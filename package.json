@@ -1,0 +1,10 @@
+{
+  "name": "claude-tauri-boilerplate",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @claude-tauri/desktop dev",
+    "dev:server": "pnpm --filter @claude-tauri/server dev",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
+  }
+}

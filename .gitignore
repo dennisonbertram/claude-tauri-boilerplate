@@ -3,3 +3,19 @@ node_modules/
 .env.local
 *.log
 .DS_Store
+
+# Build outputs
+dist/
+target/
+out/
+
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# IDE
+.vscode/
+.idea/
+
+# pnpm
+.pnpm-debug.log
