@@ -14,22 +14,37 @@ chatRouter.post('/', async (c) => {
   const sessionId = body.sessionId;
 
   // Extract the last user message as the prompt
-  const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
+  const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop() as any;
   if (!lastUserMessage) {
     return c.json({ error: 'No user message provided' }, 400);
   }
 
+  // AI SDK v6 sends parts array instead of content string
+  const prompt: string = lastUserMessage.content
+    ?? lastUserMessage.parts
+      ?.filter((p: any) => p.type === 'text')
+      .map((p: any) => p.text)
+      .join('')
+    ?? '';
+
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       let claudeSessionId: string | undefined;
+      let startSent = false;
 
       for await (const event of streamClaude({
-        prompt: lastUserMessage.content,
+        prompt,
         sessionId,
       })) {
         if (event.type === 'session') {
           claudeSessionId = event.sessionId;
         } else if (event.type === 'text-delta') {
+          // AI SDK v6 requires start + text-start before text-delta
+          if (!startSent) {
+            writer.write({ type: 'start' });
+            writer.write({ type: 'text-start', id: 'text-0' });
+            startSent = true;
+          }
           writer.write({
             type: 'text-delta',
             id: 'text-0',
