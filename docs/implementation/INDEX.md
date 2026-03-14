@@ -10,3 +10,6 @@ Implementation notes and code change documentation.
 | [phase2-auth-endpoint.md](phase2-auth-endpoint.md) | Phase 2 auth status endpoint - subscription detection via Claude Agent SDK with 10s timeout |
 | [phase3-chat-streaming.md](phase3-chat-streaming.md) | Phase 3 chat streaming route - SSE streaming of Claude responses via AI SDK v6 UI message stream protocol |
 | [phase4-sqlite-persistence.md](phase4-sqlite-persistence.md) | Phase 4 SQLite persistence - bun:sqlite for sessions and messages with CRUD operations and HTTP routes |
+| [phase5-frontend-ui.md](phase5-frontend-ui.md) | Phase 5 frontend chat UI - React chat interface with shadcn/ui, AI SDK v6 useChat, session sidebar, and message streaming |
+| [phase6-onboarding.md](phase6-onboarding.md) | Phase 6 onboarding screen - AuthGate with step-by-step Claude Code setup instructions |
+| [phase7-sidecar-integration.md](phase7-sidecar-integration.md) | Phase 7 Tauri sidecar integration - Hono server as bundled sidecar with shell plugin, health polling, and dev/prod modes |

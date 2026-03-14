@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "pnpm --filter @claude-tauri/desktop dev",
     "dev:server": "pnpm --filter @claude-tauri/server dev",
+    "dev:all": "concurrently \"pnpm dev:server\" \"pnpm dev\"",
     "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "build:sidecar": "bun build --compile apps/server/src/index.ts --outfile apps/desktop/src-tauri/binaries/server-$(rustc -vV | grep host | cut -d' ' -f2)"
   }
 }
