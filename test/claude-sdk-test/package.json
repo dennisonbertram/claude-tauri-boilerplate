@@ -1,0 +1,8 @@
+{
+  "name": "claude-sdk-test",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.76",
+    "@anthropic-ai/claude-code": "latest"
+  }
+}
