@@ -1,0 +1,74 @@
+/*
+ * Theme CSS custom properties
+ *
+ * These variables supplement the shadcn/tailwind variables already defined in
+ * index.css (:root for light, .dark for dark).  They provide additional
+ * semantic tokens that components can reference directly.
+ *
+ * The primary color tokens (--background, --foreground, --primary, etc.) are
+ * defined in index.css and driven by the `.dark` class that useTheme applies.
+ */
+
+/* ── Smooth theme transitions ──────────────────────────────────────────────── */
+
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* ── Extended semantic tokens (light / default) ───────────────────────────── */
+
+:root {
+  /* Surface layers (for elevated cards, modals, etc.) */
+  --surface-0: oklch(1 0 0);
+  --surface-1: oklch(0.985 0 0);
+  --surface-2: oklch(0.97 0 0);
+
+  /* Text hierarchy */
+  --text-primary: oklch(0.145 0 0);
+  --text-secondary: oklch(0.4 0 0);
+  --text-tertiary: oklch(0.556 0 0);
+
+  /* Interactive states */
+  --hover-overlay: oklch(0 0 0 / 4%);
+  --active-overlay: oklch(0 0 0 / 8%);
+  --focus-ring: oklch(0.708 0 0);
+
+  /* Status colors */
+  --success: oklch(0.59 0.16 145);
+  --warning: oklch(0.75 0.18 80);
+  --info: oklch(0.62 0.15 250);
+
+  /* Scrollbar */
+  --scrollbar-thumb: oklch(0.8 0 0);
+  --scrollbar-track: transparent;
+}
+
+/* ── Extended semantic tokens (dark) ──────────────────────────────────────── */
+
+.dark {
+  --surface-0: oklch(0.145 0 0);
+  --surface-1: oklch(0.185 0 0);
+  --surface-2: oklch(0.22 0 0);
+
+  --text-primary: oklch(0.985 0 0);
+  --text-secondary: oklch(0.78 0 0);
+  --text-tertiary: oklch(0.556 0 0);
+
+  --hover-overlay: oklch(1 0 0 / 6%);
+  --active-overlay: oklch(1 0 0 / 10%);
+  --focus-ring: oklch(0.556 0 0);
+
+  --success: oklch(0.65 0.16 145);
+  --warning: oklch(0.8 0.18 80);
+  --info: oklch(0.68 0.15 250);
+
+  --scrollbar-thumb: oklch(0.35 0 0);
+  --scrollbar-track: transparent;
+}
