@@ -25,6 +25,10 @@ interface ChatInputProps {
   images?: AttachedImage[];
   /** Called when attached images change (add/remove) */
   onImagesChange?: (images: AttachedImage[]) => void;
+  /** Ghost text suggestion shown when input is empty */
+  ghostText?: string | null;
+  /** Called when the user accepts the ghost text suggestion */
+  onAcceptSuggestion?: () => void;
 }
 
 let imageIdCounter = 0;
@@ -45,10 +49,14 @@ export function ChatInput({
   onPaletteClose,
   images = [],
   onImagesChange,
+  ghostText,
+  onAcceptSuggestion,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const paletteRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  const showGhost = !input && !!ghostText;
 
   const addImageFile = useCallback(
     (file: File) => {
@@ -154,6 +162,25 @@ export function ChatInput({
         }
       }
 
+      // Ghost text acceptance: Tab, Enter (accept+submit), ArrowRight
+      if (showGhost && onAcceptSuggestion) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          onAcceptSuggestion();
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          onAcceptSuggestion();
+          return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onAcceptSuggestion();
+          return;
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (input.trim() && !isLoading) {
@@ -161,7 +188,7 @@ export function ChatInput({
         }
       }
     },
-    [input, isLoading, onSubmit, showPalette]
+    [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion]
   );
 
   return (
@@ -177,22 +204,34 @@ export function ChatInput({
             />
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message... (/ for commands)"
-          disabled={isLoading}
-          rows={1}
-          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-          style={{ maxHeight: '120px', minHeight: '40px' }}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement;
-            target.style.height = 'auto';
-            target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-          }}
-        />
+        <div className="relative flex-1">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder={showGhost ? '' : 'Type a message... (/ for commands)'}
+            disabled={isLoading}
+            rows={1}
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+            style={{ maxHeight: '120px', minHeight: '40px' }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+            }}
+          />
+          {showGhost && (
+            <div
+              data-testid="ghost-text"
+              className="pointer-events-none absolute left-0 top-0 px-3 py-2 text-sm text-muted-foreground/50"
+              aria-hidden="true"
+            >
+              {ghostText}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           <Button
             type="submit"
