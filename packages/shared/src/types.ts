@@ -498,3 +498,26 @@ export interface TeamTask {
   status: 'pending' | 'in_progress' | 'completed';
   assignee?: string;
 }
+
+// --- Checkpoint Types ---
+
+export interface Checkpoint {
+  id: string;
+  userMessageId: string;
+  promptPreview: string; // first ~50 chars of the user's prompt
+  timestamp: string;
+  filesChanged: FileChange[];
+  turnIndex: number;
+}
+
+export interface FileChange {
+  path: string;
+  action: 'created' | 'modified' | 'deleted';
+  tool: string; // Edit, Write, MultiEdit
+}
+
+export interface RewindPreview {
+  checkpointId: string;
+  filesAffected: string[];
+  messagesRemoved: number;
+}
