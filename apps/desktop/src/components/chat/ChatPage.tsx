@@ -12,6 +12,8 @@ import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
 import { useCommands } from '@/hooks/useCommands';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { ContextIndicator } from './ContextIndicator';
+import type { ContextUsage } from './ContextIndicator';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
@@ -44,8 +46,24 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     plan,
     approvePlan,
     rejectPlan,
+    cumulativeUsage,
+    isCompacting,
     reset: resetStreamEvents,
   } = useStreamEvents();
+
+  // Claude's context window is 200k tokens
+  const MAX_CONTEXT_TOKENS = 200_000;
+
+  const contextUsage: ContextUsage = useMemo(
+    () => ({
+      inputTokens: cumulativeUsage.inputTokens,
+      outputTokens: cumulativeUsage.outputTokens,
+      cacheReadTokens: cumulativeUsage.cacheReadTokens,
+      cacheCreationTokens: cumulativeUsage.cacheCreationTokens,
+      maxTokens: MAX_CONTEXT_TOKENS,
+    }),
+    [cumulativeUsage]
+  );
 
   const transport = useMemo(
     () =>
@@ -300,6 +318,12 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
+      {/* Context usage indicator */}
+      {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting) && (
+        <div className="border-t border-border px-4">
+          <ContextIndicator usage={contextUsage} isCompacting={isCompacting} />
+        </div>
+      )}
       {/* Error banner */}
       <ErrorBanner
         error={chatError}

@@ -48,6 +48,13 @@ export interface PlanState {
   feedback?: string;
 }
 
+export interface CumulativeUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+}
+
 export interface StreamEventsState {
   toolCalls: Map<string, ToolCallState>;
   thinkingBlocks: Map<string, string>;
@@ -62,6 +69,10 @@ export interface StreamEventsState {
   deniedPermissions: DeniedPermission[];
   /** Current plan state */
   plan: PlanState | null;
+  /** Cumulative token usage across the entire session */
+  cumulativeUsage: CumulativeUsage;
+  /** Whether the SDK is currently compacting context */
+  isCompacting: boolean;
 }
 
 // --- Actions ---
@@ -85,6 +96,13 @@ export const initialStreamEventsState: StreamEventsState = {
   pendingPermissions: new Map(),
   deniedPermissions: [],
   plan: null,
+  cumulativeUsage: {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheCreationTokens: 0,
+  },
+  isCompacting: false,
 };
 
 // --- Reducer ---
@@ -104,6 +122,13 @@ export function streamEventsReducer(
       pendingPermissions: new Map(),
       deniedPermissions: [],
       plan: null,
+      cumulativeUsage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
+      },
+      isCompacting: false,
     };
   }
 
@@ -248,6 +273,26 @@ export function streamEventsReducer(
           costUsd: event.costUsd,
           durationMs: event.durationMs,
         },
+        cumulativeUsage: {
+          inputTokens: state.cumulativeUsage.inputTokens + event.usage.inputTokens,
+          outputTokens: state.cumulativeUsage.outputTokens + event.usage.outputTokens,
+          cacheReadTokens: state.cumulativeUsage.cacheReadTokens + event.usage.cacheReadTokens,
+          cacheCreationTokens: state.cumulativeUsage.cacheCreationTokens + event.usage.cacheCreationTokens,
+        },
+      };
+    }
+
+    case 'status': {
+      return {
+        ...state,
+        isCompacting: event.status === 'compacting',
+      };
+    }
+
+    case 'compact-boundary': {
+      return {
+        ...state,
+        isCompacting: false,
       };
     }
 
