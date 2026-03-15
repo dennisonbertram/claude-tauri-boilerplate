@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { parseToolInput } from './file-utils';
+import { DiffViewer } from './DiffViewer';
 
 interface FileEditDisplayProps {
   toolCall: ToolCallState;
@@ -113,31 +114,10 @@ export function FileEditDisplay({ toolCall }: FileEditDisplayProps) {
         </span>
       </div>
 
-      {/* Diff view */}
+      {/* Diff view - uses the reusable DiffViewer component */}
       {(oldString || newString) && (
         <div className="border-t border-border">
-          <pre className="bg-zinc-900 text-xs font-mono p-3 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre">
-            {removedLines.map((line, i) => (
-              <div
-                key={`removed-${i}`}
-                data-testid="diff-removed"
-                className="bg-red-900/30 text-red-300"
-              >
-                <span className="select-none text-red-500/70 mr-2">-</span>
-                {line}
-              </div>
-            ))}
-            {addedLines.map((line, i) => (
-              <div
-                key={`added-${i}`}
-                data-testid="diff-added"
-                className="bg-green-900/30 text-green-300"
-              >
-                <span className="select-none text-green-500/70 mr-2">+</span>
-                {line}
-              </div>
-            ))}
-          </pre>
+          <DiffViewer oldString={oldString} newString={newString} />
         </div>
       )}
     </div>

@@ -56,17 +56,45 @@ const components: Components = {
           ? children
           : String(children).replace(/\n$/, '');
 
+      const lines = codeText.split('\n');
+      const showLineNumbers = lines.length > 5;
+
       return (
         <div>
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-            <span className="text-xs text-muted-foreground font-mono">
+            <span
+              data-testid="code-language-label"
+              className="text-xs text-muted-foreground font-mono"
+            >
               {language}
             </span>
             <CopyButton text={codeText} />
           </div>
-          <code className={`${className} block p-4`} {...props}>
-            {children}
-          </code>
+          {showLineNumbers ? (
+            <div className="relative">
+              <code
+                className={`${className} block p-4 pl-14`}
+                {...props}
+              >
+                {lines.map((line, i) => (
+                  <span key={i} className="block relative">
+                    <span
+                      data-testid="code-line-number"
+                      className="absolute -left-10 w-8 text-right select-none text-zinc-600 text-xs"
+                    >
+                      {i + 1}
+                    </span>
+                    {line}
+                    {i < lines.length - 1 ? '\n' : ''}
+                  </span>
+                ))}
+              </code>
+            </div>
+          ) : (
+            <code className={`${className} block p-4`} {...props}>
+              {children}
+            </code>
+          )}
         </div>
       );
     }
