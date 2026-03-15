@@ -379,6 +379,26 @@ export interface RuleFile {
 
 // --- Git Types ---
 
+// --- Memory Types ---
+
+export interface MemoryFile {
+  name: string;
+  path: string;
+  content: string;
+  isEntrypoint: boolean;
+  sizeBytes: number;
+  modifiedAt: string;
+}
+
+export interface MemorySearchResult {
+  file: string;
+  line: number;
+  text: string;
+  context: string;
+}
+
+// --- Git Types ---
+
 export interface GitFileStatus {
   path: string;
   status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked';
