@@ -16,6 +16,7 @@ interface SessionSidebarProps {
   onRenameSession: (id: string, title: string) => void;
   onForkSession: (id: string) => void;
   onExportSession: (id: string, format: 'json' | 'md') => void;
+  onOpenSettings?: () => void;
 }
 
 export function SessionSidebar({
@@ -29,11 +30,34 @@ export function SessionSidebar({
   onRenameSession,
   onForkSession,
   onExportSession,
+  onOpenSettings,
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
-      <div className="p-3">
+      <div className="flex items-center justify-between p-3">
         <UserBadge email={email} plan={plan} />
+        {onOpenSettings && (
+          <button
+            data-testid="settings-gear-button"
+            onClick={onOpenSettings}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Open settings"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        )}
       </div>
       <Separator />
       <div className="p-3">

@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
+import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { useSessions } from '@/hooks/useSessions';
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
@@ -17,6 +18,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     forkSession,
     exportSession,
   } = useSessions();
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleNewChat = async () => {
     await createSession();
@@ -35,8 +38,17 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         onRenameSession={renameSession}
         onForkSession={forkSession}
         onExportSession={exportSession}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
-      <ChatPage sessionId={activeSessionId} />
+      <ChatPage
+        sessionId={activeSessionId}
+        onCreateSession={handleNewChat}
+        onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
+      />
+      <SettingsPanel
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }
