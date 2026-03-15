@@ -154,6 +154,28 @@ function mapSystemEvent(event: any): StreamEvent[] {
           toolName: event.tool_name,
         },
       ];
+    case 'plan_start':
+      return [
+        {
+          type: 'plan:start' as const,
+          planId: event.plan_id ?? '',
+        },
+      ];
+    case 'plan_content':
+      return [
+        {
+          type: 'plan:content' as const,
+          planId: event.plan_id ?? '',
+          text: event.text ?? '',
+        },
+      ];
+    case 'plan_complete':
+      return [
+        {
+          type: 'plan:complete' as const,
+          planId: event.plan_id ?? '',
+        },
+      ];
     default:
       console.warn(
         `[event-mapper] Unhandled system subtype: ${event.subtype}`

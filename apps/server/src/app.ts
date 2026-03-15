@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { authRouter } from './routes/auth';
 import { createChatRouter } from './routes/chat';
 import { createPermissionRouter } from './routes/permission';
+import { createPlanRouter } from './routes/plan';
 import { createSessionsRouter } from './routes/sessions';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
@@ -27,6 +28,7 @@ app.get('/api/health', (c) => c.json({ status: 'ok' }));
 app.route('/api/auth', authRouter);
 app.route('/api/chat', createChatRouter(db));
 app.route('/api/chat/permission', createPermissionRouter(db));
+app.route('/api/chat/plan', createPlanRouter(db));
 app.route('/api/sessions', createSessionsRouter(db));
 
 export { app };

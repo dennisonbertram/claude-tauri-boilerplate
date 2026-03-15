@@ -6,8 +6,10 @@ import type { Message, PermissionResponse } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { PermissionDialog } from './PermissionDialog';
+import { PlanView } from './PlanView';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
+import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -34,6 +36,9 @@ export function ChatPage({ sessionId }: ChatPageProps) {
     thinkingBlocks,
     pendingPermissions,
     resolvePermission,
+    plan,
+    approvePlan,
+    rejectPlan,
     reset: resetStreamEvents,
   } = useStreamEvents();
 
@@ -113,6 +118,48 @@ export function ChatPage({ sessionId }: ChatPageProps) {
     [sessionId, resolvePermission]
   );
 
+  const handlePlanApprove = useCallback(async () => {
+    if (!plan) return;
+    approvePlan(plan.planId);
+
+    try {
+      await fetch(`${API_BASE}/api/chat/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          planId: plan.planId,
+          decision: 'approve',
+        } satisfies PlanDecisionRequest),
+      });
+    } catch (err) {
+      console.error('[plan] Failed to send approval:', err);
+    }
+  }, [sessionId, plan, approvePlan]);
+
+  const handlePlanReject = useCallback(
+    async (feedback?: string) => {
+      if (!plan) return;
+      rejectPlan(plan.planId, feedback);
+
+      try {
+        await fetch(`${API_BASE}/api/chat/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            planId: plan.planId,
+            decision: 'reject',
+            feedback,
+          } satisfies PlanDecisionRequest),
+        });
+      } catch (err) {
+        console.error('[plan] Failed to send rejection:', err);
+      }
+    },
+    [sessionId, plan, rejectPlan]
+  );
+
   const pendingPermissionEntries = useMemo(
     () => Array.from(pendingPermissions.values()),
     [pendingPermissions]
@@ -135,6 +182,16 @@ export function ChatPage({ sessionId }: ChatPageProps) {
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
+      {/* Plan view */}
+      {plan && plan.status !== 'idle' && (
+        <div className="border-t border-border px-4 py-2">
+          <PlanView
+            plan={plan}
+            onApprove={handlePlanApprove}
+            onReject={handlePlanReject}
+          />
+        </div>
+      )}
       {/* Permission dialogs */}
       {pendingPermissionEntries.length > 0 && (
         <div className="border-t border-border px-4 py-2 space-y-2">

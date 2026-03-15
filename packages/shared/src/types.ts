@@ -108,6 +108,12 @@ export type StreamEvent =
   // Permissions
   | StreamPermissionRequest
   | StreamPermissionDenied
+  // Plan mode
+  | StreamPlanStart
+  | StreamPlanContent
+  | StreamPlanComplete
+  | StreamPlanApproved
+  | StreamPlanRejected
   // Misc
   | StreamFilesPersisted
   | StreamToolUseSummary
@@ -310,3 +316,47 @@ export interface StreamPermissionDenied {
   requestId: string;
   toolName: string;
 }
+
+// --- Plan Mode Types ---
+
+/** Plan mode entered - agent is creating a plan */
+export interface StreamPlanStart {
+  type: 'plan:start';
+  planId: string;
+}
+
+/** Plan content streaming delta */
+export interface StreamPlanContent {
+  type: 'plan:content';
+  planId: string;
+  text: string;
+}
+
+/** Plan is complete and ready for user review */
+export interface StreamPlanComplete {
+  type: 'plan:complete';
+  planId: string;
+}
+
+/** User approved the plan */
+export interface StreamPlanApproved {
+  type: 'plan:approved';
+  planId: string;
+}
+
+/** User rejected the plan with optional feedback */
+export interface StreamPlanRejected {
+  type: 'plan:rejected';
+  planId: string;
+  feedback?: string;
+}
+
+/** Request body for plan decision endpoint */
+export interface PlanDecisionRequest {
+  sessionId: string;
+  planId: string;
+  decision: 'approve' | 'reject';
+  feedback?: string;
+}
+
+export type PlanDecisionAction = 'approve' | 'reject';
