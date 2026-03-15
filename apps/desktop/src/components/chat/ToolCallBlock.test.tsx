@@ -7,9 +7,9 @@ import type { ToolCallState } from '@/hooks/useStreamEvents';
 function makeToolCall(overrides: Partial<ToolCallState> = {}): ToolCallState {
   return {
     toolUseId: 'tool-1',
-    name: 'Read',
+    name: 'Grep',
     status: 'running',
-    input: '{"file_path":"/src/index.ts"}',
+    input: '{"pattern":"TODO","path":"/src"}',
     ...overrides,
   };
 }
@@ -17,7 +17,7 @@ function makeToolCall(overrides: Partial<ToolCallState> = {}): ToolCallState {
 describe('ToolCallBlock', () => {
   it('renders the tool name', () => {
     render(<ToolCallBlock toolCall={makeToolCall()} />);
-    expect(screen.getByText('Read')).toBeInTheDocument();
+    expect(screen.getByText('Grep')).toBeInTheDocument();
   });
 
   it('shows a spinner indicator when status is running', () => {
@@ -45,36 +45,36 @@ describe('ToolCallBlock', () => {
   it('is expanded by default when running', () => {
     render(<ToolCallBlock toolCall={makeToolCall({ status: 'running' })} />);
     // Input section should be visible when running
-    expect(screen.getByText(/file_path/)).toBeInTheDocument();
+    expect(screen.getByText(/pattern/)).toBeInTheDocument();
   });
 
   it('is collapsed by default when complete', () => {
     render(
       <ToolCallBlock
-        toolCall={makeToolCall({ status: 'complete', result: 'file contents' })}
+        toolCall={makeToolCall({ status: 'complete', result: 'search results' })}
       />
     );
     // Input section should not be visible when collapsed
-    expect(screen.queryByText(/file_path/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/pattern/)).not.toBeInTheDocument();
   });
 
   it('can be toggled open and closed', async () => {
     const user = userEvent.setup();
     render(
       <ToolCallBlock
-        toolCall={makeToolCall({ status: 'complete', result: 'file contents' })}
+        toolCall={makeToolCall({ status: 'complete', result: 'search results' })}
       />
     );
 
     // Initially collapsed -- input not visible
-    expect(screen.queryByText(/file_path/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/pattern/)).not.toBeInTheDocument();
 
     // Click to expand
-    const header = screen.getByRole('button', { name: /Read/i });
+    const header = screen.getByRole('button', { name: /Grep/i });
     await user.click(header);
 
     // Now input should be visible
-    expect(screen.getByText(/file_path/)).toBeInTheDocument();
+    expect(screen.getByText(/pattern/)).toBeInTheDocument();
   });
 
   it('renders the result when complete and expanded', async () => {
@@ -89,7 +89,7 @@ describe('ToolCallBlock', () => {
     );
 
     // Expand
-    const header = screen.getByRole('button', { name: /Read/i });
+    const header = screen.getByRole('button', { name: /Grep/i });
     await user.click(header);
 
     expect(screen.getByText(/const x = 42/)).toBeInTheDocument();
@@ -100,11 +100,11 @@ describe('ToolCallBlock', () => {
       <ToolCallBlock
         toolCall={makeToolCall({
           status: 'complete',
-          summary: 'Read file /src/index.ts (42 lines)',
+          summary: 'Found 42 matches in /src',
         })}
       />
     );
-    expect(screen.getByText(/Read file \/src\/index\.ts/)).toBeInTheDocument();
+    expect(screen.getByText(/Found 42 matches in \/src/)).toBeInTheDocument();
   });
 
   it('shows elapsed time when available and running', () => {
