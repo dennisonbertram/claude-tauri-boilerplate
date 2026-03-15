@@ -9,6 +9,9 @@ import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
 import { SubagentPanel } from './SubagentPanel';
+import { CheckpointTimeline } from './CheckpointTimeline';
+import { RewindDialog } from './RewindDialog';
+import type { RewindMode } from './RewindDialog';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
 import type { UsageState } from '@/hooks/useStreamEvents';
@@ -22,9 +25,10 @@ import type { ContextUsage } from './ContextIndicator';
 import { CostDisplay } from './CostDisplay';
 import { useCostTracking } from '@/hooks/useCostTracking';
 import { useSuggestions } from '@/hooks/useSuggestions';
+import { useCheckpoints } from '@/hooks/useCheckpoints';
 import { SuggestionChips } from './SuggestionChips';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
-import type { PlanDecisionRequest } from '@claude-tauri/shared';
+import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -89,6 +93,27 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     reset: resetCostTracking,
   } = useCostTracking();
 
+  // Checkpoint tracking state
+  const turnIndexRef = useRef(0);
+  const lastUserPromptRef = useRef('');
+  const lastUserMessageIdRef = useRef('');
+  const [rewindTarget, setRewindTarget] = useState<Checkpoint | null>(null);
+  const [rewindPreview, setRewindPreview] = useState<RewindPreview | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const {
+    checkpoints,
+    previewRewind,
+    executeRewind,
+    reset: resetCheckpoints,
+  } = useCheckpoints({
+    sessionId,
+    toolCalls,
+    lastUserPrompt: lastUserPromptRef.current,
+    turnIndex: turnIndexRef.current,
+    userMessageId: lastUserMessageIdRef.current,
+  });
+
   // Claude's context window is 200k tokens
   const MAX_CONTEXT_TOKENS = 200_000;
 
@@ -144,9 +169,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     [sessionId]
   );
 
+  // Stable fallback ID so we don't recreate the Chat on every render
+  // when sessionId is null. Using useRef + crypto ensures it persists
+  // across renders but is unique per ChatPage mount.
+  const fallbackId = useRef(crypto.randomUUID()).current;
+
   const { messages, sendMessage, status, setMessages, error, clearError } =
     useChat({
-      id: sessionId ?? undefined,
+      id: sessionId ?? fallbackId,
       transport,
     });
 
@@ -185,7 +215,11 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     resetStreamEvents();
     resetCostTracking();
     resetSubagents();
-  }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents]);
+    resetCheckpoints();
+    turnIndexRef.current = 0;
+    lastUserPromptRef.current = '';
+    lastUserMessageIdRef.current = '';
+  }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents, resetCheckpoints]);
 
   const commandContext = useMemo(
     () => ({
@@ -452,6 +486,35 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     [pendingPermissions]
   );
 
+  // Rewind dialog handlers
+  const handleRewindClick = useCallback(
+    async (checkpointId: string) => {
+      const cp = checkpoints.find((c) => c.id === checkpointId);
+      if (!cp) return;
+      setRewindTarget(cp);
+      setIsLoadingPreview(true);
+      const preview = await previewRewind(checkpointId);
+      setRewindPreview(preview);
+      setIsLoadingPreview(false);
+    },
+    [checkpoints, previewRewind]
+  );
+
+  const handleRewindConfirm = useCallback(
+    async (mode: RewindMode) => {
+      if (!rewindTarget) return;
+      await executeRewind(rewindTarget.id, mode);
+      setRewindTarget(null);
+      setRewindPreview(null);
+    },
+    [rewindTarget, executeRewind]
+  );
+
+  const handleRewindCancel = useCallback(() => {
+    setRewindTarget(null);
+    setRewindPreview(null);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = input.trim();
@@ -460,6 +523,11 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     if (text.startsWith('/')) {
       return;
     }
+
+    // Track turn info for checkpoints
+    lastUserPromptRef.current = text;
+    lastUserMessageIdRef.current = `user-${Date.now()}`;
+    turnIndexRef.current += 1;
 
     setInput('');
     resetStreamEvents();
@@ -481,6 +549,21 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
           activeCount={subagentActiveCount}
           isVisible={subagentPanelVisible}
           onToggleVisibility={toggleSubagentPanel}
+        />
+      )}
+      {/* Checkpoint timeline */}
+      <CheckpointTimeline
+        checkpoints={checkpoints}
+        onRewind={handleRewindClick}
+      />
+      {/* Rewind dialog */}
+      {rewindTarget && (
+        <RewindDialog
+          checkpoint={rewindTarget}
+          preview={rewindPreview}
+          isLoadingPreview={isLoadingPreview}
+          onRewind={handleRewindConfirm}
+          onCancel={handleRewindCancel}
         />
       )}
       {/* Context usage indicator + cost display */}

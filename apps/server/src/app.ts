@@ -11,6 +11,7 @@ import { createMemoryRouter } from './routes/memory';
 import { createMcpRouter } from './routes/mcp';
 import { createHooksRouter } from './routes/hooks';
 import { createTeamsRouter } from './routes/teams';
+import { createCheckpointsRouter } from './routes/checkpoints';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -42,5 +43,11 @@ app.route('/api/memory', createMemoryRouter());
 app.route('/api/mcp', createMcpRouter());
 app.route('/api/hooks', createHooksRouter());
 app.route('/api/teams', createTeamsRouter());
+
+// Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
+// We mount a sub-router that receives sessionId as a param.
+const checkpointsApp = new Hono();
+checkpointsApp.route('/:sessionId/checkpoints', createCheckpointsRouter());
+app.route('/api/sessions', checkpointsApp);
 
 export { app };
