@@ -1,0 +1,242 @@
+import { useReducer, useCallback } from 'react';
+import type { StreamEvent } from '@claude-tauri/shared';
+
+// --- State Types ---
+
+export interface ToolCallState {
+  toolUseId: string;
+  name: string;
+  status: 'running' | 'complete' | 'error';
+  input: string;
+  result?: unknown;
+  elapsedSeconds?: number;
+  summary?: string;
+}
+
+export interface ErrorState {
+  errorType: string;
+  message: string;
+}
+
+export interface UsageState {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  costUsd: number;
+  durationMs: number;
+}
+
+export interface StreamEventsState {
+  toolCalls: Map<string, ToolCallState>;
+  thinkingBlocks: Map<string, string>;
+  errors: ErrorState[];
+  usage: UsageState | null;
+  sessionInfo: { sessionId: string; model: string } | null;
+  /** Maps blockIndex -> toolUseId for correlating deltas to tool calls */
+  blockIndexToToolId: Map<number, string>;
+}
+
+// --- Actions ---
+
+type StreamEventsAction =
+  | { type: 'PROCESS_EVENT'; event: StreamEvent }
+  | { type: 'RESET' };
+
+// --- Initial State ---
+
+export const initialStreamEventsState: StreamEventsState = {
+  toolCalls: new Map(),
+  thinkingBlocks: new Map(),
+  errors: [],
+  usage: null,
+  sessionInfo: null,
+  blockIndexToToolId: new Map(),
+};
+
+// --- Reducer ---
+
+export function streamEventsReducer(
+  state: StreamEventsState,
+  action: StreamEventsAction
+): StreamEventsState {
+  if (action.type === 'RESET') {
+    return {
+      toolCalls: new Map(),
+      thinkingBlocks: new Map(),
+      errors: [],
+      usage: null,
+      sessionInfo: null,
+      blockIndexToToolId: new Map(),
+    };
+  }
+
+  const event = action.event;
+
+  switch (event.type) {
+    case 'session:init': {
+      return {
+        ...state,
+        sessionInfo: {
+          sessionId: event.sessionId,
+          model: event.model,
+        },
+      };
+    }
+
+    case 'block:start': {
+      if (event.blockType === 'tool_use' && event.toolUseId && event.toolName) {
+        const newToolCalls = new Map(state.toolCalls);
+        newToolCalls.set(event.toolUseId, {
+          toolUseId: event.toolUseId,
+          name: event.toolName,
+          status: 'running',
+          input: '',
+        });
+        const newBlockIndex = new Map(state.blockIndexToToolId);
+        newBlockIndex.set(event.blockIndex, event.toolUseId);
+        return {
+          ...state,
+          toolCalls: newToolCalls,
+          blockIndexToToolId: newBlockIndex,
+        };
+      }
+      if (event.blockType === 'thinking') {
+        const newThinking = new Map(state.thinkingBlocks);
+        newThinking.set(`block-${event.blockIndex}`, '');
+        return { ...state, thinkingBlocks: newThinking };
+      }
+      return state;
+    }
+
+    case 'tool-input:delta': {
+      const toolId = state.blockIndexToToolId.get(event.blockIndex);
+      if (!toolId) return state;
+      const existing = state.toolCalls.get(toolId);
+      if (!existing) return state;
+      const newToolCalls = new Map(state.toolCalls);
+      newToolCalls.set(toolId, {
+        ...existing,
+        input: existing.input + event.partialJson,
+      });
+      return { ...state, toolCalls: newToolCalls };
+    }
+
+    case 'tool:result': {
+      const existing = state.toolCalls.get(event.toolUseId);
+      if (!existing) return state;
+      const newToolCalls = new Map(state.toolCalls);
+      newToolCalls.set(event.toolUseId, {
+        ...existing,
+        status: 'complete',
+        result: event.result,
+      });
+      return { ...state, toolCalls: newToolCalls };
+    }
+
+    case 'tool:progress': {
+      const existing = state.toolCalls.get(event.toolUseId);
+      if (!existing) return state;
+      const newToolCalls = new Map(state.toolCalls);
+      newToolCalls.set(event.toolUseId, {
+        ...existing,
+        elapsedSeconds: event.elapsedSeconds,
+      });
+      return { ...state, toolCalls: newToolCalls };
+    }
+
+    case 'tool:summary': {
+      const existing = state.toolCalls.get(event.toolUseId);
+      if (!existing) return state;
+      const newToolCalls = new Map(state.toolCalls);
+      newToolCalls.set(event.toolUseId, {
+        ...existing,
+        summary: event.summary,
+      });
+      return { ...state, toolCalls: newToolCalls };
+    }
+
+    case 'thinking:delta': {
+      const key = `block-${event.blockIndex}`;
+      const existing = state.thinkingBlocks.get(key);
+      if (existing === undefined) return state;
+      const newThinking = new Map(state.thinkingBlocks);
+      newThinking.set(key, existing + event.thinking);
+      return { ...state, thinkingBlocks: newThinking };
+    }
+
+    case 'error': {
+      return {
+        ...state,
+        errors: [
+          ...state.errors,
+          { errorType: event.errorType, message: event.message },
+        ],
+      };
+    }
+
+    case 'session:result': {
+      return {
+        ...state,
+        usage: {
+          inputTokens: event.usage.inputTokens,
+          outputTokens: event.usage.outputTokens,
+          cacheReadTokens: event.usage.cacheReadTokens,
+          cacheCreationTokens: event.usage.cacheCreationTokens,
+          costUsd: event.costUsd,
+          durationMs: event.durationMs,
+        },
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
+// --- Hook ---
+
+export function useStreamEvents() {
+  const [state, dispatch] = useReducer(
+    streamEventsReducer,
+    initialStreamEventsState
+  );
+
+  const processEvent = useCallback((event: StreamEvent) => {
+    dispatch({ type: 'PROCESS_EVENT', event });
+  }, []);
+
+  const reset = useCallback(() => {
+    dispatch({ type: 'RESET' });
+  }, []);
+
+  /**
+   * onData callback compatible with useChat's data channel.
+   * Parses incoming data items and dispatches them as stream events.
+   */
+  const onData = useCallback(
+    (data: unknown[]) => {
+      for (const item of data) {
+        try {
+          const event =
+            typeof item === 'string'
+              ? (JSON.parse(item) as StreamEvent)
+              : (item as StreamEvent);
+          if (event && typeof event === 'object' && 'type' in event) {
+            processEvent(event);
+          }
+        } catch {
+          // Silently skip unparseable data items
+        }
+      }
+    },
+    [processEvent]
+  );
+
+  return {
+    ...state,
+    processEvent,
+    reset,
+    onData,
+  };
+}
