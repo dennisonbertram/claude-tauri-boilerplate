@@ -116,9 +116,8 @@ describe('ToolCallBlock', () => {
     expect(screen.getByText(/3s/)).toBeInTheDocument();
   });
 
-  it('renders Bash tool output with terminal styling', async () => {
-    const user = userEvent.setup();
-    const { container } = render(
+  it('renders Bash tool calls with BashDisplay component', () => {
+    render(
       <ToolCallBlock
         toolCall={makeToolCall({
           name: 'Bash',
@@ -129,12 +128,12 @@ describe('ToolCallBlock', () => {
       />
     );
 
-    // Expand
-    const header = screen.getByRole('button', { name: /Bash/i });
-    await user.click(header);
+    // BashDisplay renders the command in a code element
+    const command = screen.getByTestId('bash-command');
+    expect(command).toHaveTextContent('ls -la');
 
-    // Result should be in a terminal-styled container
-    const terminal = container.querySelector('[data-testid="terminal-output"]');
-    expect(terminal).toBeInTheDocument();
+    // Output is shown in the bash-output area (visible by default)
+    const output = screen.getByTestId('bash-output');
+    expect(output).toHaveTextContent('total 42');
   });
 });

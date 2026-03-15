@@ -505,7 +505,7 @@ describe('ToolCallBlock routing to specialized displays', () => {
     expect(screen.getByText('/src/new.ts')).toBeInTheDocument();
   });
 
-  it('still renders generic display for Bash tool calls', () => {
+  it('routes Bash tool calls to BashDisplay', () => {
     render(
       <ToolCallBlock
         toolCall={makeToolCall({
@@ -515,8 +515,8 @@ describe('ToolCallBlock routing to specialized displays', () => {
         })}
       />
     );
-    // Generic display shows tool name in header
-    expect(screen.getByText('Bash')).toBeInTheDocument();
+    // BashDisplay renders the command in a code element
+    expect(screen.getByTestId('bash-command')).toBeInTheDocument();
   });
 
   it('still renders generic display for Grep tool calls', () => {

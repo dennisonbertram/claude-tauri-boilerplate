@@ -6,11 +6,222 @@ All agents working on this project MUST read and follow these policies.
 
 ## 1. Project Overview
 
-This is **claude-tauri-boilerplate**, an MVP boilerplate project. We use best practices, keep code clean, and don't skimp on security -- but we don't over-engineer for enterprise scale. Keep things focused and reasonable.
+This is **claude-tauri-boilerplate**, a desktop GUI for Claude that aims for feature parity with Claude Code CLI. Built as a Tauri v2 desktop app with a React frontend and a Hono/Bun backend sidecar.
+
+**Goal:** MVP boilerplate. Best practices, clean code, no skimping on security -- but no over-engineering for enterprise scale.
 
 ---
 
-## 2. Documentation Structure
+## 2. Architecture & Tech Stack
+
+```
+┌─────────────────────────────────────────────────┐
+│  Tauri v2 Desktop Shell                         │
+│  ┌───────────────────┐  ┌────────────────────┐  │
+│  │  React 19 Frontend│  │  Hono/Bun Sidecar  │  │
+│  │  (Vite, port 1420)│──│  (API, port 3131)  │  │
+│  │  Tailwind CSS v4  │  │  SQLite (WAL mode) │  │
+│  │  AI SDK v6        │  │  Claude Agent SDK  │  │
+│  └───────────────────┘  └────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+### Monorepo Structure
+
+```
+claude-tauri-boilerplate/
+├── apps/
+│   ├── desktop/          # Tauri + React frontend
+│   │   ├── src/          # React components, hooks, lib
+│   │   └── src-tauri/    # Rust shell, Tauri config, sidecar binaries
+│   └── server/           # Hono API server (runs as sidecar)
+│       └── src/
+│           ├── db/       # SQLite schema, database service
+│           ├── routes/   # API route handlers
+│           └── services/ # Business logic (auth, claude)
+├── packages/
+│   └── shared/           # Shared TypeScript types
+└── docs/                 # All project documentation
+```
+
+### Key Technologies
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Desktop shell | Tauri | v2 |
+| Frontend | React + TypeScript | 19.1 / 5.8 |
+| Styling | Tailwind CSS | v4 |
+| Bundler | Vite | 7.0 |
+| Backend runtime | Bun | latest |
+| Backend framework | Hono | v4 |
+| Database | SQLite (Bun native) | WAL mode, FK on |
+| AI integration | Claude Agent SDK | v0.2.76 |
+| Chat hooks | Vercel AI SDK | v6 |
+| Validation | Zod | v3.23 |
+| Package manager | pnpm | workspaces |
+
+### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/health` | GET | Server health check |
+| `/api/auth/status` | GET | Auth info (email, plan, subscription) |
+| `/api/sessions` | GET | List all sessions |
+| `/api/sessions` | POST | Create new session |
+| `/api/sessions/:id/messages` | GET | Get messages in session |
+| `/api/sessions/:id` | DELETE | Delete session (cascades messages) |
+| `/api/chat` | POST | Stream chat response (SSE) |
+
+### Database
+
+SQLite at `~/.claude-tauri/data.db`. Two tables: `sessions` and `messages`. Foreign keys enabled, WAL journaling. Schema in `apps/server/src/db/schema.ts`.
+
+### Authentication
+
+Uses Claude subscription auth (detected from CLI credentials). If `ANTHROPIC_API_KEY` is set, it overrides subscription auth -- clear it or set to `""` to use subscription.
+
+---
+
+## 3. Development Setup
+
+### Prerequisites
+
+- **pnpm** (package manager)
+- **Bun** (server runtime + test runner)
+- **Rust + Cargo** (for Tauri)
+- **Tauri CLI v2** (`cargo install tauri-cli`)
+- A valid **Claude subscription** (for auth) OR `ANTHROPIC_API_KEY`
+
+### Install Dependencies
+
+```bash
+pnpm install
+```
+
+### Development Commands
+
+```bash
+# Start everything (frontend + backend)
+pnpm dev:all
+
+# Start individually
+pnpm dev           # Frontend only (Vite, port 1420)
+pnpm dev:server    # Backend only (Bun, port 3131)
+
+# Run with Tauri desktop shell
+cd apps/desktop && pnpm tauri dev
+```
+
+### Testing
+
+#### Automated Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run server tests only
+cd apps/server && bun test
+
+# Run a specific test file
+cd apps/server && bun test src/routes/auth.test.ts
+```
+
+Server tests use **Bun's built-in test runner** (not Vitest or Jest). Test files live alongside source files as `*.test.ts`.
+
+#### Manual API Testing with curl
+
+Every backend endpoint or API change MUST be manually tested with curl before considering the work done. Start the server first (`pnpm dev:server`), then test.
+
+```bash
+# Health check
+curl http://localhost:3131/api/health
+
+# Auth status
+curl http://localhost:3131/api/auth/status
+
+# Create a session
+curl -X POST http://localhost:3131/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test Session"}'
+
+# List sessions
+curl http://localhost:3131/api/sessions
+
+# Get messages for a session
+curl http://localhost:3131/api/sessions/<session-id>/messages
+
+# Delete a session
+curl -X DELETE http://localhost:3131/api/sessions/<session-id>
+
+# Stream a chat response
+curl -N -X POST http://localhost:3131/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages": [{"role": "user", "content": "Hello"}], "sessionId": "<session-id>"}'
+```
+
+Verify: correct status codes, response shapes match shared types, error cases return proper error JSON, and streaming endpoints actually stream (not buffer).
+
+#### Manual Frontend Testing with Chrome Browser Tool
+
+Every frontend change MUST be manually verified using the `mcp__claude-in-chrome__*` browser automation tools. This catches visual bugs, layout issues, and interaction problems that unit tests miss.
+
+**Setup:**
+1. Start the dev environment: `pnpm dev:all`
+2. Use `mcp__claude-in-chrome__tabs_context_mcp` to check current browser state
+3. Navigate to `http://localhost:1420` using `mcp__claude-in-chrome__navigate` (or create a new tab with `mcp__claude-in-chrome__tabs_create_mcp`)
+
+**Testing workflow:**
+1. **Take a screenshot** with `mcp__claude-in-chrome__get_screenshot` to verify the current UI state
+2. **Interact with the page** using `mcp__claude-in-chrome__computer` (click, type, scroll) to test user flows
+3. **Read page content** with `mcp__claude-in-chrome__read_page` or `mcp__claude-in-chrome__get_page_text` to verify rendered text
+4. **Check for console errors** with `mcp__claude-in-chrome__read_console_messages` -- there should be zero errors
+5. **Take a final screenshot** to confirm the feature looks correct after interaction
+
+**What to verify for each frontend change:**
+- Component renders without console errors
+- Layout is correct (no overflow, no misalignment)
+- Interactive elements work (buttons click, inputs accept text, modals open/close)
+- Loading states display properly
+- Error states display properly
+- Responsive behavior is reasonable
+
+**Recording multi-step interactions:**
+Use `mcp__claude-in-chrome__gif_creator` to record complex user flows (e.g., creating a session, sending a message, receiving a streamed response). Name the GIF descriptively (e.g., `chat-flow-test.gif`).
+
+### Building
+
+```bash
+# Build sidecar binary (required before Tauri build)
+pnpm build:sidecar
+
+# Build all packages
+pnpm build
+
+# Build desktop app for distribution
+cd apps/desktop && pnpm tauri build
+```
+
+The sidecar build compiles the Hono server into a standalone Bun binary at `apps/desktop/src-tauri/binaries/server-<platform-triple>`.
+
+### Ports
+
+| Service | Port | Notes |
+|---------|------|-------|
+| Frontend (Vite) | 1420 | Strict -- fails if occupied |
+| Backend (Hono) | 3131 | Configurable via `PORT` env var |
+
+**Always check ports before starting:** `lsof -i :1420` and `lsof -i :3131`.
+
+### Environment Variables
+
+- `PORT` -- Server port (default: 3131)
+- `ANTHROPIC_API_KEY` -- Set to `""` or unset to use subscription auth
+- API keys are in `~/.zshrc` (never committed)
+
+---
+
+## 4. Documentation Structure
 
 All project documentation lives in `docs/`. Start with **`docs/INDEX.md`** -- it links to every subfolder.
 
@@ -42,24 +253,38 @@ docs/
 
 ---
 
-## 3. Strict TDD Policy
+## 5. Strict TDD + Manual Testing Policy
 
-Test-Driven Development is mandatory. No exceptions.
+Test-Driven Development is mandatory. Manual verification is mandatory. No exceptions.
+
+### Automated Tests (TDD)
 
 1. **Write tests FIRST.** Before implementing any feature, write the tests that define correct behavior.
 2. **Tests must be meaningful.** No trivial tests like `expect(true).toBe(true)`. Every test must assert something real about the system.
 3. **Tests must not be underspecified.** Cover edge cases, error conditions, invalid inputs, and realistic scenarios -- not just the happy path.
 4. **Tests must pass before any commit.** If tests fail, the commit is blocked. Fix the code, not the tests (unless the test itself is wrong).
-5. **Bug fix protocol:**
+
+### Manual Testing (Required)
+
+Automated tests alone are not sufficient. Every change must also be manually verified:
+
+5. **Backend changes: test with curl.** Hit every new or modified endpoint with curl. Verify status codes, response shapes, error cases, and streaming behavior. See §3 "Manual API Testing with curl" for examples.
+6. **Frontend changes: test with the Chrome browser tool.** Use the `mcp__claude-in-chrome__*` tools to navigate to the app, take screenshots, interact with the UI, and check for console errors. See §3 "Manual Frontend Testing with Chrome Browser Tool" for the full workflow.
+7. **Both layers changed? Test both.** If a feature touches backend and frontend, do curl testing first (confirm the API works), then Chrome testing (confirm the UI works end-to-end).
+
+### Bug Fix Protocol
+
+8. **Bug fix protocol:**
    - Document the bug in the engineering log (`docs/logs/engineering-log.md`)
    - Write a regression test that **fails** (proving the bug exists)
    - Fix the bug
    - Verify the regression test now passes
+   - Manually verify the fix with curl and/or Chrome browser tool
    - Commit
 
 ---
 
-## 4. Worktree Workflow
+## 6. Worktree Workflow
 
 Never commit directly to `main`. All work happens in branches via git worktrees.
 
@@ -79,7 +304,7 @@ Flow:
 
 ---
 
-## 5. Feature Development Process
+## 7. Feature Development Process
 
 Before implementing any feature:
 
@@ -95,7 +320,7 @@ This keeps work trackable and lets any agent pick up where another left off.
 
 ---
 
-## 6. Logging Requirements
+## 8. Logging Requirements
 
 Three logs are maintained in `docs/logs/`. Keep entries dated and concise.
 
@@ -119,7 +344,7 @@ Document each system/module in the project: what it does, how systems interact, 
 
 ---
 
-## 7. GitHub Issues
+## 9. GitHub Issues
 
 When reviewing code or spotting problems:
 
@@ -133,7 +358,7 @@ When reviewing code or spotting problems:
 
 ---
 
-## 8. Communication Style
+## 10. Communication Style
 
 - Use **plain language**. Avoid jargon unless it's necessary and well-known.
 - The user manages many things and needs to understand how everything fits together at a **high level**.
@@ -143,7 +368,7 @@ When reviewing code or spotting problems:
 
 ---
 
-## 9. Agent Task Completion
+## 11. Agent Task Completion
 
 When an agent completes a task, it MUST report back with:
 
@@ -156,7 +381,7 @@ Do not give vague summaries. Be specific about what changed and where.
 
 ---
 
-## 10. Nightly Tasks
+## 12. Nightly Tasks
 
 Automated agents can pick up work from **`docs/nightly-tasks.md`**.
 
@@ -169,7 +394,7 @@ When completing a nightly task, remove it from the list and log the completion i
 
 ---
 
-## 11. MVP Mindset
+## 13. MVP Mindset
 
 This is an MVP. The goal is to build something that works well, not something that handles every edge case at planetary scale.
 
@@ -181,7 +406,7 @@ This is an MVP. The goal is to build something that works well, not something th
 
 ---
 
-## 12. Index Maintenance
+## 14. Index Maintenance
 
 This is important enough to restate clearly:
 
