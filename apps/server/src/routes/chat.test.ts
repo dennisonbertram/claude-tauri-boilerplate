@@ -1,4 +1,5 @@
-import { describe, test, expect, mock, beforeEach } from 'bun:test';
+import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { Database } from 'bun:sqlite';
 import type { ChatRequest } from '@claude-tauri/shared';
 
 // Mock the claude-agent-sdk before importing anything that uses it
@@ -32,7 +33,8 @@ mock.module('@anthropic-ai/claude-agent-sdk', () => ({
 
 // Import AFTER mocking
 const { streamClaude } = await import('../services/claude');
-const { chatRouter } = await import('./chat');
+const { createChatRouter } = await import('./chat');
+const { createDb, createSession, getMessages, addMessage } = await import('../db');
 const { Hono } = await import('hono');
 
 // Helper: collect SSE events from a streaming response
@@ -183,11 +185,18 @@ describe('Claude Service - streamClaude()', () => {
 
 describe('Chat Route - POST /chat', () => {
   let testApp: InstanceType<typeof Hono>;
+  let db: Database;
 
   beforeEach(() => {
     mockQuery.mockReset();
+    db = createDb(':memory:');
+    const chatRouter = createChatRouter(db);
     testApp = new Hono();
     testApp.route('/api/chat', chatRouter);
+  });
+
+  afterEach(() => {
+    db.close();
   });
 
   test('returns streaming response for valid chat request', async () => {
@@ -204,8 +213,12 @@ describe('Chat Route - POST /chat', () => {
       })()
     );
 
+    // Create a session first so the chat route can persist messages
+    const session = createSession(db, 'test-session-id', 'Test');
+
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'Hello' }],
+      sessionId: session.id,
     };
 
     const res = await testApp.request('/api/chat', {
@@ -251,16 +264,21 @@ describe('Chat Route - POST /chat', () => {
     expect(callArgs.prompt).toBe('second message');
   });
 
-  test('uses resume option when sessionId is provided', async () => {
+  test('uses resume option when session has a claudeSessionId', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
         yield { type: 'system', subtype: 'init', session_id: 'resumed' };
       })()
     );
 
+    // Create a session and set its claudeSessionId
+    const session = createSession(db, 'resume-test-session', 'Test');
+    const { updateClaudeSessionId } = await import('../db');
+    updateClaudeSessionId(db, session.id, 'previous-claude-session-id');
+
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'follow up' }],
-      sessionId: 'previous-session-id',
+      sessionId: session.id,
     };
 
     await testApp.request('/api/chat', {
@@ -270,7 +288,7 @@ describe('Chat Route - POST /chat', () => {
     });
 
     const callArgs = mockQuery.mock.calls[0][0] as any;
-    expect(callArgs.options.resume).toBe('previous-session-id');
+    expect(callArgs.options.resume).toBe('previous-claude-session-id');
   });
 
   test('returns 400 when no user message is provided', async () => {
@@ -361,5 +379,300 @@ describe('Chat Route - POST /chat', () => {
     // Should contain an error event
     const errorEvent = parsed.find((e: any) => e.type === 'error');
     expect(errorEvent).toBeDefined();
+  });
+});
+
+describe('Chat Route - Message Persistence', () => {
+  let testApp: InstanceType<typeof Hono>;
+  let db: Database;
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    db = createDb(':memory:');
+    const chatRouter = createChatRouter(db);
+    testApp = new Hono();
+    testApp.route('/api/chat', chatRouter);
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  test('persists the user message to the database', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-1' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Response' },
+          },
+        };
+      })()
+    );
+
+    // Create a session first
+    const session = createSession(db, 'persist-test-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Hello, Claude!' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    // Consume the stream so the response completes
+    await res.text();
+
+    // Check the database for the persisted user message
+    const messages = getMessages(db, session.id);
+    const userMessages = messages.filter((m) => m.role === 'user');
+    expect(userMessages).toHaveLength(1);
+    expect(userMessages[0].content).toBe('Hello, Claude!');
+    expect(userMessages[0].sessionId).toBe(session.id);
+  });
+
+  test('persists the assistant response after streaming completes', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-2' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Hello' },
+          },
+        };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: ' there!' },
+          },
+        };
+      })()
+    );
+
+    const session = createSession(db, 'persist-assistant-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Hi' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    // Consume the stream so the response fully completes
+    await res.text();
+
+    // Check for assistant message in DB
+    const messages = getMessages(db, session.id);
+    const assistantMessages = messages.filter((m) => m.role === 'assistant');
+    expect(assistantMessages).toHaveLength(1);
+    expect(assistantMessages[0].content).toBe('Hello there!');
+    expect(assistantMessages[0].sessionId).toBe(session.id);
+  });
+
+  test('persists both user and assistant messages in correct order', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-3' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'I am the assistant reply.' },
+          },
+        };
+      })()
+    );
+
+    const session = createSession(db, 'order-test-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'What is 2+2?' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    const messages = getMessages(db, session.id);
+    expect(messages).toHaveLength(2);
+    expect(messages[0].role).toBe('user');
+    expect(messages[0].content).toBe('What is 2+2?');
+    expect(messages[1].role).toBe('assistant');
+    expect(messages[1].content).toBe('I am the assistant reply.');
+  });
+
+  test('messages are associated with the correct session', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-4' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Reply A' },
+          },
+        };
+      })()
+    );
+
+    const sessionA = createSession(db, 'session-a', 'Session A');
+    const sessionB = createSession(db, 'session-b', 'Session B');
+
+    const bodyA: ChatRequest = {
+      messages: [{ role: 'user', content: 'Message for A' }],
+      sessionId: sessionA.id,
+    };
+
+    const resA = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyA),
+    });
+    await resA.text();
+
+    // Session A should have messages
+    const messagesA = getMessages(db, sessionA.id);
+    expect(messagesA).toHaveLength(2);
+    expect(messagesA[0].content).toBe('Message for A');
+
+    // Session B should have no messages
+    const messagesB = getMessages(db, sessionB.id);
+    expect(messagesB).toHaveLength(0);
+  });
+
+  test('auto-creates a session when no sessionId is provided', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-auto-sess' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Auto reply' },
+          },
+        };
+      })()
+    );
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'No session yet' }],
+      // No sessionId provided
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // The finish event should contain a sessionId (the app-level one)
+    // and the messages should be persisted to a newly created session
+    const events = await collectSSEEvents(
+      await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    );
+
+    // We can verify by checking the DB has sessions now
+    const { listSessions } = await import('../db');
+    const sessions = listSessions(db);
+    expect(sessions.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('does not persist assistant message when stream errors', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-err' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Partial' },
+          },
+        };
+        throw new Error('Stream broke');
+      })()
+    );
+
+    const session = createSession(db, 'error-session', 'Error Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Will fail' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // User message should be persisted, but assistant message should NOT
+    // (since the stream errored, the partial response shouldn't be saved)
+    const messages = getMessages(db, session.id);
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const assistantMessages = messages.filter((m) => m.role === 'assistant');
+
+    expect(userMessages).toHaveLength(1);
+    expect(assistantMessages).toHaveLength(0);
+  });
+
+  test('updates claude_session_id on the session after streaming', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', session_id: 'claude-real-id-xyz' };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Done' },
+          },
+        };
+      })()
+    );
+
+    const session = createSession(db, 'update-claude-id-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'test' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // The session should now have the claude session ID stored
+    const { getSession } = await import('../db');
+    const updatedSession = getSession(db, session.id);
+    expect(updatedSession?.claudeSessionId).toBe('claude-real-id-xyz');
   });
 });
