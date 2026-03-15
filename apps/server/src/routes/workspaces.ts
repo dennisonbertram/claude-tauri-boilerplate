@@ -116,7 +116,7 @@ export function createFlatWorkspaceRouter(db: Database) {
       );
     }
 
-    const diff = await worktreeService.getWorktreeDiff(workspace.worktreePath);
+    const diff = await worktreeService.getWorktreeDiff(workspace.worktreePath, workspace.baseBranch);
     return c.json({ diff, workspaceId: id });
   });
 
@@ -139,7 +139,7 @@ export function createFlatWorkspaceRouter(db: Database) {
       );
     }
 
-    const files = await worktreeService.getChangedFiles(workspace.worktreePath);
+    const files = await worktreeService.getChangedFiles(workspace.worktreePath, workspace.baseBranch);
     return c.json({ files, workspaceId: id });
   });
 

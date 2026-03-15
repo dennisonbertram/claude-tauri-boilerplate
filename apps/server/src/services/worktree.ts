@@ -121,23 +121,32 @@ export class WorktreeService {
   }
 
   /**
-   * Get the combined diff (staged + unstaged) for a worktree.
+   * Get the full diff for a worktree relative to its base branch.
+   * Uses `git diff <baseBranch>...HEAD` to show all commits the workspace
+   * branch introduces over the base, plus any uncommitted working tree changes.
    * Returns the raw diff string, capped at 1MB.
    */
-  async getWorktreeDiff(worktreePath: string): Promise<string> {
+  async getWorktreeDiff(worktreePath: string, baseBranch = 'main'): Promise<string> {
+    // Branch diff: all commits workspace introduces over baseBranch
+    const branchDiff = await this.git.run(
+      ['diff', `${baseBranch}...HEAD`],
+      { cwd: worktreePath }
+    );
+
+    // Plus any uncommitted working tree changes (staged + unstaged)
     const [unstaged, staged] = await Promise.all([
       this.git.run(['diff', 'HEAD'], { cwd: worktreePath }),
       this.git.run(['diff', '--cached', 'HEAD'], { cwd: worktreePath }),
     ]);
 
-    if (unstaged.exitCode !== 0 && staged.exitCode !== 0) {
+    if (branchDiff.exitCode !== 0 && unstaged.exitCode !== 0 && staged.exitCode !== 0) {
       throw Object.assign(
-        new Error(`Failed to get diff: ${unstaged.stderr.trim()}`),
+        new Error(`Failed to get diff: ${branchDiff.stderr.trim()}`),
         { status: 500, code: 'GIT_ERROR' }
       );
     }
 
-    const combined = [unstaged.stdout, staged.stdout]
+    const combined = [branchDiff.stdout, unstaged.stdout, staged.stdout]
       .filter(Boolean)
       .join('\n');
 
@@ -147,9 +156,19 @@ export class WorktreeService {
   }
 
   /**
-   * Get list of changed files in a worktree using `git status --porcelain`.
+   * Get list of files changed in the workspace branch relative to baseBranch,
+   * plus any uncommitted working tree changes.
+   * Uses `git diff --name-status <baseBranch>...HEAD` for committed changes
+   * and `git status --porcelain` for uncommitted changes, deduplicating by path.
    */
-  async getChangedFiles(worktreePath: string): Promise<ChangedFile[]> {
+  async getChangedFiles(worktreePath: string, baseBranch = 'main'): Promise<ChangedFile[]> {
+    // Committed branch changes
+    const branchResult = await this.git.run(
+      ['diff', '--name-status', `${baseBranch}...HEAD`],
+      { cwd: worktreePath }
+    );
+
+    // Uncommitted working tree changes
     const result = await this.git.run(['status', '--porcelain'], {
       cwd: worktreePath,
     });
@@ -160,11 +179,29 @@ export class WorktreeService {
       );
     }
 
-    return result.stdout
+    // Parse committed branch changes from `git diff --name-status`
+    const branchFiles: ChangedFile[] = branchResult.exitCode === 0
+      ? branchResult.stdout
+          .split('\n')
+          .map((line) => line.trimEnd())
+          .filter(Boolean)
+          .map(parseDiffNameStatus)
+          .filter((f): f is ChangedFile => f !== null)
+      : [];
+
+    // Parse uncommitted working tree changes
+    const uncommittedFiles: ChangedFile[] = result.stdout
       .split('\n')
       .map((line) => line.trimEnd())
       .filter(Boolean)
       .map(parseChangedFile);
+
+    // Merge, letting uncommitted state override branch state for same path
+    const byPath = new Map<string, ChangedFile>();
+    for (const f of branchFiles) byPath.set(f.path, f);
+    for (const f of uncommittedFiles) byPath.set(f.path, f);
+
+    return Array.from(byPath.values());
   }
 
   /**
@@ -296,6 +333,27 @@ function normalizeChangedFileStatus(rawStatus: string): ChangedFileStatus {
   if (statusFlags.includes('D')) return 'deleted';
   if (statusFlags.includes('A')) return 'added';
   return 'modified';
+}
+
+/**
+ * Parse a line from `git diff --name-status` output.
+ * Format: <status>\t<path>  (or <status>\t<oldPath>\t<newPath> for renames)
+ */
+function parseDiffNameStatus(line: string): ChangedFile | null {
+  const parts = line.split('\t');
+  if (parts.length < 2) return null;
+  const statusChar = parts[0].charAt(0).toUpperCase();
+  const path = parts.length >= 3 ? parts[2] : parts[1]; // use new path for renames
+  const statusMap: Record<string, ChangedFileStatus> = {
+    M: 'modified',
+    A: 'added',
+    D: 'deleted',
+    R: 'renamed',
+  };
+  return {
+    path,
+    status: statusMap[statusChar] ?? 'modified',
+  };
 }
 
 /** Singleton instance */
