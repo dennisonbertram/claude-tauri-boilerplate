@@ -35,6 +35,55 @@ export function useSessions() {
     if (activeSessionId === id) setActiveSessionId(null);
   }, [activeSessionId]);
 
+  const renameSession = useCallback(async (id: string, title: string) => {
+    const res = await fetch(`${API_BASE}/api/sessions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) return;
+    const updated = await res.json();
+    setSessions(prev =>
+      prev.map(s => (s.id === id ? { ...s, title: updated.title, updatedAt: updated.updatedAt } : s))
+    );
+  }, []);
+
+  const forkSession = useCallback(async (id: string) => {
+    const res = await fetch(`${API_BASE}/api/sessions/${id}/fork`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return;
+    const forked = await res.json();
+    setSessions(prev => [forked, ...prev]);
+    setActiveSessionId(forked.id);
+  }, []);
+
+  const exportSession = useCallback(async (id: string, format: 'json' | 'md') => {
+    const res = await fetch(`${API_BASE}/api/sessions/${id}/export?format=${format}`);
+    if (!res.ok) return;
+
+    // Get filename from Content-Disposition header or generate one
+    const disposition = res.headers.get('content-disposition');
+    let filename = `session-export.${format === 'md' ? 'md' : 'json'}`;
+    if (disposition) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match) filename = match[1];
+    }
+
+    // Create blob and trigger download
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
+
   const fetchMessages = useCallback(async (sessionId: string): Promise<Message[]> => {
     const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`);
     return res.json();
@@ -48,6 +97,9 @@ export function useSessions() {
     setActiveSessionId,
     createSession,
     deleteSession,
+    renameSession,
+    forkSession,
+    exportSession,
     fetchMessages,
     fetchSessions,
   };

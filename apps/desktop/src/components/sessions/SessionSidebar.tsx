@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Session } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,9 @@ interface SessionSidebarProps {
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
   onDeleteSession: (id: string) => void;
+  onRenameSession: (id: string, title: string) => void;
+  onForkSession: (id: string) => void;
+  onExportSession: (id: string, format: 'json' | 'md') => void;
 }
 
 export function SessionSidebar({
@@ -23,6 +26,9 @@ export function SessionSidebar({
   onSelectSession,
   onNewChat,
   onDeleteSession,
+  onRenameSession,
+  onForkSession,
+  onExportSession,
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
@@ -45,6 +51,9 @@ export function SessionSidebar({
               isActive={session.id === activeSessionId}
               onSelect={() => onSelectSession(session.id)}
               onDelete={() => onDeleteSession(session.id)}
+              onRename={(title) => onRenameSession(session.id, title)}
+              onFork={() => onForkSession(session.id)}
+              onExport={(format) => onExportSession(session.id, format)}
             />
           ))}
           {sessions.length === 0 && (
@@ -63,22 +72,116 @@ function SessionItem({
   isActive,
   onSelect,
   onDelete,
+  onRename,
+  onFork,
+  onExport,
 }: {
   session: Session;
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onRename: (title: string) => void;
+  onFork: () => void;
+  onExport: (format: 'json' | 'md') => void;
 }) {
   const [hovering, setHovering] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(session.title);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const date = new Date(session.createdAt);
   const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  // Focus input when entering rename mode
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  const handleRenameSubmit = () => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== session.title) {
+      onRename(trimmed);
+    }
+    setIsRenaming(false);
+    setRenameValue(session.title);
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenaming(false);
+    setRenameValue(session.title);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleRenameCancel();
+    }
+  };
+
+  const handleMenuAction = (action: string) => {
+    switch (action) {
+      case 'rename':
+        setMenuOpen(false);
+        setRenameValue(session.title);
+        setIsRenaming(true);
+        break;
+      case 'fork':
+        setMenuOpen(false);
+        onFork();
+        break;
+      case 'export-json':
+        setMenuOpen(false);
+        onExport('json');
+        break;
+      case 'export-md':
+        setMenuOpen(false);
+        onExport('md');
+        break;
+      case 'delete':
+        setConfirmDelete(true);
+        break;
+      case 'confirm-delete':
+        setMenuOpen(false);
+        setConfirmDelete(false);
+        onDelete();
+        break;
+    }
+  };
 
   return (
     <button
       onClick={onSelect}
       onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+      onMouseLeave={() => {
+        setHovering(false);
+        if (!menuOpen) {
+          setConfirmDelete(false);
+        }
+      }}
       className={`w-full rounded-md px-3 py-2 text-left transition-colors relative group ${
         isActive
           ? 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -86,26 +189,130 @@ function SessionItem({
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium truncate flex-1">
-          {session.title || 'New Chat'}
-        </span>
-        {hovering && (
-          <button
-            onClick={e => {
+        {isRenaming ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={handleRenameSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm font-medium flex-1 bg-background border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring"
+          />
+        ) : (
+          <span className="text-sm font-medium truncate flex-1">
+            {session.title || 'New Chat'}
+          </span>
+        )}
+        {hovering && !isRenaming && (
+          <div
+            data-testid="session-menu-trigger"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              setMenuOpen(!menuOpen);
             }}
-            className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            title="Delete"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                setMenuOpen(!menuOpen);
+              }
+            }}
+            className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+              <circle cx="12" cy="5" r="1" />
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="12" cy="19" r="1" />
             </svg>
-          </button>
+          </div>
         )}
       </div>
       <span className="text-xs text-muted-foreground">{dateStr}</span>
+
+      {/* Context menu dropdown */}
+      {menuOpen && (
+        <div
+          ref={menuRef}
+          className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-md border border-border bg-popover p-1 shadow-md"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {confirmDelete ? (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => handleMenuAction('confirm-delete')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleMenuAction('confirm-delete');
+              }}
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
+            >
+              Confirm Delete
+            </div>
+          ) : (
+            <>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('rename')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('rename');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+              >
+                Rename
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('fork')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('fork');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+              >
+                Fork
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('export-json')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('export-json');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+              >
+                Export JSON
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('export-md')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('export-md');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+              >
+                Export Markdown
+              </div>
+              <Separator className="my-1" />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('delete')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('delete');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
+              >
+                Delete
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </button>
   );
 }
