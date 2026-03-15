@@ -166,6 +166,18 @@ export function createChatRouter(db: Database) {
                 fullResponse += event.text;
                 break;
 
+              case 'permission:request':
+                // Permission requests are on the data channel for the
+                // frontend to display the approval dialog. The stream
+                // continues -- the SDK is paused internally waiting for
+                // the permission decision via the permission endpoint.
+                break;
+
+              case 'permission:denied':
+                // Denied permissions are on the data channel for the
+                // frontend to show a notification.
+                break;
+
               case 'error':
                 // Errors are already on the data channel; no additional
                 // AI SDK protocol action needed since the stream continues

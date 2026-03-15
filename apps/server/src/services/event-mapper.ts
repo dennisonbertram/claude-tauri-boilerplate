@@ -136,6 +136,24 @@ function mapSystemEvent(event: any): StreamEvent[] {
       return [
         { type: 'prompt:suggestion', suggestions: event.suggestions },
       ];
+    case 'permission_request':
+      return [
+        {
+          type: 'permission:request' as const,
+          requestId: event.permission_request_id,
+          toolName: event.tool_name,
+          toolInput: event.tool_input ?? {},
+          riskLevel: event.risk_level ?? 'medium',
+        },
+      ];
+    case 'permission_denied':
+      return [
+        {
+          type: 'permission:denied' as const,
+          requestId: event.permission_request_id,
+          toolName: event.tool_name,
+        },
+      ];
     default:
       console.warn(
         `[event-mapper] Unhandled system subtype: ${event.subtype}`

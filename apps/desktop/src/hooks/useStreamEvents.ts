@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import type { StreamEvent } from '@claude-tauri/shared';
+import type { StreamEvent, StreamPermissionRequest } from '@claude-tauri/shared';
 
 // --- State Types ---
 
@@ -11,6 +11,18 @@ export interface ToolCallState {
   result?: unknown;
   elapsedSeconds?: number;
   summary?: string;
+}
+
+export interface PendingPermission {
+  requestId: string;
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  riskLevel: 'low' | 'medium' | 'high';
+}
+
+export interface DeniedPermission {
+  requestId: string;
+  toolName: string;
 }
 
 export interface ErrorState {
@@ -35,12 +47,17 @@ export interface StreamEventsState {
   sessionInfo: { sessionId: string; model: string } | null;
   /** Maps blockIndex -> toolUseId for correlating deltas to tool calls */
   blockIndexToToolId: Map<number, string>;
+  /** Pending permission requests awaiting user decision */
+  pendingPermissions: Map<string, PendingPermission>;
+  /** Denied permission records for display in chat */
+  deniedPermissions: DeniedPermission[];
 }
 
 // --- Actions ---
 
 type StreamEventsAction =
   | { type: 'PROCESS_EVENT'; event: StreamEvent }
+  | { type: 'RESOLVE_PERMISSION'; requestId: string }
   | { type: 'RESET' };
 
 // --- Initial State ---
@@ -52,6 +69,8 @@ export const initialStreamEventsState: StreamEventsState = {
   usage: null,
   sessionInfo: null,
   blockIndexToToolId: new Map(),
+  pendingPermissions: new Map(),
+  deniedPermissions: [],
 };
 
 // --- Reducer ---
@@ -68,7 +87,15 @@ export function streamEventsReducer(
       usage: null,
       sessionInfo: null,
       blockIndexToToolId: new Map(),
+      pendingPermissions: new Map(),
+      deniedPermissions: [],
     };
+  }
+
+  if (action.type === 'RESOLVE_PERMISSION') {
+    const newPending = new Map(state.pendingPermissions);
+    newPending.delete(action.requestId);
+    return { ...state, pendingPermissions: newPending };
   }
 
   const event = action.event;
@@ -189,6 +216,30 @@ export function streamEventsReducer(
       };
     }
 
+    case 'permission:request': {
+      const newPending = new Map(state.pendingPermissions);
+      newPending.set(event.requestId, {
+        requestId: event.requestId,
+        toolName: event.toolName,
+        toolInput: event.toolInput,
+        riskLevel: event.riskLevel,
+      });
+      return { ...state, pendingPermissions: newPending };
+    }
+
+    case 'permission:denied': {
+      const newPending = new Map(state.pendingPermissions);
+      newPending.delete(event.requestId);
+      return {
+        ...state,
+        pendingPermissions: newPending,
+        deniedPermissions: [
+          ...state.deniedPermissions,
+          { requestId: event.requestId, toolName: event.toolName },
+        ],
+      };
+    }
+
     default:
       return state;
   }
@@ -208,6 +259,10 @@ export function useStreamEvents() {
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });
+  }, []);
+
+  const resolvePermission = useCallback((requestId: string) => {
+    dispatch({ type: 'RESOLVE_PERMISSION', requestId });
   }, []);
 
   /**
@@ -237,6 +292,7 @@ export function useStreamEvents() {
     ...state,
     processEvent,
     reset,
+    resolvePermission,
     onData,
   };
 }
