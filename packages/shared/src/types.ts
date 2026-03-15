@@ -397,6 +397,19 @@ export interface MemorySearchResult {
   context: string;
 }
 
+// --- MCP Server Types ---
+
+export interface McpServerConfig {
+  name: string;
+  type: 'stdio' | 'http' | 'sse';
+  enabled: boolean;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  headers?: Record<string, string>;
+}
+
 // --- Git Types ---
 
 export interface GitFileStatus {
