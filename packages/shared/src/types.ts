@@ -456,3 +456,45 @@ export interface GitDiff {
   diff: string;
   error?: string;
 }
+
+// --- Agent Teams Types ---
+
+export interface AgentDefinition {
+  name: string;
+  description: string;
+  model?: string;
+  tools?: string[];
+  permissionMode?: 'normal' | 'acceptEdits' | 'dontAsk' | 'plan';
+}
+
+export interface TeamConfig {
+  id: string;
+  name: string;
+  agents: AgentDefinition[];
+  displayMode: 'auto' | 'in-process' | 'tmux';
+  createdAt: string;
+}
+
+export interface TeammateStatus {
+  name: string;
+  status: 'active' | 'idle' | 'stopped';
+  currentTask?: string;
+  model?: string;
+  tools?: string[];
+}
+
+export interface TeamMessage {
+  id: string;
+  from: string;
+  to: string;
+  content: string;
+  timestamp: string;
+  type: 'message' | 'broadcast' | 'shutdown_request';
+}
+
+export interface TeamTask {
+  id: string;
+  subject: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  assignee?: string;
+}

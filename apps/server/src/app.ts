@@ -10,6 +10,7 @@ import { createInstructionsRouter } from './routes/instructions';
 import { createMemoryRouter } from './routes/memory';
 import { createMcpRouter } from './routes/mcp';
 import { createHooksRouter } from './routes/hooks';
+import { createTeamsRouter } from './routes/teams';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -40,5 +41,6 @@ app.route('/api/instructions', createInstructionsRouter());
 app.route('/api/memory', createMemoryRouter());
 app.route('/api/mcp', createMcpRouter());
 app.route('/api/hooks', createHooksRouter());
+app.route('/api/teams', createTeamsRouter());
 
 export { app };

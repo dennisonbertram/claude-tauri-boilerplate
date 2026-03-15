@@ -6,6 +6,7 @@ import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { TeamsView } from '@/components/teams/TeamsView';
 import { StatusBar } from '@/components/StatusBar';
 import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
@@ -39,6 +40,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusData, setStatusData] = useState<StatusBarProps>(defaultStatusData);
+  const [activeView, setActiveView] = useState<'chat' | 'teams'>('chat');
 
   const handleNewChat = async () => {
     await createSession();
@@ -51,25 +53,59 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   return (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 min-h-0">
-        <SessionSidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          email={email}
-          plan={plan}
-          onSelectSession={setActiveSessionId}
-          onNewChat={handleNewChat}
-          onDeleteSession={deleteSession}
-          onRenameSession={renameSession}
-          onForkSession={forkSession}
-          onExportSession={exportSession}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-        <ChatPage
-          sessionId={activeSessionId}
-          onCreateSession={handleNewChat}
-          onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
-          onStatusChange={handleStatusChange}
-        />
+        {activeView === 'chat' && (
+          <SessionSidebar
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            email={email}
+            plan={plan}
+            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); }}
+            onNewChat={handleNewChat}
+            onDeleteSession={deleteSession}
+            onRenameSession={renameSession}
+            onForkSession={forkSession}
+            onExportSession={exportSession}
+            onOpenSettings={() => setSettingsOpen(true)}
+            activeView={activeView}
+            onSwitchView={setActiveView}
+          />
+        )}
+        {activeView === 'teams' && (
+          <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
+            {/* View toggle tabs */}
+            <div className="flex border-b border-border">
+              <button
+                data-testid="view-tab-chat"
+                onClick={() => setActiveView('chat')}
+                className="flex-1 px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+              >
+                Chat
+              </button>
+              <button
+                data-testid="view-tab-teams"
+                onClick={() => setActiveView('teams')}
+                className="flex-1 px-3 py-2 text-sm font-medium transition-colors border-b-2 border-primary text-foreground"
+              >
+                Teams
+              </button>
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-xs text-muted-foreground p-4 text-center">
+                Select a team from the main area or create a new one.
+              </p>
+            </div>
+          </div>
+        )}
+        {activeView === 'chat' ? (
+          <ChatPage
+            sessionId={activeSessionId}
+            onCreateSession={handleNewChat}
+            onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
+            onStatusChange={handleStatusChange}
+          />
+        ) : (
+          <TeamsView />
+        )}
         <SettingsPanel
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}
