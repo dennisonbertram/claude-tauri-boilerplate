@@ -14,10 +14,16 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
+import { FileReadDisplay } from './FileReadDisplay';
+import { FileEditDisplay } from './FileEditDisplay';
+import { FileWriteDisplay } from './FileWriteDisplay';
 
 interface ToolCallBlockProps {
   toolCall: ToolCallState;
 }
+
+/** Tool names that get specialized file operation displays */
+const FILE_OPERATION_TOOLS = new Set(['Read', 'Edit', 'Write']);
 
 /** Maps tool names to Lucide icon components */
 function getToolIcon(name: string) {
@@ -79,6 +85,18 @@ function formatResult(result: unknown): string {
 }
 
 export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
+  // Route to specialized displays for file operations
+  if (FILE_OPERATION_TOOLS.has(toolCall.name)) {
+    switch (toolCall.name) {
+      case 'Read':
+        return <FileReadDisplay toolCall={toolCall} />;
+      case 'Edit':
+        return <FileEditDisplay toolCall={toolCall} />;
+      case 'Write':
+        return <FileWriteDisplay toolCall={toolCall} />;
+    }
+  }
+
   const [isExpanded, setIsExpanded] = useState(toolCall.status === 'running');
   const Icon = getToolIcon(toolCall.name);
   const isBash = toolCall.name === 'Bash';
