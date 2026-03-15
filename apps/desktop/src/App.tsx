@@ -11,6 +11,7 @@ import { StatusBar } from '@/components/StatusBar';
 import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
 import { useTheme } from '@/hooks/useTheme';
+import { Agentation } from 'agentation';
 
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
@@ -194,6 +195,7 @@ function App() {
       <AuthGate>
         {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
       </AuthGate>
+      {import.meta.env.DEV && <Agentation />}
     </ErrorBoundary>
   );
 }
