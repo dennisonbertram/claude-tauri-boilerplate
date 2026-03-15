@@ -8,9 +8,11 @@ import { ChatInput } from './ChatInput';
 import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
+import { SubagentPanel } from './SubagentPanel';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
 import type { UsageState } from '@/hooks/useStreamEvents';
+import { useSubagents } from '@/hooks/useSubagents';
 import { useCommands } from '@/hooks/useCommands';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
@@ -19,6 +21,8 @@ import { ContextIndicator } from './ContextIndicator';
 import type { ContextUsage } from './ContextIndicator';
 import { CostDisplay } from './CostDisplay';
 import { useCostTracking } from '@/hooks/useCostTracking';
+import { useSuggestions } from '@/hooks/useSuggestions';
+import { SuggestionChips } from './SuggestionChips';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
@@ -59,6 +63,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     sessionInfo,
     reset: resetStreamEvents,
   } = useStreamEvents();
+
+  const {
+    agents: subagents,
+    activeCount: subagentActiveCount,
+    isVisible: subagentPanelVisible,
+    toggleVisibility: toggleSubagentPanel,
+    reset: resetSubagents,
+  } = useSubagents();
 
   const {
     messageCosts,
@@ -128,12 +140,42 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
       transport,
     });
 
+  // Prompt suggestions based on last assistant message
+  const handleSuggestionAccept = useCallback(
+    (suggestion: string) => {
+      setInput(suggestion);
+    },
+    []
+  );
+
+  const {
+    suggestions,
+    currentSuggestion,
+    accept: acceptSuggestion,
+    dismiss: dismissSuggestion,
+    dismissAll: dismissAllSuggestions,
+  } = useSuggestions(messages, { onAccept: handleSuggestionAccept });
+
+  const handleAcceptGhostText = useCallback(() => {
+    if (currentSuggestion) {
+      acceptSuggestion(currentSuggestion);
+    }
+  }, [currentSuggestion, acceptSuggestion]);
+
+  const handleSuggestionChipSelect = useCallback(
+    (suggestion: string) => {
+      setInput(suggestion);
+    },
+    []
+  );
+
   // Command palette integration
   const clearChat = useCallback(() => {
     setMessages([]);
     resetStreamEvents();
     resetCostTracking();
-  }, [setMessages, resetStreamEvents, resetCostTracking]);
+    resetSubagents();
+  }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents]);
 
   const commandContext = useMemo(
     () => ({
@@ -410,6 +452,15 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
+      {/* Subagent visualization panel */}
+      {(subagents.length > 0 || subagentPanelVisible) && (
+        <SubagentPanel
+          agents={subagents}
+          activeCount={subagentActiveCount}
+          isVisible={subagentPanelVisible}
+          onToggleVisibility={toggleSubagentPanel}
+        />
+      )}
       {/* Context usage indicator + cost display */}
       {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting || messageCosts.length > 0) && (
         <div className="border-t border-border px-4 flex items-center">
@@ -448,6 +499,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
           ))}
         </div>
       )}
+      {/* Suggestion chips */}
+      {suggestions.length > 0 && !isLoading && (
+        <SuggestionChips
+          suggestions={suggestions}
+          onSelect={handleSuggestionChipSelect}
+          onDismiss={dismissSuggestion}
+        />
+      )}
       <ChatInput
         input={input}
         onInputChange={handleInputChange}
@@ -458,6 +517,8 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         paletteCommands={filteredCommands}
         onCommandSelect={handleCommandSelectAndClear}
         onPaletteClose={handlePaletteClose}
+        ghostText={isLoading ? undefined : currentSuggestion}
+        onAcceptSuggestion={handleAcceptGhostText}
       />
       <ShortcutHelpModal
         isOpen={helpOpen}
