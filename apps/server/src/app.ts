@@ -4,8 +4,13 @@ import { authRouter } from './routes/auth';
 import { createChatRouter } from './routes/chat';
 import { createSessionsRouter } from './routes/sessions';
 import { createDb } from './db';
+import { errorHandler } from './middleware/error-handler';
 
 const app = new Hono();
+
+// Centralized error handler -- catches all unhandled errors and returns
+// consistent JSON responses: { error, code, details? }
+app.onError(errorHandler);
 
 app.use(
   '*',

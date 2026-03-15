@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isTauri } from './lib/platform';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
@@ -95,9 +96,11 @@ function App() {
   }
 
   return (
-    <AuthGate>
-      {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
-    </AuthGate>
+    <ErrorBoundary>
+      <AuthGate>
+        {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
+      </AuthGate>
+    </ErrorBoundary>
   );
 }
 
