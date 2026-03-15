@@ -14,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
+import { BashDisplay } from './BashDisplay';
 
 interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -78,10 +79,70 @@ function formatResult(result: unknown): string {
   }
 }
 
+/**
+ * Parse the Bash tool input JSON to extract command, description, and flags.
+ */
+function parseBashInput(input: string): {
+  command: string;
+  description?: string;
+  isBackground?: boolean;
+  timeout?: number;
+} {
+  try {
+    const parsed = JSON.parse(input);
+    return {
+      command: parsed.command || input,
+      description: parsed.description,
+      isBackground: parsed.run_in_background,
+      timeout: parsed.timeout,
+    };
+  } catch {
+    return { command: input };
+  }
+}
+
+/**
+ * Extract exit code from a Bash tool result.
+ * The result may contain exit code info embedded in the output text.
+ */
+function extractExitCode(
+  result: unknown,
+  status: ToolCallState['status']
+): number | undefined {
+  if (status === 'running') return undefined;
+  // If the tool completed successfully, assume exit 0
+  // If it errored, assume exit 1
+  // The SDK doesn't always provide an explicit exit code
+  if (status === 'error') return 1;
+  if (status === 'complete') return 0;
+  return undefined;
+}
+
 export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
   const [isExpanded, setIsExpanded] = useState(toolCall.status === 'running');
   const Icon = getToolIcon(toolCall.name);
-  const isBash = toolCall.name === 'Bash';
+
+  // Delegate to BashDisplay for Bash tool calls
+  if (toolCall.name === 'Bash') {
+    const bashInput = parseBashInput(toolCall.input);
+    const output = toolCall.result !== undefined ? formatResult(toolCall.result) : undefined;
+    const exitCode = extractExitCode(toolCall.result, toolCall.status);
+    const duration = toolCall.elapsedSeconds != null
+      ? toolCall.elapsedSeconds * 1000
+      : undefined;
+
+    return (
+      <BashDisplay
+        command={bashInput.command}
+        description={bashInput.description}
+        output={output}
+        exitCode={exitCode}
+        isRunning={toolCall.status === 'running'}
+        isBackground={bashInput.isBackground}
+        duration={duration}
+      />
+    );
+  }
 
   return (
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
@@ -137,18 +198,9 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
               <div className="text-xs text-muted-foreground mb-1 font-medium">
                 Output
               </div>
-              {isBash ? (
-                <div
-                  data-testid="terminal-output"
-                  className="bg-zinc-900 text-green-300 rounded p-2 text-xs font-mono whitespace-pre-wrap break-all max-h-64 overflow-y-auto"
-                >
-                  {formatResult(toolCall.result)}
-                </div>
-              ) : (
-                <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground/80 max-h-64 overflow-y-auto">
-                  {formatResult(toolCall.result)}
-                </pre>
-              )}
+              <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground/80 max-h-64 overflow-y-auto">
+                {formatResult(toolCall.result)}
+              </pre>
             </div>
           )}
 
