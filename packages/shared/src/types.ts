@@ -410,6 +410,33 @@ export interface McpServerConfig {
   headers?: Record<string, string>;
 }
 
+// --- Hook Types ---
+
+export interface HookEventMeta {
+  event: string;
+  description: string;
+  canBlock: boolean;
+  supportsMatcher: boolean;
+}
+
+export interface HookHandler {
+  type: 'command' | 'http' | 'prompt';
+  command?: string;
+  timeout?: number;
+  url?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  prompt?: string;
+}
+
+export interface HookConfig {
+  id: string;
+  event: string;
+  matcher?: string;
+  enabled: boolean;
+  handler: HookHandler;
+}
+
 // --- Git Types ---
 
 export interface GitFileStatus {
