@@ -20,6 +20,8 @@ import { FileWriteDisplay } from './FileWriteDisplay';
 import { BashDisplay } from './BashDisplay';
 import { GrepDisplay } from './GrepDisplay';
 import { GlobDisplay } from './GlobDisplay';
+import { WebSearchDisplay } from './WebSearchDisplay';
+import { WebFetchDisplay } from './WebFetchDisplay';
 
 interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -30,6 +32,9 @@ const FILE_OPERATION_TOOLS = new Set(['Read', 'Edit', 'Write']);
 
 /** Tool names that get specialized search displays */
 const SEARCH_TOOLS = new Set(['Grep', 'Glob']);
+
+/** Tool names that get specialized web displays */
+const WEB_TOOLS = new Set(['WebSearch', 'WebFetch']);
 
 /** Maps tool names to Lucide icon components */
 function getToolIcon(name: string) {
@@ -149,6 +154,16 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
         return <GrepDisplay toolCall={toolCall} />;
       case 'Glob':
         return <GlobDisplay toolCall={toolCall} />;
+    }
+  }
+
+  // Route to specialized web displays
+  if (WEB_TOOLS.has(toolCall.name)) {
+    switch (toolCall.name) {
+      case 'WebSearch':
+        return <WebSearchDisplay toolCall={toolCall} />;
+      case 'WebFetch':
+        return <WebFetchDisplay toolCall={toolCall} />;
     }
   }
 
