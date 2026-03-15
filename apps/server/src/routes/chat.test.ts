@@ -1,6 +1,6 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import type { ChatRequest } from '@claude-tauri/shared';
+import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
 // Mock the claude-agent-sdk before importing anything that uses it
 const mockQuery = mock(() => {
@@ -9,20 +9,39 @@ const mockQuery = mock(() => {
       type: 'system',
       subtype: 'init',
       session_id: 'test-session-abc',
+      model: 'claude-opus-4-6',
+      tools: ['Read', 'Edit'],
+      mcp_servers: [],
+      claude_code_version: '2.1.39',
+      cwd: '/project',
+      permissionMode: 'bypassPermissions',
+      apiKeySource: 'env',
+      slash_commands: [],
+      output_style: 'text',
+      skills: [],
+      plugins: [],
     };
     yield {
       type: 'stream_event',
       event: {
         type: 'content_block_delta',
         delta: { type: 'text_delta', text: 'Hello' },
+        index: 0,
       },
+      parent_tool_use_id: null,
+      uuid: 'uuid-1',
+      session_id: 'test-session-abc',
     };
     yield {
       type: 'stream_event',
       event: {
         type: 'content_block_delta',
         delta: { type: 'text_delta', text: ' world' },
+        index: 0,
       },
+      parent_tool_use_id: null,
+      uuid: 'uuid-2',
+      session_id: 'test-session-abc',
     };
   })();
 });
@@ -51,75 +70,144 @@ function parseSSEData(lines: string[]): unknown[] {
   return lines.filter((l) => l !== '[DONE]').map((l) => JSON.parse(l));
 }
 
+// Helper: extract custom StreamEvent data from SSE data lines
+function extractStreamEvents(parsed: unknown[]): StreamEvent[] {
+  const events: StreamEvent[] = [];
+  for (const item of parsed) {
+    const obj = item as any;
+    if (obj.type === 'data' && Array.isArray(obj.data)) {
+      for (const evt of obj.data) {
+        events.push(evt);
+      }
+    }
+  }
+  return events;
+}
+
 describe('Claude Service - streamClaude()', () => {
   beforeEach(() => {
     mockQuery.mockReset();
   });
 
-  test('yields session event with sessionId from init', async () => {
+  test('yields session:init event with sessionId from init', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
         yield {
           type: 'system',
           subtype: 'init',
           session_id: 'session-123',
+          model: 'claude-opus-4-6',
+          tools: ['Read'],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
         };
       })()
     );
 
-    const events: Array<{ type: string; sessionId?: string; text?: string }> = [];
+    const events: StreamEvent[] = [];
     for await (const event of streamClaude({ prompt: 'hi' })) {
       events.push(event);
     }
 
     expect(events).toHaveLength(1);
-    expect(events[0]).toEqual({ type: 'session', sessionId: 'session-123' });
+    expect(events[0].type).toBe('session:init');
+    if (events[0].type === 'session:init') {
+      expect(events[0].sessionId).toBe('session-123');
+      expect(events[0].model).toBe('claude-opus-4-6');
+    }
   });
 
-  test('yields text-delta events from content_block_delta', async () => {
+  test('yields text:delta events from content_block_delta', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
         yield {
           type: 'system',
           subtype: 'init',
           session_id: 'session-456',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
         };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'Hello' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'session-456',
         };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: ' world' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-2',
+          session_id: 'session-456',
         };
       })()
     );
 
-    const events: Array<{ type: string; sessionId?: string; text?: string }> = [];
+    const events: StreamEvent[] = [];
     for await (const event of streamClaude({ prompt: 'test' })) {
       events.push(event);
     }
 
     expect(events).toHaveLength(3);
-    expect(events[0]).toEqual({ type: 'session', sessionId: 'session-456' });
-    expect(events[1]).toEqual({ type: 'text-delta', text: 'Hello' });
-    expect(events[2]).toEqual({ type: 'text-delta', text: ' world' });
+    expect(events[0].type).toBe('session:init');
+    expect(events[1].type).toBe('text:delta');
+    if (events[1].type === 'text:delta') {
+      expect(events[1].text).toBe('Hello');
+    }
+    expect(events[2].type).toBe('text:delta');
+    if (events[2].type === 'text:delta') {
+      expect(events[2].text).toBe(' world');
+    }
   });
 
   test('passes resume option when sessionId is provided', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'resumed-session' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'resumed-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
       })()
     );
 
-    const events = [];
+    const events: StreamEvent[] = [];
     for await (const event of streamClaude({
       prompt: 'follow-up',
       sessionId: 'previous-session',
@@ -136,11 +224,26 @@ describe('Claude Service - streamClaude()', () => {
   test('does not set resume when no sessionId provided', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'new-session' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'new-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
       })()
     );
 
-    const events = [];
+    const events: StreamEvent[] = [];
     for await (const event of streamClaude({ prompt: 'first message' })) {
       events.push(event);
     }
@@ -149,37 +252,166 @@ describe('Claude Service - streamClaude()', () => {
     expect(callArgs.options.resume).toBeUndefined();
   });
 
-  test('ignores non-text stream events', async () => {
+  test('maps block start/stop events from stream', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 's1' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 's1',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
-          event: { type: 'content_block_start', content_block: { type: 'text' } },
+          event: {
+            type: 'content_block_start',
+            content_block: { type: 'text' },
+            index: 0,
+          },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 's1',
         };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'only this' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-2',
+          session_id: 's1',
         };
         yield {
           type: 'stream_event',
-          event: { type: 'content_block_stop' },
+          event: { type: 'content_block_stop', index: 0 },
+          parent_tool_use_id: null,
+          uuid: 'uuid-3',
+          session_id: 's1',
         };
       })()
     );
 
-    const events: Array<{ type: string }> = [];
+    const events: StreamEvent[] = [];
     for await (const event of streamClaude({ prompt: 'test' })) {
       events.push(event);
     }
 
-    // Should only have session + one text-delta (ignoring start/stop)
+    // session:init + block:start + text:delta + block:stop = 4 events
+    expect(events).toHaveLength(4);
+    expect(events[0].type).toBe('session:init');
+    expect(events[1].type).toBe('block:start');
+    expect(events[2].type).toBe('text:delta');
+    expect(events[3].type).toBe('block:stop');
+  });
+
+  test('maps thinking deltas from stream', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 's1',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'thinking_delta', thinking: 'Let me think...' },
+            index: 0,
+          },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 's1',
+        };
+      })()
+    );
+
+    const events: StreamEvent[] = [];
+    for await (const event of streamClaude({ prompt: 'test' })) {
+      events.push(event);
+    }
+
     expect(events).toHaveLength(2);
-    expect(events[0].type).toBe('session');
-    expect(events[1].type).toBe('text-delta');
+    expect(events[1].type).toBe('thinking:delta');
+    if (events[1].type === 'thinking:delta') {
+      expect(events[1].thinking).toBe('Let me think...');
+    }
+  });
+
+  test('maps result events from stream', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 's1',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        yield {
+          type: 'result',
+          subtype: 'success',
+          uuid: 'uuid-result',
+          session_id: 's1',
+          duration_ms: 2000,
+          duration_api_ms: 1800,
+          is_error: false,
+          num_turns: 1,
+          result: 'Done',
+          total_cost_usd: 0.01,
+          usage: {
+            input_tokens: 100,
+            output_tokens: 50,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
+          },
+        };
+      })()
+    );
+
+    const events: StreamEvent[] = [];
+    for await (const event of streamClaude({ prompt: 'test' })) {
+      events.push(event);
+    }
+
+    expect(events).toHaveLength(2);
+    expect(events[1].type).toBe('session:result');
+    if (events[1].type === 'session:result') {
+      expect(events[1].success).toBe(true);
+      expect(events[1].costUsd).toBe(0.01);
+    }
   });
 });
 
@@ -202,13 +434,32 @@ describe('Chat Route - POST /chat', () => {
   test('returns streaming response for valid chat request', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'chat-session-1' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'chat-session-1',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'Hi there!' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'chat-session-1',
         };
       })()
     );
@@ -238,10 +489,95 @@ describe('Chat Route - POST /chat', () => {
     expect(textDeltas.length).toBeGreaterThan(0);
   });
 
+  test('sends custom StreamEvent data on data channel', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'data-channel-test',
+          model: 'claude-opus-4-6',
+          tools: ['Read', 'Edit'],
+          mcp_servers: [{ name: 'fs', status: 'connected' }],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'hello' },
+            index: 0,
+          },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'data-channel-test',
+        };
+      })()
+    );
+
+    const session = createSession(db, 'data-channel-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'test' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const events = await collectSSEEvents(res);
+    const parsed = parseSSEData(events);
+    const streamEvents = extractStreamEvents(parsed);
+
+    // Should have session:init and text:delta on the data channel
+    const sessionInit = streamEvents.find(
+      (e: StreamEvent) => e.type === 'session:init'
+    );
+    expect(sessionInit).toBeDefined();
+    if (sessionInit && sessionInit.type === 'session:init') {
+      expect(sessionInit.sessionId).toBe('data-channel-test');
+      expect(sessionInit.model).toBe('claude-opus-4-6');
+      expect(sessionInit.tools).toEqual(['Read', 'Edit']);
+    }
+
+    const textDelta = streamEvents.find(
+      (e: StreamEvent) => e.type === 'text:delta'
+    );
+    expect(textDelta).toBeDefined();
+    if (textDelta && textDelta.type === 'text:delta') {
+      expect(textDelta.text).toBe('hello');
+    }
+  });
+
   test('extracts last user message as prompt', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 's1' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 's1',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
       })()
     );
 
@@ -267,7 +603,22 @@ describe('Chat Route - POST /chat', () => {
   test('uses resume option when session has a claudeSessionId', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'resumed' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'resumed',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
       })()
     );
 
@@ -322,13 +673,32 @@ describe('Chat Route - POST /chat', () => {
   test('includes sessionId in the stream metadata', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'metadata-session' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'metadata-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'test' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'metadata-session',
         };
       })()
     );
@@ -355,7 +725,22 @@ describe('Chat Route - POST /chat', () => {
   test('handles stream errors gracefully', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'err-session' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'err-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         throw new Error('Stream exploded');
       })()
     );
@@ -398,19 +783,43 @@ describe('Chat Route - Message Persistence', () => {
     db.close();
   });
 
-  test('persists the user message to the database', async () => {
+  // Helper to create a standard mock that yields init + text delta
+  function setupStandardMock(sessionId: string, text: string) {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-1' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: sessionId,
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
-            delta: { type: 'text_delta', text: 'Response' },
+            delta: { type: 'text_delta', text },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: sessionId,
         };
       })()
     );
+  }
+
+  test('persists the user message to the database', async () => {
+    setupStandardMock('claude-sess-1', 'Response');
 
     // Create a session first
     const session = createSession(db, 'persist-test-session', 'Test');
@@ -440,20 +849,43 @@ describe('Chat Route - Message Persistence', () => {
   test('persists the assistant response after streaming completes', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-2' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'claude-sess-2',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'Hello' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'claude-sess-2',
         };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: ' there!' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-2',
+          session_id: 'claude-sess-2',
         };
       })()
     );
@@ -483,18 +915,7 @@ describe('Chat Route - Message Persistence', () => {
   });
 
   test('persists both user and assistant messages in correct order', async () => {
-    mockQuery.mockImplementation(() =>
-      (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-3' };
-        yield {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_delta',
-            delta: { type: 'text_delta', text: 'I am the assistant reply.' },
-          },
-        };
-      })()
-    );
+    setupStandardMock('claude-sess-3', 'I am the assistant reply.');
 
     const session = createSession(db, 'order-test-session', 'Test');
 
@@ -520,18 +941,7 @@ describe('Chat Route - Message Persistence', () => {
   });
 
   test('messages are associated with the correct session', async () => {
-    mockQuery.mockImplementation(() =>
-      (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-sess-4' };
-        yield {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_delta',
-            delta: { type: 'text_delta', text: 'Reply A' },
-          },
-        };
-      })()
-    );
+    setupStandardMock('claude-sess-4', 'Reply A');
 
     const sessionA = createSession(db, 'session-a', 'Session A');
     const sessionB = createSession(db, 'session-b', 'Session B');
@@ -559,18 +969,7 @@ describe('Chat Route - Message Persistence', () => {
   });
 
   test('auto-creates a session when no sessionId is provided', async () => {
-    mockQuery.mockImplementation(() =>
-      (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-auto-sess' };
-        yield {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_delta',
-            delta: { type: 'text_delta', text: 'Auto reply' },
-          },
-        };
-      })()
-    );
+    setupStandardMock('claude-auto-sess', 'Auto reply');
 
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'No session yet' }],
@@ -585,16 +984,6 @@ describe('Chat Route - Message Persistence', () => {
 
     await res.text();
 
-    // The finish event should contain a sessionId (the app-level one)
-    // and the messages should be persisted to a newly created session
-    const events = await collectSSEEvents(
-      await testApp.request('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-    );
-
     // We can verify by checking the DB has sessions now
     const { listSessions } = await import('../db');
     const sessions = listSessions(db);
@@ -604,13 +993,32 @@ describe('Chat Route - Message Persistence', () => {
   test('does not persist assistant message when stream errors', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-err' };
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'claude-err',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
         yield {
           type: 'stream_event',
           event: {
             type: 'content_block_delta',
             delta: { type: 'text_delta', text: 'Partial' },
+            index: 0,
           },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'claude-err',
         };
         throw new Error('Stream broke');
       })()
@@ -642,18 +1050,7 @@ describe('Chat Route - Message Persistence', () => {
   });
 
   test('updates claude_session_id on the session after streaming', async () => {
-    mockQuery.mockImplementation(() =>
-      (async function* () {
-        yield { type: 'system', subtype: 'init', session_id: 'claude-real-id-xyz' };
-        yield {
-          type: 'stream_event',
-          event: {
-            type: 'content_block_delta',
-            delta: { type: 'text_delta', text: 'Done' },
-          },
-        };
-      })()
-    );
+    setupStandardMock('claude-real-id-xyz', 'Done');
 
     const session = createSession(db, 'update-claude-id-session', 'Test');
 
