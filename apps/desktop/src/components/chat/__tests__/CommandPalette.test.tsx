@@ -261,6 +261,61 @@ describe('CommandPalette', () => {
     });
   });
 
+  // -- Category Grouping --
+
+  describe('Category grouping', () => {
+    it('shows category headers', () => {
+      const commandsWithCategories: Command[] = [
+        { name: 'clear', description: 'Clear chat', category: 'chat', execute: vi.fn() },
+        { name: 'settings', description: 'Open settings', category: 'navigation', execute: vi.fn() },
+        { name: 'model', description: 'Switch model', category: 'tools', execute: vi.fn() },
+      ];
+      renderPalette({ commands: commandsWithCategories });
+      expect(screen.getByText('Chat')).toBeInTheDocument();
+      expect(screen.getByText('Navigation')).toBeInTheDocument();
+      expect(screen.getByText('Tools')).toBeInTheDocument();
+    });
+
+    it('groups commands under their category', () => {
+      renderPalette();
+      // mockCommands has chat: clear, new, help, compact; tools: export
+      expect(screen.getByText('Chat')).toBeInTheDocument();
+      expect(screen.getByText('Tools')).toBeInTheDocument();
+    });
+
+    it('does not show empty category headers', () => {
+      // Only chat commands in the list
+      const chatOnly: Command[] = [
+        { name: 'clear', description: 'Clear chat', category: 'chat', execute: vi.fn() },
+      ];
+      renderPalette({ commands: chatOnly });
+      expect(screen.getByText('Chat')).toBeInTheDocument();
+      expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
+      expect(screen.queryByText('Tools')).not.toBeInTheDocument();
+    });
+
+    it('keyboard navigation works across category boundaries', async () => {
+      const user = userEvent.setup();
+      const commandsMultiCat: Command[] = [
+        { name: 'clear', description: 'Clear chat', category: 'chat', execute: vi.fn() },
+        { name: 'model', description: 'Switch model', category: 'tools', execute: vi.fn() },
+      ];
+      renderPalette({ commands: commandsMultiCat });
+
+      const palette = screen.getByTestId('command-palette');
+      palette.focus();
+
+      // First item (chat/clear) is selected
+      let items = screen.getAllByTestId('command-item');
+      expect(items[0]).toHaveAttribute('data-selected', 'true');
+
+      // ArrowDown moves to second item (tools/model) across category boundary
+      await user.keyboard('{ArrowDown}');
+      items = screen.getAllByTestId('command-item');
+      expect(items[1]).toHaveAttribute('data-selected', 'true');
+    });
+  });
+
   // -- Edge Cases --
 
   describe('Edge cases', () => {
