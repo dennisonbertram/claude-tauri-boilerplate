@@ -5,6 +5,7 @@ import { AuthGate } from '@/components/auth/AuthGate';
 import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { GitStatusBar } from '@/components/GitStatusBar';
 import { useSessions } from '@/hooks/useSessions';
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
@@ -26,29 +27,34 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   };
 
   return (
-    <div className="flex h-screen">
-      <SessionSidebar
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        email={email}
-        plan={plan}
-        onSelectSession={setActiveSessionId}
-        onNewChat={handleNewChat}
-        onDeleteSession={deleteSession}
-        onRenameSession={renameSession}
-        onForkSession={forkSession}
-        onExportSession={exportSession}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
-      <ChatPage
-        sessionId={activeSessionId}
-        onCreateSession={handleNewChat}
-        onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
-      />
-      <SettingsPanel
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
+    <div className="flex h-screen flex-col">
+      <div className="flex flex-1 min-h-0">
+        <SessionSidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          email={email}
+          plan={plan}
+          onSelectSession={setActiveSessionId}
+          onNewChat={handleNewChat}
+          onDeleteSession={deleteSession}
+          onRenameSession={renameSession}
+          onForkSession={forkSession}
+          onExportSession={exportSession}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+        <ChatPage
+          sessionId={activeSessionId}
+          onCreateSession={handleNewChat}
+          onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
+        />
+        <SettingsPanel
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
+      </div>
+      <footer className="flex items-center border-t border-border bg-background h-7 shrink-0">
+        <GitStatusBar />
+      </footer>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { createChatRouter } from './routes/chat';
 import { createPermissionRouter } from './routes/permission';
 import { createPlanRouter } from './routes/plan';
 import { createSessionsRouter } from './routes/sessions';
+import { createGitRouter } from './routes/git';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -30,5 +31,6 @@ app.route('/api/chat', createChatRouter(db));
 app.route('/api/chat/permission', createPermissionRouter(db));
 app.route('/api/chat/plan', createPlanRouter(db));
 app.route('/api/sessions', createSessionsRouter(db));
+app.route('/api/git', createGitRouter());
 
 export { app };
