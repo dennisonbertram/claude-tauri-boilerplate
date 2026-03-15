@@ -88,3 +88,18 @@ export function parseToolInput<T extends Record<string, unknown>>(input: string)
     return {};
   }
 }
+
+/** Image file extensions supported for inline preview */
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']);
+
+/**
+ * Checks whether a file path refers to an image file based on its extension.
+ */
+export function isImageFile(filePath: string): boolean {
+  if (!filePath) return false;
+  const filename = filePath.split('/').pop() || '';
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex === -1 || dotIndex === 0) return false;
+  const ext = filename.slice(dotIndex + 1).toLowerCase();
+  return IMAGE_EXTENSIONS.has(ext);
+}
