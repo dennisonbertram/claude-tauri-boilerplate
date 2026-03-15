@@ -1,8 +1,15 @@
-import { useRef, useCallback, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, useRef, useCallback, type FormEvent, type KeyboardEvent, type ClipboardEvent, type DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutBadge } from '@/components/ShortcutBadge';
+import { X } from 'lucide-react';
 import type { Command } from '@/hooks/useCommands';
+
+export interface AttachedImage {
+  id: string;
+  dataUrl: string;
+  name: string;
+}
 
 interface ChatInputProps {
   input: string;
@@ -14,6 +21,16 @@ interface ChatInputProps {
   paletteCommands: Command[];
   onCommandSelect: (cmd: Command) => void;
   onPaletteClose: () => void;
+  /** Attached images for sending with the message */
+  images?: AttachedImage[];
+  /** Called when attached images change (add/remove) */
+  onImagesChange?: (images: AttachedImage[]) => void;
+}
+
+let imageIdCounter = 0;
+
+function generateImageId(): string {
+  return `img-${Date.now()}-${++imageIdCounter}`;
 }
 
 export function ChatInput({
@@ -26,9 +43,94 @@ export function ChatInput({
   paletteCommands,
   onCommandSelect,
   onPaletteClose,
+  images = [],
+  onImagesChange,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const paletteRef = useRef<HTMLDivElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const addImageFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const newImage: AttachedImage = {
+          id: generateImageId(),
+          dataUrl,
+          name: file.name || 'pasted-image',
+        };
+        onImagesChange?.([...images, newImage]);
+      };
+      reader.readAsDataURL(file);
+    },
+    [images, onImagesChange]
+  );
+
+  const removeImage = useCallback(
+    (id: string) => {
+      onImagesChange?.(images.filter((img) => img.id !== id));
+    },
+    [images, onImagesChange]
+  );
+
+  const handlePaste = useCallback(
+    (e: ClipboardEvent<HTMLTextAreaElement>) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            addImageFile(file);
+          }
+        }
+      }
+    },
+    [addImageFile]
+  );
+
+  const handleDragOver = useCallback(
+    (e: DragEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(true);
+    },
+    []
+  );
+
+  const handleDragLeave = useCallback(
+    (e: DragEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+    },
+    []
+  );
+
+  const handleDrop = useCallback(
+    (e: DragEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer?.files;
+      if (!files) return;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          addImageFile(file);
+        }
+      }
+    },
+    [addImageFile]
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {

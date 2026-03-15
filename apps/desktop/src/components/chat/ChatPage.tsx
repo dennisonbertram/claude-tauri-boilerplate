@@ -21,6 +21,8 @@ import { ContextIndicator } from './ContextIndicator';
 import type { ContextUsage } from './ContextIndicator';
 import { CostDisplay } from './CostDisplay';
 import { useCostTracking } from '@/hooks/useCostTracking';
+import { useSuggestions } from '@/hooks/useSuggestions';
+import { SuggestionChips } from './SuggestionChips';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
@@ -137,6 +139,35 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
       id: sessionId ?? undefined,
       transport,
     });
+
+  // Prompt suggestions based on last assistant message
+  const handleSuggestionAccept = useCallback(
+    (suggestion: string) => {
+      setInput(suggestion);
+    },
+    []
+  );
+
+  const {
+    suggestions,
+    currentSuggestion,
+    accept: acceptSuggestion,
+    dismiss: dismissSuggestion,
+    dismissAll: dismissAllSuggestions,
+  } = useSuggestions(messages, { onAccept: handleSuggestionAccept });
+
+  const handleAcceptGhostText = useCallback(() => {
+    if (currentSuggestion) {
+      acceptSuggestion(currentSuggestion);
+    }
+  }, [currentSuggestion, acceptSuggestion]);
+
+  const handleSuggestionChipSelect = useCallback(
+    (suggestion: string) => {
+      setInput(suggestion);
+    },
+    []
+  );
 
   // Command palette integration
   const clearChat = useCallback(() => {
@@ -468,6 +499,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
           ))}
         </div>
       )}
+      {/* Suggestion chips */}
+      {suggestions.length > 0 && !isLoading && (
+        <SuggestionChips
+          suggestions={suggestions}
+          onSelect={handleSuggestionChipSelect}
+          onDismiss={dismissSuggestion}
+        />
+      )}
       <ChatInput
         input={input}
         onInputChange={handleInputChange}
@@ -478,6 +517,8 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         paletteCommands={filteredCommands}
         onCommandSelect={handleCommandSelectAndClear}
         onPaletteClose={handlePaletteClose}
+        ghostText={isLoading ? undefined : currentSuggestion}
+        onAcceptSuggestion={handleAcceptGhostText}
       />
       <ShortcutHelpModal
         isOpen={helpOpen}

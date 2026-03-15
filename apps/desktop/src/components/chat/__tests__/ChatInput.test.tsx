@@ -33,6 +33,8 @@ function renderInput(
     paletteCommands: mockCommands,
     onCommandSelect: vi.fn(),
     onPaletteClose: vi.fn(),
+    ghostText: undefined,
+    onAcceptSuggestion: undefined,
     ...overrides,
   };
   return render(<ChatInput {...defaults} />);
@@ -234,6 +236,90 @@ describe('ChatInput', () => {
       renderInput();
       const textarea = screen.getByPlaceholderText(/\/ for commands/i);
       expect(textarea).toBeInTheDocument();
+    });
+  });
+
+  // -- Ghost text / suggestions --
+
+  describe('Ghost text overlay', () => {
+    it('renders ghost text when input is empty and suggestion is provided', () => {
+      renderInput({ ghostText: 'Can you explain this code?' });
+      const ghost = screen.getByTestId('ghost-text');
+      expect(ghost).toBeInTheDocument();
+      expect(ghost).toHaveTextContent('Can you explain this code?');
+    });
+
+    it('does not render ghost text when input has content', () => {
+      renderInput({ input: 'hello', ghostText: 'Can you explain this code?' });
+      expect(screen.queryByTestId('ghost-text')).not.toBeInTheDocument();
+    });
+
+    it('does not render ghost text when no suggestion is provided', () => {
+      renderInput({ ghostText: undefined });
+      expect(screen.queryByTestId('ghost-text')).not.toBeInTheDocument();
+    });
+
+    it('does not render ghost text when ghostText is null', () => {
+      renderInput({ ghostText: null });
+      expect(screen.queryByTestId('ghost-text')).not.toBeInTheDocument();
+    });
+
+    it('calls onAcceptSuggestion when Tab is pressed with ghost text and empty input', async () => {
+      const user = userEvent.setup();
+      const onAcceptSuggestion = vi.fn();
+      renderInput({
+        ghostText: 'Can you explain this code?',
+        onAcceptSuggestion,
+      });
+
+      const textarea = screen.getByRole('textbox');
+      await user.click(textarea);
+      await user.keyboard('{Tab}');
+      expect(onAcceptSuggestion).toHaveBeenCalled();
+    });
+
+    it('does not call onAcceptSuggestion when Tab is pressed without ghost text', async () => {
+      const user = userEvent.setup();
+      const onAcceptSuggestion = vi.fn();
+      renderInput({
+        ghostText: undefined,
+        onAcceptSuggestion,
+      });
+
+      const textarea = screen.getByPlaceholderText(/type a message/i);
+      await user.click(textarea);
+      await user.keyboard('{Tab}');
+      expect(onAcceptSuggestion).not.toHaveBeenCalled();
+    });
+
+    it('accepts and submits on Enter when input is empty but ghost text exists', async () => {
+      const user = userEvent.setup();
+      const onAcceptSuggestion = vi.fn();
+      const onSubmit = vi.fn();
+      renderInput({
+        ghostText: 'Can you explain this code?',
+        onAcceptSuggestion,
+        onSubmit,
+      });
+
+      const textarea = screen.getByRole('textbox');
+      await user.click(textarea);
+      await user.keyboard('{Enter}');
+      expect(onAcceptSuggestion).toHaveBeenCalled();
+    });
+
+    it('calls onAcceptSuggestion when ArrowRight is pressed with empty input and ghost text', async () => {
+      const user = userEvent.setup();
+      const onAcceptSuggestion = vi.fn();
+      renderInput({
+        ghostText: 'Can you explain this code?',
+        onAcceptSuggestion,
+      });
+
+      const textarea = screen.getByRole('textbox');
+      await user.click(textarea);
+      await user.keyboard('{ArrowRight}');
+      expect(onAcceptSuggestion).toHaveBeenCalled();
     });
   });
 });
