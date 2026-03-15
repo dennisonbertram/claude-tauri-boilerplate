@@ -6,6 +6,7 @@ import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { useSessions } from '@/hooks/useSessions';
+import { useTheme } from '@/hooks/useTheme';
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const {
@@ -54,6 +55,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 }
 
 function App() {
+  // Initialize theme: applies dark/light class to <html> and listens for system preference changes
+  useTheme();
+
   const [serverReady, setServerReady] = useState(!isTauri());
   const [error, setError] = useState<string | null>(null);
 
