@@ -22,6 +22,7 @@ import { GrepDisplay } from './GrepDisplay';
 import { GlobDisplay } from './GlobDisplay';
 import { WebSearchDisplay } from './WebSearchDisplay';
 import { WebFetchDisplay } from './WebFetchDisplay';
+import { NotebookEditDisplay } from './NotebookEditDisplay';
 
 interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -165,6 +166,11 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
       case 'WebFetch':
         return <WebFetchDisplay toolCall={toolCall} />;
     }
+  }
+
+  // Route to NotebookEdit display
+  if (toolCall.name === 'NotebookEdit') {
+    return <NotebookEditDisplay toolCall={toolCall} />;
   }
 
   const [isExpanded, setIsExpanded] = useState(toolCall.status === 'running');
