@@ -8,9 +8,11 @@ import { ChatInput } from './ChatInput';
 import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
+import { SubagentPanel } from './SubagentPanel';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
 import type { UsageState } from '@/hooks/useStreamEvents';
+import { useSubagents } from '@/hooks/useSubagents';
 import { useCommands } from '@/hooks/useCommands';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
@@ -59,6 +61,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     sessionInfo,
     reset: resetStreamEvents,
   } = useStreamEvents();
+
+  const {
+    agents: subagents,
+    activeCount: subagentActiveCount,
+    isVisible: subagentPanelVisible,
+    toggleVisibility: toggleSubagentPanel,
+    reset: resetSubagents,
+  } = useSubagents();
 
   const {
     messageCosts,
@@ -133,7 +143,8 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     setMessages([]);
     resetStreamEvents();
     resetCostTracking();
-  }, [setMessages, resetStreamEvents, resetCostTracking]);
+    resetSubagents();
+  }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents]);
 
   const commandContext = useMemo(
     () => ({
@@ -410,6 +421,15 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
+      {/* Subagent visualization panel */}
+      {(subagents.length > 0 || subagentPanelVisible) && (
+        <SubagentPanel
+          agents={subagents}
+          activeCount={subagentActiveCount}
+          isVisible={subagentPanelVisible}
+          onToggleVisibility={toggleSubagentPanel}
+        />
+      )}
       {/* Context usage indicator + cost display */}
       {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting || messageCosts.length > 0) && (
         <div className="border-t border-border px-4 flex items-center">
