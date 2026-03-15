@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import type { UIMessage } from '@ai-sdk/react';
-import type { Message } from '@claude-tauri/shared';
+import type { Message, PermissionResponse } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
+import { PermissionDialog } from './PermissionDialog';
+import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
 
 const API_BASE = 'http://localhost:3131';
@@ -27,7 +29,13 @@ function toUIMessage(msg: Message): UIMessage {
 
 export function ChatPage({ sessionId }: ChatPageProps) {
   const [input, setInput] = useState('');
-  const { toolCalls, thinkingBlocks, reset: resetStreamEvents } = useStreamEvents();
+  const {
+    toolCalls,
+    thinkingBlocks,
+    pendingPermissions,
+    resolvePermission,
+    reset: resetStreamEvents,
+  } = useStreamEvents();
 
   const transport = useMemo(
     () =>
@@ -81,6 +89,35 @@ export function ChatPage({ sessionId }: ChatPageProps) {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  const handlePermissionDecision = useCallback(
+    async (result: PermissionDecisionResult) => {
+      // Remove from pending state immediately for responsive UI
+      resolvePermission(result.requestId);
+
+      // Send decision to backend
+      try {
+        await fetch(`${API_BASE}/api/chat/permission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            requestId: result.requestId,
+            decision: result.decision,
+            scope: result.scope,
+          } satisfies PermissionResponse),
+        });
+      } catch (err) {
+        console.error('[permission] Failed to send decision:', err);
+      }
+    },
+    [sessionId, resolvePermission]
+  );
+
+  const pendingPermissionEntries = useMemo(
+    () => Array.from(pendingPermissions.values()),
+    [pendingPermissions]
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = input.trim();
@@ -98,6 +135,21 @@ export function ChatPage({ sessionId }: ChatPageProps) {
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
+      {/* Permission dialogs */}
+      {pendingPermissionEntries.length > 0 && (
+        <div className="border-t border-border px-4 py-2 space-y-2">
+          {pendingPermissionEntries.map((perm) => (
+            <PermissionDialog
+              key={perm.requestId}
+              request={{
+                type: 'permission:request',
+                ...perm,
+              }}
+              onDecision={handlePermissionDecision}
+            />
+          ))}
+        </div>
+      )}
       <ChatInput
         input={input}
         onInputChange={setInput}

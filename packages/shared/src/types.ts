@@ -51,6 +51,27 @@ export interface ThinkingBlock {
 
 export type ContentBlock = TextBlock | ToolUseBlock | ThinkingBlock;
 
+// --- Permission Types ---
+
+export type PermissionDecisionAction = 'allow_once' | 'allow_always' | 'deny';
+export type PermissionScope = 'session' | 'permanent';
+export type RiskLevel = 'low' | 'medium' | 'high';
+
+export interface PermissionRequest {
+  requestId: string;
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  riskLevel: RiskLevel;
+  sessionId: string;
+}
+
+export interface PermissionResponse {
+  sessionId: string;
+  requestId: string;
+  decision: PermissionDecisionAction;
+  scope?: PermissionScope;
+}
+
 // --- Stream Event Types (Server -> Frontend over SSE) ---
 
 export type StreamEvent =
@@ -84,6 +105,9 @@ export type StreamEvent =
   | StreamHookStarted
   | StreamHookProgress
   | StreamHookResponse
+  // Permissions
+  | StreamPermissionRequest
+  | StreamPermissionDenied
   // Misc
   | StreamFilesPersisted
   | StreamToolUseSummary
@@ -269,4 +293,20 @@ export interface StreamToolUseSummary {
 export interface StreamPromptSuggestion {
   type: 'prompt:suggestion';
   suggestions: string[];
+}
+
+// Permission request (tool needs approval)
+export interface StreamPermissionRequest {
+  type: 'permission:request';
+  requestId: string;
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  riskLevel: RiskLevel;
+}
+
+// Permission denied notification
+export interface StreamPermissionDenied {
+  type: 'permission:denied';
+  requestId: string;
+  toolName: string;
 }
