@@ -361,6 +361,42 @@ export interface PlanDecisionRequest {
 
 export type PlanDecisionAction = 'approve' | 'reject';
 
+// --- Instruction / Rules Types ---
+
+export interface InstructionFile {
+  path: string;
+  level: 'project' | 'user' | 'global' | 'managed';
+  content: string;
+  exists: boolean;
+}
+
+export interface RuleFile {
+  path: string;
+  name: string;
+  content: string;
+  pathScope?: string[];
+}
+
+// --- Git Types ---
+
+// --- Memory Types ---
+
+export interface MemoryFile {
+  name: string;
+  path: string;
+  content: string;
+  isEntrypoint: boolean;
+  sizeBytes: number;
+  modifiedAt: string;
+}
+
+export interface MemorySearchResult {
+  file: string;
+  line: number;
+  text: string;
+  context: string;
+}
+
 // --- Git Types ---
 
 export interface GitFileStatus {

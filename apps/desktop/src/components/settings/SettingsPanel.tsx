@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import type { AppSettings } from '@/hooks/useSettings';
+import { InstructionsPanel } from '@/components/settings/InstructionsPanel';
+import { MemoryPanel } from '@/components/settings/MemoryPanel';
 
-type TabId = 'general' | 'model' | 'appearance' | 'advanced';
+type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'advanced';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'model', label: 'Model' },
   { id: 'appearance', label: 'Appearance' },
+  { id: 'instructions', label: 'Instructions' },
+  { id: 'memory', label: 'Memory' },
   { id: 'advanced', label: 'Advanced' },
 ];
 
@@ -96,6 +100,8 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               updateSettings={updateSettings}
             />
           )}
+          {activeTab === 'instructions' && <InstructionsPanel />}
+          {activeTab === 'memory' && <MemoryPanel />}
           {activeTab === 'advanced' && (
             <AdvancedTab settings={settings} updateSettings={updateSettings} />
           )}
