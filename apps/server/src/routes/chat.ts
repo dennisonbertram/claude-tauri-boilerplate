@@ -98,23 +98,14 @@ export function createChatRouter(db: Database) {
         .join('') ??
       '';
 
-    // If no sessionId, auto-create a session
-    if (!sessionId) {
-      const newSession = createSession(db, crypto.randomUUID(), 'New Chat');
-      sessionId = newSession.id;
-    }
+    // Look up an existing session (if provided) so we can resume
+    // the Claude conversation. Session creation is deferred until
+    // we get the first successful SDK response to avoid orphaned
+    // sessions when the SDK call fails (Bug #37).
+    const existingSession = sessionId ? getSession(db, sessionId) : null;
 
-    // Ensure session exists in DB (it may have been created by the frontend)
-    const existingSession = getSession(db, sessionId);
-    if (!existingSession) {
-      createSession(db, sessionId, 'New Chat');
-    }
-
-    // Persist the user message before streaming
-    addMessage(db, crypto.randomUUID(), sessionId, 'user', prompt);
-
-    // Capture sessionId in closure for use in the stream
-    const appSessionId = sessionId;
+    // Capture the caller-supplied sessionId (may be null for new chats)
+    const callerSessionId = sessionId;
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -126,11 +117,42 @@ export function createChatRouter(db: Database) {
         let currentTextId = 0;
         let activeTextBlockIndex: number | null = null;
 
+        // Deferred session state: the session and user message are only
+        // persisted once we receive the first successful SDK event.
+        let appSessionId: string | undefined;
+        let sessionEnsured = false;
+
+        /**
+         * Ensure the session and user message exist in the DB.
+         * Called lazily on the first successful SDK event so that
+         * a failing SDK call never creates an orphaned session.
+         */
+        function ensureSession() {
+          if (sessionEnsured) return;
+          sessionEnsured = true;
+
+          if (callerSessionId) {
+            appSessionId = callerSessionId;
+            if (!existingSession) {
+              createSession(db, callerSessionId, 'New Chat');
+            }
+          } else {
+            appSessionId = crypto.randomUUID();
+            createSession(db, appSessionId, 'New Chat');
+          }
+
+          // Persist the user message now that we have a valid session
+          addMessage(db, crypto.randomUUID(), appSessionId, 'user', prompt);
+        }
+
         try {
           for await (const event of streamClaude({
             prompt,
             sessionId: existingSession?.claudeSessionId ?? undefined,
           })) {
+            // Lazily create the session on first successful event
+            ensureSession();
+
             // Send every event as data for the custom event handler (rich UI)
             writer.write({ type: 'data', data: [event] });
 
@@ -203,7 +225,8 @@ export function createChatRouter(db: Database) {
           throw err instanceof Error ? err : new Error(String(err));
         } finally {
           // Persist the assistant response only if streaming completed without error
-          if (!streamErrored && fullResponse.length > 0) {
+          // and a session was actually created
+          if (appSessionId && !streamErrored && fullResponse.length > 0) {
             addMessage(
               db,
               crypto.randomUUID(),
@@ -214,7 +237,7 @@ export function createChatRouter(db: Database) {
           }
 
           // Update the claude session ID on the app session
-          if (claudeSessionId) {
+          if (appSessionId && claudeSessionId) {
             updateClaudeSessionId(db, appSessionId, claudeSessionId);
           }
         }

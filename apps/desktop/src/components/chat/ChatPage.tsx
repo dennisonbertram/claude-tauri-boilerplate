@@ -5,16 +5,21 @@ import type { UIMessage } from '@ai-sdk/react';
 import type { Message, PermissionResponse } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
+import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
+import { useCommands } from '@/hooks/useCommands';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
 
 interface ChatPageProps {
   sessionId: string | null;
+  onCreateSession?: () => void | Promise<void>;
+  onExportSession?: () => void | Promise<void>;
 }
 
 /**
@@ -29,7 +34,7 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPageProps) {
   const [input, setInput] = useState('');
   const {
     toolCalls,
@@ -51,12 +56,62 @@ export function ChatPage({ sessionId }: ChatPageProps) {
     [sessionId]
   );
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    // Use sessionId as the chat id so useChat resets its internal state
-    // when switching sessions
-    id: sessionId ?? undefined,
-    transport,
-  });
+  const { messages, sendMessage, status, setMessages, error, clearError } =
+    useChat({
+      // Use sessionId as the chat id so useChat resets its internal state
+      // when switching sessions
+      id: sessionId ?? undefined,
+      transport,
+    });
+
+  // Command palette integration
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    resetStreamEvents();
+  }, [setMessages, resetStreamEvents]);
+
+  const commandContext = useMemo(
+    () => ({
+      clearChat,
+      createSession: onCreateSession ?? (() => {}),
+      exportSession: onExportSession ?? (() => {}),
+    }),
+    [clearChat, onCreateSession, onExportSession]
+  );
+
+  const { commands, filterCommands } = useCommands(commandContext);
+
+  const {
+    isOpen: paletteOpen,
+    searchQuery: paletteFilter,
+    filteredCommands,
+    close: closePalette,
+    handleInputChange: handlePaletteInput,
+    handleCommandSelect,
+  } = useCommandPalette({ commands, filterCommands });
+
+  // Wrap setInput to also drive palette state
+  const handleInputChange = useCallback(
+    (value: string) => {
+      setInput(value);
+      handlePaletteInput(value);
+    },
+    [handlePaletteInput]
+  );
+
+  // When a command is selected, clear the input and execute
+  const handleCommandSelectAndClear = useCallback(
+    (cmd: typeof commands[number]) => {
+      setInput('');
+      handleCommandSelect(cmd);
+    },
+    [handleCommandSelect]
+  );
+
+  const handlePaletteClose = useCallback(() => {
+    setInput('');
+    closePalette();
+  }, [closePalette]);
 
   // Load persisted messages when the session changes
   useEffect(() => {
@@ -93,6 +148,63 @@ export function ChatPage({ sessionId }: ChatPageProps) {
   }, [sessionId, setMessages]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  /**
+   * Convert the AI SDK Error into a ChatError for the ErrorBanner component.
+   * Maps common HTTP status messages to the appropriate error type.
+   */
+  const chatError: ChatError | null = useMemo(() => {
+    if (!error) return null;
+
+    const msg = error.message || 'An unexpected error occurred';
+    const lowerMsg = msg.toLowerCase();
+
+    if (lowerMsg.includes('rate limit') || lowerMsg.includes('429')) {
+      return { type: 'rate_limit', message: msg, retryable: true };
+    }
+    if (
+      lowerMsg.includes('auth') ||
+      lowerMsg.includes('401') ||
+      lowerMsg.includes('403')
+    ) {
+      return { type: 'auth', message: msg, retryable: false };
+    }
+    if (
+      lowerMsg.includes('network') ||
+      lowerMsg.includes('fetch') ||
+      lowerMsg.includes('econnrefused') ||
+      lowerMsg.includes('econnreset')
+    ) {
+      return { type: 'network', message: msg, retryable: true };
+    }
+    // Default to API error (covers 5xx like 503, generic failures, etc.)
+    return { type: 'api', message: msg, retryable: true };
+  }, [error]);
+
+  /**
+   * Retry the last user message by re-submitting it.
+   */
+  const handleRetry = useCallback(() => {
+    clearError();
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((m) => m.role === 'user');
+    if (!lastUserMessage) return;
+
+    const text = lastUserMessage.parts
+      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join('');
+
+    if (text) {
+      resetStreamEvents();
+      sendMessage({ text });
+    }
+  }, [messages, clearError, sendMessage, resetStreamEvents]);
+
+  const handleDismissError = useCallback(() => {
+    clearError();
+  }, [clearError]);
 
   const handlePermissionDecision = useCallback(
     async (result: PermissionDecisionResult) => {
@@ -169,6 +281,12 @@ export function ChatPage({ sessionId }: ChatPageProps) {
     e.preventDefault();
     const text = input.trim();
     if (!text || isLoading) return;
+
+    // Don't send slash commands as chat messages
+    if (text.startsWith('/')) {
+      return;
+    }
+
     setInput('');
     resetStreamEvents();
     await sendMessage({ text });
@@ -181,6 +299,12 @@ export function ChatPage({ sessionId }: ChatPageProps) {
         isLoading={isLoading}
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
+      />
+      {/* Error banner */}
+      <ErrorBanner
+        error={chatError}
+        onDismiss={handleDismissError}
+        onRetry={handleRetry}
       />
       {/* Plan view */}
       {plan && plan.status !== 'idle' && (
@@ -209,9 +333,14 @@ export function ChatPage({ sessionId }: ChatPageProps) {
       )}
       <ChatInput
         input={input}
-        onInputChange={setInput}
+        onInputChange={handleInputChange}
         onSubmit={handleSubmit}
         isLoading={isLoading}
+        showPalette={paletteOpen}
+        paletteFilter={paletteFilter}
+        paletteCommands={filteredCommands}
+        onCommandSelect={handleCommandSelectAndClear}
+        onPaletteClose={handlePaletteClose}
       />
     </div>
   );

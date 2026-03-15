@@ -30,7 +30,7 @@ mock.module('@anthropic-ai/claude-agent-sdk', () => ({
 
 // Import AFTER mocking
 const { createChatRouter } = await import('./chat');
-const { createDb, createSession } = await import('../db');
+const { createDb, createSession, listSessions, getMessages } = await import('../db');
 const { Hono } = await import('hono');
 
 // Helper: collect SSE events from a streaming response
@@ -317,5 +317,186 @@ describe('Chat Route - Error Handling', () => {
     // Should contain an error event somewhere
     const hasError = parsed.some((e: any) => e.type === 'error');
     expect(hasError).toBe(true);
+  });
+});
+
+describe('Chat Route - Orphaned Session Prevention (Bug #37)', () => {
+  let testApp: InstanceType<typeof Hono>;
+  let db: Database;
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    db = createDb(':memory:');
+    const chatRouter = createChatRouter(db);
+    testApp = new Hono();
+    testApp.route('/api/chat', chatRouter);
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  test('does not create a session when SDK throws immediately (no sessionId provided)', async () => {
+    // SDK throws before yielding any events
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        const err = new Error('Service Unavailable');
+        (err as any).status = 503;
+        throw err;
+      })()
+    );
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Hello' }],
+      // No sessionId -- would normally auto-create one
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // No sessions should exist in the DB since the SDK failed
+    // before yielding any events
+    const sessions = listSessions(db);
+    expect(sessions).toHaveLength(0);
+  });
+
+  test('does not create orphaned session when SDK throws after init event (no sessionId provided)', async () => {
+    // SDK yields init then throws
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'orphan-test',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        throw new Error('Stream broke mid-conversation');
+      })()
+    );
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Hello' }],
+      // No sessionId
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // A session SHOULD be created because the SDK did yield a successful event.
+    // But no assistant message should be persisted since the stream errored.
+    const sessions = listSessions(db);
+    expect(sessions).toHaveLength(1);
+
+    const messages = getMessages(db, sessions[0].id);
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const assistantMessages = messages.filter((m) => m.role === 'assistant');
+    expect(userMessages).toHaveLength(1);
+    expect(assistantMessages).toHaveLength(0);
+  });
+
+  test('does not persist user message when SDK fails immediately', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        throw new Error('Connection refused');
+      })()
+    );
+
+    const session = createSession(db, 'existing-session', 'Test');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'This should not be saved' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // Since SDK failed before yielding any events, the user message
+    // should NOT be persisted (session creation is deferred)
+    const messages = getMessages(db, session.id);
+    expect(messages).toHaveLength(0);
+  });
+
+  test('creates session and persists messages on successful SDK response', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'success-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Hello!' },
+            index: 0,
+          },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'success-session',
+        };
+      })()
+    );
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Hi there' }],
+      // No sessionId -- should auto-create after first successful event
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    // Session should be created and both messages persisted
+    const sessions = listSessions(db);
+    expect(sessions).toHaveLength(1);
+
+    const messages = getMessages(db, sessions[0].id);
+    expect(messages).toHaveLength(2);
+    expect(messages[0].role).toBe('user');
+    expect(messages[0].content).toBe('Hi there');
+    expect(messages[1].role).toBe('assistant');
+    expect(messages[1].content).toBe('Hello!');
   });
 });
