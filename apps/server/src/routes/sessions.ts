@@ -10,6 +10,8 @@ import {
   updateSessionTitle,
   addMessage,
 } from '../db';
+import { generateRandomName } from '../services/name-generator';
+import { generateSessionTitle } from '../services/auto-namer';
 
 const createSessionSchema = z.object({
   title: z.string().max(500).optional(),
@@ -45,7 +47,10 @@ export function createSessionsRouter(db: Database) {
     }
 
     const id = crypto.randomUUID();
-    const session = createSession(db, id, parsed.data.title);
+    const title = (parsed.data.title && parsed.data.title !== 'New Chat')
+      ? parsed.data.title
+      : generateRandomName();
+    const session = createSession(db, id, title);
     return c.json(session, 201);
   });
 
@@ -209,6 +214,38 @@ export function createSessionsRouter(db: Database) {
     }
     deleteSession(db, id);
     return c.json({ ok: true });
+  });
+
+  // ─── Auto-name session ───
+  router.post('/:id/auto-name', async (c) => {
+    const id = c.req.param('id');
+    const session = getSession(db, id);
+    if (!session) {
+      return c.json(
+        { error: 'Session not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    const messages = getMessages(db, id);
+    if (messages.length === 0) {
+      return c.json(
+        { error: 'No messages to generate title from', code: 'NO_MESSAGES' },
+        400
+      );
+    }
+
+    try {
+      const title = await generateSessionTitle(messages);
+      updateSessionTitle(db, id, title);
+      return c.json({ title });
+    } catch (err) {
+      console.error('[auto-name] Failed to generate title:', err);
+      return c.json(
+        { error: 'Failed to generate title', code: 'GENERATION_ERROR' },
+        500
+      );
+    }
   });
 
   return router;

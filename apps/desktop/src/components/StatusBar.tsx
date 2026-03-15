@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { formatCost } from '@/lib/pricing';
+import { AVAILABLE_MODELS, getModelDisplay } from '@/lib/models';
 import type { ToolCallState, CumulativeUsage } from '@/hooks/useStreamEvents';
 
 const API_BASE = 'http://localhost:3131';
@@ -14,6 +15,8 @@ export interface StatusBarProps {
   cumulativeUsage: CumulativeUsage;
   sessionTotalCost: number;
   subagentActiveCount: number;
+  selectedModel?: string;
+  onModelChange?: (modelId: string) => void;
 }
 
 // --- Main StatusBar ---
@@ -25,6 +28,8 @@ export function StatusBar({
   cumulativeUsage,
   sessionTotalCost,
   subagentActiveCount,
+  selectedModel,
+  onModelChange,
 }: StatusBarProps) {
   return (
     <div
@@ -33,7 +38,7 @@ export function StatusBar({
     >
       {/* Left section */}
       <div data-testid="status-bar-left" className="flex items-center gap-0.5 px-2 min-w-0">
-        {model && <ModelSegment model={model} />}
+        <ModelSegment model={model} selectedModel={selectedModel} onModelChange={onModelChange} />
         <PermissionModeSegment />
         <GitBranchSegment />
         <ConnectionIndicator />
@@ -57,25 +62,107 @@ export function StatusBar({
 
 // --- ModelSegment ---
 
-function ModelSegment({ model }: { model: string }) {
+function ModelSegment({
+  model,
+  selectedModel,
+  onModelChange,
+}: {
+  model: string | null;
+  selectedModel?: string;
+  onModelChange?: (modelId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const displayLabel = selectedModel ? getModelDisplay(selectedModel) : (model ?? 'No model');
+
   return (
-    <div data-testid="model-segment" className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="shrink-0"
+    <div ref={ref} className="relative" data-testid="model-segment">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors"
       >
-        <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z" />
-        <circle cx="12" cy="14" r="2" />
-      </svg>
-      <span className="truncate max-w-[120px]">{model}</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0"
+        >
+          <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z" />
+          <circle cx="12" cy="14" r="2" />
+        </svg>
+        <span className="truncate max-w-[120px]">{displayLabel}</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 opacity-50"
+        >
+          <polyline points="18 15 12 9 6 15" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute bottom-full left-0 mb-1 w-44 rounded-md border border-border bg-popover shadow-lg z-50">
+          {AVAILABLE_MODELS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => {
+                onModelChange?.(m.id);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-muted/50 ${
+                selectedModel === m.id ? 'text-foreground font-medium' : 'text-muted-foreground'
+              }`}
+            >
+              {selectedModel === m.id && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              {selectedModel !== m.id && <span className="w-3" />}
+              <span>{m.label}</span>
+              <span className="ml-auto text-[10px] text-muted-foreground/60">{m.id.split('-').slice(1, 3).join('-')}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

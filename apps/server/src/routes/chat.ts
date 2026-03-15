@@ -5,6 +5,7 @@ import {
   createUIMessageStreamResponse,
 } from 'ai';
 import { streamClaude } from '../services/claude';
+import { generateRandomName } from '../services/name-generator';
 import {
   addMessage,
   createSession,
@@ -82,6 +83,7 @@ export function createChatRouter(db: Database) {
     console.log('[chat] body:', JSON.stringify(body, null, 2));
     const messages = body.messages || [];
     let sessionId = body.sessionId;
+    const model = body.model;
 
     // Extract the last user message as the prompt
     const lastUserMessage = messages
@@ -139,11 +141,11 @@ export function createChatRouter(db: Database) {
           if (callerSessionId) {
             appSessionId = callerSessionId;
             if (!existingSession) {
-              createSession(db, callerSessionId, 'New Chat');
+              createSession(db, callerSessionId, generateRandomName());
             }
           } else {
             appSessionId = crypto.randomUUID();
-            createSession(db, appSessionId, 'New Chat');
+            createSession(db, appSessionId, generateRandomName());
           }
 
           // Persist the user message now that we have a valid session
@@ -154,6 +156,7 @@ export function createChatRouter(db: Database) {
           for await (const event of streamClaude({
             prompt,
             sessionId: existingSession?.claudeSessionId ?? undefined,
+            model,
           })) {
             // Lazily create the session on first successful event
             ensureSession();

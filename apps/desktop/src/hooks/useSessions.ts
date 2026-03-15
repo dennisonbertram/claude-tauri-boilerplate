@@ -89,6 +89,23 @@ export function useSessions() {
     return res.json();
   }, []);
 
+  const autoNameSession = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/sessions/${id}/auto-name`, {
+        method: 'POST',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.title) {
+        setSessions(prev =>
+          prev.map(s => (s.id === id ? { ...s, title: data.title } : s))
+        );
+      }
+    } catch {
+      // Auto-naming is best-effort; don't throw on failure
+    }
+  }, []);
+
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
   return {
@@ -102,5 +119,6 @@ export function useSessions() {
     exportSession,
     fetchMessages,
     fetchSessions,
+    autoNameSession,
   };
 }

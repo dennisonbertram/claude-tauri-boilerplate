@@ -11,6 +11,7 @@ import { StatusBar } from '@/components/StatusBar';
 import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
 import { useTheme } from '@/hooks/useTheme';
+import { DEFAULT_MODEL } from '@/lib/models';
 import { Agentation } from 'agentation';
 
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
@@ -38,11 +39,13 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     renameSession,
     forkSession,
     exportSession,
+    autoNameSession,
   } = useSessions();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams'>('chat');
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL.id);
 
   const handleNewChat = async () => {
     await createSession();
@@ -104,6 +107,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             onCreateSession={handleNewChat}
             onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
             onStatusChange={handleStatusChange}
+            selectedModel={selectedModel}
+            onAutoName={autoNameSession}
           />
         ) : (
           <TeamsView />
@@ -122,7 +127,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           plan={plan}
         />
       </div>
-      <StatusBar {...statusData} />
+      <StatusBar {...statusData} selectedModel={selectedModel} onModelChange={setSelectedModel} />
     </div>
   );
 }

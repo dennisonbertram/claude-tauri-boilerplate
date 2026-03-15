@@ -5,6 +5,7 @@ import type { StreamEvent } from '@claude-tauri/shared';
 export interface ClaudeStreamOptions {
   prompt: string;
   sessionId?: string;
+  model?: string;
 }
 
 export async function* streamClaude(
@@ -17,6 +18,10 @@ export async function* streamClaude(
 
   if (options.sessionId) {
     queryOptions.resume = options.sessionId;
+  }
+
+  if (options.model) {
+    queryOptions.model = options.model;
   }
 
   const stream = query({

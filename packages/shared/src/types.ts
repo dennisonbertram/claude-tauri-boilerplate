@@ -28,6 +28,7 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
+  model?: string;
 }
 
 // --- Content Block Types ---

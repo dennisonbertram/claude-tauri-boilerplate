@@ -53,6 +53,8 @@ interface ChatPageProps {
   onCreateSession?: () => void | Promise<void>;
   onExportSession?: () => void | Promise<void>;
   onStatusChange?: (data: ChatPageStatusData) => void;
+  selectedModel?: string;
+  onAutoName?: (sessionId: string) => void;
 }
 
 /**
@@ -67,7 +69,7 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, selectedModel, onAutoName }: ChatPageProps) {
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const {
@@ -122,6 +124,18 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     userMessageId: lastUserMessageIdRef.current,
   });
 
+  // Auto-naming: track user message count per session
+  const userMsgCountRef = useRef(0);
+  const autoNameCalledRef = useRef(false);
+  const prevSessionIdRef = useRef(sessionId);
+
+  // Reset counters when session changes
+  if (sessionId !== prevSessionIdRef.current) {
+    prevSessionIdRef.current = sessionId;
+    userMsgCountRef.current = 0;
+    autoNameCalledRef.current = false;
+  }
+
   // Claude's context window is 200k tokens
   const MAX_CONTEXT_TOKENS = 200_000;
 
@@ -172,9 +186,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     () =>
       new DefaultChatTransport({
         api: `${API_BASE}/api/chat`,
-        body: { sessionId },
+        body: { sessionId, model: selectedModel },
       }),
-    [sessionId]
+    [sessionId, selectedModel]
   );
 
   // Stable fallback ID so we don't recreate the Chat on every render
@@ -377,6 +391,27 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
   }, [sessionId, setMessages]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  // Track when streaming completes to trigger auto-naming
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    if (isLoading) {
+      wasStreamingRef.current = true;
+    } else if (wasStreamingRef.current) {
+      // Streaming just ended
+      wasStreamingRef.current = false;
+      userMsgCountRef.current += 1;
+      if (
+        userMsgCountRef.current >= 2 &&
+        !autoNameCalledRef.current &&
+        sessionId &&
+        onAutoName
+      ) {
+        autoNameCalledRef.current = true;
+        onAutoName(sessionId);
+      }
+    }
+  }, [isLoading, sessionId, onAutoName]);
 
   // Report status data to parent for StatusBar
   useEffect(() => {
@@ -591,7 +626,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       )}
       {/* Context usage indicator + cost display */}
       {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting || messageCosts.length > 0) && (
-        <div className="border-t border-border px-4 flex items-center">
+        <div className="px-4 flex items-center">
           <ContextIndicator usage={contextUsage} isCompacting={isCompacting} />
           <CostDisplay messageCosts={messageCosts} sessionTotalCost={sessionTotalCost} />
         </div>
