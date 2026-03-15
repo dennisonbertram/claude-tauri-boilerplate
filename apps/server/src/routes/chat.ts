@@ -11,7 +11,67 @@ import {
   getSession,
   updateClaudeSessionId,
 } from '../db';
-import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
+import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
+
+/**
+ * Classify an error thrown during Claude streaming into a StreamError event
+ * that the frontend can handle gracefully.
+ */
+function classifyStreamError(err: unknown): StreamError {
+  if (!(err instanceof Error)) {
+    return {
+      type: 'error',
+      errorType: 'unknown',
+      message: 'An unknown error occurred',
+    };
+  }
+
+  const status = (err as any).status;
+  const code = (err as any).code;
+
+  // Rate limit
+  if (status === 429) {
+    return {
+      type: 'error',
+      errorType: 'rate_limit',
+      message: err.message || 'Rate limited. Please try again later.',
+    };
+  }
+
+  // Auth failure
+  if (status === 401 || status === 403) {
+    return {
+      type: 'error',
+      errorType: 'auth',
+      message: err.message || 'Authentication failed.',
+    };
+  }
+
+  // Network timeout
+  if (code === 'ETIMEDOUT' || code === 'ECONNRESET' || code === 'ECONNREFUSED') {
+    return {
+      type: 'error',
+      errorType: 'network',
+      message: err.message || 'Network error. Connection lost.',
+    };
+  }
+
+  // Model/API error (catch-all for 4xx/5xx)
+  if (typeof status === 'number' && status >= 400) {
+    return {
+      type: 'error',
+      errorType: 'api',
+      message: err.message || 'API error occurred.',
+    };
+  }
+
+  // Generic error
+  return {
+    type: 'error',
+    errorType: 'stream',
+    message: err.message || 'Stream error',
+  };
+}
 
 export function createChatRouter(db: Database) {
   const router = new Hono();
@@ -116,9 +176,19 @@ export function createChatRouter(db: Database) {
                 break;
             }
           }
-        } catch {
+        } catch (err) {
           streamErrored = true;
-          throw new Error('Stream error');
+
+          // Classify the error and send it on the data channel so
+          // the frontend can display a useful message
+          const errorEvent = classifyStreamError(err);
+          writer.write({ type: 'data', data: [errorEvent] });
+
+          // Log to stderr for server-side debugging
+          console.error('[chat-stream]', err);
+
+          // Re-throw so the AI SDK onError handler can finalize the stream
+          throw err instanceof Error ? err : new Error(String(err));
         } finally {
           // Persist the assistant response only if streaming completed without error
           if (!streamErrored && fullResponse.length > 0) {
