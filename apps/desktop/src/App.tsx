@@ -13,6 +13,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setActiveSessionId,
     createSession,
     deleteSession,
+    renameSession,
+    forkSession,
+    exportSession,
   } = useSessions();
 
   const handleNewChat = async () => {
@@ -29,6 +32,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         onSelectSession={setActiveSessionId}
         onNewChat={handleNewChat}
         onDeleteSession={deleteSession}
+        onRenameSession={renameSession}
+        onForkSession={forkSession}
+        onExportSession={exportSession}
       />
       <ChatPage sessionId={activeSessionId} />
     </div>
