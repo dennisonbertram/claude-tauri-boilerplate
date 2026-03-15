@@ -1,13 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { isTauri } from './lib/platform';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
+import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
-import { GitStatusBar } from '@/components/GitStatusBar';
+import { StatusBar } from '@/components/StatusBar';
+import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
 import { useTheme } from '@/hooks/useTheme';
+
+const defaultStatusData: StatusBarProps = {
+  model: null,
+  isStreaming: false,
+  toolCalls: new Map(),
+  cumulativeUsage: {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheCreationTokens: 0,
+  },
+  sessionTotalCost: 0,
+  subagentActiveCount: 0,
+};
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const {
@@ -22,10 +38,15 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   } = useSessions();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statusData, setStatusData] = useState<StatusBarProps>(defaultStatusData);
 
   const handleNewChat = async () => {
     await createSession();
   };
+
+  const handleStatusChange = useCallback((data: ChatPageStatusData) => {
+    setStatusData(data);
+  }, []);
 
   return (
     <div className="flex h-screen flex-col">
@@ -47,15 +68,14 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           sessionId={activeSessionId}
           onCreateSession={handleNewChat}
           onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
+          onStatusChange={handleStatusChange}
         />
         <SettingsPanel
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}
         />
       </div>
-      <footer className="flex items-center border-t border-border bg-background h-7 shrink-0">
-        <GitStatusBar />
-      </footer>
+      <StatusBar {...statusData} />
     </div>
   );
 }
