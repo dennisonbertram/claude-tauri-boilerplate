@@ -5,6 +5,7 @@ import type { UIMessage } from '@ai-sdk/react';
 import type { Message } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
+import { useStreamEvents } from '@/hooks/useStreamEvents';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -26,6 +27,7 @@ function toUIMessage(msg: Message): UIMessage {
 
 export function ChatPage({ sessionId }: ChatPageProps) {
   const [input, setInput] = useState('');
+  const { toolCalls, thinkingBlocks, reset: resetStreamEvents } = useStreamEvents();
 
   const transport = useMemo(
     () =>
@@ -84,12 +86,18 @@ export function ChatPage({ sessionId }: ChatPageProps) {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
+    resetStreamEvents();
     await sendMessage({ text });
   };
 
   return (
     <div className="flex flex-1 flex-col min-w-0">
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        toolCalls={toolCalls}
+        thinkingBlocks={thinkingBlocks}
+      />
       <ChatInput
         input={input}
         onInputChange={setInput}
