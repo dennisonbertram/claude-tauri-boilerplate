@@ -192,7 +192,7 @@ export function ChatInput({
   );
 
   return (
-    <form onSubmit={onSubmit} className="border-t border-border p-4">
+    <form onSubmit={onSubmit} data-testid="chat-input-form" className="border-t border-border p-4" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       <div className="relative mx-auto flex max-w-3xl items-end gap-2">
         {showPalette && (
           <div ref={paletteRef} className="absolute bottom-full left-0 right-0 z-10 mb-1">
@@ -205,6 +205,27 @@ export function ChatInput({
           </div>
         )}
         <div className="relative flex-1">
+          {images.length > 0 && (
+            <div data-testid="image-thumbnails" className="flex flex-wrap gap-2 mb-2">
+              {images.map((img) => (
+                <div key={img.id} data-testid="image-thumbnail" className="relative group">
+                  <img
+                    src={img.dataUrl}
+                    alt={img.name}
+                    className="h-16 w-16 rounded-md object-cover border border-border"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Remove image"
+                    onClick={() => removeImage(img.id)}
+                    className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             value={input}

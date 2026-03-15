@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
+import { ImageViewer } from './ImageViewer';
 
 interface MarkdownRendererProps {
   content: string;
@@ -239,17 +240,9 @@ const components: Components = {
     );
   },
 
-  // Images
-  img({ alt, src, ...props }) {
-    return (
-      <img
-        alt={alt}
-        src={src}
-        className="max-w-full h-auto rounded-lg my-3"
-        loading="lazy"
-        {...props}
-      />
-    );
+  // Images - rendered with clickable lightbox viewer
+  img({ alt, src }) {
+    return <ImageViewer src={src || ''} alt={alt || ''} />;
   },
 
   // Paragraphs
