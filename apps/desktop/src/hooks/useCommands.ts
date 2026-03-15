@@ -17,6 +17,7 @@ export interface CommandContext {
   showModelSelector?: () => void;
   showCostSummary?: () => void;
   showSettings?: () => void;
+  showHelp?: () => void;
 }
 
 export function useCommands(context: CommandContext) {
@@ -41,10 +42,8 @@ export function useCommands(context: CommandContext) {
         name: 'help',
         description: 'Show help and keyboard shortcuts',
         category: 'chat' as CommandCategory,
-        shortcut: '?',
-        execute: () => {
-          // Placeholder: show help modal or panel
-        },
+        shortcut: 'Cmd+?',
+        execute: () => context.showHelp?.(),
       },
       {
         name: 'compact',

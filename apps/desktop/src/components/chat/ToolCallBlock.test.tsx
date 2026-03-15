@@ -7,9 +7,9 @@ import type { ToolCallState } from '@/hooks/useStreamEvents';
 function makeToolCall(overrides: Partial<ToolCallState> = {}): ToolCallState {
   return {
     toolUseId: 'tool-1',
-    name: 'WebFetch',
+    name: 'ToolSearch',
     status: 'running',
-    input: '{"url":"https://example.com","prompt":"summarize"}',
+    input: '{"query":"find tools"}',
     ...overrides,
   };
 }
@@ -17,7 +17,7 @@ function makeToolCall(overrides: Partial<ToolCallState> = {}): ToolCallState {
 describe('ToolCallBlock', () => {
   it('renders the tool name', () => {
     render(<ToolCallBlock toolCall={makeToolCall()} />);
-    expect(screen.getByText('WebFetch')).toBeInTheDocument();
+    expect(screen.getByText('ToolSearch')).toBeInTheDocument();
   });
 
   it('shows a spinner indicator when status is running', () => {
@@ -45,7 +45,7 @@ describe('ToolCallBlock', () => {
   it('is expanded by default when running', () => {
     render(<ToolCallBlock toolCall={makeToolCall({ status: 'running' })} />);
     // Input section should be visible when running
-    expect(screen.getByText(/url/)).toBeInTheDocument();
+    expect(screen.getByText(/query/)).toBeInTheDocument();
   });
 
   it('is collapsed by default when complete', () => {
@@ -55,7 +55,7 @@ describe('ToolCallBlock', () => {
       />
     );
     // Input section should not be visible when collapsed
-    expect(screen.queryByText(/url/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/query/)).not.toBeInTheDocument();
   });
 
   it('can be toggled open and closed', async () => {
@@ -67,14 +67,14 @@ describe('ToolCallBlock', () => {
     );
 
     // Initially collapsed -- input not visible
-    expect(screen.queryByText(/url/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/query/)).not.toBeInTheDocument();
 
     // Click to expand
-    const header = screen.getByRole('button', { name: /WebFetch/i });
+    const header = screen.getByRole('button', { name: /ToolSearch/i });
     await user.click(header);
 
     // Now input should be visible
-    expect(screen.getByText(/url/)).toBeInTheDocument();
+    expect(screen.getByText(/query/)).toBeInTheDocument();
   });
 
   it('renders the result when complete and expanded', async () => {
@@ -89,7 +89,7 @@ describe('ToolCallBlock', () => {
     );
 
     // Expand
-    const header = screen.getByRole('button', { name: /WebFetch/i });
+    const header = screen.getByRole('button', { name: /ToolSearch/i });
     await user.click(header);
 
     expect(screen.getByText(/const x = 42/)).toBeInTheDocument();
