@@ -13,7 +13,6 @@ export async function* streamClaude(
 ): AsyncGenerator<StreamEvent> {
   const queryOptions: Record<string, unknown> = {
     includePartialMessages: true,
-    maxTurns: 1,
   };
 
   if (options.sessionId) {
