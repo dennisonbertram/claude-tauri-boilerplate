@@ -19,12 +19,8 @@ export async function generateSessionTitle(
   let title = '';
 
   for await (const event of stream) {
-    if (
-      event.type === 'stream_event' &&
-      event.event.type === 'content_block_delta' &&
-      event.event.delta.type === 'text_delta'
-    ) {
-      title += event.event.delta.text;
+    if (event.type === 'result' && event.subtype === 'success' && event.result) {
+      title = String(event.result);
     }
   }
 
