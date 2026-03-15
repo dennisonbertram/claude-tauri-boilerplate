@@ -39,7 +39,7 @@ export function SessionSidebar({
   onSwitchView,
 }: SessionSidebarProps) {
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
+    <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
       {/* View toggle tabs (Chat / Teams) */}
       {onSwitchView && (
         <div className="flex border-b border-border">
@@ -99,7 +99,7 @@ export function SessionSidebar({
         </Button>
       </div>
       <Separator />
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="p-2 space-y-1">
           {sessions.map(session => (
             <SessionItem

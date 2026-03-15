@@ -39,6 +39,13 @@ export interface ChatPageStatusData {
   cumulativeUsage: import('@/hooks/useStreamEvents').CumulativeUsage;
   sessionTotalCost: number;
   subagentActiveCount: number;
+  sessionInfo?: {
+    sessionId: string;
+    model: string;
+    tools: string[];
+    mcpServers: Array<{ name: string; status: string }>;
+    claudeCodeVersion: string;
+  } | null;
 }
 
 interface ChatPageProps {
@@ -75,6 +82,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     isCompacting,
     usage,
     sessionInfo,
+    processEvent,
     reset: resetStreamEvents,
   } = useStreamEvents();
 
@@ -174,10 +182,24 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
   // across renders but is unique per ChatPage mount.
   const fallbackId = useRef(crypto.randomUUID()).current;
 
+  // Handle data-stream-event parts from the AI SDK data channel.
+  // The server sends custom events (session:init, tool:result, etc.)
+  // via `{ type: 'data-stream-event', data: <StreamEvent> }` which
+  // the AI SDK delivers through the onData callback.
+  const handleDataPart = useCallback(
+    (part: { type: string; data?: unknown }) => {
+      if (part.type === 'data-stream-event' && part.data && typeof part.data === 'object' && 'type' in part.data) {
+        processEvent(part.data as import('@claude-tauri/shared').StreamEvent);
+      }
+    },
+    [processEvent]
+  );
+
   const { messages, sendMessage, status, setMessages, error, clearError } =
     useChat({
       id: sessionId ?? fallbackId,
       transport,
+      onData: handleDataPart as any,
     });
 
   // Prompt suggestions based on last assistant message
@@ -365,8 +387,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       cumulativeUsage,
       sessionTotalCost,
       subagentActiveCount,
+      sessionInfo: sessionInfo ?? null,
     });
-  }, [sessionInfo?.model, isLoading, toolCalls, cumulativeUsage, sessionTotalCost, subagentActiveCount, onStatusChange]);
+  }, [sessionInfo, isLoading, toolCalls, cumulativeUsage, sessionTotalCost, subagentActiveCount, onStatusChange]);
 
   const chatError: ChatError | null = useMemo(() => {
     if (!error) return null;

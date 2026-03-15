@@ -75,10 +75,9 @@ function extractStreamEvents(parsed: unknown[]): StreamEvent[] {
   const events: StreamEvent[] = [];
   for (const item of parsed) {
     const obj = item as any;
-    if (obj.type === 'data' && Array.isArray(obj.data)) {
-      for (const evt of obj.data) {
-        events.push(evt);
-      }
+    // AI SDK v6 format: { type: 'data-stream-event', data: <event> }
+    if (obj.type === 'data-stream-event' && obj.data) {
+      events.push(obj.data);
     }
   }
   return events;

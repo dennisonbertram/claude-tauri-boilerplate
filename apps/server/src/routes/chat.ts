@@ -77,7 +77,9 @@ export function createChatRouter(db: Database) {
   const router = new Hono();
 
   router.post('/', async (c) => {
+    console.log('[chat] === NEW CHAT REQUEST ===');
     const body = (await c.req.json()) as ChatRequest;
+    console.log('[chat] body:', JSON.stringify(body, null, 2));
     const messages = body.messages || [];
     let sessionId = body.sessionId;
 
@@ -86,6 +88,7 @@ export function createChatRouter(db: Database) {
       .filter((m: any) => m.role === 'user')
       .pop() as any;
     if (!lastUserMessage) {
+      console.log('[chat] ERROR: No user message found');
       return c.json({ error: 'No user message provided' }, 400);
     }
 
@@ -97,6 +100,8 @@ export function createChatRouter(db: Database) {
         .map((p: any) => p.text)
         .join('') ??
       '';
+    console.log('[chat] Extracted prompt:', prompt);
+    console.log('[chat] sessionId:', sessionId);
 
     // Look up an existing session (if provided) so we can resume
     // the Claude conversation. Session creation is deferred until
@@ -153,61 +158,44 @@ export function createChatRouter(db: Database) {
             // Lazily create the session on first successful event
             ensureSession();
 
-            // Send every event as data for the custom event handler (rich UI)
-            writer.write({ type: 'data', data: [event] });
+            console.log('[chat] SDK event:', JSON.stringify(event).slice(0, 200));
 
-            // Also map key events to AI SDK protocol for useChat() compatibility
-            switch (event.type) {
-              case 'session:init':
-                claudeSessionId = event.sessionId;
-                break;
-
-              case 'text:delta':
-                if (!startSent) {
-                  writer.write({ type: 'start' });
-                  writer.write({
-                    type: 'text-start',
-                    id: `text-${currentTextId}`,
-                  });
-                  startSent = true;
-                  activeTextBlockIndex = event.blockIndex;
-                } else if (event.blockIndex !== activeTextBlockIndex) {
-                  // New text block -- close previous and start new
-                  currentTextId++;
-                  writer.write({
-                    type: 'text-start',
-                    id: `text-${currentTextId}`,
-                  });
-                  activeTextBlockIndex = event.blockIndex;
-                }
+            // text:delta events: send AI SDK protocol events FIRST, then data channel
+            // This ensures start/text-start arrive before the data event.
+            // We map ALL Claude text blocks into a single AI SDK text stream
+            // to avoid creating multiple assistant messages in useChat.
+            if (event.type === 'text:delta') {
+              if (!startSent) {
+                console.log('[chat] Sending start + text-start');
+                writer.write({ type: 'start' });
                 writer.write({
-                  type: 'text-delta',
+                  type: 'text-start',
                   id: `text-${currentTextId}`,
-                  delta: event.text,
                 });
-                fullResponse += event.text;
-                break;
+                startSent = true;
+                activeTextBlockIndex = event.blockIndex;
+              } else if (event.blockIndex !== activeTextBlockIndex) {
+                // Track the new block index but do NOT create a new text stream.
+                // Multiple Claude blockIndex values are an internal detail.
+                activeTextBlockIndex = event.blockIndex;
+              }
+              writer.write({
+                type: 'text-delta',
+                id: `text-${currentTextId}`,
+                delta: event.text,
+              });
+              // Also send on data channel for rich UI (useStreamEvents)
+              (writer as any).write({ type: 'data-stream-event', data: event });
+              fullResponse += event.text;
+            } else {
+              // Non-text events: data channel for the custom event handler
+              (writer as any).write({ type: 'data-stream-event', data: event });
 
-              case 'permission:request':
-                // Permission requests are on the data channel for the
-                // frontend to display the approval dialog. The stream
-                // continues -- the SDK is paused internally waiting for
-                // the permission decision via the permission endpoint.
-                break;
-
-              case 'permission:denied':
-                // Denied permissions are on the data channel for the
-                // frontend to show a notification.
-                break;
-
-              case 'error':
-                // Errors are already on the data channel; no additional
-                // AI SDK protocol action needed since the stream continues
-                break;
-
-              case 'session:result':
-                // Result is on the data channel for the frontend reducer
-                break;
+              // Handle protocol-relevant events
+              if (event.type === 'session:init') {
+                claudeSessionId = event.sessionId;
+                console.log('[chat] Got session:init, claudeSessionId:', claudeSessionId);
+              }
             }
           }
         } catch (err) {
@@ -216,7 +204,7 @@ export function createChatRouter(db: Database) {
           // Classify the error and send it on the data channel so
           // the frontend can display a useful message
           const errorEvent = classifyStreamError(err);
-          writer.write({ type: 'data', data: [errorEvent] });
+          (writer as any).write({ type: 'data-stream-event', data: errorEvent });
 
           // Log to stderr for server-side debugging
           console.error('[chat-stream]', err);
@@ -242,7 +230,21 @@ export function createChatRouter(db: Database) {
           }
         }
 
+        // Ensure `start` was sent (AI SDK requires it before `finish`)
+        if (!startSent) {
+          writer.write({ type: 'start' });
+        }
+
+        // Close any open text block before finishing (AI SDK v6 protocol compliance)
+        if (startSent && activeTextBlockIndex !== null) {
+          writer.write({
+            type: 'text-end',
+            id: `text-${currentTextId}`,
+          });
+        }
+
         // Send sessionId as message metadata in the finish event
+        console.log('[chat] Sending finish event. startSent:', startSent, 'fullResponse length:', fullResponse.length);
         writer.write({
           type: 'finish',
           finishReason: 'stop',

@@ -60,7 +60,13 @@ export interface StreamEventsState {
   thinkingBlocks: Map<string, string>;
   errors: ErrorState[];
   usage: UsageState | null;
-  sessionInfo: { sessionId: string; model: string } | null;
+  sessionInfo: {
+    sessionId: string;
+    model: string;
+    tools: string[];
+    mcpServers: Array<{ name: string; status: string }>;
+    claudeCodeVersion: string;
+  } | null;
   /** Maps blockIndex -> toolUseId for correlating deltas to tool calls */
   blockIndexToToolId: Map<number, string>;
   /** Pending permission requests awaiting user decision */
@@ -167,6 +173,9 @@ export function streamEventsReducer(
         sessionInfo: {
           sessionId: event.sessionId,
           model: event.model,
+          tools: event.tools ?? [],
+          mcpServers: event.mcpServers ?? [],
+          claudeCodeVersion: event.claudeCodeVersion ?? '',
         },
       };
     }

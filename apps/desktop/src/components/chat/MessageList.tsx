@@ -47,16 +47,27 @@ export function MessageList({
     ? Array.from(toolCalls.values())
     : [];
 
+  // Filter out empty assistant messages (the AI SDK may create placeholder
+  // entries from start/text-start events before any text arrives)
+  const visibleMessages = messages.filter((msg) => {
+    if (msg.role !== 'assistant') return true;
+    const text = msg.parts
+      ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
+      .map((p) => p.text)
+      .join('') || '';
+    return text.trim().length > 0;
+  });
+
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-3xl space-y-4 p-4">
-        {messages.map((message, index) => (
+        {visibleMessages.map((message, index) => (
           <div key={message.id}>
             <MessageBubble message={message} />
 
             {/* Render stream event blocks after the last assistant message */}
             {message.role === 'assistant' &&
-              index === messages.length - 1 && (
+              index === visibleMessages.length - 1 && (
                 <div className="mt-2 space-y-1">
                   {/* Thinking blocks */}
                   {thinkingEntries.map(([key, text]) => (
@@ -73,7 +84,7 @@ export function MessageList({
         ))}
 
         {/* Streaming indicator when waiting for first response */}
-        {isLoading && messages[messages.length - 1]?.role === 'user' && (
+        {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
           <div className="flex justify-start">
             <div className="rounded-lg bg-muted px-4 py-3">
               <div className="flex items-center gap-2">
@@ -88,7 +99,7 @@ export function MessageList({
 
         {/* Streaming indicator when assistant is actively generating */}
         {isLoading &&
-          messages[messages.length - 1]?.role === 'assistant' &&
+          visibleMessages[visibleMessages.length - 1]?.role === 'assistant' &&
           toolCallEntries.length === 0 && (
             <div className="flex justify-start pl-4">
               <div className="flex items-center gap-1.5">
@@ -119,20 +130,30 @@ function MessageBubble({ message }: { message: UIMessage }) {
       .map(part => part.text)
       .join('') || '';
 
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-[80%] rounded-lg px-4 py-3 ${
-          isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-foreground'
-        }`}
-      >
-        {isUser ? (
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[80%] rounded-lg px-4 py-3 bg-primary text-primary-foreground">
           <div className="text-sm whitespace-pre-wrap break-words">{text}</div>
-        ) : (
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-start gap-3">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-600 text-white mt-0.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
+          <path d="M8.5 16.5a6.5 6.5 0 0 0 7 0" />
+          <path d="M12 16v6" />
+        </svg>
+      </div>
+      <div className="max-w-[80%] min-w-0">
+        <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
+        <div className="rounded-lg bg-muted px-4 py-3 text-foreground">
           <MarkdownRenderer content={text} />
-        )}
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
 import { useTheme } from '@/hooks/useTheme';
 
-const defaultStatusData: StatusBarProps = {
+const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
   isStreaming: false,
   toolCalls: new Map(),
@@ -24,6 +24,7 @@ const defaultStatusData: StatusBarProps = {
   },
   sessionTotalCost: 0,
   subagentActiveCount: 0,
+  sessionInfo: null,
 };
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
@@ -39,7 +40,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   } = useSessions();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [statusData, setStatusData] = useState<StatusBarProps>(defaultStatusData);
+  const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams'>('chat');
 
   const handleNewChat = async () => {
@@ -109,6 +110,15 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         <SettingsPanel
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}
+          sessionInfo={statusData.sessionInfo ? {
+            model: statusData.sessionInfo.model,
+            tools: statusData.sessionInfo.tools,
+            mcpServers: statusData.sessionInfo.mcpServers,
+            claudeCodeVersion: statusData.sessionInfo.claudeCodeVersion,
+            sessionId: statusData.sessionInfo.sessionId,
+          } : undefined}
+          email={email}
+          plan={plan}
         />
       </div>
       <StatusBar {...statusData} />

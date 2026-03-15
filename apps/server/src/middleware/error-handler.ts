@@ -25,6 +25,17 @@ export const errorHandler: ErrorHandler = (err, c) => {
     );
   }
 
+  // JSON parse errors are client errors (bad request body), not server errors
+  if (err instanceof SyntaxError && err.message.includes('JSON')) {
+    return c.json(
+      {
+        error: err.message,
+        code: 'VALIDATION_ERROR',
+      } satisfies AppError,
+      400
+    );
+  }
+
   // Extract status code and error code from the error if set
   const status = (err as any).status ?? 500;
   const code = (err as any).code ?? statusToCode(status);

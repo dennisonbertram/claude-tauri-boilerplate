@@ -6,7 +6,7 @@ import { MemoryPanel } from '@/components/settings/MemoryPanel';
 import { McpPanel } from '@/components/settings/McpPanel';
 import { HooksPanel } from '@/components/settings/HooksPanel';
 
-type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'mcp' | 'hooks' | 'advanced';
+type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'mcp' | 'hooks' | 'advanced' | 'status';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -17,14 +17,26 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'mcp', label: 'MCP' },
   { id: 'hooks', label: 'Hooks' },
   { id: 'advanced', label: 'Advanced' },
+  { id: 'status', label: 'Status' },
 ];
+
+export interface SessionRuntimeInfo {
+  sessionId: string;
+  model: string;
+  tools: string[];
+  mcpServers: Array<{ name: string; status: string }>;
+  claudeCodeVersion: string;
+}
 
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  sessionInfo?: SessionRuntimeInfo;
+  email?: string;
+  plan?: string;
 }
 
-export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [showApiKey, setShowApiKey] = useState(false);
   const { settings, updateSettings } = useSettings();
@@ -67,14 +79,14 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border" role="tablist">
+        <div className="flex overflow-x-auto border-b border-border scrollbar-hide" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+              className={`shrink-0 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-b-2 border-primary text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -110,6 +122,9 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           {activeTab === 'hooks' && <HooksPanel />}
           {activeTab === 'advanced' && (
             <AdvancedTab settings={settings} updateSettings={updateSettings} />
+          )}
+          {activeTab === 'status' && (
+            <StatusTab sessionInfo={sessionInfo} email={email} plan={plan} />
           )}
         </div>
       </div>
@@ -433,5 +448,102 @@ function ToggleSwitch({
         }`}
       />
     </button>
+  );
+}
+
+// ─── Status Tab ───
+
+function StatusTab({
+  sessionInfo,
+  email,
+  plan,
+}: {
+  sessionInfo?: SessionRuntimeInfo | null;
+  email?: string;
+  plan?: string;
+}) {
+  return (
+    <>
+      {/* Account */}
+      <SettingField label="Account" description="Your Claude subscription info">
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Email</span>
+            <span className="font-mono">{email || 'Not signed in'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Plan</span>
+            <span className="capitalize">{plan || 'Unknown'}</span>
+          </div>
+        </div>
+      </SettingField>
+
+      {/* Session Info */}
+      <SettingField label="Session" description="Current chat session details">
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Model</span>
+            <span className="font-mono">{sessionInfo?.model || 'No active session'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Version</span>
+            <span className="font-mono">{sessionInfo?.claudeCodeVersion || '\u2014'}</span>
+          </div>
+          {sessionInfo?.sessionId && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Session ID</span>
+              <span className="font-mono text-xs truncate max-w-[200px]" title={sessionInfo.sessionId}>
+                {sessionInfo.sessionId}
+              </span>
+            </div>
+          )}
+        </div>
+      </SettingField>
+
+      {/* MCP Servers */}
+      <SettingField label="MCP Servers" description="Connected Model Context Protocol servers">
+        {sessionInfo?.mcpServers && sessionInfo.mcpServers.length > 0 ? (
+          <div className="space-y-1">
+            {sessionInfo.mcpServers.map((server) => (
+              <div key={server.name} className="flex items-center justify-between text-sm">
+                <span className="font-mono">{server.name}</span>
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      server.status === 'connected'
+                        ? 'bg-green-500'
+                        : server.status === 'error'
+                          ? 'bg-red-500'
+                          : 'bg-yellow-500'
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">{server.status}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No MCP servers connected</p>
+        )}
+      </SettingField>
+
+      {/* Tools */}
+      <SettingField
+        label="Available Tools"
+        description={`${sessionInfo?.tools?.length ?? 0} tools available`}
+      >
+        {sessionInfo?.tools && sessionInfo.tools.length > 0 ? (
+          <div className="max-h-48 overflow-y-auto rounded-md border border-input p-2 space-y-0.5">
+            {sessionInfo.tools.map((tool) => (
+              <div key={tool} className="text-xs font-mono text-muted-foreground">
+                {tool}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No active session</p>
+        )}
+      </SettingField>
+    </>
   );
 }
