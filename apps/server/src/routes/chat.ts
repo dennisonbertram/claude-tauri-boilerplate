@@ -10,7 +10,10 @@ import {
   addMessage,
   createSession,
   getSession,
+  getWorkspace,
   updateClaudeSessionId,
+  updateWorkspaceClaudeSession,
+  linkSessionToWorkspace,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
 
@@ -84,6 +87,7 @@ export function createChatRouter(db: Database) {
     const messages = body.messages || [];
     let sessionId = body.sessionId;
     const model = body.model;
+    const workspaceId = body.workspaceId;
 
     // Extract the last user message as the prompt
     const lastUserMessage = messages
@@ -104,6 +108,26 @@ export function createChatRouter(db: Database) {
       '';
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
+
+    // Workspace validation (when workspaceId is provided)
+    let workspaceCwd: string | undefined;
+    let workspaceClaudeSessionId: string | undefined;
+    if (workspaceId) {
+      const workspace = getWorkspace(db, workspaceId);
+      if (!workspace) {
+        return c.json({ error: 'Workspace not found' }, 404);
+      }
+      const terminalStatuses = ['error', 'merged', 'archived'];
+      if (terminalStatuses.includes(workspace.status)) {
+        return c.json(
+          { error: `Workspace is in '${workspace.status}' state and cannot be used for chat` },
+          400
+        );
+      }
+      workspaceCwd = workspace.worktreePath;
+      workspaceClaudeSessionId = workspace.claudeSessionId ?? undefined;
+      console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
+    }
 
     // Look up an existing session (if provided) so we can resume
     // the Claude conversation. Session creation is deferred until
@@ -148,15 +172,27 @@ export function createChatRouter(db: Database) {
             createSession(db, appSessionId, generateRandomName());
           }
 
+          // Link the session to the workspace if applicable
+          if (workspaceId) {
+            linkSessionToWorkspace(db, appSessionId, workspaceId);
+          }
+
           // Persist the user message now that we have a valid session
           addMessage(db, crypto.randomUUID(), appSessionId, 'user', prompt);
         }
 
         try {
+          // Determine the Claude session ID for resume:
+          // 1. Existing app session's claudeSessionId (explicit sessionId provided)
+          // 2. Workspace's stored claudeSessionId (workspaceId provided, no explicit sessionId)
+          const resumeSessionId =
+            existingSession?.claudeSessionId ?? workspaceClaudeSessionId ?? undefined;
+
           for await (const event of streamClaude({
             prompt,
-            sessionId: existingSession?.claudeSessionId ?? undefined,
+            sessionId: resumeSessionId,
             model,
+            cwd: workspaceCwd,
           })) {
             // Lazily create the session on first successful event
             ensureSession();
@@ -230,6 +266,11 @@ export function createChatRouter(db: Database) {
           // Update the claude session ID on the app session
           if (appSessionId && claudeSessionId) {
             updateClaudeSessionId(db, appSessionId, claudeSessionId);
+          }
+
+          // Persist the claude session ID on the workspace for future resume
+          if (workspaceId && claudeSessionId) {
+            updateWorkspaceClaudeSession(db, workspaceId, claudeSessionId);
           }
         }
 

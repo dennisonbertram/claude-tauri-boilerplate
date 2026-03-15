@@ -55,6 +55,7 @@ interface ChatPageProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   selectedModel?: string;
   onAutoName?: (sessionId: string) => void;
+  workspaceId?: string;
 }
 
 /**
@@ -69,7 +70,7 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, selectedModel, onAutoName }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, selectedModel, onAutoName, workspaceId }: ChatPageProps) {
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const {
@@ -186,9 +187,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     () =>
       new DefaultChatTransport({
         api: `${API_BASE}/api/chat`,
-        body: { sessionId, model: selectedModel },
+        body: { sessionId, model: selectedModel, ...(workspaceId ? { workspaceId } : {}) },
       }),
-    [sessionId, selectedModel]
+    [sessionId, selectedModel, workspaceId]
   );
 
   // Stable fallback ID so we don't recreate the Chat on every render
@@ -623,13 +624,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
           onRewind={handleRewindConfirm}
           onCancel={handleRewindCancel}
         />
-      )}
-      {/* Context usage indicator + cost display */}
-      {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting || messageCosts.length > 0) && (
-        <div className="px-4 flex items-center">
-          <ContextIndicator usage={contextUsage} isCompacting={isCompacting} />
-          <CostDisplay messageCosts={messageCosts} sessionTotalCost={sessionTotalCost} />
-        </div>
       )}
       {/* Error banner */}
       <ErrorBanner

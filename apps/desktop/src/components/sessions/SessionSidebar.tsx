@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
 
-type ViewType = 'chat' | 'teams';
+type ViewType = 'chat' | 'teams' | 'workspaces';
 
 interface SessionSidebarProps {
   sessions: Session[];
@@ -53,6 +53,17 @@ export function SessionSidebar({
             }`}
           >
             Chat
+          </button>
+          <button
+            data-testid="view-tab-workspaces"
+            onClick={() => onSwitchView('workspaces')}
+            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+              activeView === 'workspaces'
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Workspaces
           </button>
           <button
             data-testid="view-tab-teams"

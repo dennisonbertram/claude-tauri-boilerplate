@@ -29,6 +29,7 @@ export interface ChatRequest {
   }>;
   sessionId?: string;
   model?: string;
+  workspaceId?: string;
 }
 
 // --- Content Block Types ---
@@ -521,4 +522,74 @@ export interface RewindPreview {
   checkpointId: string;
   filesAffected: string[];
   messagesRemoved: number;
+}
+
+// --- Project & Workspace Types ---
+
+export type WorkspaceStatus =
+  | 'creating'
+  | 'setup_running'
+  | 'ready'
+  | 'active'
+  | 'merging'
+  | 'discarding'
+  | 'merged'
+  | 'archived'
+  | 'error';
+
+export type ProjectHealth = 'ok' | 'missing_repo' | 'invalid_repo';
+
+export interface Project {
+  id: string;
+  name: string;
+  repoPath: string;
+  repoPathCanonical: string;
+  defaultBranch: string;
+  setupCommand?: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Workspace {
+  id: string;
+  projectId: string;
+  name: string;
+  branch: string;
+  worktreePath: string;
+  worktreePathCanonical: string;
+  baseBranch: string;
+  status: WorkspaceStatus;
+  claudeSessionId?: string;
+  setupPid?: number;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProjectRequest {
+  repoPath: string;
+}
+
+export interface CreateWorkspaceRequest {
+  name: string;
+  baseBranch?: string;
+}
+
+/** Valid workspace status transitions */
+export const VALID_WORKSPACE_TRANSITIONS: Record<WorkspaceStatus, WorkspaceStatus[]> = {
+  creating: ['setup_running', 'ready', 'error'],
+  setup_running: ['ready', 'error'],
+  ready: ['active', 'merging', 'discarding', 'archived', 'error'],
+  active: ['ready', 'merging', 'discarding', 'error'],
+  merging: ['merged', 'error'],
+  discarding: ['archived', 'error'],
+  merged: [],
+  archived: [],
+  error: ['ready', 'creating', 'archived'],
+};
+
+/** Check whether a workspace status transition is valid */
+export function isValidTransition(from: WorkspaceStatus, to: WorkspaceStatus): boolean {
+  return VALID_WORKSPACE_TRANSITIONS[from]?.includes(to) ?? false;
 }

@@ -7,12 +7,19 @@ import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
+import { ProjectSidebar } from '@/components/workspaces/ProjectSidebar';
+import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
+import { AddProjectDialog } from '@/components/workspaces/AddProjectDialog';
+import { CreateWorkspaceDialog } from '@/components/workspaces/CreateWorkspaceDialog';
 import { StatusBar } from '@/components/StatusBar';
 import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
+import { useProjects } from '@/hooks/useProjects';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useTheme } from '@/hooks/useTheme';
 import { DEFAULT_MODEL } from '@/lib/models';
 import { Agentation } from 'agentation';
+import type { Project, Workspace } from '@claude-tauri/shared';
 
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
@@ -44,8 +51,23 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
-  const [activeView, setActiveView] = useState<'chat' | 'teams'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL.id);
+
+  // Workspace state
+  const { projects, addProject, removeProject } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const [createWorkspaceProject, setCreateWorkspaceProject] = useState<Project | null>(null);
+  const { workspaces, addWorkspace, refresh: refreshWorkspaces } = useWorkspaces(selectedProjectId);
+
+  // Build workspaces-by-project map for all projects
+  // For simplicity in MVP, we only load workspaces for the selected project
+  const workspacesByProject: Record<string, Workspace[]> = {};
+  if (selectedProjectId) {
+    workspacesByProject[selectedProjectId] = workspaces;
+  }
 
   const handleNewChat = async () => {
     await createSession();
@@ -53,6 +75,38 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
     setStatusData(data);
+  }, []);
+
+  const handleSelectWorkspace = useCallback((ws: Workspace) => {
+    setSelectedProjectId(ws.projectId);
+    setSelectedWorkspace(ws);
+  }, []);
+
+  const handleAddProject = useCallback(async (repoPath: string) => {
+    const project = await addProject(repoPath);
+    setSelectedProjectId(project.id);
+  }, [addProject]);
+
+  const handleCreateWorkspace = useCallback(async (name: string, baseBranch?: string) => {
+    await addWorkspace(name, baseBranch);
+  }, [addWorkspace]);
+
+  const handleWorkspaceUpdate = useCallback(() => {
+    refreshWorkspaces();
+    setSelectedWorkspace(null);
+  }, [refreshWorkspaces]);
+
+  // When switching to workspaces view, auto-select first project
+  const handleSwitchView = useCallback((view: 'chat' | 'teams' | 'workspaces') => {
+    setActiveView(view);
+    if (view === 'workspaces' && !selectedProjectId && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [selectedProjectId, projects]);
+
+  // Track when a project is clicked in the sidebar (expand + load workspaces)
+  const handleProjectClick = useCallback((projectId: string) => {
+    setSelectedProjectId(projectId);
   }, []);
 
   return (
@@ -72,7 +126,23 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             onExportSession={exportSession}
             onOpenSettings={() => setSettingsOpen(true)}
             activeView={activeView}
-            onSwitchView={setActiveView}
+            onSwitchView={handleSwitchView}
+          />
+        )}
+        {activeView === 'workspaces' && (
+          <ProjectSidebar
+            projects={projects}
+            workspacesByProject={workspacesByProject}
+            selectedWorkspaceId={selectedWorkspace?.id ?? null}
+            onSelectWorkspace={handleSelectWorkspace}
+            onAddProject={() => setAddProjectOpen(true)}
+            onCreateWorkspace={(project) => {
+              handleProjectClick(project.id);
+              setCreateWorkspaceProject(project);
+            }}
+            onDeleteProject={removeProject}
+            activeView={activeView}
+            onSwitchView={handleSwitchView}
           />
         )}
         {activeView === 'teams' && (
@@ -81,14 +151,20 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             <div className="flex border-b border-border">
               <button
                 data-testid="view-tab-chat"
-                onClick={() => setActiveView('chat')}
+                onClick={() => handleSwitchView('chat')}
                 className="flex-1 px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
               >
                 Chat
               </button>
               <button
+                onClick={() => handleSwitchView('workspaces')}
+                className="flex-1 px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+              >
+                Workspaces
+              </button>
+              <button
                 data-testid="view-tab-teams"
-                onClick={() => setActiveView('teams')}
+                onClick={() => handleSwitchView('teams')}
                 className="flex-1 px-3 py-2 text-sm font-medium transition-colors border-b-2 border-primary text-foreground"
               >
                 Teams
@@ -110,6 +186,21 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             selectedModel={selectedModel}
             onAutoName={autoNameSession}
           />
+        ) : activeView === 'workspaces' ? (
+          selectedWorkspace ? (
+            <WorkspacePanel
+              workspace={selectedWorkspace}
+              onStatusChange={handleStatusChange}
+              selectedModel={selectedModel}
+              onWorkspaceUpdate={handleWorkspaceUpdate}
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                Select a workspace or create one to get started
+              </p>
+            </div>
+          )
         ) : (
           <TeamsView />
         )}
@@ -128,6 +219,22 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         />
       </div>
       <StatusBar {...statusData} selectedModel={selectedModel} onModelChange={setSelectedModel} />
+
+      {/* Workspace dialogs */}
+      <AddProjectDialog
+        isOpen={addProjectOpen}
+        onClose={() => setAddProjectOpen(false)}
+        onSubmit={handleAddProject}
+      />
+      {createWorkspaceProject && (
+        <CreateWorkspaceDialog
+          isOpen={true}
+          projectName={createWorkspaceProject.name}
+          defaultBranch={createWorkspaceProject.defaultBranch}
+          onClose={() => setCreateWorkspaceProject(null)}
+          onSubmit={handleCreateWorkspace}
+        />
+      )}
     </div>
   );
 }

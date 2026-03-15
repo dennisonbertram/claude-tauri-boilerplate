@@ -6,6 +6,7 @@ export interface ClaudeStreamOptions {
   prompt: string;
   sessionId?: string;
   model?: string;
+  cwd?: string;
 }
 
 export async function* streamClaude(
@@ -21,6 +22,10 @@ export async function* streamClaude(
 
   if (options.model) {
     queryOptions.model = options.model;
+  }
+
+  if (options.cwd) {
+    queryOptions.cwd = options.cwd;
   }
 
   const stream = query({
