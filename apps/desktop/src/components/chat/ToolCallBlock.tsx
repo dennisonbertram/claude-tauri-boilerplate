@@ -18,6 +18,8 @@ import { FileReadDisplay } from './FileReadDisplay';
 import { FileEditDisplay } from './FileEditDisplay';
 import { FileWriteDisplay } from './FileWriteDisplay';
 import { BashDisplay } from './BashDisplay';
+import { GrepDisplay } from './GrepDisplay';
+import { GlobDisplay } from './GlobDisplay';
 
 interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -25,6 +27,9 @@ interface ToolCallBlockProps {
 
 /** Tool names that get specialized file operation displays */
 const FILE_OPERATION_TOOLS = new Set(['Read', 'Edit', 'Write']);
+
+/** Tool names that get specialized search displays */
+const SEARCH_TOOLS = new Set(['Grep', 'Glob']);
 
 /** Maps tool names to Lucide icon components */
 function getToolIcon(name: string) {
@@ -134,6 +139,16 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
         return <FileEditDisplay toolCall={toolCall} />;
       case 'Write':
         return <FileWriteDisplay toolCall={toolCall} />;
+    }
+  }
+
+  // Route to specialized search displays
+  if (SEARCH_TOOLS.has(toolCall.name)) {
+    switch (toolCall.name) {
+      case 'Grep':
+        return <GrepDisplay toolCall={toolCall} />;
+      case 'Glob':
+        return <GlobDisplay toolCall={toolCall} />;
     }
   }
 

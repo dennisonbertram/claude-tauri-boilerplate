@@ -519,7 +519,7 @@ describe('ToolCallBlock routing to specialized displays', () => {
     expect(screen.getByTestId('bash-command')).toBeInTheDocument();
   });
 
-  it('still renders generic display for Grep tool calls', () => {
+  it('routes Grep tool calls to GrepDisplay', () => {
     render(
       <ToolCallBlock
         toolCall={makeToolCall({
@@ -529,10 +529,10 @@ describe('ToolCallBlock routing to specialized displays', () => {
         })}
       />
     );
-    expect(screen.getByText('Grep')).toBeInTheDocument();
+    expect(screen.getByTestId('grep-pattern')).toHaveTextContent('TODO');
   });
 
-  it('still renders generic display for Glob tool calls', () => {
+  it('routes Glob tool calls to GlobDisplay', () => {
     render(
       <ToolCallBlock
         toolCall={makeToolCall({
@@ -542,7 +542,7 @@ describe('ToolCallBlock routing to specialized displays', () => {
         })}
       />
     );
-    expect(screen.getByText('Glob')).toBeInTheDocument();
+    expect(screen.getByTestId('glob-pattern')).toHaveTextContent('**/*.ts');
   });
 });
 
