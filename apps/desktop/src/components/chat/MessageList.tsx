@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface MessageListProps {
   messages: UIMessage[];
@@ -68,7 +69,11 @@ function MessageBubble({ message }: { message: UIMessage }) {
             : 'bg-muted text-foreground'
         }`}
       >
-        <div className="text-sm whitespace-pre-wrap break-words">{text}</div>
+        {isUser ? (
+          <div className="text-sm whitespace-pre-wrap break-words">{text}</div>
+        ) : (
+          <MarkdownRenderer content={text} />
+        )}
       </div>
     </div>
   );
