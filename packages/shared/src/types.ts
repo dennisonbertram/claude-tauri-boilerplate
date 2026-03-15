@@ -360,3 +360,23 @@ export interface PlanDecisionRequest {
 }
 
 export type PlanDecisionAction = 'approve' | 'reject';
+
+// --- Git Types ---
+
+export interface GitFileStatus {
+  path: string;
+  status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked';
+}
+
+export interface GitStatus {
+  branch: string;
+  isClean: boolean;
+  modifiedFiles: GitFileStatus[];
+  stagedFiles: GitFileStatus[];
+  error?: string;
+}
+
+export interface GitDiff {
+  diff: string;
+  error?: string;
+}
