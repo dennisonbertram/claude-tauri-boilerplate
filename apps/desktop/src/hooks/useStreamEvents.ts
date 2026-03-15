@@ -39,6 +39,15 @@ export interface UsageState {
   durationMs: number;
 }
 
+export type PlanStatus = 'idle' | 'planning' | 'review' | 'approved' | 'rejected';
+
+export interface PlanState {
+  planId: string;
+  status: PlanStatus;
+  content: string;
+  feedback?: string;
+}
+
 export interface StreamEventsState {
   toolCalls: Map<string, ToolCallState>;
   thinkingBlocks: Map<string, string>;
@@ -51,6 +60,8 @@ export interface StreamEventsState {
   pendingPermissions: Map<string, PendingPermission>;
   /** Denied permission records for display in chat */
   deniedPermissions: DeniedPermission[];
+  /** Current plan state */
+  plan: PlanState | null;
 }
 
 // --- Actions ---
@@ -58,6 +69,8 @@ export interface StreamEventsState {
 type StreamEventsAction =
   | { type: 'PROCESS_EVENT'; event: StreamEvent }
   | { type: 'RESOLVE_PERMISSION'; requestId: string }
+  | { type: 'APPROVE_PLAN'; planId: string }
+  | { type: 'REJECT_PLAN'; planId: string; feedback?: string }
   | { type: 'RESET' };
 
 // --- Initial State ---
@@ -71,6 +84,7 @@ export const initialStreamEventsState: StreamEventsState = {
   blockIndexToToolId: new Map(),
   pendingPermissions: new Map(),
   deniedPermissions: [],
+  plan: null,
 };
 
 // --- Reducer ---
@@ -89,6 +103,7 @@ export function streamEventsReducer(
       blockIndexToToolId: new Map(),
       pendingPermissions: new Map(),
       deniedPermissions: [],
+      plan: null,
     };
   }
 
@@ -96,6 +111,26 @@ export function streamEventsReducer(
     const newPending = new Map(state.pendingPermissions);
     newPending.delete(action.requestId);
     return { ...state, pendingPermissions: newPending };
+  }
+
+  if (action.type === 'APPROVE_PLAN') {
+    if (!state.plan) return state;
+    return {
+      ...state,
+      plan: { ...state.plan, status: 'approved' },
+    };
+  }
+
+  if (action.type === 'REJECT_PLAN') {
+    if (!state.plan) return state;
+    return {
+      ...state,
+      plan: {
+        ...state.plan,
+        status: 'rejected',
+        feedback: action.feedback,
+      },
+    };
   }
 
   const event = action.event;
@@ -240,6 +275,62 @@ export function streamEventsReducer(
       };
     }
 
+    case 'plan:start': {
+      return {
+        ...state,
+        plan: {
+          planId: event.planId,
+          status: 'planning',
+          content: '',
+        },
+      };
+    }
+
+    case 'plan:content': {
+      if (!state.plan) return state;
+      return {
+        ...state,
+        plan: {
+          ...state.plan,
+          content: state.plan.content + event.text,
+        },
+      };
+    }
+
+    case 'plan:complete': {
+      if (!state.plan) return state;
+      return {
+        ...state,
+        plan: {
+          ...state.plan,
+          status: 'review',
+        },
+      };
+    }
+
+    case 'plan:approved': {
+      if (!state.plan) return state;
+      return {
+        ...state,
+        plan: {
+          ...state.plan,
+          status: 'approved',
+        },
+      };
+    }
+
+    case 'plan:rejected': {
+      if (!state.plan) return state;
+      return {
+        ...state,
+        plan: {
+          ...state.plan,
+          status: 'rejected',
+          feedback: event.feedback,
+        },
+      };
+    }
+
     default:
       return state;
   }
@@ -263,6 +354,14 @@ export function useStreamEvents() {
 
   const resolvePermission = useCallback((requestId: string) => {
     dispatch({ type: 'RESOLVE_PERMISSION', requestId });
+  }, []);
+
+  const approvePlan = useCallback((planId: string) => {
+    dispatch({ type: 'APPROVE_PLAN', planId });
+  }, []);
+
+  const rejectPlan = useCallback((planId: string, feedback?: string) => {
+    dispatch({ type: 'REJECT_PLAN', planId, feedback });
   }, []);
 
   /**
@@ -293,6 +392,8 @@ export function useStreamEvents() {
     processEvent,
     reset,
     resolvePermission,
+    approvePlan,
+    rejectPlan,
     onData,
   };
 }
