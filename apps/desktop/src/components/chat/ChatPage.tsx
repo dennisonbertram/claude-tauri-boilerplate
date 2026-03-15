@@ -13,6 +13,8 @@ import { useStreamEvents } from '@/hooks/useStreamEvents';
 import type { UsageState } from '@/hooks/useStreamEvents';
 import { useCommands } from '@/hooks/useCommands';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
+import { ShortcutHelpModal } from '@/components/ShortcutHelpModal';
 import { ContextIndicator } from './ContextIndicator';
 import type { ContextUsage } from './ContextIndicator';
 import { CostDisplay } from './CostDisplay';
@@ -42,6 +44,7 @@ function toUIMessage(msg: Message): UIMessage {
 
 export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPageProps) {
   const [input, setInput] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
   const {
     toolCalls,
     thinkingBlocks,
@@ -137,6 +140,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
       clearChat,
       createSession: onCreateSession ?? (() => {}),
       exportSession: onExportSession ?? (() => {}),
+      showHelp: () => setHelpOpen(true),
     }),
     [clearChat, onCreateSession, onExportSession]
   );
@@ -172,6 +176,63 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     setInput('');
     closePalette();
   }, [closePalette]);
+
+  // Keyboard shortcuts
+  const shortcutDefs: ShortcutDefinition[] = useMemo(
+    () => [
+      {
+        id: 'new-session',
+        key: 'n',
+        meta: true,
+        label: 'New Session',
+        category: 'chat' as const,
+        handler: () => onCreateSession?.(),
+      },
+      {
+        id: 'clear-chat',
+        key: 'l',
+        meta: true,
+        label: 'Clear Chat',
+        category: 'chat' as const,
+        handler: clearChat,
+      },
+      {
+        id: 'toggle-sidebar',
+        key: '/',
+        meta: true,
+        label: 'Toggle Sidebar',
+        category: 'navigation' as const,
+        handler: () => {
+          // Placeholder: toggle sidebar visibility
+        },
+      },
+      {
+        id: 'help',
+        key: '?',
+        meta: true,
+        shift: true,
+        label: 'Show Help',
+        category: 'general' as const,
+        handler: () => setHelpOpen((prev) => !prev),
+      },
+      {
+        id: 'escape',
+        key: 'Escape',
+        label: 'Cancel / Close',
+        category: 'general' as const,
+        handler: () => {
+          if (helpOpen) {
+            setHelpOpen(false);
+          } else if (paletteOpen) {
+            handlePaletteClose();
+          }
+        },
+      },
+    ],
+    [onCreateSession, clearChat, helpOpen, paletteOpen, handlePaletteClose]
+  );
+
+  const { shortcuts } = useKeyboardShortcuts(shortcutDefs);
 
   // Load persisted messages when the session changes
   useEffect(() => {
@@ -397,6 +458,11 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         paletteCommands={filteredCommands}
         onCommandSelect={handleCommandSelectAndClear}
         onPaletteClose={handlePaletteClose}
+      />
+      <ShortcutHelpModal
+        isOpen={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        shortcuts={shortcuts}
       />
     </div>
   );
