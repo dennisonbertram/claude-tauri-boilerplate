@@ -1,6 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic(); // uses ANTHROPIC_API_KEY from env
+import { query } from '@anthropic-ai/claude-agent-sdk';
 
 export async function generateSessionTitle(
   messages: Array<{ role: string; content: string }>
@@ -8,20 +6,33 @@ export async function generateSessionTitle(
   // Take first 4-6 messages max to keep it cheap
   const context = messages.slice(0, 6);
 
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 30,
-    messages: [
-      {
-        role: "user",
-        content: `Generate a short title (3-6 words) for this conversation. Return ONLY the title, no quotes, no punctuation at the end.\n\nConversation:\n${context.map((m) => `${m.role}: ${m.content}`).join("\n")}`,
-      },
-    ],
+  const prompt = `Generate a short title (3-6 words) for this conversation. Return ONLY the title, no quotes, no punctuation at the end.\n\nConversation:\n${context.map((m) => `${m.role}: ${m.content}`).join('\n')}`;
+
+  const stream = query({
+    prompt,
+    options: {
+      model: 'claude-haiku-4-5-20251001',
+      maxTurns: 1,
+    },
   });
 
-  const text = response.content[0];
-  if (text.type === "text") {
-    return text.text.trim().slice(0, 60); // cap at 60 chars
+  let title = '';
+
+  for await (const event of stream) {
+    if (
+      event.type === 'stream_event' &&
+      event.event.type === 'content_block_delta' &&
+      event.event.delta.type === 'text_delta'
+    ) {
+      title += event.event.delta.text;
+    }
   }
-  return "Chat Session";
+
+  title = title.trim();
+
+  if (!title) {
+    return 'Chat Session';
+  }
+
+  return title.slice(0, 60); // cap at 60 chars
 }
