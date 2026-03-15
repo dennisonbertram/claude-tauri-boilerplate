@@ -361,6 +361,22 @@ export interface PlanDecisionRequest {
 
 export type PlanDecisionAction = 'approve' | 'reject';
 
+// --- Instruction / Rules Types ---
+
+export interface InstructionFile {
+  path: string;
+  level: 'project' | 'user' | 'global' | 'managed';
+  content: string;
+  exists: boolean;
+}
+
+export interface RuleFile {
+  path: string;
+  name: string;
+  content: string;
+  pathScope?: string[];
+}
+
 // --- Git Types ---
 
 export interface GitFileStatus {
