@@ -5,6 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
 
+type ViewType = 'chat' | 'teams';
+
 interface SessionSidebarProps {
   sessions: Session[];
   activeSessionId: string | null;
@@ -17,6 +19,8 @@ interface SessionSidebarProps {
   onForkSession: (id: string) => void;
   onExportSession: (id: string, format: 'json' | 'md') => void;
   onOpenSettings?: () => void;
+  activeView?: ViewType;
+  onSwitchView?: (view: ViewType) => void;
 }
 
 export function SessionSidebar({
@@ -31,9 +35,38 @@ export function SessionSidebar({
   onForkSession,
   onExportSession,
   onOpenSettings,
+  activeView,
+  onSwitchView,
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
+      {/* View toggle tabs (Chat / Teams) */}
+      {onSwitchView && (
+        <div className="flex border-b border-border">
+          <button
+            data-testid="view-tab-chat"
+            onClick={() => onSwitchView('chat')}
+            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+              activeView === 'chat'
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Chat
+          </button>
+          <button
+            data-testid="view-tab-teams"
+            onClick={() => onSwitchView('teams')}
+            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+              activeView === 'teams'
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Teams
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between p-3">
         <UserBadge email={email} plan={plan} />
         {onOpenSettings && (
