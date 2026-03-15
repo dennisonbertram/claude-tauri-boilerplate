@@ -28,10 +28,20 @@ import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
 
+export interface ChatPageStatusData {
+  model: string | null;
+  isStreaming: boolean;
+  toolCalls: Map<string, import('@/hooks/useStreamEvents').ToolCallState>;
+  cumulativeUsage: import('@/hooks/useStreamEvents').CumulativeUsage;
+  sessionTotalCost: number;
+  subagentActiveCount: number;
+}
+
 interface ChatPageProps {
   sessionId: string | null;
   onCreateSession?: () => void | Promise<void>;
   onExportSession?: () => void | Promise<void>;
+  onStatusChange?: (data: ChatPageStatusData) => void;
 }
 
 /**
@@ -46,7 +56,7 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange }: ChatPageProps) {
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const {
@@ -311,6 +321,18 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
   }, [sessionId, setMessages]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  // Report status data to parent for StatusBar
+  useEffect(() => {
+    onStatusChange?.({
+      model: sessionInfo?.model ?? null,
+      isStreaming: isLoading,
+      toolCalls,
+      cumulativeUsage,
+      sessionTotalCost,
+      subagentActiveCount,
+    });
+  }, [sessionInfo?.model, isLoading, toolCalls, cumulativeUsage, sessionTotalCost, subagentActiveCount, onStatusChange]);
 
   const chatError: ChatError | null = useMemo(() => {
     if (!error) return null;
