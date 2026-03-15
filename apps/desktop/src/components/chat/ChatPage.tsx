@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import type { UIMessage } from '@ai-sdk/react';
@@ -10,10 +10,14 @@ import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
+import type { UsageState } from '@/hooks/useStreamEvents';
 import { useCommands } from '@/hooks/useCommands';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { ContextIndicator } from './ContextIndicator';
 import type { ContextUsage } from './ContextIndicator';
+import { CostDisplay } from './CostDisplay';
+import { useCostTracking } from '@/hooks/useCostTracking';
+import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
@@ -48,8 +52,17 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     rejectPlan,
     cumulativeUsage,
     isCompacting,
+    usage,
+    sessionInfo,
     reset: resetStreamEvents,
   } = useStreamEvents();
+
+  const {
+    messageCosts,
+    sessionTotalCost,
+    addMessageCost,
+    reset: resetCostTracking,
+  } = useCostTracking();
 
   // Claude's context window is 200k tokens
   const MAX_CONTEXT_TOKENS = 200_000;
@@ -65,6 +78,38 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     [cumulativeUsage]
   );
 
+  // Record cost when a session:result event provides usage data
+  const lastRecordedUsageRef = useRef<UsageState | null>(null);
+  useEffect(() => {
+    if (usage && usage !== lastRecordedUsageRef.current) {
+      lastRecordedUsageRef.current = usage;
+      const model = sessionInfo?.model ?? 'claude-sonnet-4';
+      const costUsd =
+        usage.costUsd > 0
+          ? usage.costUsd
+          : calculateCost(
+              {
+                inputTokens: usage.inputTokens,
+                outputTokens: usage.outputTokens,
+                cacheReadTokens: usage.cacheReadTokens,
+                cacheCreationTokens: usage.cacheCreationTokens,
+              },
+              getModelFromName(model)
+            );
+
+      addMessageCost({
+        messageId: `turn-${Date.now()}`,
+        model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cacheReadTokens: usage.cacheReadTokens,
+        cacheCreationTokens: usage.cacheCreationTokens,
+        costUsd,
+        durationMs: usage.durationMs,
+      });
+    }
+  }, [usage, sessionInfo, addMessageCost]);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -76,8 +121,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
 
   const { messages, sendMessage, status, setMessages, error, clearError } =
     useChat({
-      // Use sessionId as the chat id so useChat resets its internal state
-      // when switching sessions
       id: sessionId ?? undefined,
       transport,
     });
@@ -86,7 +129,8 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
   const clearChat = useCallback(() => {
     setMessages([]);
     resetStreamEvents();
-  }, [setMessages, resetStreamEvents]);
+    resetCostTracking();
+  }, [setMessages, resetStreamEvents, resetCostTracking]);
 
   const commandContext = useMemo(
     () => ({
@@ -108,7 +152,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     handleCommandSelect,
   } = useCommandPalette({ commands, filterCommands });
 
-  // Wrap setInput to also drive palette state
   const handleInputChange = useCallback(
     (value: string) => {
       setInput(value);
@@ -117,7 +160,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     [handlePaletteInput]
   );
 
-  // When a command is selected, clear the input and execute
   const handleCommandSelectAndClear = useCallback(
     (cmd: typeof commands[number]) => {
       setInput('');
@@ -167,10 +209,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  /**
-   * Convert the AI SDK Error into a ChatError for the ErrorBanner component.
-   * Maps common HTTP status messages to the appropriate error type.
-   */
   const chatError: ChatError | null = useMemo(() => {
     if (!error) return null;
 
@@ -195,13 +233,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     ) {
       return { type: 'network', message: msg, retryable: true };
     }
-    // Default to API error (covers 5xx like 503, generic failures, etc.)
     return { type: 'api', message: msg, retryable: true };
   }, [error]);
 
-  /**
-   * Retry the last user message by re-submitting it.
-   */
   const handleRetry = useCallback(() => {
     clearError();
     const lastUserMessage = [...messages]
@@ -226,10 +260,8 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
 
   const handlePermissionDecision = useCallback(
     async (result: PermissionDecisionResult) => {
-      // Remove from pending state immediately for responsive UI
       resolvePermission(result.requestId);
 
-      // Send decision to backend
       try {
         await fetch(`${API_BASE}/api/chat/permission`, {
           method: 'POST',
@@ -300,7 +332,6 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
     const text = input.trim();
     if (!text || isLoading) return;
 
-    // Don't send slash commands as chat messages
     if (text.startsWith('/')) {
       return;
     }
@@ -318,10 +349,11 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession }: ChatPa
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
       />
-      {/* Context usage indicator */}
-      {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting) && (
-        <div className="border-t border-border px-4">
+      {/* Context usage indicator + cost display */}
+      {(contextUsage.inputTokens > 0 || contextUsage.outputTokens > 0 || isCompacting || messageCosts.length > 0) && (
+        <div className="border-t border-border px-4 flex items-center">
           <ContextIndicator usage={contextUsage} isCompacting={isCompacting} />
+          <CostDisplay messageCosts={messageCosts} sessionTotalCost={sessionTotalCost} />
         </div>
       )}
       {/* Error banner */}
