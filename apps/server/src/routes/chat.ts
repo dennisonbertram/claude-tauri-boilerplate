@@ -11,7 +11,7 @@ import {
   getSession,
   updateClaudeSessionId,
 } from '../db';
-import type { ChatRequest } from '@claude-tauri/shared';
+import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
 export function createChatRouter(db: Database) {
   const router = new Hono();
@@ -62,27 +62,58 @@ export function createChatRouter(db: Database) {
         let startSent = false;
         let fullResponse = '';
         let streamErrored = false;
+        // Track active text blocks for proper AI SDK text ID management
+        let currentTextId = 0;
+        let activeTextBlockIndex: number | null = null;
 
         try {
           for await (const event of streamClaude({
             prompt,
             sessionId: existingSession?.claudeSessionId ?? undefined,
           })) {
-            if (event.type === 'session') {
-              claudeSessionId = event.sessionId;
-            } else if (event.type === 'text-delta') {
-              // AI SDK v6 requires start + text-start before text-delta
-              if (!startSent) {
-                writer.write({ type: 'start' });
-                writer.write({ type: 'text-start', id: 'text-0' });
-                startSent = true;
-              }
-              writer.write({
-                type: 'text-delta',
-                id: 'text-0',
-                delta: event.text,
-              });
-              fullResponse += event.text;
+            // Send every event as data for the custom event handler (rich UI)
+            writer.write({ type: 'data', data: [event] });
+
+            // Also map key events to AI SDK protocol for useChat() compatibility
+            switch (event.type) {
+              case 'session:init':
+                claudeSessionId = event.sessionId;
+                break;
+
+              case 'text:delta':
+                if (!startSent) {
+                  writer.write({ type: 'start' });
+                  writer.write({
+                    type: 'text-start',
+                    id: `text-${currentTextId}`,
+                  });
+                  startSent = true;
+                  activeTextBlockIndex = event.blockIndex;
+                } else if (event.blockIndex !== activeTextBlockIndex) {
+                  // New text block -- close previous and start new
+                  currentTextId++;
+                  writer.write({
+                    type: 'text-start',
+                    id: `text-${currentTextId}`,
+                  });
+                  activeTextBlockIndex = event.blockIndex;
+                }
+                writer.write({
+                  type: 'text-delta',
+                  id: `text-${currentTextId}`,
+                  delta: event.text,
+                });
+                fullResponse += event.text;
+                break;
+
+              case 'error':
+                // Errors are already on the data channel; no additional
+                // AI SDK protocol action needed since the stream continues
+                break;
+
+              case 'session:result':
+                // Result is on the data channel for the frontend reducer
+                break;
             }
           }
         } catch {
