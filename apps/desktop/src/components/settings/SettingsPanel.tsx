@@ -3,8 +3,10 @@ import { useSettings } from '@/hooks/useSettings';
 import type { AppSettings } from '@/hooks/useSettings';
 import { InstructionsPanel } from '@/components/settings/InstructionsPanel';
 import { MemoryPanel } from '@/components/settings/MemoryPanel';
+import { McpPanel } from '@/components/settings/McpPanel';
+import { HooksPanel } from '@/components/settings/HooksPanel';
 
-type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'advanced';
+type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'mcp' | 'hooks' | 'advanced';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -12,6 +14,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'instructions', label: 'Instructions' },
   { id: 'memory', label: 'Memory' },
+  { id: 'mcp', label: 'MCP' },
+  { id: 'hooks', label: 'Hooks' },
   { id: 'advanced', label: 'Advanced' },
 ];
 
@@ -102,6 +106,8 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           )}
           {activeTab === 'instructions' && <InstructionsPanel />}
           {activeTab === 'memory' && <MemoryPanel />}
+          {activeTab === 'mcp' && <McpPanel />}
+          {activeTab === 'hooks' && <HooksPanel />}
           {activeTab === 'advanced' && (
             <AdvancedTab settings={settings} updateSettings={updateSettings} />
           )}
