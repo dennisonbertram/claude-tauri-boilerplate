@@ -4,11 +4,6 @@ import type { AuthStatus } from '@claude-tauri/shared';
 const AUTH_TIMEOUT_MS = 10_000;
 
 export async function getAuthStatus(): Promise<AuthStatus> {
-  // Clear ANTHROPIC_API_KEY to force subscription auth detection.
-  // If this key is set (even invalid), it overrides subscription auth.
-  const savedKey = process.env.ANTHROPIC_API_KEY;
-  delete process.env.ANTHROPIC_API_KEY;
-
   try {
     const result = await Promise.race([
       detectAuth(),
@@ -20,11 +15,6 @@ export async function getAuthStatus(): Promise<AuthStatus> {
       authenticated: false,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
-  } finally {
-    // Restore the key if it was set
-    if (savedKey !== undefined) {
-      process.env.ANTHROPIC_API_KEY = savedKey;
-    }
   }
 }
 
