@@ -18,7 +18,7 @@ import { useSessions } from '@/hooks/useSessions';
 import { useProjects } from '@/hooks/useProjects';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useTheme } from '@/hooks/useTheme';
-import { DEFAULT_MODEL } from '@/lib/models';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Agentation } from 'agentation';
 import type { Project, Workspace } from '@claude-tauri/shared';
 
@@ -53,7 +53,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL.id);
 
   // Workspace state
   const { projects, addProject, removeProject } = useProjects();
@@ -185,7 +184,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onCreateSession={handleNewChat}
               onExportSession={() => exportSession(activeSessionId, 'json')}
               onStatusChange={handleStatusChange}
-              selectedModel={selectedModel}
               onAutoName={autoNameSession}
             />
           ) : (
@@ -196,7 +194,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             <WorkspacePanel
               workspace={selectedWorkspace}
               onStatusChange={handleStatusChange}
-              selectedModel={selectedModel}
               onWorkspaceUpdate={handleWorkspaceUpdate}
             />
           ) : (
@@ -223,7 +220,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           plan={plan}
         />
       </div>
-      <StatusBar {...statusData} selectedModel={selectedModel} onModelChange={setSelectedModel} />
+      <StatusBar {...statusData} />
 
       {/* Workspace dialogs */}
       <AddProjectDialog
@@ -309,10 +306,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthGate>
-        {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
-      </AuthGate>
-      {import.meta.env.DEV && <Agentation />}
+      <SettingsProvider>
+        <AuthGate>
+          {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
+        </AuthGate>
+        {import.meta.env.DEV && <Agentation />}
+      </SettingsProvider>
     </ErrorBoundary>
   );
 }

@@ -1,9 +1,8 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsPanel } from './SettingsPanel';
-import { DEFAULT_SETTINGS } from '@/hooks/useSettings';
-import type { AppSettings } from '@/hooks/useSettings';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -27,6 +26,10 @@ const localStorageMock = (() => {
 
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<SettingsProvider>{ui}</SettingsProvider>);
+}
+
 describe('SettingsPanel', () => {
   const defaultProps = {
     isOpen: true,
@@ -41,18 +44,18 @@ describe('SettingsPanel', () => {
   // ─── Panel open/close ───
 
   test('renders panel when isOpen is true', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
   test('does not render panel content when isOpen is false', () => {
-    render(<SettingsPanel {...defaultProps} isOpen={false} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 
   test('calls onClose when close button is clicked', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const closeButton = screen.getByTestId('settings-close-button');
     await user.click(closeButton);
@@ -63,15 +66,14 @@ describe('SettingsPanel', () => {
   // ─── Tab navigation ───
 
   test('shows General tab by default', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
     expect(screen.getByText('API Key')).toBeInTheDocument();
-    expect(screen.getByText('Default Model')).toBeInTheDocument();
     expect(screen.getByText('Max Tokens')).toBeInTheDocument();
   });
 
   test('switches to Model tab on click', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     await user.click(screen.getByRole('tab', { name: /model/i }));
 
@@ -82,7 +84,7 @@ describe('SettingsPanel', () => {
 
   test('switches to Appearance tab on click', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     await user.click(screen.getByRole('tab', { name: /appearance/i }));
 
@@ -94,7 +96,7 @@ describe('SettingsPanel', () => {
 
   test('switches to Advanced tab on click', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     await user.click(screen.getByRole('tab', { name: /advanced/i }));
 
@@ -105,14 +107,8 @@ describe('SettingsPanel', () => {
 
   // ─── Default values render correctly ───
 
-  test('renders default model value', () => {
-    render(<SettingsPanel {...defaultProps} />);
-    const select = screen.getByTestId('model-select') as HTMLSelectElement;
-    expect(select.value).toBe('sonnet');
-  });
-
   test('renders default max tokens value', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
     const slider = screen.getByTestId('max-tokens-slider') as HTMLInputElement;
     expect(slider.value).toBe('4096');
   });
@@ -120,14 +116,14 @@ describe('SettingsPanel', () => {
   // ─── API key masking ───
 
   test('API key input is masked by default', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
     const input = screen.getByTestId('api-key-input') as HTMLInputElement;
     expect(input.type).toBe('password');
   });
 
   test('API key can be toggled to visible', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const toggleButton = screen.getByTestId('api-key-toggle');
     await user.click(toggleButton);
@@ -138,7 +134,7 @@ describe('SettingsPanel', () => {
 
   test('API key visibility toggle switches back to masked', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const toggleButton = screen.getByTestId('api-key-toggle');
     await user.click(toggleButton); // show
@@ -150,20 +146,9 @@ describe('SettingsPanel', () => {
 
   // ─── Settings persistence to localStorage ───
 
-  test('changing model persists to localStorage', async () => {
-    const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
-
-    const select = screen.getByTestId('model-select');
-    await user.selectOptions(select, 'opus');
-
-    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
-    expect(stored.model).toBe('opus');
-  });
-
   test('changing API key persists to localStorage', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const input = screen.getByTestId('api-key-input');
     await user.type(input, 'sk-ant-test-key-123');
@@ -174,7 +159,7 @@ describe('SettingsPanel', () => {
 
   test('changing theme persists to localStorage', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     await user.click(screen.getByRole('tab', { name: /appearance/i }));
 
@@ -186,7 +171,7 @@ describe('SettingsPanel', () => {
   });
 
   test('changing max turns persists to localStorage', async () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     await fireEvent.click(screen.getByRole('tab', { name: /advanced/i }));
 
@@ -197,30 +182,11 @@ describe('SettingsPanel', () => {
     expect(stored.maxTurns).toBe(50);
   });
 
-  // ─── Settings loaded from localStorage ───
-
-  test('loads saved settings on mount', () => {
-    const savedSettings: AppSettings = {
-      ...DEFAULT_SETTINGS,
-      model: 'opus',
-      apiKey: 'saved-key',
-    };
-    localStorageMock.setItem(
-      'claude-tauri-settings',
-      JSON.stringify(savedSettings)
-    );
-
-    render(<SettingsPanel {...defaultProps} />);
-
-    const select = screen.getByTestId('model-select') as HTMLSelectElement;
-    expect(select.value).toBe('opus');
-  });
-
   // ─── Overlay click closes panel ───
 
   test('clicking overlay calls onClose', async () => {
     const user = userEvent.setup();
-    render(<SettingsPanel {...defaultProps} />);
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const overlay = screen.getByTestId('settings-overlay');
     await user.click(overlay);
