@@ -8,6 +8,9 @@ export async function generateSessionTitle(
 
   const prompt = `Generate a short title (3-6 words) for this conversation. Return ONLY the title, no quotes, no punctuation at the end.\n\nConversation:\n${context.map((m) => `${m.role}: ${m.content}`).join('\n')}`;
 
+  const savedKey = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = '';
+
   const stream = query({
     prompt,
     options: {
@@ -18,10 +21,14 @@ export async function generateSessionTitle(
 
   let title = '';
 
-  for await (const event of stream) {
-    if (event.type === 'result' && event.subtype === 'success' && event.result) {
-      title = String(event.result);
+  try {
+    for await (const event of stream) {
+      if (event.type === 'result' && event.subtype === 'success' && event.result) {
+        title = String(event.result);
+      }
     }
+  } finally {
+    process.env.ANTHROPIC_API_KEY = savedKey ?? '';
   }
 
   title = title.trim();

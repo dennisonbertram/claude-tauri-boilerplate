@@ -33,15 +33,23 @@ export async function* streamClaude(
     queryOptions.cwd = options.cwd;
   }
 
+  // Clear API key so SDK uses subscription auth, not API key billing
+  const savedKey = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = '';
+
   const stream = query({
     prompt: options.prompt,
     options: queryOptions,
   });
 
-  for await (const event of stream) {
-    const mapped = mapSdkEvent(event);
-    for (const streamEvent of mapped) {
-      yield streamEvent;
+  try {
+    for await (const event of stream) {
+      const mapped = mapSdkEvent(event);
+      for (const streamEvent of mapped) {
+        yield streamEvent;
+      }
     }
+  } finally {
+    process.env.ANTHROPIC_API_KEY = savedKey ?? '';
   }
 }
