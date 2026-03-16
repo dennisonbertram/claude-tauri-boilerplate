@@ -1,15 +1,15 @@
 import type { WorkspaceStatus } from '@claude-tauri/shared';
 
 const statusConfig: Record<WorkspaceStatus, { label: string; classes: string }> = {
-  creating: { label: 'Creating', classes: 'bg-yellow-500/20 text-yellow-400' },
-  setup_running: { label: 'Setting up', classes: 'bg-yellow-500/20 text-yellow-400 animate-pulse' },
-  ready: { label: 'Ready', classes: 'bg-muted text-muted-foreground' },
-  active: { label: 'Active', classes: 'bg-green-500/20 text-green-400' },
-  merging: { label: 'Merging', classes: 'bg-blue-500/20 text-blue-400 animate-pulse' },
-  discarding: { label: 'Discarding', classes: 'bg-orange-500/20 text-orange-400 animate-pulse' },
-  merged: { label: 'Merged', classes: 'bg-green-500/20 text-green-400' },
-  archived: { label: 'Archived', classes: 'bg-muted text-muted-foreground' },
-  error: { label: 'Error', classes: 'bg-red-500/20 text-red-400' },
+  creating: { label: 'Creating', classes: 'bg-amber-900/50 text-amber-400 border border-amber-700/50 animate-pulse' },
+  setup_running: { label: 'Setting up', classes: 'bg-amber-900/50 text-amber-400 border border-amber-700/50 animate-pulse' },
+  ready: { label: 'Ready', classes: 'bg-green-900/50 text-green-400 border border-green-700/50' },
+  active: { label: 'Active', classes: 'bg-blue-900/50 text-blue-400 border border-blue-700/50' },
+  merging: { label: 'Merging', classes: 'bg-purple-900/50 text-purple-400 border border-purple-700/50 animate-pulse' },
+  discarding: { label: 'Discarding', classes: 'bg-orange-900/50 text-orange-400 border border-orange-700/50 animate-pulse' },
+  merged: { label: 'Merged', classes: 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50' },
+  archived: { label: 'Archived', classes: 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50' },
+  error: { label: 'Error', classes: 'bg-red-900/50 text-red-400 border border-red-700/50' },
 };
 
 interface WorkspaceStatusBadgeProps {
