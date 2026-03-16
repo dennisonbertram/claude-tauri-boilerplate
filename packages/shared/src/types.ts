@@ -29,6 +29,7 @@ export interface ChatRequest {
   }>;
   sessionId?: string;
   model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'max';
   workspaceId?: string;
 }
 

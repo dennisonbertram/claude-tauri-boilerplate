@@ -6,6 +6,7 @@ export interface ClaudeStreamOptions {
   prompt: string;
   sessionId?: string;
   model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'max';
   cwd?: string;
 }
 
@@ -22,6 +23,10 @@ export async function* streamClaude(
 
   if (options.model) {
     queryOptions.model = options.model;
+  }
+
+  if (options.effort) {
+    queryOptions.effort = options.effort;
   }
 
   if (options.cwd) {
