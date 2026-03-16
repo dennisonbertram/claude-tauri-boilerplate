@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
+import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
@@ -178,14 +179,18 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           </div>
         )}
         {activeView === 'chat' ? (
-          <ChatPage
-            sessionId={activeSessionId}
-            onCreateSession={handleNewChat}
-            onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
-            onStatusChange={handleStatusChange}
-            selectedModel={selectedModel}
-            onAutoName={autoNameSession}
-          />
+          activeSessionId ? (
+            <ChatPage
+              sessionId={activeSessionId}
+              onCreateSession={handleNewChat}
+              onExportSession={() => exportSession(activeSessionId, 'json')}
+              onStatusChange={handleStatusChange}
+              selectedModel={selectedModel}
+              onAutoName={autoNameSession}
+            />
+          ) : (
+            <WelcomeScreen onNewChat={handleNewChat} />
+          )
         ) : activeView === 'workspaces' ? (
           selectedWorkspace ? (
             <WorkspacePanel
