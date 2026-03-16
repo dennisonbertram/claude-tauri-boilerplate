@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useSettingsContext } from '@/contexts/SettingsContext';
 
 export interface AppSettings {
   // General
   apiKey: string;
-  model: 'sonnet' | 'opus' | 'haiku';
+  model: string;
   maxTokens: number;
 
   // Model
@@ -26,7 +26,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   // General
   apiKey: '',
-  model: 'sonnet',
+  model: 'claude-sonnet-4-6',
   maxTokens: 4096,
 
   // Model
@@ -48,11 +48,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const STORAGE_KEY = 'claude-tauri-settings';
 
-function loadSettings(): AppSettings {
+// Migration map: old short model names -> full model IDs
+const MODEL_MIGRATION: Record<string, string> = {
+  sonnet: 'claude-sonnet-4-6',
+  opus: 'claude-opus-4-6',
+  haiku: 'claude-haiku-4-5-20251001',
+};
+
+export function loadSettings(): AppSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(stored);
+    // Migrate old short model names to full model IDs
+    if (parsed.model && parsed.model in MODEL_MIGRATION) {
+      parsed.model = MODEL_MIGRATION[parsed.model];
+    }
     // Merge with defaults so new keys get default values
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
@@ -60,26 +71,14 @@ function loadSettings(): AppSettings {
   }
 }
 
-function saveSettings(settings: AppSettings): void {
+export function saveSettings(settings: AppSettings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+/**
+ * Hook to access shared app settings.
+ * Must be used within a SettingsProvider.
+ */
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(loadSettings);
-
-  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...updates };
-      saveSettings(next);
-      return next;
-    });
-  }, []);
-
-  const resetSettings = useCallback(() => {
-    const defaults = { ...DEFAULT_SETTINGS };
-    setSettings(defaults);
-    saveSettings(defaults);
-  }, []);
-
-  return { settings, updateSettings, resetSettings };
+  return useSettingsContext();
 }

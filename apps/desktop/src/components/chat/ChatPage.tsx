@@ -27,6 +27,7 @@ import { useCostTracking } from '@/hooks/useCostTracking';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { useCheckpoints } from '@/hooks/useCheckpoints';
 import { SuggestionChips } from './SuggestionChips';
+import { useSettings } from '@/hooks/useSettings';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
 
@@ -53,7 +54,6 @@ interface ChatPageProps {
   onCreateSession?: () => void | Promise<void>;
   onExportSession?: () => void | Promise<void>;
   onStatusChange?: (data: ChatPageStatusData) => void;
-  selectedModel?: string;
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
 }
@@ -70,7 +70,8 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, selectedModel, onAutoName, workspaceId }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, onAutoName, workspaceId }: ChatPageProps) {
+  const { settings } = useSettings();
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const {
@@ -187,9 +188,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     () =>
       new DefaultChatTransport({
         api: `${API_BASE}/api/chat`,
-        body: { sessionId, model: selectedModel, ...(workspaceId ? { workspaceId } : {}) },
+        body: { sessionId, model: settings.model, effort: settings.effort, ...(workspaceId ? { workspaceId } : {}) },
       }),
-    [sessionId, selectedModel, workspaceId]
+    [sessionId, settings.model, settings.effort, workspaceId]
   );
 
   // Stable fallback ID so we don't recreate the Chat on every render

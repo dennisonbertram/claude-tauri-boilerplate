@@ -13,11 +13,10 @@ type Tab = 'chat' | 'diff';
 interface WorkspacePanelProps {
   workspace: Workspace;
   onStatusChange?: (data: ChatPageStatusData) => void;
-  selectedModel?: string;
   onWorkspaceUpdate?: () => void;
 }
 
-export function WorkspacePanel({ workspace, onStatusChange, selectedModel, onWorkspaceUpdate }: WorkspacePanelProps) {
+export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
 
@@ -88,7 +87,6 @@ export function WorkspacePanel({ workspace, onStatusChange, selectedModel, onWor
             key={workspace.id}
             sessionId={null}
             onStatusChange={onStatusChange}
-            selectedModel={selectedModel}
             workspaceId={workspace.id}
           />
         ) : (

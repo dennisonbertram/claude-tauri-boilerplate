@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { formatCost } from '@/lib/pricing';
 import { AVAILABLE_MODELS, getModelDisplay } from '@/lib/models';
+import { useSettings } from '@/hooks/useSettings';
 import type { ToolCallState, CumulativeUsage } from '@/hooks/useStreamEvents';
 
 const API_BASE = 'http://localhost:3131';
@@ -15,8 +16,6 @@ export interface StatusBarProps {
   cumulativeUsage: CumulativeUsage;
   sessionTotalCost: number;
   subagentActiveCount: number;
-  selectedModel?: string;
-  onModelChange?: (modelId: string) => void;
 }
 
 // --- Main StatusBar ---
@@ -28,8 +27,6 @@ export function StatusBar({
   cumulativeUsage,
   sessionTotalCost,
   subagentActiveCount,
-  selectedModel,
-  onModelChange,
 }: StatusBarProps) {
   return (
     <div
@@ -38,7 +35,7 @@ export function StatusBar({
     >
       {/* Left section */}
       <div data-testid="status-bar-left" className="flex items-center gap-0.5 px-2 min-w-0">
-        <ModelSegment model={model} selectedModel={selectedModel} onModelChange={onModelChange} />
+        <ModelSegment model={model} />
         <PermissionModeSegment />
         <GitBranchSegment />
         <ConnectionIndicator />
@@ -64,13 +61,11 @@ export function StatusBar({
 
 function ModelSegment({
   model,
-  selectedModel,
-  onModelChange,
 }: {
   model: string | null;
-  selectedModel?: string;
-  onModelChange?: (modelId: string) => void;
 }) {
+  const { settings, updateSettings } = useSettings();
+  const selectedModel = settings.model;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -133,7 +128,7 @@ function ModelSegment({
               key={m.id}
               type="button"
               onClick={() => {
-                onModelChange?.(m.id);
+                updateSettings({ model: m.id });
                 setOpen(false);
               }}
               className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors hover:bg-muted/50 ${

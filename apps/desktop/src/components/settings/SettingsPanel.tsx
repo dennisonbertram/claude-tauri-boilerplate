@@ -168,24 +168,6 @@ function GeneralTab({
         </div>
       </SettingField>
 
-      {/* Model */}
-      <SettingField label="Default Model" description="Claude model to use for new chats">
-        <select
-          data-testid="model-select"
-          value={settings.model}
-          onChange={(e) =>
-            updateSettings({
-              model: e.target.value as AppSettings['model'],
-            })
-          }
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="sonnet">Claude Sonnet</option>
-          <option value="opus">Claude Opus</option>
-          <option value="haiku">Claude Haiku</option>
-        </select>
-      </SettingField>
-
       {/* Max Tokens */}
       <SettingField
         label="Max Tokens"
