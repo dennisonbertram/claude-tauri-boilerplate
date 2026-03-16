@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { isTauri } from '@/lib/platform';
 
 interface AddProjectDialogProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
   const [repoPath, setRepoPath] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,14 +40,34 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
   }, [onClose]);
 
   const handleBrowse = async () => {
-    try {
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const selected = await open({ directory: true, multiple: false, title: 'Select a Git Repository' });
-      if (selected) setRepoPath(selected as string);
-    } catch (err) {
-      console.warn('[AddProjectDialog] Browse failed (Tauri dialog not available?):', err);
+    if (isTauri()) {
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const selected = await open({ directory: true, multiple: false, title: 'Select a Git Repository' });
+        if (selected) setRepoPath(selected as string);
+      } catch (err) {
+        console.warn('[AddProjectDialog] Browse failed (Tauri dialog not available?):', err);
+      }
+    } else {
+      folderInputRef.current?.click();
     }
   };
+
+  const handleFolderSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // webkitRelativePath gives paths like "folder-name/sub/file.txt"
+    // Extract the root folder name from the first file
+    const relativePath = files[0].webkitRelativePath;
+    if (relativePath) {
+      const folderName = relativePath.split('/')[0];
+      setRepoPath(folderName);
+    }
+
+    // Reset the input so the same folder can be re-selected
+    e.target.value = '';
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,6 +117,17 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
             </Button>
           </div>
         </form>
+        {/* Hidden file input for browser fallback folder selection */}
+        {!isTauri() && (
+          <input
+            ref={folderInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFolderSelected}
+            // @ts-expect-error -- webkitdirectory is a non-standard attribute
+            webkitdirectory=""
+          />
+        )}
       </div>
     </div>
   );
