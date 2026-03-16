@@ -23,6 +23,24 @@ const statusColors: Record<string, string> = {
   untracked: 'text-muted-foreground',
 };
 
+function renderDiff(diff: string) {
+  return diff.split('\n').map((line, i) => {
+    let className = 'px-3 py-0 leading-5 font-mono text-xs block whitespace-pre';
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      className += ' bg-green-950 text-green-400';
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      className += ' bg-red-950 text-red-400';
+    } else if (line.startsWith('@@')) {
+      className += ' text-cyan-500 bg-zinc-900/50';
+    } else if (line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('---') || line.startsWith('+++')) {
+      className += ' text-zinc-400 bg-zinc-900/30 font-semibold';
+    } else {
+      className += ' text-zinc-300';
+    }
+    return <span key={i} className={className}>{line}</span>;
+  });
+}
+
 export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
   const { diff, changedFiles, loading, error, fetchDiff } = useWorkspaceDiff(workspaceId);
 
@@ -83,9 +101,9 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
       {/* Diff content */}
       <ScrollArea className="flex-1 min-h-0">
         {diff ? (
-          <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all text-muted-foreground">
-            {diff}
-          </pre>
+          <div className="font-mono text-xs overflow-auto">
+            {renderDiff(diff)}
+          </div>
         ) : (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
             No changes
