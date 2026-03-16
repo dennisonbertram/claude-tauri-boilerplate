@@ -4,6 +4,9 @@ import type { AuthStatus } from '@claude-tauri/shared';
 const AUTH_TIMEOUT_MS = 10_000;
 
 export async function getAuthStatus(): Promise<AuthStatus> {
+  const savedKey = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = '';
+
   try {
     const result = await Promise.race([
       detectAuth(),
@@ -15,6 +18,8 @@ export async function getAuthStatus(): Promise<AuthStatus> {
       authenticated: false,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
+  } finally {
+    process.env.ANTHROPIC_API_KEY = savedKey ?? '';
   }
 }
 
