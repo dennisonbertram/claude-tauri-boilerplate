@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "lsof -ti :3131 | xargs kill 2>/dev/null; bun --watch src/index.ts",
     "test": "bun test",
     "build": "bun build --compile src/index.ts --outfile dist/server"
   },
