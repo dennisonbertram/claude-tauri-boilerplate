@@ -38,6 +38,9 @@ const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['se
 };
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
+  // Initialize theme inside SettingsProvider so useSettings() works correctly
+  useTheme();
+
   const {
     sessions,
     activeSessionId,
@@ -242,9 +245,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 }
 
 function App() {
-  // Initialize theme: applies dark/light class to <html> and listens for system preference changes
-  useTheme();
-
   const [serverReady, setServerReady] = useState(!isTauri());
   const [error, setError] = useState<string | null>(null);
 
