@@ -65,8 +65,8 @@ export function MessageList({
           <div key={message.id}>
             <MessageBubble message={message} />
 
-            {/* Render stream event blocks after the last assistant message */}
-            {message.role === 'assistant' &&
+            {/* Render stream event blocks after the last assistant message, only while streaming */}
+            {isLoading && message.role === 'assistant' &&
               index === visibleMessages.length - 1 && (
                 <div className="mt-2 space-y-1">
                   {/* Thinking blocks */}
