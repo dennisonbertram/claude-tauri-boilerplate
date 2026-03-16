@@ -8,5 +8,10 @@
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "build:sidecar": "bun build --compile apps/server/src/index.ts --outfile apps/desktop/src-tauri/binaries/server-$(rustc -vV | grep host | cut -d' ' -f2)"
-  }
+  },
+  "dependencies": {},
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

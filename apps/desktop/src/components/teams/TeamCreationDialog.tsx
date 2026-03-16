@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { AgentDefinition, TeamConfig } from '@claude-tauri/shared';
 
 interface TeamCreationDialogProps {
@@ -101,6 +101,14 @@ export function TeamCreationDialog({
     setError(null);
     onClose();
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleClose]);
 
   if (!isOpen) return null;
 

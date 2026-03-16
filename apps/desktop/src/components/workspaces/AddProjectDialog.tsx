@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -37,24 +37,51 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
     onClose();
   }, [onClose]);
 
+  const handleBrowse = async () => {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({ directory: true, multiple: false, title: 'Select a Git Repository' });
+      if (selected) setRepoPath(selected as string);
+    } catch {
+      // Tauri not available (web preview) — ignore
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg border border-border bg-popover p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleClose}>
+      <div className="w-full max-w-md rounded-lg border border-border bg-popover p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold text-foreground">Add Project</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Enter the path to a local git repository.
         </p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <Input
-              type="text"
-              placeholder="/path/to/your/repo"
-              value={repoPath}
-              onChange={(e) => setRepoPath(e.target.value)}
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="/path/to/your/repo"
+                value={repoPath}
+                onChange={(e) => setRepoPath(e.target.value)}
+                autoFocus
+                className="flex-1"
+              />
+              <Button type="button" variant="outline" onClick={handleBrowse} disabled={submitting}>
+                Browse...
+              </Button>
+            </div>
+            {!repoPath.trim() && error === null && (
+              <p className="mt-1.5 text-sm text-muted-foreground">Path is required</p>
+            )}
             {error && (
               <p className="mt-1.5 text-sm text-destructive">{error}</p>
             )}
