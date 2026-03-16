@@ -42,8 +42,8 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({ directory: true, multiple: false, title: 'Select a Git Repository' });
       if (selected) setRepoPath(selected as string);
-    } catch {
-      // Tauri not available (web preview) — ignore
+    } catch (err) {
+      console.warn('[AddProjectDialog] Browse failed (Tauri dialog not available?):', err);
     }
   };
 
