@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Workspace } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
@@ -19,6 +19,20 @@ interface WorkspacePanelProps {
 export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
+  // Load the existing session for this workspace on mount.
+  useEffect(() => {
+    setSessionLoaded(false);
+    api.getWorkspaceSession(workspace.id).then((session) => {
+      setSessionId(session?.id ?? null);
+      setSessionLoaded(true);
+    }).catch(() => {
+      setSessionId(null);
+      setSessionLoaded(true);
+    });
+  }, [workspace.id]);
 
   const canMerge = workspace.status === 'ready' || workspace.status === 'active';
   const canDiscard = workspace.status === 'ready' || workspace.status === 'active';
@@ -83,12 +97,18 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
       {/* Content */}
       <div className="flex-1 min-h-0 flex flex-col">
         {activeTab === 'chat' ? (
-          <ChatPage
-            key={workspace.id}
-            sessionId={null}
-            onStatusChange={onStatusChange}
-            workspaceId={workspace.id}
-          />
+          sessionLoaded ? (
+            <ChatPage
+              key={workspace.id}
+              sessionId={sessionId}
+              onStatusChange={onStatusChange}
+              workspaceId={workspace.id}
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          )
         ) : (
           <WorkspaceDiffView workspaceId={workspace.id} />
         )}

@@ -108,3 +108,9 @@ export async function discardWorkspace(id: string): Promise<{ success: boolean }
   }
   return res.json();
 }
+
+export async function getWorkspaceSession(workspaceId: string): Promise<{ id: string } | null> {
+  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/session`);
+  if (!res.ok) return null;
+  return res.json();
+}

@@ -337,6 +337,15 @@ export function deleteWorkspace(db: Database, id: string) {
   return stmt.run(id);
 }
 
+export function getSessionForWorkspace(db: Database, workspaceId: string) {
+  const stmt = db.prepare(
+    `SELECT * FROM sessions WHERE workspace_id = ? ORDER BY updated_at DESC LIMIT 1`
+  );
+  const row = stmt.get(workspaceId) as any;
+  if (!row) return null;
+  return mapSession(row);
+}
+
 export function linkSessionToWorkspace(db: Database, sessionId: string, workspaceId: string) {
   const stmt = db.prepare(
     `UPDATE sessions SET workspace_id = ?, updated_at = datetime('now') WHERE id = ?`

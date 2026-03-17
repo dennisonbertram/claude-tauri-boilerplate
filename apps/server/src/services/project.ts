@@ -151,6 +151,19 @@ export async function removeProject(
         // Best-effort directory cleanup.
       }
     }
+
+    // Delete the git branch too (best-effort).
+    try {
+      const branchExists = await wt.branchExists(
+        project.repoPathCanonical,
+        workspace.branch
+      );
+      if (branchExists) {
+        await wt.deleteBranch(project.repoPathCanonical, workspace.branch, true);
+      }
+    } catch {
+      // Best-effort branch deletion.
+    }
   }
 
   const result = dbDeleteProject(db, id);

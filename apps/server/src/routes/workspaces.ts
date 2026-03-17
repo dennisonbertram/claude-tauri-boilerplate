@@ -7,6 +7,7 @@ import {
   getWorkspace,
   transitionWorkspaceStatus,
   deleteWorkspace as dbDeleteWorkspace,
+  getSessionForWorkspace,
 } from '../db';
 import { worktreeOrchestrator } from '../services/worktree-orchestrator';
 import { worktreeService } from '../services/worktree';
@@ -81,6 +82,17 @@ export function createFlatWorkspaceRouter(db: Database) {
       );
     }
     return c.json(workspace);
+  });
+
+  // GET /api/workspaces/:id/session — Get the most recent session for a workspace
+  router.get('/:id/session', (c) => {
+    const id = c.req.param('id');
+    const workspace = getWorkspace(db, id);
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
+    }
+    const session = getSessionForWorkspace(db, id);
+    return c.json(session ?? null);
   });
 
   // DELETE /api/workspaces/:id — Delete a workspace
