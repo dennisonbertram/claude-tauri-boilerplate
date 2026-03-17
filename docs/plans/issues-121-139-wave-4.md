@@ -29,38 +29,38 @@ Notes:
 
 - [x] Live issue details were pulled directly from GitHub before work started.
 - [x] A new integration branch `codex/wave4-merge` was created from `codex/wave3-merge`.
-- [ ] Ten isolated issue worktrees are created for the first parallel batch.
+- [x] Ten isolated issue worktrees are created for the first parallel batch.
 - [ ] Every worked issue gets either:
-  - [ ] a failing test first, then a fix, then passing regression coverage, or
-  - [ ] regression coverage only when the fix already exists on the integration line.
-- [ ] `docs/plans/` contains the wave plan plus per-issue handoff notes with short manual browser-control verification steps.
-- [ ] `docs/plans/INDEX.md` remains current.
+  - [x] a failing test first, then a fix, then passing regression coverage, or
+  - [x] regression coverage only when the fix already exists on the integration line.
+- [x] `docs/plans/` contains the wave plan plus per-issue handoff notes with short manual browser-control verification steps.
+- [x] `docs/plans/INDEX.md` remains current.
 - [ ] GitHub issues touched in this wave receive the `partially-done` label and a handoff comment pointing to the integration branch or commit with manual test notes.
-- [ ] All issue branches are merged into `codex/wave4-merge`.
-- [ ] Targeted frontend and server validation pass on `codex/wave4-merge`.
-- [ ] A cleanup/review wave resolves integration conflicts and red tests before any merge to `main`.
+- [x] All issue branches are merged into `codex/wave4-merge`.
+- [x] Targeted frontend and server validation pass on `codex/wave4-merge`.
+- [x] A cleanup/review wave resolves integration conflicts and red tests before any merge to `main`.
 - [ ] `codex/wave4-merge` lands on `main` only if `main` is still clean at merge time.
 
 ## First Parallel Batch
 
-- [ ] `#121` memory path resolution
-- [ ] `#123` Create Team model IDs
-- [ ] `#124` duplicate workspace error messaging
-- [ ] `#125` export feedback toast
+- [x] `#121` memory path resolution
+- [x] `#123` Create Team model IDs
+- [x] `#124` duplicate workspace error messaging
+- [x] `#125` export feedback toast
 - [ ] `#128` chat scroll-to-bottom affordance
-- [ ] `#131` project delete workspace branch cleanup
-- [ ] `#132` workspace chat history reload
-- [ ] `#137` Team dialog validation clearing
-- [ ] `#138` compact toast duration audit/regression
-- [ ] `#139` permission mode status bar binding
+- [x] `#131` project delete workspace branch cleanup
+- [x] `#132` workspace chat history reload
+- [x] `#137` Team dialog validation clearing
+- [x] `#138` compact toast duration audit/regression
+- [x] `#139` permission mode status bar binding
 
 ## Integration and Review
 
-- [ ] Validate `#122` on the current integration line and add a handoff note if no code change is needed.
-- [ ] Merge issue branches into `codex/wave4-merge`.
-- [ ] Run targeted frontend Vitest from `apps/desktop`.
-- [ ] Run targeted Bun/server tests from `apps/server`.
-- [ ] Perform manual curl and browser verification notes for each worked issue.
-- [ ] Run a short cleanup/review pass for regression and merge mistakes.
+- [x] Validate `#122` on the current integration line and add a handoff note if no code change is needed.
+- [x] Merge issue branches into `codex/wave4-merge`.
+- [x] Run targeted frontend Vitest from `apps/desktop`.
+- [x] Run targeted Bun/server tests from `apps/server`.
+- [x] Perform manual curl and browser verification notes for each worked issue.
+- [x] Run a short cleanup/review pass for regression and merge mistakes.
 - [ ] Update GitHub issues with status labels, comments, and handoff guidance.
 - [ ] Merge `codex/wave4-merge` to `main` only if `main` remains clean.

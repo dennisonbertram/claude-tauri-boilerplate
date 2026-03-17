@@ -1,10 +1,28 @@
 import '@testing-library/jest-dom/vitest';
-import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { UIMessage } from '@ai-sdk/react';
 import { MessageList } from '../MessageList';
 
 Element.prototype.scrollIntoView = vi.fn();
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    ((callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(performance.now()), 0)) as typeof requestAnimationFrame
+  );
+  vi.stubGlobal(
+    'cancelAnimationFrame',
+    ((id: number) => window.clearTimeout(id)) as typeof cancelAnimationFrame
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 function makeMessage(index: number): UIMessage {
   return {
@@ -65,6 +83,52 @@ describe('MessageList scroll affordance', () => {
     fireEvent.scroll(viewport);
 
     expect(screen.getByTestId('message-list-scroll-to-bottom')).toBeInTheDocument();
+  });
+
+  it('binds the viewport listener when the viewport is available on the next frame', async () => {
+    const messages = Array.from({ length: 20 }, (_, index) =>
+      makeMessage(index)
+    );
+    const originalQuerySelector = HTMLElement.prototype.querySelector;
+    let firstViewportLookup = true;
+
+    HTMLElement.prototype.querySelector = function (
+      selector: string
+    ): Element | null {
+      if (
+        selector === '[data-slot="scroll-area-viewport"]' &&
+        firstViewportLookup
+      ) {
+        firstViewportLookup = false;
+        return null;
+      }
+
+      return originalQuerySelector.call(this, selector);
+    };
+
+    try {
+      const { container } = render(
+        <MessageList messages={messages} isLoading={false} />
+      );
+      const viewport = getViewport(container);
+
+      mockScrollableViewport(viewport, {
+        scrollHeight: 1200,
+        clientHeight: 300,
+        scrollTop: 0,
+      });
+
+      await act(async () => {
+        vi.runAllTimers();
+      });
+
+      fireEvent.scroll(viewport);
+      expect(
+        screen.getByTestId('message-list-scroll-to-bottom')
+      ).toBeInTheDocument();
+    } finally {
+      HTMLElement.prototype.querySelector = originalQuerySelector;
+    }
   });
 
   it('scrolls to latest and hides when the affordance is clicked', async () => {
