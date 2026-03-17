@@ -216,6 +216,34 @@ describe('Workspace Diff & Changed Files', () => {
       const body = await res.json();
       expect(body.code).toBe('VALIDATION_ERROR');
     });
+
+    test('requires fromRef and toRef together for changed-files historical range', async () => {
+      const ws = await createWorkspace('changed-files-range-validation');
+
+      const res = await app.request(`/api/workspaces/${ws.id}/changed-files?toRef=main`);
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe('VALIDATION_ERROR');
+      expect(body.error).toContain('fromRef and toRef');
+    });
+
+    test('returns error for invalid historical refs', async () => {
+      const ws = await createWorkspace('range-invalid-refs');
+
+      const changedRes = await app.request(
+        `/api/workspaces/${ws.id}/changed-files?fromRef=not-a-ref&toRef=also-not-a-ref`
+      );
+      expect(changedRes.status).toBe(500);
+      const changedBody = await changedRes.json();
+      expect(changedBody.code).toBe('GIT_ERROR');
+
+      const diffRes = await app.request(
+        `/api/workspaces/${ws.id}/diff?fromRef=not-a-ref&toRef=also-not-a-ref`
+      );
+      expect(diffRes.status).toBe(500);
+      const diffBody = await diffRes.json();
+      expect(diffBody.code).toBe('GIT_ERROR');
+    });
   });
 
   describe('GET /api/workspaces/:id/revisions', () => {
