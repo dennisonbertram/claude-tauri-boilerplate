@@ -417,6 +417,22 @@ describe('Session Management - Rename, Fork, Export', () => {
       expect(disposition).toContain('.json');
     });
 
+    test('sanitizes filenames for titles with parentheses', async () => {
+      const session = await createSessionWithMessages('Issue (142) title (test)', [
+        { role: 'user', content: 'Hello' },
+      ]);
+
+      const res = await app.request(
+        `/api/sessions/${session.id}/export?format=json`
+      );
+
+      const disposition = res.headers.get('content-disposition');
+      expect(disposition).not.toBeNull();
+      expect(disposition).toContain('Issue_142_title_test.json');
+      expect(disposition).not.toContain('__');
+      expect(disposition).not.toMatch(/_\\.(json|md)$/);
+    });
+
     test('Markdown export includes Content-Disposition header for download', async () => {
       const session = await createSessionWithMessages('Download MD', [
         { role: 'user', content: 'Hi' },

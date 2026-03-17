@@ -208,6 +208,44 @@ describe('WebSearchDisplay', () => {
     expect(screen.getByTestId('websearch-empty')).toBeInTheDocument();
   });
 
+  it('sanitizes javascript and data URLs in search results', () => {
+    const results = JSON.stringify([
+      {
+        title: 'Bad search result',
+        url: 'javascript:alert(1)',
+        snippet: 'bad',
+      },
+      {
+        title: 'Data result',
+        url: 'data:text/html;base64,c2Vjb25k',
+        snippet: 'bad',
+      },
+      {
+        title: 'Safe result',
+        url: 'https://example.com/safe',
+        snippet: 'safe',
+      },
+    ]);
+
+    render(
+      <WebSearchDisplay
+        toolCall={makeToolCall({
+          name: 'WebSearch',
+          input: JSON.stringify({ query: 'safe search' }),
+          result: results,
+        })}
+      />
+    );
+
+    const resultCards = screen.getAllByTestId('websearch-result-card');
+    expect(resultCards).toHaveLength(3);
+
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute('href', 'https://example.com/safe');
+    expect(screen.getAllByText('Blocked URL')).toHaveLength(2);
+  });
+
   it('renders status indicator for running state', () => {
     render(
       <WebSearchDisplay
