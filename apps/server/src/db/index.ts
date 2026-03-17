@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -11,6 +11,7 @@ interface SessionRow {
   id: string;
   title: string;
   claude_session_id: string | null;
+  model: string;
   workspace_id: string | null;
   linear_issue_id: string | null;
   linear_issue_title: string | null;
@@ -65,6 +66,7 @@ function mapSession(row: SessionRow) {
     id: row.id,
     title: row.title,
     claudeSessionId: row.claude_session_id,
+    model: row.model,
     workspaceId: row.workspace_id,
     linearIssueId: row.linear_issue_id,
     linearIssueTitle: row.linear_issue_title,
@@ -131,6 +133,7 @@ export function createDb(path?: string): Database {
   db.exec(SCHEMA);
   migrateSessionsWorkspaceId(db);
   migrateLinearIssueColumns(db);
+  migrateSessionModelColumn(db);
   return db;
 }
 
@@ -145,18 +148,21 @@ export function createSession(
   db: Database,
   id: string,
   title?: string,
-  linearIssue?: LinearIssueMetadata
+  linearIssue?: LinearIssueMetadata,
+  model?: string
 ) {
   const linearIssueId = linearIssue?.id ?? null;
   const linearIssueTitle = linearIssue?.title ?? null;
   const linearIssueSummary = linearIssue?.summary ?? null;
   const linearIssueUrl = linearIssue?.url ?? null;
+  const sessionModel = model ?? 'claude-sonnet-4-6';
   const stmt = db.prepare(
-    `INSERT INTO sessions (id, title, linear_issue_id, linear_issue_title, linear_issue_summary, linear_issue_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO sessions (id, title, model, linear_issue_id, linear_issue_title, linear_issue_summary, linear_issue_url) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
   );
   const row = stmt.get(
     id,
     title || 'New Chat',
+    sessionModel,
     linearIssueId,
     linearIssueTitle,
     linearIssueSummary,

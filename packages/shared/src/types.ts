@@ -9,6 +9,7 @@ export interface Session {
   id: string;
   title: string;
   claudeSessionId?: string;
+  model?: string;
   workspaceId?: string;
   linearIssueId?: string | null;
   linearIssueTitle?: string | null;

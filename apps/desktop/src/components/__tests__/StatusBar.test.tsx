@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, within } from '@testing-library/react';
 expect.extend(matchers);
 import type { ReactNode } from 'react';
 import { StatusBar } from '../StatusBar';
@@ -20,6 +20,7 @@ function renderWithSettings(ui: React.ReactElement) {
 const mockFetch = vi.fn();
 
 beforeEach(() => {
+  localStorage.clear();
   vi.stubGlobal('fetch', mockFetch);
   vi.useFakeTimers();
   // Default: git status returns a branch
@@ -67,6 +68,11 @@ describe('StatusBar', () => {
   });
 
   describe('ModelSegment', () => {
+    it('defaults to Sonnet 4.6 when no settings are persisted', () => {
+      renderWithSettings(<StatusBar {...makeProps({ model: 'claude-opus-4-6' })} />);
+      expect(screen.getByTestId('model-segment')).toHaveTextContent('Sonnet 4.6');
+    });
+
     it('shows friendly model display name from settings', () => {
       // Default settings model is 'claude-sonnet-4-6' which displays as 'Sonnet 4.6'
       renderWithSettings(<StatusBar {...makeProps({ model: 'claude-sonnet-4-6' })} />);
@@ -77,6 +83,31 @@ describe('StatusBar', () => {
       // Model segment renders regardless of active session model — uses settings.model
       renderWithSettings(<StatusBar {...makeProps({ model: null })} />);
       expect(screen.getByTestId('model-segment')).toBeInTheDocument();
+    });
+
+    it('switches model with number keys while picker is open', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
+
+      fireEvent.click(within(screen.getByTestId('model-segment')).getByRole('button'));
+      fireEvent.keyDown(document, { key: '2' });
+
+      expect(screen.getByTestId('model-segment')).toHaveTextContent('Opus 4.6');
+      const savedSettings = JSON.parse(localStorage.getItem('claude-tauri-settings') || '{}');
+      expect(savedSettings.model).toBe('claude-opus-4-6');
+    });
+
+    it('persists model changes across provider remount', () => {
+      const { unmount } = renderWithSettings(<StatusBar {...makeProps()} />);
+
+      fireEvent.click(within(screen.getByTestId('model-segment')).getByRole('button'));
+      fireEvent.click(screen.getByRole('button', { name: /haiku 4.5/i }));
+
+      const savedSettings = JSON.parse(localStorage.getItem('claude-tauri-settings') || '{}');
+      expect(savedSettings.model).toBe('claude-haiku-4-5-20251001');
+
+      unmount();
+      renderWithSettings(<StatusBar {...makeProps()} />);
+      expect(screen.getByTestId('model-segment')).toHaveTextContent('Haiku 4.5');
     });
   });
 
