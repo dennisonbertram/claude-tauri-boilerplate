@@ -207,9 +207,33 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     () =>
       new DefaultChatTransport({
         api: `${API_BASE}/api/chat`,
-        body: { sessionId, model: settings.model, effort: settings.effort, ...(workspaceId ? { workspaceId } : {}) },
+        body: {
+          sessionId,
+          model: settings.model,
+          effort: settings.effort,
+          provider: settings.provider,
+          providerConfig: {
+            bedrockBaseUrl: settings.bedrockBaseUrl,
+            bedrockProjectId: settings.bedrockProjectId,
+            vertexProjectId: settings.vertexProjectId,
+            vertexBaseUrl: settings.vertexBaseUrl,
+            customBaseUrl: settings.customBaseUrl,
+          },
+          ...(workspaceId ? { workspaceId } : {}),
+        },
       }),
-    [sessionId, settings.model, settings.effort, workspaceId]
+    [
+      sessionId,
+      settings.model,
+      settings.effort,
+      settings.provider,
+      settings.bedrockBaseUrl,
+      settings.bedrockProjectId,
+      settings.vertexProjectId,
+      settings.vertexBaseUrl,
+      settings.customBaseUrl,
+      workspaceId,
+    ]
   );
 
   // Stable fallback ID so we don't recreate the Chat on every render

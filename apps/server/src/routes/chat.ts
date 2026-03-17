@@ -89,6 +89,8 @@ export function createChatRouter(db: Database) {
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
+    const provider = body.provider;
+    const providerConfig = body.providerConfig;
     const workspaceId = body.workspaceId;
 
     // Extract the last user message as the prompt
@@ -198,6 +200,8 @@ export function createChatRouter(db: Database) {
             sessionId: currentResumeId,
             model,
             effort,
+            provider,
+            providerConfig,
             cwd: workspaceCwd,
           })) {
             // Lazily create the session on first successful event

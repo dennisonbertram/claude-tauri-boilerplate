@@ -174,6 +174,111 @@ function GeneralTab({
         </div>
       </SettingField>
 
+      {/* Provider */}
+      <SettingField label="Provider" description="Routing backend to Anthropic, Bedrock, Vertex, or custom provider">
+        <select
+          data-testid="provider-select"
+          value={settings.provider}
+          onChange={(e) =>
+            updateSettings({
+              provider: e.target.value as AppSettings['provider'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="anthropic">Anthropic</option>
+          <option value="bedrock">AWS Bedrock</option>
+          <option value="vertex">Google Vertex</option>
+          <option value="custom">Custom Base URL</option>
+        </select>
+      </SettingField>
+
+      {settings.provider === 'bedrock' && (
+        <>
+          <SettingField
+            label="Bedrock Base URL"
+            description="Optional Bedrock endpoint override"
+          >
+            <input
+              data-testid="provider-bedrock-base-url"
+              type="text"
+              value={settings.bedrockBaseUrl}
+              onChange={(e) =>
+                updateSettings({ bedrockBaseUrl: e.target.value })
+              }
+              placeholder="https://bedrock.example.com"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </SettingField>
+          <SettingField
+            label="Bedrock Project ID"
+            description="Optional Bedrock project identifier"
+          >
+            <input
+              data-testid="provider-bedrock-project-id"
+              type="text"
+              value={settings.bedrockProjectId}
+              onChange={(e) =>
+                updateSettings({ bedrockProjectId: e.target.value })
+              }
+              placeholder="project-id"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </SettingField>
+        </>
+      )}
+
+      {settings.provider === 'vertex' && (
+        <>
+          <SettingField
+            label="Vertex Project ID"
+            description="Google Cloud project ID"
+          >
+            <input
+              data-testid="provider-vertex-project-id"
+              type="text"
+              value={settings.vertexProjectId}
+              onChange={(e) =>
+                updateSettings({ vertexProjectId: e.target.value })
+              }
+              placeholder="project-id"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </SettingField>
+          <SettingField
+            label="Vertex Base URL"
+            description="Optional Vertex endpoint override"
+          >
+            <input
+              data-testid="provider-vertex-base-url"
+              type="text"
+              value={settings.vertexBaseUrl}
+              onChange={(e) =>
+                updateSettings({ vertexBaseUrl: e.target.value })
+              }
+              placeholder="https://us-central1-aiplatform.googleapis.com"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </SettingField>
+        </>
+      )}
+
+      {settings.provider === 'custom' && (
+        <SettingField
+          label="Custom Base URL"
+          description="Override Claude API base URL"
+        >
+          <input
+            data-testid="provider-custom-base-url"
+            type="text"
+            value={settings.customBaseUrl}
+            onChange={(e) => updateSettings({ customBaseUrl: e.target.value })}
+            placeholder="https://gateway.example.com/v1"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        </SettingField>
+      )}
+
     </>
   );
 }
