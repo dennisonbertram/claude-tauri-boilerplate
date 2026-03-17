@@ -408,12 +408,14 @@ function extractCiFailuresFromToolResult(result: unknown): {
   const rawOutput = stringifyToolResult(result);
   if (!rawOutput || rawOutput.length < 8) return null;
 
+  const normalizedOutput = rawOutput.replace(/\u001b\[[0-9;]*m/g, '');
   const hasFailureSignal =
-    /\b(fail(?:ed|ing)?|timed out|exit code)\b/i.test(rawOutput) &&
-    /\b(check|checks|workflow|action|job|ci|pipeline|pull request)\b/i.test(rawOutput);
+    /\b(fail(?:ed|ing)?|timed out|exit code|errored|error|❌|✗)\b/i.test(
+      normalizedOutput
+    );
   if (!hasFailureSignal) return null;
 
-  const checks = rawOutput
+  const checks = normalizedOutput
     .split('\n')
     .map((line) => line.trim())
     .map((line) =>
@@ -424,10 +426,16 @@ function extractCiFailuresFromToolResult(result: unknown): {
     )
     .filter((line) => {
       if (!line) return false;
-      if (!/\b(failed|failure|timed out|exit code)\b/i.test(line)) return false;
-      return /\b(check|checks|workflow|action|job|ci|pipeline|test|pull request)\b/i.test(
+      const failed = /\b(fail(?:ed|ing)?|timed out|exit code|errored|error)\b/i.test(
         line
       );
+      const failedSymbol = /[❌✗]\s/.test(line) || /\s[❌✗]$/.test(line);
+      const hasCiContext =
+        /\b(check|checks|workflow|workflows|action|actions|job|jobs|pipeline|pipelines|test|lint|build|deploy|publish|pull request)\b/i.test(
+          line
+        ) || /\bCI\b/.test(line);
+      const isProcessResult = /process completed with exit code/i.test(line);
+      return failed || failedSymbol || isProcessResult ? failedSymbol || hasCiContext || isProcessResult : false;
     });
 
   if (checks.length === 0) return null;

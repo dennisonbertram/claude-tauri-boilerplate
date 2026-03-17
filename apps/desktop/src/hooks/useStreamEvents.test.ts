@@ -286,6 +286,65 @@ describe('streamEventsReducer', () => {
       const toolCall = state.toolCalls.get('tool-2');
       expect(toolCall?.ciFailures).toBeUndefined();
     });
+
+    it('detects GitHub Actions summary lines with process completion exit code', () => {
+      let state = streamEventsReducer(initialStreamEventsState, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'block:start',
+          blockIndex: 1,
+          blockType: 'tool_use',
+          toolUseId: 'tool-gh-1',
+          toolName: 'Bash',
+        },
+      });
+
+      state = streamEventsReducer(state, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'tool:result',
+          toolUseId: 'tool-gh-1',
+          result:
+            'Run lint and test checks\nProcess completed with exit code 1\nError: Some non-ci message',
+        },
+      });
+
+      const toolCall = state.toolCalls.get('tool-gh-1');
+      expect(toolCall?.ciFailures).toEqual(
+        expect.objectContaining({
+          checks: ['Process completed with exit code 1'],
+        })
+      );
+    });
+
+    it('detects emoji-marked failed checks with non-colon formats', () => {
+      let state = streamEventsReducer(initialStreamEventsState, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'block:start',
+          blockIndex: 1,
+          blockType: 'tool_use',
+          toolUseId: 'tool-gh-2',
+          toolName: 'Bash',
+        },
+      });
+
+      state = streamEventsReducer(state, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'tool:result',
+          toolUseId: 'tool-gh-2',
+          result:
+            '✅ test: passed\n❌ lint: failed\n❌ build: timed out',
+        },
+      });
+
+      const toolCall = state.toolCalls.get('tool-gh-2');
+      expect(toolCall?.ciFailures?.checks).toEqual([
+        '❌ lint: failed',
+        '❌ build: timed out',
+      ]);
+    });
   });
 
   describe('RESET action', () => {

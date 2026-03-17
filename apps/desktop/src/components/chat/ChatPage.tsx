@@ -571,7 +571,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
 
   const handleFixErrors = useCallback(
     async (toolCall: ToolCallState) => {
-      if (!toolCall.ciFailures || isLoading) return;
+      if (!toolCall.ciFailures) return;
 
       const command = extractCommandFromToolInput(toolCall.input);
       const checks =
