@@ -171,6 +171,76 @@ describe('Workspace Diff & Changed Files', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('GET /api/workspaces/:id/diff?fromRef&toRef', () => {
+    test('returns range-based diff and changed files for historical review', async () => {
+      const ws = await createWorkspace('historical-diff');
+
+      writeFileSync(join(ws.worktreePath, 'history.txt'), 'first');
+      Bun.spawnSync(['git', 'add', 'history.txt'], { cwd: ws.worktreePath });
+      Bun.spawnSync(['git', 'commit', '-m', 'add history'], { cwd: ws.worktreePath });
+
+      const fromRef = Bun.spawnSync(['git', 'rev-parse', 'HEAD~1'], { cwd: ws.worktreePath })
+        .stdout.toString()
+        .trim();
+      const toRef = Bun.spawnSync(['git', 'rev-parse', 'HEAD'], { cwd: ws.worktreePath })
+        .stdout.toString()
+        .trim();
+
+      const diffRes = await app.request(
+        `/api/workspaces/${ws.id}/diff?fromRef=${fromRef}&toRef=${toRef}`
+      );
+      expect(diffRes.status).toBe(200);
+
+      const diffBody = await diffRes.json();
+      expect(diffBody.diff).toContain('history.txt');
+
+      const filesRes = await app.request(
+        `/api/workspaces/${ws.id}/changed-files?fromRef=${fromRef}&toRef=${toRef}`
+      );
+      expect(filesRes.status).toBe(200);
+
+      const filesBody = await filesRes.json();
+      expect(filesBody.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: 'history.txt', status: 'added' }),
+        ])
+      );
+    });
+
+    test('requires fromRef and toRef together for historical range', async () => {
+      const ws = await createWorkspace('range-validation');
+
+      const res = await app.request(`/api/workspaces/${ws.id}/diff?fromRef=main`);
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('GET /api/workspaces/:id/revisions', () => {
+    test('returns workspace revision history', async () => {
+      const ws = await createWorkspace('revisions-history');
+
+      writeFileSync(join(ws.worktreePath, 'rev1.txt'), 'v1');
+      Bun.spawnSync(['git', 'add', 'rev1.txt'], { cwd: ws.worktreePath });
+      Bun.spawnSync(['git', 'commit', '-m', 'rev1'], { cwd: ws.worktreePath });
+
+      writeFileSync(join(ws.worktreePath, 'rev2.txt'), 'v2');
+      Bun.spawnSync(['git', 'add', 'rev2.txt'], { cwd: ws.worktreePath });
+      Bun.spawnSync(['git', 'commit', '-m', 'rev2'], { cwd: ws.worktreePath });
+
+      const res = await app.request(`/api/workspaces/${ws.id}/revisions`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.workspaceId).toBe(ws.id);
+      expect(body.revisions).toHaveLength(3);
+      expect(body.revisions[0].message).toBe('rev2');
+      expect(body.revisions[1].message).toBe('rev1');
+      expect(body.revisions[0].shortId).toHaveLength(7);
+    });
+  });
 });
 
 describe('Workspace Merge', () => {
