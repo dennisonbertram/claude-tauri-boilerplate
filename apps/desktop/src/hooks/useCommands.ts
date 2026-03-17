@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 
 export type CommandCategory = 'chat' | 'navigation' | 'tools';
 
@@ -72,6 +73,20 @@ export function useCommands(context: CommandContext) {
         description: 'Export current session',
         category: 'tools' as CommandCategory,
         execute: () => context.exportSession(),
+      },
+      {
+        name: 'compact',
+        description: 'Compact conversation context',
+        category: 'chat' as CommandCategory,
+        execute: () => {
+          toast.info('Context compaction is automatic', {
+            description: 'Configure Auto-Compact in Settings → Advanced',
+            action: {
+              label: 'Open Settings',
+              onClick: () => context.showSettings?.(),
+            },
+          });
+        },
       },
     ],
     [context]
