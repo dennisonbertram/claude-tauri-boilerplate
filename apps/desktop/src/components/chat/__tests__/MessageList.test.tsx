@@ -85,50 +85,28 @@ describe('MessageList scroll affordance', () => {
     expect(screen.getByTestId('message-list-scroll-to-bottom')).toBeInTheDocument();
   });
 
-  it('binds the viewport listener when the viewport is available on the next frame', async () => {
+  it('updates the affordance after viewport metrics settle on the next frame', async () => {
     const messages = Array.from({ length: 20 }, (_, index) =>
       makeMessage(index)
     );
-    const originalQuerySelector = HTMLElement.prototype.querySelector;
-    let firstViewportLookup = true;
+    const { container } = render(
+      <MessageList messages={messages} isLoading={false} />
+    );
+    const viewport = getViewport(container);
 
-    HTMLElement.prototype.querySelector = function (
-      selector: string
-    ): Element | null {
-      if (
-        selector === '[data-slot="scroll-area-viewport"]' &&
-        firstViewportLookup
-      ) {
-        firstViewportLookup = false;
-        return null;
-      }
+    mockScrollableViewport(viewport, {
+      scrollHeight: 1200,
+      clientHeight: 300,
+      scrollTop: 0,
+    });
 
-      return originalQuerySelector.call(this, selector);
-    };
+    await act(async () => {
+      vi.runAllTimers();
+    });
 
-    try {
-      const { container } = render(
-        <MessageList messages={messages} isLoading={false} />
-      );
-      const viewport = getViewport(container);
-
-      mockScrollableViewport(viewport, {
-        scrollHeight: 1200,
-        clientHeight: 300,
-        scrollTop: 0,
-      });
-
-      await act(async () => {
-        vi.runAllTimers();
-      });
-
-      fireEvent.scroll(viewport);
-      expect(
-        screen.getByTestId('message-list-scroll-to-bottom')
-      ).toBeInTheDocument();
-    } finally {
-      HTMLElement.prototype.querySelector = originalQuerySelector;
-    }
+    expect(
+      screen.getByTestId('message-list-scroll-to-bottom')
+    ).toBeInTheDocument();
   });
 
   it('scrolls to latest and hides when the affordance is clicked', async () => {

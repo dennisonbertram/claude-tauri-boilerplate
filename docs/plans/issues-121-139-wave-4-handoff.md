@@ -2,7 +2,7 @@
 
 ## Status
 
-Wave 4 was integrated on `codex/wave4-merge` from the current `codex/wave3-merge` baseline. All targeted automated tests on the merge branch are green. Backend curl verification and most frontend browser checks are also green. The only remaining blocker before a `main` merge is `#128`: the live browser still does not surface the chat scroll-to-bottom affordance after scrolling a long conversation upward, despite targeted unit coverage passing.
+Wave 4 was integrated on `codex/wave4-merge` from the current `codex/wave3-merge` baseline and then landed on `main`. All targeted automated tests on the merge branch were green. Backend curl verification and the Wave 4 frontend browser checks passed. The original live-browser blocker on `#128` was resolved afterward on `codex/issue-128-scroll-to-bottom-followup` by switching the chat scroll logic to direct `ScrollArea` viewport bindings.
 
 ## Per-Issue Handoff
 
@@ -65,20 +65,19 @@ Wave 4 was integrated on `codex/wave4-merge` from the current `codex/wave3-merge
 ### #128 Add scroll-to-bottom button in chat when scrolled up
 - Branch: `codex/issue-128-scroll-to-bottom`
 - Commit: `cff3f7a`
-- Merge-branch cleanup attempt: uncommitted Wave 4 review change on `codex/wave4-merge`
-- Status: blocked on live-browser verification
+- Follow-up branch: `codex/issue-128-scroll-to-bottom-followup`
+- Status: resolved after direct viewport binding follow-up
 - Automated validation:
   - `pnpm test src/components/chat/__tests__/MessageList.test.tsx` from `apps/desktop`
 - Manual verification:
   - Loaded a long existing session (`You're right — I apologize for the confusion! ...`)
-  - Confirmed the message viewport starts at the bottom with `scrollTop: 1547` on a `2401px` scroll height
-  - Forced the message viewport back to the top (`scrollTop: 0`)
-  - Expected the `message-list-scroll-to-bottom` affordance to appear
-  - Actual result: the button still did not render in the live browser
-- Handoff guidance:
-  - Treat this as the current blocker for a `main` merge
-  - Continue from the merge-branch cleanup change in `apps/desktop/src/components/chat/MessageList.tsx`
-  - Re-test in a real browser after any additional fix before landing
+  - Scrolled upward inside the message viewport
+  - Verified the `message-list-scroll-to-bottom` affordance appeared as `Latest`
+  - Clicked `Latest`
+  - Verified the chat returned to the newest messages and the affordance disappeared again after the smooth scroll completed
+- Follow-up implementation note:
+  - The final fix replaces the brittle post-render viewport query in `apps/desktop/src/components/chat/MessageList.tsx`
+  - The shared `apps/desktop/src/components/ui/scroll-area.tsx` wrapper now accepts explicit `viewportRef` and `viewportProps`
 
 ### #131 Deleting a project does not clean up workspace git branches
 - Branch: `codex/issue-131-project-delete-branches`
@@ -149,8 +148,5 @@ Wave 4 was integrated on `codex/wave4-merge` from the current `codex/wave3-merge
 
 ## Merge Recommendation
 
-- Do not merge `codex/wave4-merge` to `main` yet.
-- Resolve the remaining live-browser `#128` behavior gap first.
-- After that, rerun:
-  - `pnpm test src/routes/memory.path-regression.test.ts && pnpm test ./src/routes/workspaces.test.ts` from `apps/server`
-  - `pnpm test src/components/__tests__/TeamCreationDialog.test.tsx src/hooks/useSessions.test.ts src/components/chat/__tests__/MessageList.test.tsx src/hooks/useCommands.test.ts src/components/__tests__/StatusBar.test.tsx` from `apps/desktop`
+- Wave 4 has landed on `main`.
+- The `#128` follow-up should be tracked from `codex/issue-128-scroll-to-bottom-followup` and its direct viewport-binding fix.

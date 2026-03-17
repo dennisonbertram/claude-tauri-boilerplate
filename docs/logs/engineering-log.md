@@ -44,6 +44,14 @@ Each entry follows this format:
 **Regression Test**: `apps/server/src/routes/memory.path-regression.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/desktop/src/components/__tests__/TeamCreationDialog.test.tsx`, `apps/desktop/src/hooks/useSessions.test.ts`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`, `apps/desktop/src/hooks/useCommands.test.ts`, `apps/desktop/src/components/__tests__/StatusBar.test.tsx`, `apps/desktop/src/components/__tests__/NewChatBehavior.test.tsx`
 **Related Issue**: GitHub issues `#121`, `#122`, `#123`, `#124`, `#125`, `#128`, `#131`, `#132`, `#137`, `#138`, `#139`
 
+### 2026-03-17: Issue 128 live scroll affordance follow-up
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Resolved the remaining live-browser gap for GitHub issue `#128`. The previous implementation in `MessageList` depended on querying the `ScrollArea` viewport after render and manually wiring scroll listeners, which proved brittle in the real app even though unit tests passed. The fix adds explicit `viewportRef` and `viewportProps` support to the shared `ScrollArea` wrapper and binds the chat affordance directly to the real viewport element. Live browser verification now matches the tests: scrolling up in a long chat shows the `Latest` button, and clicking it returns the user to the newest messages before hiding the affordance again.
+**Regression Test**: `apps/desktop/src/components/ui/scroll-area.test.tsx`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`
+**Related Issue**: GitHub issue `#128`
+
 ---
 
 ### 2026-03-17: Generative UI registry foundation landed
