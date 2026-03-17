@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 // Mock hooks used by ChatPage so we only validate transport payload shape.
 const mockUseChat = vi.hoisted(() => vi.fn());
 const mockUseSettings = vi.hoisted(() => vi.fn());
 const mockDefaultChatTransport = vi.hoisted(() => vi.fn());
+const mockUseStreamEvents = vi.hoisted(() => vi.fn());
 
 vi.mock('@ai-sdk/react', () => ({
   useChat: mockUseChat,
@@ -19,26 +20,7 @@ vi.mock('@/hooks/useSettings', () => ({
 }));
 
 vi.mock('@/hooks/useStreamEvents', () => ({
-  useStreamEvents: () => ({
-    toolCalls: [],
-    thinkingBlocks: [],
-    pendingPermissions: new Map(),
-    resolvePermission: vi.fn(),
-    plan: null,
-    approvePlan: vi.fn(),
-    rejectPlan: vi.fn(),
-    reset: vi.fn(),
-    cumulativeUsage: {
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheCreationTokens: 0,
-    },
-    isCompacting: false,
-    usage: null,
-    sessionInfo: null,
-    processEvent: vi.fn(),
-  }),
+  useStreamEvents: mockUseStreamEvents,
 }));
 
 vi.mock('@/hooks/useSubagents', () => ({
@@ -124,7 +106,16 @@ vi.mock('@/components/chat/PermissionDialog', () => ({
 }));
 
 vi.mock('@/components/chat/PlanView', () => ({
-  PlanView: () => null,
+  PlanView: ({ onApprove, onReject }: { onApprove: () => void; onReject: (feedback?: string) => void }) => (
+    <div>
+      <button data-testid="plan-approve" onClick={() => void onApprove()}>
+        Approve
+      </button>
+      <button data-testid="plan-reject" onClick={() => void onReject('Needs more detail')}>
+        Reject
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/chat/SubagentPanel', () => ({
@@ -163,6 +154,31 @@ function getDefaultSettings(overrides = {}) {
     customBaseUrl: '',
     model: 'claude-sonnet-4-6',
     effort: 'high',
+    permissionMode: 'default',
+    ...overrides,
+  };
+}
+
+function getDefaultStreamEventsState(overrides = {}) {
+  return {
+    toolCalls: new Map(),
+    thinkingBlocks: new Map(),
+    pendingPermissions: new Map(),
+    resolvePermission: vi.fn(),
+    plan: null,
+    approvePlan: vi.fn(),
+    rejectPlan: vi.fn(),
+    reset: vi.fn(),
+    cumulativeUsage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+    },
+    isCompacting: false,
+    usage: null,
+    sessionInfo: null,
+    processEvent: vi.fn(),
     ...overrides,
   };
 }
@@ -183,6 +199,7 @@ describe('ChatPage transport provider payload', () => {
       updateSettings: vi.fn(),
       resetSettings: vi.fn(),
     });
+    mockUseStreamEvents.mockReturnValue(getDefaultStreamEventsState());
   });
 
   it('sends provider and providerConfig for bedrock settings', () => {
@@ -268,6 +285,106 @@ describe('ChatPage transport provider payload', () => {
           customBaseUrl: 'https://custom.internal',
         },
       }),
+    });
+  });
+
+  it('includes permissionMode in transport body when set to plan', () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        permissionMode: 'plan',
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} />);
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        permissionMode: 'plan',
+      }),
+    });
+  });
+
+  it('sends approve decision to /api/chat/plan and updates local plan state', async () => {
+    const approvePlan = vi.fn();
+    mockUseStreamEvents.mockReturnValue(
+      getDefaultStreamEventsState({
+        plan: {
+          planId: 'plan-123',
+          status: 'review',
+          content: 'Plan content',
+        },
+        approvePlan,
+      })
+    );
+
+    const fetchMock = vi.fn(async () => ({ ok: false, json: async () => [] }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    render(<ChatPage sessionId="session-1" />);
+    fireEvent.click(screen.getByTestId('plan-approve'));
+
+    await waitFor(() => {
+      const planCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith('/api/chat/plan')
+      );
+      expect(planCall).toBeDefined();
+    });
+
+    const planCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith('/api/chat/plan')
+    );
+    const requestInit = planCall?.[1] as RequestInit;
+
+    expect(approvePlan).toHaveBeenCalledWith('plan-123');
+    expect(requestInit.method).toBe('POST');
+    expect(JSON.parse(requestInit.body as string)).toEqual({
+      sessionId: 'session-1',
+      planId: 'plan-123',
+      decision: 'approve',
+    });
+  });
+
+  it('sends reject decision to /api/chat/plan with feedback', async () => {
+    const rejectPlan = vi.fn();
+    mockUseStreamEvents.mockReturnValue(
+      getDefaultStreamEventsState({
+        plan: {
+          planId: 'plan-456',
+          status: 'review',
+          content: 'Plan content',
+        },
+        rejectPlan,
+      })
+    );
+
+    const fetchMock = vi.fn(async () => ({ ok: false, json: async () => [] }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    render(<ChatPage sessionId="session-2" />);
+    fireEvent.click(screen.getByTestId('plan-reject'));
+
+    await waitFor(() => {
+      const planCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith('/api/chat/plan')
+      );
+      expect(planCall).toBeDefined();
+    });
+
+    const planCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith('/api/chat/plan')
+    );
+    const requestInit = planCall?.[1] as RequestInit;
+
+    expect(rejectPlan).toHaveBeenCalledWith('plan-456', 'Needs more detail');
+    expect(requestInit.method).toBe('POST');
+    expect(JSON.parse(requestInit.body as string)).toEqual({
+      sessionId: 'session-2',
+      planId: 'plan-456',
+      decision: 'reject',
+      feedback: 'Needs more detail',
     });
   });
 });

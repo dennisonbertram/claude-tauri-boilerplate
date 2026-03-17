@@ -1,9 +1,18 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { Database } from 'bun:sqlite';
 import type { Checkpoint, FileChange, RewindPreview } from '@claude-tauri/shared';
-
-// In-memory checkpoint storage keyed by sessionId
-const checkpointStore = new Map<string, Checkpoint[]>();
+import {
+  getSession,
+  getWorkspace,
+  listSessionCheckpoints,
+  createCheckpoint as createCheckpointRecord,
+  getSessionCheckpoint,
+  getSessionMessageCount,
+  deleteSessionCheckpointsAfter,
+  trimSessionMessagesToCount,
+} from '../db';
+import { gitCommand } from '../services/git-command';
 
 const fileChangeSchema = z.object({
   path: z.string().min(1),
@@ -22,24 +31,47 @@ const rewindSchema = z.object({
   mode: z.enum(['code_and_conversation', 'conversation_only', 'code_only']),
 });
 
-/**
- * Helper to get or initialize checkpoint list for a session.
- */
-function getSessionCheckpoints(sessionId: string): Checkpoint[] {
-  if (!checkpointStore.has(sessionId)) {
-    checkpointStore.set(sessionId, []);
-  }
-  return checkpointStore.get(sessionId)!;
+async function createGitCheckpoint(worktreePath: string): Promise<string | null> {
+  const isRepoResult = await gitCommand.runSafe(['rev-parse', '--is-inside-work-tree'], {
+    cwd: worktreePath,
+  });
+  if (isRepoResult.exitCode !== 0) return null;
+
+  const addResult = await gitCommand.run(['add', '-A'], { cwd: worktreePath });
+  if (addResult.exitCode !== 0) return null;
+
+  const commitResult = await gitCommand.run(
+    [
+      '-c',
+      'user.name=checkpoint-bot',
+      '-c',
+      'user.email=checkpoint@local.dev',
+      'commit',
+      '--allow-empty',
+      '-m',
+      `checkpoint-${new Date().toISOString()}`,
+    ],
+    { cwd: worktreePath }
+  );
+  if (commitResult.exitCode !== 0) return null;
+
+  const hashResult = await gitCommand.run(['rev-parse', 'HEAD'], { cwd: worktreePath });
+  if (hashResult.exitCode !== 0) return null;
+
+  return hashResult.stdout.trim();
 }
 
-/**
- * Export for testing: clear all in-memory checkpoints.
- */
-export function clearCheckpointStore(): void {
-  checkpointStore.clear();
+async function restoreGitCommit(worktreePath: string, commit: string): Promise<boolean> {
+  const resetResult = await gitCommand.run(['reset', '--hard', commit], { cwd: worktreePath });
+  if (resetResult.exitCode !== 0) return false;
+
+  const cleanResult = await gitCommand.run(['clean', '-fd'], { cwd: worktreePath });
+  if (cleanResult.exitCode !== 0) return false;
+
+  return true;
 }
 
-export function createCheckpointsRouter() {
+export function createCheckpointsRouter(db: Database) {
   const router = new Hono();
 
   // GET /api/sessions/:sessionId/checkpoints - List checkpoints
@@ -49,7 +81,15 @@ export function createCheckpointsRouter() {
       return c.json({ error: 'Session ID required', code: 'VALIDATION_ERROR' }, 400);
     }
 
-    const checkpoints = getSessionCheckpoints(sessionId);
+    const session = getSession(db, sessionId);
+    if (!session) {
+      return c.json(
+        { error: 'Session not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    const checkpoints = listSessionCheckpoints(db, sessionId);
     return c.json({ checkpoints });
   });
 
@@ -58,6 +98,14 @@ export function createCheckpointsRouter() {
     const sessionId = c.req.param('sessionId');
     if (!sessionId) {
       return c.json({ error: 'Session ID required', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const session = getSession(db, sessionId);
+    if (!session) {
+      return c.json(
+        { error: 'Session not found', code: 'NOT_FOUND' },
+        404
+      );
     }
 
     const body = await c.req.json().catch(() => ({}));
@@ -73,19 +121,38 @@ export function createCheckpointsRouter() {
       );
     }
 
-    const checkpoints = getSessionCheckpoints(sessionId);
+    const checkpoints = listSessionCheckpoints(db, sessionId);
     const turnIndex = parsed.data.turnIndex ?? checkpoints.length;
+    const messageCount = getSessionMessageCount(db, sessionId);
 
-    const checkpoint: Checkpoint = {
-      id: crypto.randomUUID(),
+    let gitCommit: string | null = null;
+    if (session.workspaceId) {
+      const workspace = getWorkspace(db, session.workspaceId);
+      if (!workspace) {
+        return c.json(
+          { error: 'Session workspace not found', code: 'NOT_FOUND' },
+          404
+        );
+      }
+      gitCommit = await createGitCheckpoint(workspace.worktreePath);
+      if (!gitCommit) {
+        return c.json(
+          { error: 'Failed to create checkpoint commit', code: 'GIT_ERROR' },
+          500
+        );
+      }
+    }
+
+    const checkpoint: Checkpoint = createCheckpointRecord(db, {
+      sessionId,
       userMessageId: parsed.data.userMessageId,
       promptPreview: parsed.data.promptPreview.slice(0, 50),
-      timestamp: new Date().toISOString(),
       filesChanged: parsed.data.filesChanged,
       turnIndex,
-    };
+      gitCommit,
+      messageCount,
+    });
 
-    checkpoints.push(checkpoint);
     return c.json(checkpoint, 201);
   });
 
@@ -93,23 +160,26 @@ export function createCheckpointsRouter() {
   router.get('/:id/preview', (c) => {
     const sessionId = c.req.param('sessionId');
     const checkpointId = c.req.param('id');
+    const checkpoint = getSessionCheckpoint(db, sessionId, checkpointId);
+    if (!checkpoint) {
+      return c.json({ error: 'Checkpoint not found', code: 'NOT_FOUND' }, 404);
+    }
 
-    const checkpoints = getSessionCheckpoints(sessionId);
-    const checkpointIndex = checkpoints.findIndex((cp) => cp.id === checkpointId);
+    const checkpoints = listSessionCheckpoints(db, sessionId);
+    const checkpointIndex = checkpoints.findIndex((cp) => cp.id === checkpoint.id);
     if (checkpointIndex === -1) {
       return c.json({ error: 'Checkpoint not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const checkpoint = checkpoints[checkpointIndex];
-
-    // Collect all files affected from this checkpoint forward
+    // Collect files changed from this checkpoint forward.
     const laterCheckpoints = checkpoints.slice(checkpointIndex);
     const filesAffected = [
       ...new Set(laterCheckpoints.flatMap((cp) => cp.filesChanged.map((fc) => fc.path))),
     ];
 
-    // Messages removed = number of checkpoints after this one (each represents a turn)
-    const messagesRemoved = checkpoints.length - checkpointIndex - 1;
+    const latestMessageCount = getSessionMessageCount(db, sessionId);
+    const baseMessageCount = checkpoint.messageCount ?? 0;
+    const messagesRemoved = Math.max(0, latestMessageCount - baseMessageCount);
 
     const preview: RewindPreview = {
       checkpointId,
@@ -125,9 +195,16 @@ export function createCheckpointsRouter() {
     const sessionId = c.req.param('sessionId');
     const checkpointId = c.req.param('id');
 
-    const checkpoints = getSessionCheckpoints(sessionId);
-    const checkpointIndex = checkpoints.findIndex((cp) => cp.id === checkpointId);
-    if (checkpointIndex === -1) {
+    const session = getSession(db, sessionId);
+    if (!session) {
+      return c.json(
+        { error: 'Session not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    const checkpoint = getSessionCheckpoint(db, sessionId, checkpointId);
+    if (!checkpoint) {
       return c.json({ error: 'Checkpoint not found', code: 'NOT_FOUND' }, 404);
     }
 
@@ -144,10 +221,49 @@ export function createCheckpointsRouter() {
       );
     }
 
-    // MVP: truncate checkpoints to the selected one (inclusive)
-    // Actual SDK rewindFiles() integration will come later
-    const remaining = checkpoints.slice(0, checkpointIndex + 1);
-    checkpointStore.set(sessionId, remaining);
+    const shouldRestoreCode = parsed.data.mode !== 'conversation_only';
+    const shouldRestoreConversation = parsed.data.mode !== 'code_only';
+    let restoredWorktreePath: string | null = null;
+
+    if (shouldRestoreCode) {
+      if (!checkpoint.gitCommit) {
+        return c.json(
+          { error: 'Checkpoint has no commit for code rollback', code: 'NO_GIT_COMMIT' },
+          409
+        );
+      }
+
+      if (!session.workspaceId) {
+        return c.json(
+          { error: 'Session has no workspace for code rollback', code: 'INVALID_STATE' },
+          409
+        );
+      }
+
+      const workspace = getWorkspace(db, session.workspaceId);
+      if (!workspace) {
+        return c.json(
+          { error: 'Session workspace not found', code: 'NOT_FOUND' },
+          404
+        );
+      }
+
+      const restored = await restoreGitCommit(workspace.worktreePath, checkpoint.gitCommit);
+      if (!restored) {
+        return c.json(
+          { error: 'Failed to restore checkpoint files', code: 'GIT_ERROR' },
+          500
+        );
+      }
+      restoredWorktreePath = workspace.worktreePath;
+    }
+
+    if (shouldRestoreConversation) {
+      trimSessionMessagesToCount(db, sessionId, checkpoint.messageCount ?? 0);
+    }
+
+    // Remove checkpoints after selected checkpoint (inclusive behavior keeps selected).
+    deleteSessionCheckpointsAfter(db, sessionId, checkpoint.id);
 
     const modeLabels: Record<string, string> = {
       code_and_conversation: 'Rewound code and conversation',
@@ -157,7 +273,8 @@ export function createCheckpointsRouter() {
 
     return c.json({
       success: true,
-      message: `${modeLabels[parsed.data.mode]} to turn ${checkpoints[checkpointIndex].turnIndex}`,
+      message: `${modeLabels[parsed.data.mode]} to turn ${checkpoint.turnIndex}`,
+      restoredWorktreePath,
     });
   });
 

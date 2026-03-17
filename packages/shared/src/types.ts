@@ -9,6 +9,7 @@ export interface Session {
   id: string;
   title: string;
   claudeSessionId?: string;
+  model?: string;
   workspaceId?: string;
   linearIssueId?: string | null;
   linearIssueTitle?: string | null;
@@ -44,6 +45,7 @@ export interface ChatRequest {
   };
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
+  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   workspaceId?: string;
   linearIssue?: {
     id: string;
@@ -532,6 +534,8 @@ export interface Checkpoint {
   timestamp: string;
   filesChanged: FileChange[];
   turnIndex: number;
+  gitCommit?: string | null;
+  messageCount?: number;
 }
 
 export interface FileChange {

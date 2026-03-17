@@ -412,6 +412,48 @@ describe('Chat Route - Workspace Integration', () => {
     expect(session?.linearIssueSummary).toBe('Race in scheduler');
   });
 
+  test('lets explicit request linearIssue override workspace-linked issue context', async () => {
+    setupStandardMock('ws-issue-override', 'Issue override reply');
+    const { workspaceId } = createTestWorkspace(db, {
+      linearIssue: {
+        id: 'ISS-900',
+        title: 'Workspace issue',
+      },
+    });
+
+    const sessionId = crypto.randomUUID();
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'What should I do?' }],
+      sessionId,
+      workspaceId,
+      linearIssue: {
+        id: 'ISS-902',
+        title: 'Request override issue',
+        summary: 'Use request issue in prompt',
+        url: 'https://linear.app/org/issue/ISS-902',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+    expect(res.status).toBe(200);
+
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.prompt).toContain('[Linear Issue Context]');
+    expect(callArgs.prompt).toContain('ISS-902');
+    expect(callArgs.prompt).not.toContain('ISS-900');
+
+    const session = getSession(db, sessionId);
+    expect(session?.linearIssueId).toBe('ISS-902');
+    expect(session?.linearIssueTitle).toBe('Request override issue');
+    expect(session?.linearIssueSummary).toBe('Use request issue in prompt');
+  });
+
   test('persists linear issue context from request body', async () => {
     setupStandardMock('ws-direct-linear', 'Direct linear reply');
 

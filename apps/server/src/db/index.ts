@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -11,6 +11,7 @@ interface SessionRow {
   id: string;
   title: string;
   claude_session_id: string | null;
+  model: string;
   workspace_id: string | null;
   linear_issue_id: string | null;
   linear_issue_title: string | null;
@@ -26,6 +27,18 @@ interface MessageRow {
   role: string;
   content: string;
   created_at: string;
+}
+
+interface CheckpointRow {
+  id: string;
+  session_id: string;
+  user_message_id: string;
+  prompt_preview: string;
+  timestamp: string;
+  files_changed: string;
+  turn_index: number;
+  git_commit: string | null;
+  message_count: number;
 }
 
 interface ProjectRow {
@@ -65,6 +78,7 @@ function mapSession(row: SessionRow) {
     id: row.id,
     title: row.title,
     claudeSessionId: row.claude_session_id,
+    model: row.model,
     workspaceId: row.workspace_id,
     linearIssueId: row.linear_issue_id,
     linearIssueTitle: row.linear_issue_title,
@@ -82,6 +96,19 @@ function mapMessage(row: MessageRow) {
     role: row.role as 'user' | 'assistant',
     content: row.content,
     createdAt: row.created_at,
+  };
+}
+
+function mapCheckpoint(row: CheckpointRow) {
+  return {
+    id: row.id,
+    userMessageId: row.user_message_id,
+    promptPreview: row.prompt_preview,
+    timestamp: row.timestamp,
+    filesChanged: JSON.parse(row.files_changed) as import('@claude-tauri/shared').FileChange[],
+    turnIndex: row.turn_index,
+    gitCommit: row.git_commit,
+    messageCount: row.message_count,
   };
 }
 
@@ -131,8 +158,19 @@ export function createDb(path?: string): Database {
   db.exec(SCHEMA);
   migrateSessionsWorkspaceId(db);
   migrateLinearIssueColumns(db);
+  migrateSessionModelColumn(db);
   return db;
 }
+
+type CheckpointMetadata = {
+  sessionId: string;
+  userMessageId: string;
+  promptPreview: string;
+  filesChanged: import('@claude-tauri/shared').FileChange[];
+  turnIndex: number;
+  gitCommit?: string | null;
+  messageCount?: number;
+};
 
 type LinearIssueMetadata = {
   id: string;
@@ -145,18 +183,21 @@ export function createSession(
   db: Database,
   id: string,
   title?: string,
-  linearIssue?: LinearIssueMetadata
+  linearIssue?: LinearIssueMetadata,
+  model?: string
 ) {
   const linearIssueId = linearIssue?.id ?? null;
   const linearIssueTitle = linearIssue?.title ?? null;
   const linearIssueSummary = linearIssue?.summary ?? null;
   const linearIssueUrl = linearIssue?.url ?? null;
+  const sessionModel = model ?? 'claude-sonnet-4-6';
   const stmt = db.prepare(
-    `INSERT INTO sessions (id, title, linear_issue_id, linear_issue_title, linear_issue_summary, linear_issue_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO sessions (id, title, model, linear_issue_id, linear_issue_title, linear_issue_summary, linear_issue_url) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
   );
   const row = stmt.get(
     id,
     title || 'New Chat',
+    sessionModel,
     linearIssueId,
     linearIssueTitle,
     linearIssueSummary,
@@ -248,6 +289,81 @@ export function getMessages(db: Database, sessionId: string) {
   );
   const rows = stmt.all(sessionId) as MessageRow[];
   return rows.map(mapMessage);
+}
+
+export function listSessionCheckpoints(db: Database, sessionId: string) {
+  const stmt = db.prepare(
+    `SELECT * FROM checkpoints WHERE session_id = ? ORDER BY turn_index ASC, timestamp ASC, id ASC`
+  );
+  const rows = stmt.all(sessionId) as CheckpointRow[];
+  return rows.map(mapCheckpoint);
+}
+
+export function getSessionCheckpoint(db: Database, sessionId: string, checkpointId: string) {
+  const stmt = db.prepare(
+    `SELECT * FROM checkpoints WHERE session_id = ? AND id = ?`
+  );
+  const row = stmt.get(sessionId, checkpointId) as CheckpointRow | null;
+  return row ? mapCheckpoint(row) : null;
+}
+
+export function getSessionMessageCount(db: Database, sessionId: string) {
+  const stmt = db.prepare(
+    `SELECT COUNT(*) AS count FROM messages WHERE session_id = ?`
+  );
+  const row = stmt.get(sessionId) as { count: number } | null;
+  return row?.count ?? 0;
+}
+
+export function createCheckpoint(db: Database, checkpoint: CheckpointMetadata) {
+  const id = crypto.randomUUID();
+  const stmt = db.prepare(
+    `INSERT INTO checkpoints (
+      id,
+      session_id,
+      user_message_id,
+      prompt_preview,
+      files_changed,
+      turn_index,
+      git_commit,
+      message_count
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(
+    id,
+    checkpoint.sessionId,
+    checkpoint.userMessageId,
+    checkpoint.promptPreview,
+    JSON.stringify(checkpoint.filesChanged),
+    checkpoint.turnIndex,
+    checkpoint.gitCommit ?? null,
+    checkpoint.messageCount ?? 0
+  ) as CheckpointRow;
+  return mapCheckpoint(row);
+}
+
+export function deleteSessionCheckpointsAfter(db: Database, sessionId: string, checkpointId: string) {
+  const checkpoint = getSessionCheckpoint(db, sessionId, checkpointId);
+  if (!checkpoint) return;
+  const stmt = db.prepare(
+    `DELETE FROM checkpoints WHERE session_id = ? AND turn_index > ?`
+  );
+  return stmt.run(sessionId, checkpoint.turnIndex);
+}
+
+export function trimSessionMessagesToCount(db: Database, sessionId: string, messageCount: number) {
+  const count = Math.max(0, messageCount);
+  const stmt = db.prepare(
+    `SELECT id FROM messages WHERE session_id = ? ORDER BY created_at ASC, rowid ASC`
+  );
+  const rows = stmt.all(sessionId) as Array<{ id: string }>;
+  const idsToDelete = rows.slice(count).map((row) => row.id);
+  if (idsToDelete.length === 0) return;
+
+  const deleteStmt = db.prepare(`DELETE FROM messages WHERE id = ?`);
+  for (const id of idsToDelete) {
+    deleteStmt.run(id);
+  }
 }
 
 // --- Project Helpers ---

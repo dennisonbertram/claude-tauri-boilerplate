@@ -1,6 +1,6 @@
-import { Hono } from 'hono';
-import { Database } from 'bun:sqlite';
 import { isAbsolute, normalize, resolve } from 'node:path';
+import { Database } from 'bun:sqlite';
+import { Hono } from 'hono';
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -52,6 +52,9 @@ const chatRequestSchema = z.object({
     .optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  permissionMode: z
+    .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
+    .optional(),
   workspaceId: z.string().optional(),
   linearIssue: z
     .object({
@@ -63,6 +66,26 @@ const chatRequestSchema = z.object({
     .optional(),
   attachments: z.array(z.string().min(1)).optional(),
 });
+
+const CLIENT_SLASH_COMMANDS = new Set([
+  'clear',
+  'new',
+  'sessions',
+  'pr',
+  'help',
+  'settings',
+  'model',
+  'cost',
+  'export',
+  'compact',
+]);
+
+function parseSlashCommand(prompt: string): string | null {
+  if (!prompt.startsWith('/')) return null;
+  const command = prompt.slice(1).trim().split(/\s+/)[0];
+  if (!command || !/^[a-z][a-z0-9-]*$/i.test(command)) return null;
+  return command.toLowerCase();
+}
 
 function sanitizeAttachmentReference(reference: string, workspaceCwd: string): string {
   const noPrefix = reference.replace(/^@/, '');
@@ -163,6 +186,12 @@ function classifyStreamError(err: unknown): StreamError {
 
 export function createChatRouter(db: Database) {
   const router = new Hono();
+  const linearIssueSchema = z.object({
+    id: z.string().min(1, 'issue id is required'),
+    title: z.string().min(1, 'issue title is required'),
+    summary: z.string().optional(),
+    url: z.string().url().optional(),
+  });
 
   router.post('/', async (c) => {
     console.log('[chat] === NEW CHAT REQUEST ===');
@@ -175,11 +204,28 @@ export function createChatRouter(db: Database) {
       );
     }
     const body = parsed.data as ChatRequest;
+
+    const parsedLinearIssue =
+      body.linearIssue === undefined
+        ? { success: true, data: undefined }
+        : linearIssueSchema.safeParse(body.linearIssue);
+    if (!parsedLinearIssue.success) {
+      return c.json(
+        {
+          error: 'Invalid linear issue payload',
+          code: 'VALIDATION_ERROR',
+          details: parsedLinearIssue.error.flatten(),
+        },
+        400
+      );
+    }
+
     console.log('[chat] body:', JSON.stringify(body, null, 2));
     const messages = body.messages;
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
+    const permissionMode = body.permissionMode;
     const provider = body.provider;
     const providerConfig = body.providerConfig;
     const workspaceId = body.workspaceId;
@@ -207,6 +253,29 @@ export function createChatRouter(db: Database) {
     let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
+
+    const slashCommand = parseSlashCommand(prompt);
+    if (slashCommand) {
+      if (!CLIENT_SLASH_COMMANDS.has(slashCommand)) {
+        return c.json(
+          {
+            error: `Invalid slash command: /${slashCommand}`,
+            code: 'INVALID_COMMAND',
+            command: slashCommand,
+          },
+          400
+        );
+      }
+
+      return c.json(
+        {
+          error: `Slash command /${slashCommand} must be executed in the desktop client`,
+          code: 'CLIENT_COMMAND',
+          command: slashCommand,
+        },
+        400
+      );
+    }
 
     // Workspace validation (when workspaceId is provided)
     let workspaceCwd: string | undefined;
@@ -357,6 +426,7 @@ export function createChatRouter(db: Database) {
             sessionId: currentResumeId,
             model,
             effort,
+            permissionMode,
             provider,
             providerConfig,
             cwd: workspaceCwd,

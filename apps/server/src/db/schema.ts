@@ -19,6 +19,20 @@ export const SCHEMA = `
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS checkpoints (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    user_message_id TEXT NOT NULL,
+    prompt_preview TEXT NOT NULL,
+    timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+    files_changed TEXT NOT NULL,
+    turn_index INTEGER NOT NULL,
+    git_commit TEXT,
+    message_count INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_checkpoints_session_id ON checkpoints(session_id);
+  CREATE INDEX IF NOT EXISTS idx_checkpoints_session_turn_index ON checkpoints(session_id, turn_index);
+
   CREATE TABLE IF NOT EXISTS projects (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL CHECK(length(trim(name)) > 0),
@@ -110,4 +124,13 @@ export function migrateLinearIssueColumns(db: import('bun:sqlite').Database): vo
   if (!sHasIssueUrl) {
     db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_url TEXT');
   }
+}
+
+export function migrateSessionModelColumn(db: import('bun:sqlite').Database): void {
+  const columns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+  const hasModel = columns.some((col) => col.name === 'model');
+  if (!hasModel) {
+    db.exec("ALTER TABLE sessions ADD COLUMN model TEXT NOT NULL DEFAULT 'claude-sonnet-4-6'");
+  }
+  db.exec("UPDATE sessions SET model = 'claude-sonnet-4-6' WHERE model IS NULL OR trim(model) = ''");
 }

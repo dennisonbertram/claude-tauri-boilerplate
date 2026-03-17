@@ -284,6 +284,26 @@ describe('Session Management - Rename, Fork, Export', () => {
       const messages = await msgRes.json();
       expect(messages).toHaveLength(0);
     });
+
+    test('fork carries over the source session model', async () => {
+      const session = await createSessionWithMessages('Model Source', [
+        { role: 'user', content: 'Hello' },
+      ]);
+      db.prepare('UPDATE sessions SET model = ? WHERE id = ?').run('claude-opus-4-6', session.id);
+
+      const res = await app.request(`/api/sessions/${session.id}/fork`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(201);
+      const forked = await res.json();
+      expect(forked.model).toBe('claude-opus-4-6');
+
+      const persisted = db.prepare('SELECT model FROM sessions WHERE id = ?').get(forked.id) as { model: string };
+      expect(persisted.model).toBe('claude-opus-4-6');
+    });
   });
 
   // ═══════════════════════════════════════════════

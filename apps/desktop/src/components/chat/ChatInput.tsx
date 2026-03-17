@@ -348,7 +348,12 @@ export function ChatInput({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (showPalette) {
-        if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+        const shouldForwardToPalette =
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowUp' ||
+          e.key === 'Escape' ||
+          (e.key === 'Enter' && paletteCommands.length > 0);
+        if (shouldForwardToPalette) {
           e.preventDefault();
           const paletteEl = paletteRef.current?.querySelector(
             '[data-testid="command-palette"]'
@@ -425,7 +430,7 @@ export function ChatInput({
         }
       }
     },
-    [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion, isMentionOpen, mentionCandidates, selectedMentionIndex, handleMentionSelect, closeMentionPalette]
+    [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion, isMentionOpen, mentionCandidates, selectedMentionIndex, handleMentionSelect, closeMentionPalette, paletteCommands]
   );
 
   return (

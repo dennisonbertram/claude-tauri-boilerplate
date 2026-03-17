@@ -239,6 +239,7 @@ export function ChatPage({
           sessionId,
           model: settings.model,
           effort: settings.effort,
+          permissionMode: settings.permissionMode,
           provider: settings.provider,
           providerConfig: {
             bedrockBaseUrl: settings.bedrockBaseUrl,
@@ -254,6 +255,7 @@ export function ChatPage({
       sessionId,
       settings.model,
       settings.effort,
+      settings.permissionMode,
       settings.provider,
       settings.bedrockBaseUrl,
       settings.bedrockProjectId,
@@ -716,7 +718,17 @@ export function ChatPage({
     if (!text || isLoading) return;
 
     if (text.startsWith('/')) {
-      return;
+      const commandToken = text.slice(1).trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+      if (commandToken) {
+        const matchedCommand = commands.find(
+          (cmd) => cmd.name.toLowerCase() === commandToken
+        );
+        if (matchedCommand) {
+          setInput('');
+          handleCommandSelect(matchedCommand);
+          return;
+        }
+      }
     }
 
     // Track turn info for checkpoints

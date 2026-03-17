@@ -105,7 +105,7 @@ export function createSessionsRouter(db: Database) {
 
     const title = parsed.data.title || `${session.title} (fork)`;
     const newId = crypto.randomUUID();
-    const forkedSession = createSession(db, newId, title);
+    const forkedSession = createSession(db, newId, title, undefined, session.model);
 
     // Copy messages from original session
     const messages = getMessages(db, id);
