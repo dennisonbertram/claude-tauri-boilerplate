@@ -95,12 +95,11 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
   const handleNewChat = async () => {
     // If there's already a truly empty session active, don't create another.
-    // A "truly empty" session is one that has never been updated (updatedAt === createdAt)
-    // AND has no claudeSessionId. This correctly handles forked sessions, which copy
-    // messages and therefore have updatedAt > createdAt even with claudeSessionId === null.
+    // Use messageCount (from the server) as the reliable signal — timestamp
+    // comparison is unreliable due to SQLite second-level precision.
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const isTrulyEmpty = activeSession &&
-      activeSession.updatedAt === activeSession.createdAt &&
+      (activeSession.messageCount ?? 0) === 0 &&
       !activeSession.claudeSessionId;
     if (activeSessionId !== null && isTrulyEmpty) {
       return;

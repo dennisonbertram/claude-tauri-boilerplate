@@ -132,9 +132,13 @@ export function getSession(db: Database, id: string) {
 }
 
 export function listSessions(db: Database) {
-  const stmt = db.prepare(`SELECT * FROM sessions ORDER BY created_at DESC`);
-  const rows = stmt.all() as SessionRow[];
-  return rows.map(mapSession);
+  const stmt = db.prepare(`
+    SELECT s.*, (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+    FROM sessions s
+    ORDER BY s.created_at DESC
+  `);
+  const rows = stmt.all() as (SessionRow & { message_count: number })[];
+  return rows.map((row) => ({ ...mapSession(row), messageCount: row.message_count }));
 }
 
 export function deleteSession(db: Database, id: string) {

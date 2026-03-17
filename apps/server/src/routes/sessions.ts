@@ -119,14 +119,7 @@ export function createSessionsRouter(db: Database) {
       addMessage(db, crypto.randomUUID(), newId, msg.role, msg.content);
     }
 
-    // Touch updated_at so the session is not mistaken for a "truly empty" session
-    // (addMessage inserts into messages but does not update sessions.updated_at)
-    if (messagesToCopy.length > 0) {
-      db.prepare(`UPDATE sessions SET updated_at = datetime('now') WHERE id = ?`).run(newId);
-    }
-
-    const resultSession = getSession(db, newId)!;
-    return c.json(resultSession, 201);
+    return c.json(forkedSession, 201);
   });
 
   // ─── Export session ───

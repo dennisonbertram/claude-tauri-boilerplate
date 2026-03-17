@@ -9,6 +9,8 @@ export interface Session {
   id: string;
   title: string;
   claudeSessionId?: string;
+  workspaceId?: string;
+  messageCount?: number;
   createdAt: string;
   updatedAt: string;
 }
