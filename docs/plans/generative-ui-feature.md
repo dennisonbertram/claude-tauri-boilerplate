@@ -1,6 +1,6 @@
 # Feature Plan: Generative UI
 
-**Status:** Planning
+**Status:** In Progress
 **Created:** 2026-03-16
 **Related Research:** `docs/research/generative-ui-landscape.md`, `docs/investigations/generative-ui-ai-sdk-deep-dive.md`
 
@@ -68,15 +68,15 @@ ToolCallBlock  ◄────────── NEW: GenUIRegistry lookup
 
 The feature is done when:
 
-- [ ] `ToolCallBlock` uses a registry-based lookup instead of hard-coded if/switch chains
-- [ ] The registry supports runtime registration of new tool-name → renderer mappings
-- [ ] All existing tool displays (BashDisplay, FileReadDisplay, etc.) are registered in the registry
+- [x] `ToolCallBlock` uses a registry-based lookup instead of hard-coded if/switch chains
+- [x] The registry supports runtime registration of new tool-name → renderer mappings
+- [x] All existing tool displays (BashDisplay, FileReadDisplay, etc.) are registered in the registry
 - [ ] At least 3 new rich display components exist and are registered
 - [ ] Each display component handles all 3 `ToolCallState.status` values (running, complete, error)
-- [ ] No existing behavior is broken — all current displays still work
+- [x] No existing behavior is broken — all current displays still work
 - [ ] All new components have tests (React Testing Library)
-- [ ] The registry is exported so future code can register additional renderers
-- [ ] TypeScript types are clean — no `any` casts in new code
+- [x] The registry is exported so future code can register additional renderers
+- [x] TypeScript types are clean — no `any` casts in new code
 - [ ] All new components tested in both Vite dev server AND Tauri shell
 - [ ] No CSP violations in Tauri shell (check DevTools console)
 
@@ -88,29 +88,29 @@ The feature is done when:
 
 Goal: Refactor `ToolCallBlock` to use a registry. Zero user-visible change.
 
-- [ ] Create `apps/desktop/src/components/chat/gen-ui/registry.ts`
+- [x] Create `apps/desktop/src/components/chat/gen-ui/registry.ts`
   - Export `type GenUIRenderer = (toolCall: ToolCallState) => React.ReactNode`
   - Export `const toolRendererRegistry = new Map<string, GenUIRenderer>()`
   - Export `registerToolRenderer(name: string, renderer: GenUIRenderer): void`
   - Export `getToolRenderer(name: string): GenUIRenderer | undefined`
-- [ ] Create `apps/desktop/src/components/chat/gen-ui/defaultRenderers.ts`
+- [x] Create `apps/desktop/src/components/chat/gen-ui/defaultRenderers.tsx`
   - Import all existing display components
   - Register each with `registerToolRenderer()`
   - This file is imported once at app startup
-- [ ] Refactor `ToolCallBlock.tsx`
+- [x] Refactor `ToolCallBlock.tsx`
   - Replace all `if (toolCall.name === 'X')` chains with `getToolRenderer(toolCall.name)`
   - Fall back to the existing generic block for unregistered tools
   - Export the registry so tests can inspect registrations
-- [ ] Write tests for the registry module
+- [x] Write tests for the registry module
   - Register a mock renderer, verify lookup
   - Verify unregistered names return undefined
   - Verify fallback behavior in ToolCallBlock
-- [ ] Run `pnpm test` — all tests must pass
+- [x] Run `pnpm test` — all tests must pass
 
 **Files to create:**
 - `apps/desktop/src/components/chat/gen-ui/registry.ts`
-- `apps/desktop/src/components/chat/gen-ui/defaultRenderers.ts`
-- `apps/desktop/src/components/chat/gen-ui/registry.test.ts`
+- `apps/desktop/src/components/chat/gen-ui/defaultRenderers.tsx`
+- `apps/desktop/src/components/chat/gen-ui/registry.test.tsx`
 
 **Files to modify:**
 - `apps/desktop/src/components/chat/ToolCallBlock.tsx` (refactor routing)
@@ -158,13 +158,13 @@ Each component must:
   - Complete: Duration, exit code, output (collapsible)
   - Files: `gen-ui/ProgressTracker.tsx`, `gen-ui/ProgressTracker.test.tsx`
 
-**Register all new components in `defaultRenderers.ts`**
+**Register all new components in `defaultRenderers.tsx`**
 
 ### Phase 3: Integration with Existing Chat Flow
 
 Goal: Wire the new components into the live app, verify end-to-end, polish.
 
-- [ ] Import `defaultRenderers.ts` in the app entry point (or in `ChatPage.tsx`)
+- [x] Import `defaultRenderers.tsx` in the app entry point (or in `ChatPage.tsx`)
   - This triggers all `registerToolRenderer()` calls at startup
 - [ ] Manual testing with Chrome browser tool:
   - Start a chat, ask Claude to read a file → verify FileReadDisplay still works
@@ -215,7 +215,7 @@ Goal: Add a separate structured generation endpoint for non-chat generative UI (
 
 ### 1. Registry initialization timing
 
-**Question:** Where should `defaultRenderers.ts` be imported to ensure registration runs before any components render?
+**Question:** Where should `defaultRenderers.tsx` be imported to ensure registration runs before any components render?
 
 **Options:**
 - Import in `main.tsx` (app entry point) — guaranteed early, but couples chat concerns to app shell
@@ -288,8 +288,8 @@ This feature runs inside a Tauri v2 WebView, not a browser. The following constr
 ```
 apps/desktop/src/components/chat/gen-ui/
 ├── registry.ts                  # Registry module
-├── registry.test.ts             # Registry tests
-├── defaultRenderers.ts          # Registers all built-in renderers
+├── registry.test.tsx            # Registry tests
+├── defaultRenderers.tsx         # Registers all built-in renderers
 ├── DiffSummaryDisplay.tsx       # Phase 2
 ├── DiffSummaryDisplay.test.tsx  # Phase 2
 ├── FileTreeDisplay.tsx          # Phase 2

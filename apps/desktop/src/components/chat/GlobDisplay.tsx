@@ -13,7 +13,11 @@ import {
   File,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
+import {
+  parseToolInput,
+  sanitizeDisplayText,
+  sanitizeToolResult,
+} from './gen-ui/toolData';
 
 interface GlobDisplayProps {
   toolCall: ToolCallState;
@@ -51,11 +55,11 @@ function getFileIcon(filePath: string): React.ElementType {
 /**
  * Parse glob result text into file paths.
  */
-function parseGlobResult(result: string): string[] {
-  if (!result || !result.trim()) return [];
+function parseGlobResult(result: unknown): string[] {
+  if (typeof result !== 'string' || !result.trim()) return [];
   return result
     .split('\n')
-    .map((line) => line.trim())
+    .map((line) => sanitizeDisplayText(line.trim()))
     .filter((line) => line.length > 0);
 }
 
@@ -119,11 +123,11 @@ function CopyPathButton({ path }: { path: string }) {
 }
 
 export function GlobDisplay({ toolCall }: GlobDisplayProps) {
-  const input = parseToolInput<GlobInput>(toolCall.input);
-  const pattern = input.pattern || '';
-  const searchPath = input.path || '';
-  const result = typeof toolCall.result === 'string' ? toolCall.result : '';
-  const files = parseGlobResult(result);
+  const parsedInput = parseToolInput<GlobInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const pattern = sanitizeDisplayText(input.pattern);
+  const searchPath = sanitizeDisplayText(input.path);
+  const files = parseGlobResult(sanitizeToolResult(toolCall.result));
 
   return (
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">

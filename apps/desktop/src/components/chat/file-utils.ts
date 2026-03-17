@@ -1,6 +1,3 @@
-import { parseToolInput as parseToolInputWithSchema } from '@/lib/parseToolInput';
-import { z } from 'zod';
-
 /** Maps file extensions to language names for display and syntax highlighting */
 const EXTENSION_MAP: Record<string, string> = {
   ts: 'typescript',
@@ -78,20 +75,6 @@ export function getDirectory(filePath: string): string {
   const lastSlash = filePath.lastIndexOf('/');
   if (lastSlash === -1) return '.';
   return filePath.slice(0, lastSlash) || '/';
-}
-
-/**
- * Safely parses JSON input from a tool call.
- * Returns an empty object if parsing fails.
- */
-export function parseToolInput<T extends Record<string, unknown>>(input: string): Partial<T> {
-  const parsedInput = parseToolInputWithSchema(input, z.any());
-
-  if (parsedInput.success) {
-    return parsedInput.data as Partial<T>;
-  }
-
-  return {};
 }
 
 /** Image file extensions supported for inline preview */

@@ -10,7 +10,11 @@ import {
   FileText,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
+import {
+  parseToolInput,
+  sanitizeDisplayText,
+  sanitizeToolResult,
+} from './gen-ui/toolData';
 
 interface GrepDisplayProps {
   toolCall: ToolCallState;
@@ -51,14 +55,14 @@ function parseGrepResult(result: string): GrepMatch[] {
       const match = line.match(/^(.+?):(\d+):(.*)$/);
       if (match) {
         return {
-          file: match[1],
+          file: sanitizeDisplayText(match[1]),
           lineNumber: parseInt(match[2], 10),
-          content: match[3],
+          content: sanitizeDisplayText(match[3]),
         };
       }
       // Fall back to file-only (files_with_matches mode)
       return {
-        file: line.trim(),
+        file: sanitizeDisplayText(line.trim()),
         lineNumber: null,
         content: '',
       };
@@ -141,9 +145,11 @@ function CopyPathButton({ path }: { path: string }) {
 }
 
 export function GrepDisplay({ toolCall }: GrepDisplayProps) {
-  const input = parseToolInput<GrepInput>(toolCall.input);
-  const pattern = input.pattern || '';
-  const result = typeof toolCall.result === 'string' ? toolCall.result : '';
+  const parsedInput = parseToolInput<GrepInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const pattern = sanitizeDisplayText(input.pattern);
+  const sanitizedResult = sanitizeToolResult(toolCall.result);
+  const result = typeof sanitizedResult === 'string' ? sanitizedResult : '';
   const matches = parseGrepResult(result);
   const fileGroups = groupByFile(matches);
   const hasContentMatches = matches.some((m) => m.lineNumber !== null);

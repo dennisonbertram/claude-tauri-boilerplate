@@ -23,13 +23,16 @@ vi.mock('ai', () => ({
 // Mock useStreamEvents
 vi.mock('@/hooks/useStreamEvents', () => ({
   useStreamEvents: () => ({
-    toolCalls: [],
-    thinkingBlocks: [],
+    toolCalls: new Map(),
+    thinkingBlocks: new Map(),
     pendingPermissions: new Map(),
     resolvePermission: vi.fn(),
     plan: null,
     approvePlan: vi.fn(),
     rejectPlan: vi.fn(),
+    usage: null,
+    sessionInfo: null,
+    processEvent: vi.fn(),
     reset: vi.fn(),
     cumulativeUsage: {
       inputTokens: 0,
@@ -38,6 +41,66 @@ vi.mock('@/hooks/useStreamEvents', () => ({
       cacheCreationTokens: 0,
     },
     isCompacting: false,
+  }),
+}));
+
+vi.mock('@/hooks/useSubagents', () => ({
+  useSubagents: () => ({
+    agents: [],
+    activeCount: 0,
+    isVisible: false,
+    toggleVisibility: vi.fn(),
+    reset: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useSuggestions', () => ({
+  useSuggestions: () => ({
+    suggestions: [],
+    currentSuggestion: null,
+    accept: vi.fn(),
+    dismiss: vi.fn(),
+    dismissAll: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useCheckpoints', () => ({
+  useCheckpoints: () => ({
+    checkpoints: [],
+    previewRewind: vi.fn(),
+    executeRewind: vi.fn(),
+    reset: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useWorkspaceDiff', () => ({
+  useWorkspaceDiff: () => ({
+    changedFiles: [],
+    fetchDiff: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: () => ({
+    settings: {
+      model: 'claude-sonnet-4-6',
+      effort: 'medium',
+      provider: 'anthropic',
+      bedrockBaseUrl: '',
+      bedrockProjectId: '',
+      vertexProjectId: '',
+      vertexBaseUrl: '',
+      customBaseUrl: '',
+    },
+  }),
+}));
+
+vi.mock('@/hooks/useCostTracking', () => ({
+  useCostTracking: () => ({
+    messageCosts: [],
+    sessionTotalCost: 0,
+    addMessageCost: vi.fn(),
+    reset: vi.fn(),
   }),
 }));
 

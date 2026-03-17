@@ -33,6 +33,7 @@ import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tau
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import type { AttachedImage } from './ChatInput';
+import './gen-ui/defaultRenderers';
 
 const API_BASE = 'http://localhost:3131';
 

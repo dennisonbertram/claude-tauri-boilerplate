@@ -8,11 +8,11 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
 import {
-  sanitizeToolOutputText,
-  sanitizeToolOutputUrl,
-} from '@/lib/sanitizeToolOutput';
+  parseToolInput,
+  sanitizeDisplayText,
+  sanitizeUrl,
+} from './gen-ui/toolData';
 
 interface WebSearchDisplayProps {
   toolCall: ToolCallState;
@@ -24,7 +24,7 @@ interface WebSearchInput {
 
 interface SearchResult {
   title: string;
-  url: string;
+  url: string | null;
   snippet: string;
 }
 
@@ -58,9 +58,9 @@ function parseSearchResults(result: unknown): SearchResult[] {
       typeof item.title === 'string' &&
       typeof item.url === 'string'
   ).map((item) => ({
-    title: sanitizeToolOutputText(item.title),
-    url: sanitizeToolOutputUrl(item.url),
-    snippet: sanitizeToolOutputText(
+    title: sanitizeDisplayText(item.title),
+    url: sanitizeUrl(item.url),
+    snippet: sanitizeDisplayText(
       typeof item.snippet === 'string' ? item.snippet : ''
     ),
   }));
@@ -94,8 +94,9 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
 
 export function WebSearchDisplay({ toolCall }: WebSearchDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const input = parseToolInput<WebSearchInput>(toolCall.input);
-  const query = sanitizeToolOutputText(input.query || '');
+  const parsedInput = parseToolInput<WebSearchInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const query = sanitizeDisplayText(input.query);
   const results = parseSearchResults(toolCall.result);
   const hasResults = results.length > 0;
   const needsCollapse = results.length > INITIAL_RESULT_COUNT;

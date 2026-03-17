@@ -37,6 +37,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-17: Generative UI registry foundation landed
+
+**Type**: Refactor
+**Impact**: Medium
+**Description**: Replaced `ToolCallBlock`'s hardcoded routing with a registry-backed generative UI foundation under `apps/desktop/src/components/chat/gen-ui/`. Added shared tool input parsing with `empty/partial/parsed/invalid` states, centralized sanitization for rendered tool data, migrated the existing specialized tool displays to the shared contract, and documented the follow-on persistence model as separate tool artifacts rather than message-content overloading. Also repaired two stale desktop tests (`ChatInput` query brittleness and `ChatPageErrorBanner` missing hook mocks) so the full workspace suite passes again.
+**Regression Test**: `apps/desktop/src/components/chat/gen-ui/registry.test.tsx`, `apps/desktop/src/components/chat/gen-ui/toolData.test.ts`, `apps/desktop/src/components/chat/ToolCallBlock.test.tsx`, `apps/desktop/src/components/chat/__tests__/FileOperations.test.tsx`, `apps/desktop/src/components/chat/__tests__/SearchDisplay.test.tsx`, `apps/desktop/src/components/chat/__tests__/WebSearchDisplay.test.tsx`, `apps/desktop/src/components/chat/__tests__/WebFetchDisplay.test.tsx`, `apps/desktop/src/components/chat/__tests__/NotebookEditDisplay.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatInput.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageErrorBanner.test.tsx`
+**Related Issue**: GitHub issues `#150`, `#151`
+
 ### 2026-03-15: Settings Status Tab & SSE Data Pipeline Fix
 
 **Type**: Bug Fix + Feature

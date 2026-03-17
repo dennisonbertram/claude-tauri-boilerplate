@@ -9,7 +9,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { detectLanguage, getDirectory, parseToolInput } from './file-utils';
+import { detectLanguage, getDirectory } from './file-utils';
+import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
 
 interface FileWriteDisplayProps {
   toolCall: ToolCallState;
@@ -52,9 +53,10 @@ export function FileWriteDisplay({ toolCall }: FileWriteDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const input = parseToolInput<WriteInput>(toolCall.input);
-  const filePath = input.file_path || '';
-  const content = input.content || '';
+  const parsedInput = parseToolInput<WriteInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const filePath = sanitizeDisplayText(input.file_path);
+  const content = sanitizeDisplayText(input.content);
   const language = filePath ? detectLanguage(filePath) : 'text';
   const directory = filePath ? getDirectory(filePath) : '';
 

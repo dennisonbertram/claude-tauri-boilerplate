@@ -10,11 +10,11 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
 import {
-  sanitizeToolOutputText,
-  sanitizeToolOutputUrl,
-} from '@/lib/sanitizeToolOutput';
+  parseToolInput,
+  sanitizeDisplayText,
+  sanitizeUrl,
+} from './gen-ui/toolData';
 
 interface WebFetchDisplayProps {
   toolCall: ToolCallState;
@@ -89,10 +89,11 @@ function CopyUrlButton({ url }: { url: string }) {
 
 export function WebFetchDisplay({ toolCall }: WebFetchDisplayProps) {
   const [isContentExpanded, setIsContentExpanded] = useState(false);
-  const input = parseToolInput<WebFetchInput>(toolCall.input);
-  const url = sanitizeToolOutputUrl(input.url || '');
-  const prompt = sanitizeToolOutputText(input.prompt || '');
-  const resultText = sanitizeToolOutputText(
+  const parsedInput = parseToolInput<WebFetchInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const url = sanitizeUrl(input.url);
+  const prompt = sanitizeDisplayText(input.prompt);
+  const resultText = sanitizeDisplayText(
     typeof toolCall.result === 'string' ? toolCall.result : ''
   );
   const hasContent = resultText.length > 0;
@@ -127,7 +128,7 @@ export function WebFetchDisplay({ toolCall }: WebFetchDisplayProps) {
           </span>
         )}
         <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-        <CopyUrlButton url={url} />
+        {url ? <CopyUrlButton url={url} /> : null}
 
         <span className="ml-auto shrink-0">
           <StatusIndicator status={toolCall.status} />

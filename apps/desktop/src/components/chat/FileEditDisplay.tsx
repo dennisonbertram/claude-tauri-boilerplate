@@ -7,8 +7,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
 import { DiffViewer } from './DiffViewer';
+import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
 
 interface FileEditDisplayProps {
   toolCall: ToolCallState;
@@ -50,11 +50,12 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
 export function FileEditDisplay({ toolCall }: FileEditDisplayProps) {
   const [copied, setCopied] = useState(false);
 
-  const input = parseToolInput<EditInput>(toolCall.input);
-  const filePath = input.file_path || '';
-  const oldString = input.old_string || '';
-  const newString = input.new_string || '';
-  const replaceAll = input.replace_all || false;
+  const parsedInput = parseToolInput<EditInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const filePath = sanitizeDisplayText(input.file_path);
+  const oldString = sanitizeDisplayText(input.old_string);
+  const newString = sanitizeDisplayText(input.new_string);
+  const replaceAll = Boolean(input.replace_all);
 
   const removedLines = oldString ? oldString.split('\n') : [];
   const addedLines = newString ? newString.split('\n') : [];

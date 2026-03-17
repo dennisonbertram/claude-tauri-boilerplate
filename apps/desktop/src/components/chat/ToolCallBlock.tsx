@@ -14,32 +14,18 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { FileReadDisplay } from './FileReadDisplay';
-import { FileEditDisplay } from './FileEditDisplay';
-import { FileWriteDisplay } from './FileWriteDisplay';
-import { BashDisplay } from './BashDisplay';
-import { GrepDisplay } from './GrepDisplay';
-import { GlobDisplay } from './GlobDisplay';
-import { WebSearchDisplay } from './WebSearchDisplay';
-import { WebFetchDisplay } from './WebFetchDisplay';
-import { NotebookEditDisplay } from './NotebookEditDisplay';
-import { sanitizeToolOutputText } from '@/lib/sanitizeToolOutput';
+import { getToolRenderer } from './gen-ui/registry';
+import {
+  formatToolInputForDisplay,
+  formatToolResultForDisplay,
+  sanitizeDisplayText,
+} from './gen-ui/toolData';
 
 export interface ToolCallBlockProps {
   toolCall: ToolCallState;
   onFixErrors?: (toolCall: ToolCallState) => void;
 }
 
-/** Tool names that get specialized file operation displays */
-const FILE_OPERATION_TOOLS = new Set(['Read', 'Edit', 'Write']);
-
-/** Tool names that get specialized search displays */
-const SEARCH_TOOLS = new Set(['Grep', 'Glob']);
-
-/** Tool names that get specialized web displays */
-const WEB_TOOLS = new Set(['WebSearch', 'WebFetch']);
-
-/** Maps tool names to Lucide icon components */
 function getToolIcon(name: string) {
   const iconMap: Record<string, React.ElementType> = {
     Bash: Terminal,
@@ -80,232 +66,85 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   }
 }
 
-function formatInput(input: string): string {
-  try {
-    const parsed = JSON.parse(input);
-    return sanitizeToolOutputText(JSON.stringify(parsed, null, 2));
-  } catch {
-    return sanitizeToolOutputText(input);
-  }
-}
-
-function formatResult(result: unknown): string {
-  if (typeof result === 'string') return sanitizeToolOutputText(result);
-  try {
-    return sanitizeToolOutputText(JSON.stringify(result, null, 2));
-  } catch {
-    return sanitizeToolOutputText(String(result));
-  }
-}
-
-/**
- * Parse the Bash tool input JSON to extract command, description, and flags.
- */
-function parseBashInput(input: string): {
-  command: string;
-  description?: string;
-  isBackground?: boolean;
-  timeout?: number;
-} {
-  try {
-    const parsed = JSON.parse(input);
-    return {
-      command: parsed.command || input,
-      description: parsed.description,
-      isBackground: parsed.run_in_background,
-      timeout: parsed.timeout,
-    };
-  } catch {
-    return { command: input };
-  }
-}
-
-/**
- * Extract exit code from a Bash tool result.
- * The result may contain exit code info embedded in the output text.
- */
-function extractExitCode(
-  result: unknown,
-  status: ToolCallState['status']
-): number | undefined {
-  if (status === 'running') return undefined;
-  // If the tool completed successfully, assume exit 0
-  // If it errored, assume exit 1
-  // The SDK doesn't always provide an explicit exit code
-  if (status === 'error') return 1;
-  if (status === 'complete') return 0;
-  return undefined;
-}
-
-export function ToolCallBlock({
-  toolCall,
-  onFixErrors,
-}: ToolCallBlockProps) {
-  const triggerFixErrors = () => {
-    onFixErrors?.(toolCall);
-  };
-
-  const renderCiFailureActions = () => {
-    if (!toolCall.ciFailures || !onFixErrors) return null;
-
-    return (
-      <div className="border-t border-border/50 px-3 py-2">
-        <div className="text-xs text-muted-foreground font-medium mb-2">
-          {toolCall.ciFailures.summary}
-        </div>
-        <ul className="text-xs text-foreground/90 space-y-1 mb-2">
-          {toolCall.ciFailures.checks.map((check) => (
-            <li key={check} className="max-w-full truncate">• {check}</li>
-          ))}
-        </ul>
-        <button
-          type="button"
-          onClick={triggerFixErrors}
-          className="rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground"
-        >
-          Fix Errors
-        </button>
-      </div>
-    );
-  };
-
-  // Route to specialized displays for file operations
-  if (FILE_OPERATION_TOOLS.has(toolCall.name)) {
-    switch (toolCall.name) {
-      case 'Read':
-        return <FileReadDisplay toolCall={toolCall} />;
-      case 'Edit':
-        return <FileEditDisplay toolCall={toolCall} />;
-      case 'Write':
-        return <FileWriteDisplay toolCall={toolCall} />;
-    }
-  }
-
-  // Route to specialized search displays
-  if (SEARCH_TOOLS.has(toolCall.name)) {
-    switch (toolCall.name) {
-      case 'Grep':
-        return <GrepDisplay toolCall={toolCall} />;
-      case 'Glob':
-        return <GlobDisplay toolCall={toolCall} />;
-    }
-  }
-
-  // Route to specialized web displays
-  if (WEB_TOOLS.has(toolCall.name)) {
-    switch (toolCall.name) {
-      case 'WebSearch':
-        return <WebSearchDisplay toolCall={toolCall} />;
-      case 'WebFetch':
-        return <WebFetchDisplay toolCall={toolCall} />;
-    }
-  }
-
-  // Route to NotebookEdit display
-  if (toolCall.name === 'NotebookEdit') {
-    return <NotebookEditDisplay toolCall={toolCall} />;
-  }
-
+function GenericToolFallback({ toolCall }: ToolCallBlockProps) {
   const [isExpanded, setIsExpanded] = useState(toolCall.status === 'running');
   const Icon = getToolIcon(toolCall.name);
 
-  // Delegate to BashDisplay for Bash tool calls
-  if (toolCall.name === 'Bash') {
-    const bashInput = parseBashInput(toolCall.input);
-    const output = toolCall.result !== undefined ? formatResult(toolCall.result) : undefined;
-    const exitCode = extractExitCode(toolCall.result, toolCall.status);
-    const duration = toolCall.elapsedSeconds != null
-      ? toolCall.elapsedSeconds * 1000
-      : undefined;
-
-    return (
-      <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
-        <BashDisplay
-          command={bashInput.command}
-          description={bashInput.description}
-          output={output}
-          exitCode={exitCode}
-          isRunning={toolCall.status === 'running'}
-          isBackground={bashInput.isBackground}
-          duration={duration}
-        />
-        {renderCiFailureActions()}
-      </div>
-    );
-  }
-
   return (
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
-      {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/50"
         aria-label={toolCall.name}
       >
         {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
-        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="font-medium text-foreground">{toolCall.name}</span>
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="font-medium text-foreground">{sanitizeDisplayText(toolCall.name)}</span>
 
-        {/* Summary or elapsed */}
-        {toolCall.summary && !isExpanded && (
-          <span className="text-xs text-muted-foreground truncate ml-1">
-            {toolCall.summary}
+        {toolCall.summary && !isExpanded ? (
+          <span className="ml-1 truncate text-xs text-muted-foreground">
+            {sanitizeDisplayText(toolCall.summary)}
           </span>
-        )}
-        {toolCall.status === 'running' && toolCall.elapsedSeconds != null && (
-          <span className="text-xs text-muted-foreground ml-auto">
+        ) : null}
+
+        {toolCall.status === 'running' && toolCall.elapsedSeconds != null ? (
+          <span className="ml-auto text-xs text-muted-foreground">
             {toolCall.elapsedSeconds}s
           </span>
-        )}
+        ) : null}
 
         <span className="ml-auto shrink-0">
           <StatusIndicator status={toolCall.status} />
         </span>
       </button>
 
-      {/* Expanded content */}
-      {isExpanded && (
+      {isExpanded ? (
         <div className="border-t border-border">
-          {/* Input section */}
-          {toolCall.input && (
-            <div className="px-3 py-2 border-b border-border/50">
-              <div className="text-xs text-muted-foreground mb-1 font-medium">
+          {toolCall.input ? (
+            <div className="border-b border-border/50 px-3 py-2">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">
                 Input
               </div>
-              <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground/80 max-h-48 overflow-y-auto">
-                {formatInput(toolCall.input)}
+              <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-all text-xs font-mono text-foreground/80">
+                {formatToolInputForDisplay(toolCall.input)}
               </pre>
             </div>
-          )}
+          ) : null}
 
-          {/* Result section */}
-          {toolCall.result !== undefined && (
+          {toolCall.result !== undefined ? (
             <div className="px-3 py-2">
-              <div className="text-xs text-muted-foreground mb-1 font-medium">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">
                 Output
               </div>
-              <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground/80 max-h-64 overflow-y-auto">
-                {formatResult(toolCall.result)}
+              <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap break-all text-xs font-mono text-foreground/80">
+                {formatToolResultForDisplay(toolCall.result)}
               </pre>
             </div>
-          )}
+          ) : null}
 
-          {/* Summary when expanded */}
-          {toolCall.summary && (
-            <div className="px-3 py-1.5 border-t border-border/50">
-              <span className="text-xs text-muted-foreground italic">
-                {toolCall.summary}
+          {toolCall.summary ? (
+            <div className="border-t border-border/50 px-3 py-1.5">
+              <span className="text-xs italic text-muted-foreground">
+                {sanitizeDisplayText(toolCall.summary)}
               </span>
             </div>
-          )}
-
-          {renderCiFailureActions()}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
+}
+
+export function ToolCallBlock(props: ToolCallBlockProps) {
+  const renderer = getToolRenderer(props.toolCall.name);
+
+  if (renderer) {
+    return <>{renderer(props)}</>;
+  }
+
+  return <GenericToolFallback {...props} />;
 }
