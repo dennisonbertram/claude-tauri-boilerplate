@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import type { AppSettings } from '@/hooks/useSettings';
+import { AVAILABLE_MODELS } from '@/lib/models';
 import { InstructionsPanel } from '@/components/settings/InstructionsPanel';
 import { MemoryPanel } from '@/components/settings/MemoryPanel';
 import { McpPanel } from '@/components/settings/McpPanel';
@@ -166,6 +167,22 @@ function GeneralTab({
             {showApiKey ? 'Hide' : 'Show'}
           </button>
         </div>
+      </SettingField>
+
+      {/* Model */}
+      <SettingField label="Model" description="AI model to use for conversations">
+        <select
+          data-testid="model-select"
+          value={settings.model}
+          onChange={(e) => updateSettings({ model: e.target.value })}
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {AVAILABLE_MODELS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
       </SettingField>
 
       {/* Max Tokens */}
