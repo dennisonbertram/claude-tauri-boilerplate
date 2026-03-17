@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsPanel } from '../settings/SettingsPanel';
@@ -41,7 +42,7 @@ describe('Settings model selector (#119)', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const select = screen.getByTestId('model-select');
-    expect(select).toBeInTheDocument();
+    expect(select).toBeTruthy();
 
     const options = Array.from(select.querySelectorAll('option')).map(
       (o) => (o as HTMLOptionElement).value,
@@ -77,12 +78,12 @@ describe('Settings model selector (#119)', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     // General tab is active by default — model-select should be visible
-    expect(screen.getByTestId('model-select')).toBeInTheDocument();
+    expect(screen.getByTestId('model-select')).toBeTruthy();
 
     // Switch to the Model tab
     fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
 
     // model-select should no longer be present (it lives in General tab only)
-    expect(screen.queryByTestId('model-select')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('model-select')).toBeNull();
   });
 });
