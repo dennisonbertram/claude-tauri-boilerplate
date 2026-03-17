@@ -41,6 +41,9 @@ describe('Settings model selector (#119)', () => {
   it('renders model selector with correct options', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
+    // Model selector is in the Model tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
+
     const select = screen.getByTestId('model-select');
     expect(select).toBeTruthy();
 
@@ -55,12 +58,16 @@ describe('Settings model selector (#119)', () => {
   it('default selected model is claude-sonnet-4-6', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
+
     const select = screen.getByTestId('model-select') as HTMLSelectElement;
     expect(select.value).toBe('claude-sonnet-4-6');
   });
 
   it('changing model calls updateSettings with new value', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
 
     const select = screen.getByTestId('model-select');
     fireEvent.change(select, { target: { value: 'claude-opus-4-6' } });
@@ -74,16 +81,16 @@ describe('Settings model selector (#119)', () => {
     expect(savedSettings.model).toBe('claude-opus-4-6');
   });
 
-  it('model selector is in the General tab, not the Model tab', () => {
+  it('model selector is in the Model tab, not the General tab', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    // General tab is active by default — model-select should be visible
-    expect(screen.getByTestId('model-select')).toBeTruthy();
+    // General tab is active by default — model-select should NOT be visible
+    expect(screen.queryByTestId('model-select')).toBeNull();
 
     // Switch to the Model tab
     fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
 
-    // model-select should no longer be present (it lives in General tab only)
-    expect(screen.queryByTestId('model-select')).toBeNull();
+    // model-select should now be present
+    expect(screen.getByTestId('model-select')).toBeTruthy();
   });
 });

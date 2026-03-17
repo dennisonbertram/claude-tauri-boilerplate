@@ -68,7 +68,8 @@ describe('SettingsPanel', () => {
   test('shows General tab by default', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     expect(screen.getByText('API Key')).toBeInTheDocument();
-    expect(screen.getByText('Max Tokens')).toBeInTheDocument();
+    // Max Tokens and Model are now in the Model tab, not General
+    expect(screen.queryByText('Max Tokens')).toBeNull();
   });
 
   test('switches to Model tab on click', async () => {
@@ -109,6 +110,8 @@ describe('SettingsPanel', () => {
 
   test('renders default max tokens value', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
+    // max-tokens-slider is now in the Model tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
     const slider = screen.getByTestId('max-tokens-slider') as HTMLInputElement;
     expect(slider.value).toBe('4096');
   });

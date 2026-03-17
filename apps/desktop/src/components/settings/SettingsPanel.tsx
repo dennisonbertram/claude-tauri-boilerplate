@@ -174,6 +174,13 @@ function GeneralTab({
         </div>
       </SettingField>
 
+    </>
+  );
+}
+
+function ModelTab({ settings, updateSettings }: TabProps) {
+  return (
+    <>
       {/* Model */}
       <SettingField label="Model" description="AI model to use for conversations">
         <select
@@ -208,13 +215,7 @@ function GeneralTab({
           className="w-full accent-primary"
         />
       </SettingField>
-    </>
-  );
-}
 
-function ModelTab({ settings, updateSettings }: TabProps) {
-  return (
-    <>
       {/* Temperature */}
       <SettingField
         label="Temperature"
