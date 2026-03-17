@@ -54,6 +54,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   } = useSessions();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
@@ -124,7 +125,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   return (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 min-h-0">
-        {activeView === 'chat' && (
+        {activeView === 'chat' && sidebarOpen && (
           <SessionSidebar
             sessions={sessions}
             activeSessionId={activeSessionId}
@@ -193,6 +194,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onExportSession={() => exportSession(activeSessionId, 'json')}
               onStatusChange={handleStatusChange}
               onAutoName={autoNameSession}
+              onToggleSidebar={() => setSidebarOpen((open) => !open)}
+              onOpenSettings={() => setSettingsOpen(true)}
             />
           ) : (
             <WelcomeScreen onNewChat={handleNewChat} />

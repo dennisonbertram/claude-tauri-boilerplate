@@ -56,6 +56,8 @@ interface ChatPageProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
+  onToggleSidebar?: () => void;
+  onOpenSettings?: () => void;
 }
 
 /**
@@ -70,10 +72,11 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, onAutoName, workspaceId }: ChatPageProps) {
+export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, onAutoName, workspaceId, onToggleSidebar, onOpenSettings }: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
+  const [costOpen, setCostOpen] = useState(false);
   const {
     toolCalls,
     thinkingBlocks,
@@ -265,8 +268,11 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       createSession: onCreateSession ?? (() => {}),
       exportSession: onExportSession ?? (() => {}),
       showHelp: () => setHelpOpen(true),
+      showSettings: onOpenSettings,
+      showModelSelector: onOpenSettings,
+      showCostSummary: () => setCostOpen(true),
     }),
-    [clearChat, onCreateSession, onExportSession]
+    [clearChat, onCreateSession, onExportSession, onOpenSettings]
   );
 
   const { commands, filterCommands } = useCommands(commandContext);
@@ -326,9 +332,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         meta: true,
         label: 'Toggle Sidebar',
         category: 'navigation' as const,
-        handler: () => {
-          // Placeholder: toggle sidebar visibility
-        },
+        handler: onToggleSidebar ?? (() => {}),
       },
       {
         id: 'help',
@@ -345,7 +349,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         label: 'Cancel / Close',
         category: 'general' as const,
         handler: () => {
-          if (helpOpen) {
+          if (costOpen) {
+            setCostOpen(false);
+          } else if (helpOpen) {
             setHelpOpen(false);
           } else if (paletteOpen) {
             handlePaletteClose();
@@ -353,7 +359,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         },
       },
     ],
-    [onCreateSession, clearChat, helpOpen, paletteOpen, handlePaletteClose]
+    [onCreateSession, clearChat, costOpen, helpOpen, paletteOpen, handlePaletteClose, onToggleSidebar]
   );
 
   const { shortcuts } = useKeyboardShortcuts(shortcutDefs);
@@ -683,6 +689,38 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         onClose={() => setHelpOpen(false)}
         shortcuts={shortcuts}
       />
+      {costOpen && (
+        <div
+          data-testid="cost-dialog-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setCostOpen(false)}
+        >
+          <div
+            data-testid="cost-dialog"
+            className="w-80 rounded-xl border border-border bg-background p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-4 text-lg font-semibold">Session Cost</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total cost</span>
+                <span className="font-mono">${sessionTotalCost.toFixed(6)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Messages</span>
+                <span className="font-mono">{messageCosts.length}</span>
+              </div>
+            </div>
+            <button
+              data-testid="cost-dialog-close"
+              onClick={() => setCostOpen(false)}
+              className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
