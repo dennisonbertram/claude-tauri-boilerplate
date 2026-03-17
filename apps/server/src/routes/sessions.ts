@@ -147,7 +147,11 @@ export function createSessionsRouter(db: Database) {
 
     const messages = getMessages(db, id);
     // Sanitize the title for use in filenames
-    const safeTitle = session.title.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+    const safeTitle = session.title
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .slice(0, 50);
 
     if (format === 'md') {
       let md = `# ${session.title}\n\n`;
