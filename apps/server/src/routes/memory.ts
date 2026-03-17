@@ -7,7 +7,9 @@ import type { MemoryFile, MemorySearchResult } from '@claude-tauri/shared';
 // import.meta.dir is the directory of this source file:
 //   apps/server/src/routes/
 // Go up 4 levels: routes -> src -> server -> apps -> project root
-const PROJECT_ROOT = process.env.PROJECT_ROOT ?? resolve(import.meta.dir, '../../../..');
+function getProjectRoot(): string {
+  return process.env.PROJECT_ROOT ?? resolve(import.meta.dir, '../../../..');
+}
 
 /**
  * Derive a project hash from the CWD path.
@@ -28,7 +30,7 @@ function getMemoryDir(): string {
   const base =
     process.env.CLAUDE_MEMORY_DIR ||
     join(homedir(), '.claude', 'projects');
-  const projectHash = deriveProjectHash(PROJECT_ROOT);
+  const projectHash = deriveProjectHash(getProjectRoot());
   return join(base, projectHash, 'memory');
 }
 

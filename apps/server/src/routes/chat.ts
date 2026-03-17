@@ -75,6 +75,9 @@ const CLIENT_SLASH_COMMANDS = new Set([
   'restart',
   'sessions',
   'pr',
+  'prs',
+  'review',
+  'branch',
   'help',
   'settings',
   'model',
@@ -403,6 +406,11 @@ export function createChatRouter(db: Database) {
     const promptWithContext = [startupPrompt, linearIssuePrompt, prompt]
       .filter((value): value is string => Boolean(value))
       .join('\n\n');
+
+    // Persisted user content should be the raw user prompt (plus attachments),
+    // not the injected startup/system instructions or other context blocks.
+    const promptForDb = appendAttachmentsToPrompt(prompt, resolvedAttachmentRefs);
+
     const promptWithContextAndAttachments = appendAttachmentsToPrompt(
       promptWithContext,
       resolvedAttachmentRefs
@@ -480,7 +488,7 @@ export function createChatRouter(db: Database) {
           }
 
           // Persist the user message now that we have a valid session
-          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptWithContextAndAttachments);
+          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptForDb);
         }
 
         // Determine the Claude session ID for resume:

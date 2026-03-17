@@ -24,6 +24,9 @@ describe('useCommands', () => {
     showSettings: vi.fn(),
     showSessionList: vi.fn(),
     openPullRequests: vi.fn(),
+    runReviewWorkflow: vi.fn(),
+    runPrWorkflow: vi.fn(),
+    runBranchWorkflow: vi.fn(),
   };
 
   beforeEach(() => {
@@ -108,11 +111,25 @@ describe('useCommands', () => {
     expect(cmd!.shortcut).toBeUndefined();
   });
 
+  it('includes /review command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'review');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('tools');
+  });
+
   it('includes /pr command', () => {
     const { result } = renderHook(() => useCommands(mockContext));
     const cmd = result.current.commands.find((c) => c.name === 'pr');
     expect(cmd).toBeDefined();
-    expect(cmd!.category).toBe('navigation');
+    expect(cmd!.category).toBe('tools');
+  });
+
+  it('includes /branch command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'branch');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('tools');
   });
 
   describe('command execution', () => {
@@ -215,13 +232,31 @@ describe('useCommands', () => {
       expect(mockContext.showSessionList).toHaveBeenCalledOnce();
     });
 
-    it('/pr calls openPullRequests', async () => {
+    it('/review calls runReviewWorkflow', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'review')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.runReviewWorkflow).toHaveBeenCalledOnce();
+    });
+
+    it('/pr calls runPrWorkflow', async () => {
       const { result } = renderHook(() => useCommands(mockContext));
       const cmd = result.current.commands.find((c) => c.name === 'pr')!;
       await act(async () => {
         await cmd.execute();
       });
-      expect(mockContext.openPullRequests).toHaveBeenCalledOnce();
+      expect(mockContext.runPrWorkflow).toHaveBeenCalledOnce();
+    });
+
+    it('/branch calls runBranchWorkflow', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'branch')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.runBranchWorkflow).toHaveBeenCalledOnce();
     });
 
     it('/add-dir calls addDir when available', async () => {

@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
-import { useSettings, DEFAULT_SETTINGS, loadSettings } from './useSettings';
+import {
+  useSettings,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  saveSettings,
+} from './useSettings';
 import type { AppSettings } from './useSettings';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 
@@ -33,13 +38,21 @@ function wrapper({ children }: { children: React.ReactNode }) {
 }
 
 describe('useSettings', () => {
+  const originalFetch = globalThis.fetch;
+
   beforeEach(() => {
     localStorageMock.clear();
     vi.clearAllMocks();
+    globalThis.fetch = vi.fn(async () => ({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    })) as typeof fetch;
   });
 
   afterEach(() => {
     localStorageMock.clear();
+    globalThis.fetch = originalFetch;
   });
 
   describe('default values', () => {
@@ -193,6 +206,52 @@ describe('useSettings', () => {
       // Should fall back to defaults
       expect(result.current.settings).toEqual(DEFAULT_SETTINGS);
     });
+
+    it('does not persist repository workflow prompts to localStorage', () => {
+      saveSettings({
+        ...DEFAULT_SETTINGS,
+        workflowPrompts: {
+          review: 'Repo review prompt',
+          pr: 'Repo PR prompt',
+          branch: 'Repo branch prompt',
+        },
+      });
+
+      const savedValue = JSON.parse(
+        localStorageMock.setItem.mock.calls.at(-1)![1]
+      );
+      expect(savedValue.workflowPrompts).toBeUndefined();
+    });
+
+    it('hydrates repository workflow prompt overrides on mount', async () => {
+      globalThis.fetch = vi.fn(async (input: string | URL) => {
+        const url = String(input);
+        if (url.endsWith('/workflow-review.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Repo review override' }),
+          } as Response;
+        }
+
+        return {
+          ok: false,
+          status: 404,
+          json: async () => ({ error: 'Not found' }),
+        } as Response;
+      }) as typeof fetch;
+
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.settings.workflowPrompts.review).toBe(
+          'Repo review override'
+        );
+      });
+      expect(result.current.settings.workflowPrompts.pr).toBe(
+        DEFAULT_SETTINGS.workflowPrompts.pr
+      );
+    });
   });
 
   describe('model migration', () => {
@@ -310,7 +369,9 @@ describe('useSettings', () => {
       });
 
       const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
-      expect(stored).toEqual(DEFAULT_SETTINGS);
+      const { workflowPrompts: _workflowPrompts, ...expectedStored } =
+        DEFAULT_SETTINGS;
+      expect(stored).toEqual(expectedStored);
     });
   });
 });

@@ -37,12 +37,13 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all 9 tabs', () => {
+  it('renders all tabs', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const expectedTabs = [
       'General',
       'Model',
+      'Workflows',
       'Appearance',
       'Instructions',
       'Memory',
@@ -57,10 +58,10 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
     }
   });
 
-  it('renders exactly 9 tabs', () => {
+  it('renders exactly 10 tabs', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(9);
+    expect(tabs).toHaveLength(10);
   });
 
   it('tab container has flex-wrap class', () => {

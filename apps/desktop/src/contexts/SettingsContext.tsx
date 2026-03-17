@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { AppSettings } from '@/hooks/useSettings';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '@/hooks/useSettings';
+import { loadRepoWorkflowPrompts } from '@/lib/workflowPrompts';
 
 interface SettingsContextValue {
   settings: AppSettings;
@@ -12,6 +13,30 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadRepoWorkflowPrompts()
+      .then((workflowPrompts) => {
+        if (cancelled || Object.keys(workflowPrompts).length === 0) return;
+
+        setSettings((prev) => ({
+          ...prev,
+          workflowPrompts: {
+            ...prev.workflowPrompts,
+            ...workflowPrompts,
+          },
+        }));
+      })
+      .catch(() => {
+        // Keep defaults/local settings when repository overrides are unavailable.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setSettings((prev) => {

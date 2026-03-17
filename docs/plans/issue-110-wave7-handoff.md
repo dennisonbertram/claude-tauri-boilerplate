@@ -1,23 +1,40 @@
-# Issue #110 Wave 7 Handoff
+# Issue #110 Wave 8 completion handoff
 
-## Status
+## Scope completed
 
-Partial. The wave adds backend support for startup instruction injection from `CLAUDE.md` files and an optional `systemPrompt` field in chat requests, but the broader settings UI and per-repository customization workflow described in the original issue remain open.
+- Global agent instructions already present in settings are now sent on every chat startup via `systemPrompt`.
+- Repository-scoped workflow prompts now exist for:
+  - review
+  - PR creation
+  - branch naming
+- Repository workflow prompts are loaded from per-project memory files and no longer leak through global `localStorage`.
+- Workflow prompts can be saved or reset from **Settings → Workflows**.
+- `/review`, `/pr`, and `/branch` now use the repository-scoped prompt values.
+- Permission mode remains live in the chat transport payload, so subsequent turns use the current setting immediately.
+- The memory route path regression was fixed so repo-scoped prompt files resolve against the project root.
 
-## What landed
+## Targeted automated validation
 
-- Global instruction loading from `CLAUDE_GLOBAL_INSTRUCTION_PATH` or the default Claude Code instructions path.
-- User instruction loading from `CLAUDE_USER_INSTRUCTION_PATH` or `~/.claude/CLAUDE.md`.
-- Workspace instruction precedence so a repository root `CLAUDE.md` wins over `./.claude/CLAUDE.md`.
-- Startup prompt ordering that places global, user, workspace, and system prompt blocks before the user message.
-- Regression coverage for instruction precedence and system prompt ordering in `apps/server/src/routes/chat-workspace.test.ts`.
+- `cd apps/server && bun test src/routes/chat-commands.test.ts src/routes/chat-workspace.test.ts src/routes/memory.path-regression.test.ts`
+  - Result: `25 pass, 0 fail`
+- `cd apps/desktop && vitest run src/lib/workflowPrompts.test.ts src/hooks/useSettings.test.ts src/hooks/useCommands.test.ts src/components/settings/SettingsPanel.test.tsx src/components/__tests__/SettingsTabsOverflow.test.tsx src/components/chat/__tests__/ChatPageTransport.test.tsx`
+  - Result: `102 pass, 0 fail`
 
-## Manual verification note
+## Manual browser-control verification note
 
-Use the desktop app against a workspace that contains both `CLAUDE.md` and `./.claude/CLAUDE.md`, send a chat message, and confirm there are no console errors and the response reflects the expected instruction precedence. For a quick backend smoke check, verify the chat request path still returns `200` when the prompt includes a `systemPrompt`.
+1. Start the existing app on port `1420`.
+2. Open **Settings → Model** and set a global system prompt.
+   - Expected: the next chat turn uses that startup instruction.
+3. Open **Settings → Workflows**.
+   - Expected: Review, PR, and Branch Naming prompt editors are visible.
+4. Save repository-specific prompt overrides.
+   - Expected: prompt state persists for this repository.
+5. Trigger `/review`, `/pr`, and `/branch`.
+   - Expected: each workflow uses the repository-scoped prompt content.
+6. Change **Permission Mode** in settings and send another message.
+   - Expected: the next request uses the updated mode without restarting the app.
 
-## Handoff guidance
+## Notes
 
-- Keep this issue labeled `partially-done`.
-- Do not rework the prompt assembly from scratch; extend the current startup prompt helper if new instruction sources are added later.
-- If the settings UI for custom prompts lands later, layer it on top of the existing startup prompt assembly rather than replacing it.
+- Repository workflow prompts are intentionally stored per project rather than globally.
+- The old wave-7 state for this issue is superseded by this branch.

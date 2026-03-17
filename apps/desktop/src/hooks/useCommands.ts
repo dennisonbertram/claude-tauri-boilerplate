@@ -24,6 +24,9 @@ export interface CommandContext {
   showHelp?: () => void;
   openPullRequests?: () => void;
   showLinearIssues?: () => void;
+  runReviewWorkflow?: () => void | Promise<void>;
+  runPrWorkflow?: () => void | Promise<void>;
+  runBranchWorkflow?: () => void | Promise<void>;
 }
 
 export function useCommands(context: CommandContext) {
@@ -58,7 +61,7 @@ export function useCommands(context: CommandContext) {
         execute: () => context.showSessionList?.(),
       },
       {
-        name: 'pr',
+        name: 'prs',
         description: 'Open pull requests',
         category: 'navigation' as CommandCategory,
         execute: () => context.openPullRequests?.(),
@@ -85,6 +88,24 @@ export function useCommands(context: CommandContext) {
         description: 'Switch the AI model',
         category: 'tools' as CommandCategory,
         execute: () => context.showModelSelector?.(),
+      },
+      {
+        name: 'review',
+        description: 'Review current workspace changes',
+        category: 'tools' as CommandCategory,
+        execute: () => context.runReviewWorkflow?.(),
+      },
+      {
+        name: 'pr',
+        description: 'Draft a pull request for current changes',
+        category: 'tools' as CommandCategory,
+        execute: () => context.runPrWorkflow?.(),
+      },
+      {
+        name: 'branch',
+        description: 'Suggest a branch name for current changes',
+        category: 'tools' as CommandCategory,
+        execute: () => context.runBranchWorkflow?.(),
       },
       {
         name: 'cost',

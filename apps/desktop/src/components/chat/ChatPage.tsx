@@ -39,6 +39,12 @@ import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import * as linearApi from '@/lib/linear-api';
 import './gen-ui/defaultRenderers';
+import {
+  getWorkflowPrompt,
+  buildReviewWorkflowMessage,
+  buildPrWorkflowMessage,
+  buildBranchNameWorkflowMessage,
+} from '@/lib/workflowPrompts';
 
 const API_BASE = 'http://localhost:3131';
 const PLAN_EXPORT_DRAFT_KEY = 'claude-tauri-plan-export-draft';
@@ -151,7 +157,11 @@ export function ChatPage({
     reset: resetCostTracking,
   } = useCostTracking();
 
-  const { changedFiles, fetchDiff: fetchWorkspaceDiff } = useWorkspaceDiff(workspaceId ?? null);
+  const {
+    diff: workspaceDiff,
+    changedFiles,
+    fetchDiff: fetchWorkspaceDiff,
+  } = useWorkspaceDiff(workspaceId ?? null);
   const suggestedFiles = useMemo(
     () => changedFiles.map((file) => file.path),
     [changedFiles]
@@ -243,6 +253,7 @@ export function ChatPage({
           effort: settings.effort,
           permissionMode: settings.permissionMode,
           provider: settings.provider,
+          systemPrompt: settings.systemPrompt || undefined,
           providerConfig: {
             bedrockBaseUrl: settings.bedrockBaseUrl,
             bedrockProjectId: settings.bedrockProjectId,
@@ -260,6 +271,7 @@ export function ChatPage({
       settings.effort,
       settings.permissionMode,
       settings.provider,
+      settings.systemPrompt,
       settings.bedrockBaseUrl,
       settings.bedrockProjectId,
       settings.vertexProjectId,
@@ -396,6 +408,31 @@ export function ChatPage({
     setAttachments([]);
   }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents, resetCheckpoints]);
 
+  const runReviewWorkflow = useCallback(async () => {
+    const latest = await fetchWorkspaceDiff();
+    const diff = latest?.diff ?? workspaceDiff;
+    const filePaths = (latest?.changedFiles ?? changedFiles).map((f) => f.path);
+    const prompt = getWorkflowPrompt(settings.workflowPrompts, 'review');
+    const text = buildReviewWorkflowMessage({ prompt, changedFiles: filePaths, diff });
+    await sendMessage({ text } as any);
+  }, [fetchWorkspaceDiff, workspaceDiff, changedFiles, settings.workflowPrompts, sendMessage]);
+
+  const runPrWorkflow = useCallback(async () => {
+    const latest = await fetchWorkspaceDiff();
+    const diff = latest?.diff ?? workspaceDiff;
+    const prompt = getWorkflowPrompt(settings.workflowPrompts, 'pr');
+    const text = buildPrWorkflowMessage({ prompt, diff });
+    await sendMessage({ text } as any);
+  }, [fetchWorkspaceDiff, workspaceDiff, settings.workflowPrompts, sendMessage]);
+
+  const runBranchWorkflow = useCallback(async () => {
+    const latest = await fetchWorkspaceDiff();
+    const filePaths = (latest?.changedFiles ?? changedFiles).map((f) => f.path);
+    const prompt = getWorkflowPrompt(settings.workflowPrompts, 'branch');
+    const text = buildBranchNameWorkflowMessage({ prompt, changedFiles: filePaths });
+    await sendMessage({ text } as any);
+  }, [fetchWorkspaceDiff, changedFiles, settings.workflowPrompts, sendMessage]);
+
   const commandContext = useMemo(
     () => ({
       clearChat,
@@ -408,6 +445,9 @@ export function ChatPage({
       showSessionList: onOpenSessions,
       openPullRequests: onOpenPullRequests,
       showLinearIssues: () => setLinearPickerOpen(true),
+      runReviewWorkflow,
+      runPrWorkflow,
+      runBranchWorkflow,
     }),
     [
       clearChat,
@@ -416,6 +456,9 @@ export function ChatPage({
       onOpenSettings,
       onOpenSessions,
       onOpenPullRequests,
+      runReviewWorkflow,
+      runPrWorkflow,
+      runBranchWorkflow,
     ]
   );
 

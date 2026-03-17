@@ -102,6 +102,18 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Show Tool Calls')).toBeTruthy();
   });
 
+  test('switches to Workflows tab on click', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /workflows/i }));
+
+    expect(screen.getByText('Review Prompt')).toBeInTheDocument();
+    expect(screen.getByText('PR Prompt')).toBeInTheDocument();
+    expect(screen.getByText('Branch Naming Prompt')).toBeInTheDocument();
+    expect(screen.getByTestId('workflow-prompts-save')).toBeInTheDocument();
+  });
+
   test('switches to Advanced tab on click', async () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);

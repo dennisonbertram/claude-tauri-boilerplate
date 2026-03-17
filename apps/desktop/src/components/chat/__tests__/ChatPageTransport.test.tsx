@@ -169,6 +169,12 @@ function getDefaultSettings(overrides = {}) {
     model: 'claude-sonnet-4-6',
     effort: 'high',
     permissionMode: 'default',
+    systemPrompt: '',
+    workflowPrompts: {
+      review: 'Review prompt',
+      pr: 'PR prompt',
+      branch: 'Branch prompt',
+    },
     ...overrides,
   };
 }
@@ -271,6 +277,25 @@ describe('ChatPage transport provider payload', () => {
           vertexBaseUrl: 'https://vertex.internal',
           customBaseUrl: '',
         },
+      }),
+    });
+  });
+
+  it('includes the global system prompt in the chat transport payload', () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        systemPrompt: 'Always produce release notes.',
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} />);
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        systemPrompt: 'Always produce release notes.',
       }),
     });
   });

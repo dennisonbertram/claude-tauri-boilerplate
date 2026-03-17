@@ -1,4 +1,5 @@
 import { useSettingsContext } from '@/contexts/SettingsContext';
+import { DEFAULT_WORKFLOW_PROMPTS, type WorkflowPrompts } from '@/lib/workflowPrompts';
 
 export interface AppSettings {
   // Provider
@@ -18,6 +19,9 @@ export interface AppSettings {
   temperature: number;
   systemPrompt: string;
   effort: 'low' | 'medium' | 'high' | 'max';
+
+  // Workflows
+  workflowPrompts: WorkflowPrompts;
 
   // Appearance
   theme: 'dark' | 'light' | 'system';
@@ -49,6 +53,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   temperature: 1.0,
   systemPrompt: '',
   effort: 'high',
+
+  // Workflows
+  workflowPrompts: { ...DEFAULT_WORKFLOW_PROMPTS },
 
   // Appearance
   theme: 'dark',
@@ -88,7 +95,8 @@ export function loadSettings(): AppSettings {
 }
 
 export function saveSettings(settings: AppSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  const { workflowPrompts: _workflowPrompts, ...persisted } = settings;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
 }
 
 /**

@@ -25,8 +25,10 @@ export function useWorkspaceDiff(workspaceId: string | null, range: DiffRange = 
       ]);
       setDiff(diffResult.diff);
       setChangedFiles(filesResult.files);
+      return { diff: diffResult.diff, changedFiles: filesResult.files };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch diff');
+      return;
     } finally {
       setLoading(false);
     }
