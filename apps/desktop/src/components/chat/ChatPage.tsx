@@ -474,6 +474,8 @@ export function ChatPage({
       return;
     }
 
+    setMessages([]);
+
     let cancelled = false;
 
     async function loadMessages() {
