@@ -119,7 +119,9 @@ export function createSessionsRouter(db: Database) {
       addMessage(db, crypto.randomUUID(), newId, msg.role, msg.content);
     }
 
-    return c.json(forkedSession, 201);
+    // Include messageCount so the isTrulyEmpty heuristic in the frontend
+    // works immediately without waiting for a sessions list refresh.
+    return c.json({ ...forkedSession, messageCount: messagesToCopy.length }, 201);
   });
 
   // ─── Export session ───
