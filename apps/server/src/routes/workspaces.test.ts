@@ -114,6 +114,8 @@ describe('Workspace Routes', () => {
       expect(res.status).toBe(409);
       const body = await res.json();
       expect(body.code).toBe('CONFLICT');
+      expect(body.error).toBe("A workspace named 'dupe-test' already exists in this project");
+      expect(body.error).not.toContain('workspace/');
     });
 
     test('returns 400 for invalid (empty) name', async () => {
