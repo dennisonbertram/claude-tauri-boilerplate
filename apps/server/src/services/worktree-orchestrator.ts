@@ -83,7 +83,19 @@ export class WorktreeOrchestrator {
     const branchName = `workspace/${sanitized}`;
     const effectiveBaseBranch = baseBranch || project.defaultBranch;
 
-    // 3. Check branch doesn't already exist
+    // 3. Check for duplicate workspace name in project first (friendly error)
+    const existingWorkspaces = listWorkspaces(db, projectId);
+    const nameConflict = existingWorkspaces.find(
+      (ws) => sanitizeWorkspaceName(ws.name) === sanitized
+    );
+    if (nameConflict) {
+      throw Object.assign(
+        new Error(`A workspace named '${name}' already exists in this project`),
+        { status: 409, code: 'CONFLICT' }
+      );
+    }
+
+    // Check branch doesn't already exist
     const branchAlreadyExists = await this.wt.branchExists(
       project.repoPathCanonical,
       branchName
@@ -91,18 +103,6 @@ export class WorktreeOrchestrator {
     if (branchAlreadyExists) {
       throw Object.assign(
         new Error(`Branch '${branchName}' already exists`),
-        { status: 409, code: 'CONFLICT' }
-      );
-    }
-
-    // Check for duplicate workspace name in project
-    const existingWorkspaces = listWorkspaces(db, projectId);
-    const nameConflict = existingWorkspaces.find(
-      (ws) => sanitizeWorkspaceName(ws.name) === sanitized
-    );
-    if (nameConflict) {
-      throw Object.assign(
-        new Error(`A workspace with name '${name}' already exists in this project`),
         { status: 409, code: 'CONFLICT' }
       );
     }

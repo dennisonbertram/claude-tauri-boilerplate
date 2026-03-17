@@ -11,7 +11,11 @@ interface TeamCreationDialogProps {
   ) => Promise<TeamConfig | null>;
 }
 
-const MODELS = ['claude-sonnet-4', 'claude-opus-4', 'claude-haiku-3'];
+const MODELS = [
+  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+  { value: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+];
 const PERMISSION_MODES: AgentDefinition['permissionMode'][] = [
   'normal',
   'acceptEdits',
@@ -231,8 +235,8 @@ export function TeamCreationDialog({
                     >
                       <option value="">Default model</option>
                       {MODELS.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
+                        <option key={m.value} value={m.value}>
+                          {m.label}
                         </option>
                       ))}
                     </select>
