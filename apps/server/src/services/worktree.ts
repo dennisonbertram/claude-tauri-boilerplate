@@ -20,6 +20,14 @@ export interface ChangedFile {
   status: ChangedFileStatus;
 }
 
+export interface WorkspaceRevision {
+  id: string;
+  shortId: string;
+  message: string;
+  parent: string | null;
+  committedAt: string;
+}
+
 /**
  * Git worktree operations.
  * All methods use GitCommandRunner with argument arrays — no shell interpolation.
@@ -126,7 +134,25 @@ export class WorktreeService {
    * branch introduces over the base, plus any uncommitted working tree changes.
    * Returns the raw diff string, capped at 1MB.
    */
-  async getWorktreeDiff(worktreePath: string, baseBranch = 'main'): Promise<string> {
+  async getWorktreeDiff(
+    worktreePath: string,
+    baseBranch = 'main',
+    range?: { fromRef: string; toRef: string }
+  ): Promise<string> {
+    if (range) {
+      const rangeResult = await this.git.run(
+        ['diff', `${range.fromRef}...${range.toRef}`],
+        { cwd: worktreePath }
+      );
+      if (rangeResult.exitCode !== 0) {
+        throw Object.assign(
+          new Error(`Failed to get diff: ${rangeResult.stderr.trim()}`),
+          { status: 500, code: 'GIT_ERROR' }
+        );
+      }
+      return rangeResult.stdout.slice(0, 1024 * 1024);
+    }
+
     // Branch diff: all commits workspace introduces over baseBranch
     const branchDiff = await this.git.run(
       ['diff', `${baseBranch}...HEAD`],
@@ -161,7 +187,31 @@ export class WorktreeService {
    * Uses `git diff --name-status <baseBranch>...HEAD` for committed changes
    * and `git status --porcelain` for uncommitted changes, deduplicating by path.
    */
-  async getChangedFiles(worktreePath: string, baseBranch = 'main'): Promise<ChangedFile[]> {
+  async getChangedFiles(
+    worktreePath: string,
+    baseBranch = 'main',
+    range?: { fromRef: string; toRef: string }
+  ): Promise<ChangedFile[]> {
+    if (range) {
+      const rangeResult = await this.git.run(
+        ['diff', '--name-status', `${range.fromRef}...${range.toRef}`],
+        { cwd: worktreePath }
+      );
+      if (rangeResult.exitCode !== 0) {
+        throw Object.assign(
+          new Error(`Failed to list changed files: ${rangeResult.stderr.trim()}`),
+          { status: 500, code: 'GIT_ERROR' }
+        );
+      }
+
+      return rangeResult.stdout
+        .split('\n')
+        .map((line) => line.trimEnd())
+        .filter(Boolean)
+        .map(parseDiffNameStatus)
+        .filter((file): file is ChangedFile => file !== null);
+    }
+
     // Committed branch changes
     const branchResult = await this.git.run(
       ['diff', '--name-status', `${baseBranch}...HEAD`],
@@ -202,6 +252,54 @@ export class WorktreeService {
     for (const f of uncommittedFiles) byPath.set(f.path, f);
 
     return Array.from(byPath.values());
+  }
+
+  /**
+   * Get recent revisions for the worktree branch, newest first.
+   * Returns commit metadata useful for historical comparison.
+   */
+  async getWorkspaceRevisions(
+    worktreePath: string,
+    maxCount = 20
+  ): Promise<WorkspaceRevision[]> {
+    const safeMaxCount = Math.max(1, Math.min(200, Math.trunc(maxCount)));
+    const result = await this.git.run(
+      [
+        'log',
+        `--max-count=${safeMaxCount}`,
+        '--pretty=format:%H\t%h\t%P\t%at\t%s',
+        'HEAD',
+      ],
+      { cwd: worktreePath }
+    );
+
+    if (result.exitCode !== 0) {
+      throw Object.assign(
+        new Error(`Failed to list revisions: ${result.stderr.trim()}`),
+        { status: 500, code: 'GIT_ERROR' }
+      );
+    }
+
+    return result.stdout
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split('\t');
+        if (parts.length < 5) return null;
+        const [id, shortId, parents, committedAtSeconds, ...messageParts] = parts;
+        const message = messageParts.join('\t');
+        const parent = parents ? parents.split(' ')[0] : null;
+        const committedAt = new Date(Number(committedAtSeconds) * 1000).toISOString();
+        return {
+          id,
+          shortId,
+          parent,
+          committedAt,
+          message,
+        };
+      })
+      .filter((revision): revision is WorkspaceRevision => revision !== null);
   }
 
   /**

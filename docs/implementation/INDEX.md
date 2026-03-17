@@ -13,8 +13,10 @@ Implementation notes and code change documentation.
 | [phase5-frontend-ui.md](phase5-frontend-ui.md) | Phase 5 frontend chat UI - React chat interface with shadcn/ui, AI SDK v6 useChat, session sidebar, and message streaming |
 | [phase6-onboarding.md](phase6-onboarding.md) | Phase 6 onboarding screen - AuthGate with step-by-step Claude Code setup instructions |
 | [phase7-sidecar-integration.md](phase7-sidecar-integration.md) | Phase 7 Tauri sidecar integration - Hono server as bundled sidecar with shell plugin, health polling, and dev/prod modes |
+<<<<<<< HEAD
 | [issue-75-wave-1-subagent.md](issue-75-wave-1-subagent.md) | Issue #75 implementation progress for CI failure forwarding and `Fix Errors` support (Wave 1). |
 | [issue-76-wave-1-subagent.md](issue-76-wave-1-subagent.md) | Issue #76 provider support implementation notes and verification summary (wave 1: provider selection, env routing, persistence) |
 | [issue-77-wave-1-subagent.md](issue-77-wave-1-subagent.md) | Initial implementation slice for Issue #77: command palette integration, fuzzy filtering, and command-driven navigation. |
 | [issue-78-wave-1-subagent.md](issue-78-wave-1-subagent.md) | Issue #78 Wave 1: Linear issue metadata linked to sessions/workspaces and chat prompt context injection |
 | [issue-79-wave-1-subagent.md](issue-79-wave-1-subagent.md) | Wave 1 for Issue #79: file picker, @-mentions, drag-and-drop file attachments, and inline preview rendering |
+| [issue-80-wave-1-subagent.md](issue-80-wave-1-subagent.md) | Issue #80 wave 1 subagent implementation notes for diff viewer enhancements. |
