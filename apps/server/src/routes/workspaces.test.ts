@@ -1,7 +1,13 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
-import { createDb, createProject, getWorkspace } from '../db';
+import {
+  createDb,
+  createProject,
+  createSession,
+  getWorkspace,
+  linkSessionToWorkspace,
+} from '../db';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './workspaces';
 import { errorHandler } from '../middleware/error-handler';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -281,6 +287,57 @@ describe('Workspace Routes', () => {
 
     test('returns 404 for non-existent workspace', async () => {
       const res = await app.request('/api/workspaces/no-such-id');
+      expect(res.status).toBe(404);
+
+      const body = await res.json();
+      expect(body.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('GET /api/workspaces/:id/session', () => {
+    test('returns latest linked workspace session', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'workspace-session-test' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const oldSession = createSession(db, 'session-old');
+      const newSession = createSession(db, 'session-new');
+
+      linkSessionToWorkspace(db, oldSession.id, workspace.id);
+      db.prepare("UPDATE sessions SET updated_at = datetime('now', '-1 day') WHERE id = ?").run(oldSession.id);
+      linkSessionToWorkspace(db, newSession.id, workspace.id);
+
+      const res = await app.request(`/api/workspaces/${workspace.id}/session`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toEqual(expect.objectContaining({ id: newSession.id }));
+    });
+
+    test('returns null for workspace with no linked session', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'workspace-no-session' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const res = await app.request(`/api/workspaces/${workspace.id}/session`);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toBeNull();
+    });
+
+    test('returns 404 for non-existent workspace', async () => {
+      const res = await app.request('/api/workspaces/no-such-workspace/session');
       expect(res.status).toBe(404);
 
       const body = await res.json();
