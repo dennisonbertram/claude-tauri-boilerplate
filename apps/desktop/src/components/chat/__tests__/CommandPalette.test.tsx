@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
 import { render, screen, within } from '@testing-library/react';
+expect.extend(matchers);
 import userEvent from '@testing-library/user-event';
 import { CommandPalette } from '../CommandPalette';
 import type { Command } from '@/hooks/useCommands';

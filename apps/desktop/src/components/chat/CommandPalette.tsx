@@ -23,7 +23,17 @@ export function CommandPalette({
   onClose,
 }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showScrollHint, setShowScrollHint] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const updateScrollHint = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setShowScrollHint(
+      el.scrollHeight > el.clientHeight &&
+        el.scrollTop + el.clientHeight < el.scrollHeight - 4
+    );
+  }, []);
 
   // Filter commands by name or description
   const filtered = filter
@@ -62,6 +72,12 @@ export function CommandPalette({
   useEffect(() => {
     setSelectedIndex(0);
   }, [filter]);
+
+  // Check scroll overflow after filtered commands change
+  useEffect(() => {
+    const raf = requestAnimationFrame(updateScrollHint);
+    return () => cancelAnimationFrame(raf);
+  }, [filtered, updateScrollHint]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -124,6 +140,7 @@ export function CommandPalette({
       ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      onScroll={updateScrollHint}
       className="absolute bottom-full left-0 right-0 mb-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg"
     >
       {grouped.map((group) => (
@@ -168,6 +185,12 @@ export function CommandPalette({
           </ul>
         </div>
       ))}
+      {showScrollHint && (
+        <div
+          aria-hidden="true"
+          className="sticky bottom-0 h-8 bg-gradient-to-t from-popover to-transparent pointer-events-none"
+        />
+      )}
     </div>
   );
 }
