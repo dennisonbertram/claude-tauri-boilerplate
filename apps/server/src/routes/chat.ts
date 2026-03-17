@@ -1,6 +1,6 @@
-import { Hono } from 'hono';
-import { Database } from 'bun:sqlite';
 import { isAbsolute, normalize, resolve } from 'node:path';
+import { Database } from 'bun:sqlite';
+import { Hono } from 'hono';
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -163,6 +163,12 @@ function classifyStreamError(err: unknown): StreamError {
 
 export function createChatRouter(db: Database) {
   const router = new Hono();
+  const linearIssueSchema = z.object({
+    id: z.string().min(1, 'issue id is required'),
+    title: z.string().min(1, 'issue title is required'),
+    summary: z.string().optional(),
+    url: z.string().url().optional(),
+  });
 
   router.post('/', async (c) => {
     console.log('[chat] === NEW CHAT REQUEST ===');
@@ -175,6 +181,22 @@ export function createChatRouter(db: Database) {
       );
     }
     const body = parsed.data as ChatRequest;
+
+    const parsedLinearIssue =
+      body.linearIssue === undefined
+        ? { success: true, data: undefined }
+        : linearIssueSchema.safeParse(body.linearIssue);
+    if (!parsedLinearIssue.success) {
+      return c.json(
+        {
+          error: 'Invalid linear issue payload',
+          code: 'VALIDATION_ERROR',
+          details: parsedLinearIssue.error.flatten(),
+        },
+        400
+      );
+    }
+
     console.log('[chat] body:', JSON.stringify(body, null, 2));
     const messages = body.messages;
     let sessionId = body.sessionId;

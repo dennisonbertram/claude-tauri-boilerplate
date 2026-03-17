@@ -765,6 +765,27 @@ describe('Chat Route - POST /chat', () => {
     expect(json.error).toBe('Invalid chat request payload');
   });
 
+  test('returns 400 when linearIssue payload fails route validation', async () => {
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'test' }],
+      linearIssue: {
+        id: 'ISS-999',
+        title: '',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe('VALIDATION_ERROR');
+    expect(json.error).toBe('Invalid linear issue payload');
+  });
+
   test('includes sessionId in the stream metadata', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {

@@ -227,6 +227,26 @@ describe('Workspace Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    test('returns 400 for invalid linear issue URL', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'bad-issue-url',
+            linearIssue: {
+              id: 'ISS-405',
+              title: 'Issue with bad url',
+              url: 'not-a-valid-url',
+            },
+          }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('GET /api/projects/:projectId/workspaces', () => {

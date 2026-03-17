@@ -223,8 +223,18 @@ describe('useCommandPalette', () => {
       act(() => {
         handled = result.current.handleInputChange('hello /cmd');
       });
-      expect(handled!).toBe(false);
-      expect(result.current.isOpen).toBe(false);
+      expect(handled!).toBe(true);
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.searchQuery).toBe('cmd');
+    });
+
+    it('opens palette when "/" appears after arbitrary text including punctuation', () => {
+      const { result } = renderHook(() => useCommandPalette(mockCommands));
+      act(() => {
+        result.current.handleInputChange('hello world /clo');
+      });
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.searchQuery).toBe('clo');
     });
 
     it('closes palette when input no longer starts with "/"', () => {
