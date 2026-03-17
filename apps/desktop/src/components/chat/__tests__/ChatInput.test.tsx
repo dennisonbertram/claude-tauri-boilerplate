@@ -56,8 +56,8 @@ describe('ChatInput', () => {
     });
 
     it('renders the submit button', () => {
-      renderInput();
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      const { container } = renderInput();
+      expect(container.querySelector('button[type="submit"]')).toBeInTheDocument();
     });
 
     it('shows the input value', () => {

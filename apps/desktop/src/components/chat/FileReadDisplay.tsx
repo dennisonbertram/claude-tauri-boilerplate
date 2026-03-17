@@ -10,10 +10,11 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { detectLanguage, isImageFile, parseToolInput } from './file-utils';
+import { detectLanguage, isImageFile } from './file-utils';
 import { ImageViewer } from './ImageViewer';
 import { NotebookViewer } from './NotebookViewer';
 import type { NotebookData } from './NotebookViewer';
+import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
 
 interface FileReadDisplayProps {
   toolCall: ToolCallState;
@@ -73,12 +74,15 @@ export function FileReadDisplay({ toolCall }: FileReadDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const input = parseToolInput<ReadInput>(toolCall.input);
-  const filePath = input.file_path || '';
+  const parsedInput = parseToolInput<ReadInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const filePath = sanitizeDisplayText(input.file_path);
   const isImage = isImageFile(filePath);
   const isNotebook = isNotebookFile(filePath);
   const language = isImage ? 'image' : isNotebook ? 'notebook' : detectLanguage(filePath);
-  const result = typeof toolCall.result === 'string' ? toolCall.result : '';
+  const result = sanitizeDisplayText(
+    typeof toolCall.result === 'string' ? toolCall.result : ''
+  );
 
   const notebookData = useMemo(
     () => (isNotebook && result ? tryParseNotebook(result) : null),

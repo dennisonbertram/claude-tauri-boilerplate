@@ -5,7 +5,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { parseToolInput } from './file-utils';
+import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
 
 interface NotebookEditDisplayProps {
   toolCall: ToolCallState;
@@ -58,10 +58,11 @@ function getEditModeColor(mode: string): string {
 }
 
 export function NotebookEditDisplay({ toolCall }: NotebookEditDisplayProps) {
-  const input = parseToolInput<NotebookEditInput>(toolCall.input);
-  const notebookPath = input.notebook_path || '';
+  const parsedInput = parseToolInput<NotebookEditInput>(toolCall.input);
+  const input = parsedInput.value ?? {};
+  const notebookPath = sanitizeDisplayText(input.notebook_path);
   const cellNumber = input.cell_number ?? 0;
-  const newSource = input.new_source || '';
+  const newSource = sanitizeDisplayText(input.new_source);
   const editMode = input.edit_mode || 'replace';
   const cellType = input.cell_type;
 
