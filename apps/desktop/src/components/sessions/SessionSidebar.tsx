@@ -243,6 +243,11 @@ function SessionItem({
   return (
     <button
       onClick={onSelect}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenuOpen(true);
+      }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => {
         setHovering(false);
