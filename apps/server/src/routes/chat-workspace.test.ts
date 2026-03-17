@@ -1,5 +1,8 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
 // Mock the claude-agent-sdk before importing anything that uses it
@@ -102,10 +105,14 @@ function setupStandardMock(sessionId: string, text: string) {
 }
 
 // Helper to create a project + workspace in the DB for testing
+const tempPaths = new Set<string>();
+
 function createTestWorkspace(
   db: Database,
   opts?: {
     status?: string;
+    workspacePath?: string;
+    projectPath?: string;
     linearIssue?: {
       id: string;
       title: string;
@@ -114,8 +121,21 @@ function createTestWorkspace(
     };
   }
 ) {
+  const workspacePath = opts?.workspacePath ?? '/tmp/worktrees/test';
+  const projectPath = opts?.projectPath ?? '/tmp/repo';
+
+  if (opts?.workspacePath) {
+    tempPaths.add(workspacePath);
+    mkdirSync(workspacePath, { recursive: true });
+  }
+
+  if (opts?.projectPath) {
+    tempPaths.add(projectPath);
+    mkdirSync(projectPath, { recursive: true });
+  }
+
   const projectId = `proj-${crypto.randomUUID().slice(0, 8)}`;
-  createProject(db, projectId, 'Test Project', '/tmp/repo', '/tmp/repo', 'main');
+  createProject(db, projectId, 'Test Project', projectPath, projectPath, 'main');
 
   const workspaceId = `ws-${crypto.randomUUID().slice(0, 8)}`;
   createWorkspace(
@@ -124,8 +144,8 @@ function createTestWorkspace(
     projectId,
     'test-workspace',
     'workspace/test',
-    '/tmp/worktrees/test',
-    '/tmp/worktrees/test',
+    workspacePath,
+    workspacePath,
     'main',
     opts?.linearIssue
   );
@@ -139,12 +159,65 @@ function createTestWorkspace(
   return { projectId, workspaceId };
 }
 
+function cleanupTempPaths() {
+  for (const path of tempPaths) {
+    rmSync(path, { recursive: true, force: true });
+  }
+  tempPaths.clear();
+}
+
+type InstructionEnvSnapshot = {
+  home: string | undefined;
+  globalInstructionPath: string | undefined;
+  userInstructionPath: string | undefined;
+};
+
+const realInstructionEnv: InstructionEnvSnapshot = {
+  home: process.env.HOME,
+  globalInstructionPath: process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH,
+  userInstructionPath: process.env.CLAUDE_USER_INSTRUCTION_PATH,
+};
+
+const instructionEnvTempDirs = new Set<string>();
+
+function setBlankInstructionEnv() {
+  const tempHome = mkdtempSync(join(tmpdir(), 'chat-workspace-home-'));
+  instructionEnvTempDirs.add(tempHome);
+  process.env.HOME = tempHome;
+  process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = join(tempHome, 'global-claude.md');
+  process.env.CLAUDE_USER_INSTRUCTION_PATH = join(tempHome, 'user-claude.md');
+}
+
+function restoreInstructionEnv() {
+  if (realInstructionEnv.home === undefined) {
+    delete process.env.HOME;
+  } else {
+    process.env.HOME = realInstructionEnv.home;
+  }
+  if (realInstructionEnv.globalInstructionPath === undefined) {
+    delete process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+  } else {
+    process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = realInstructionEnv.globalInstructionPath;
+  }
+  if (realInstructionEnv.userInstructionPath === undefined) {
+    delete process.env.CLAUDE_USER_INSTRUCTION_PATH;
+  } else {
+    process.env.CLAUDE_USER_INSTRUCTION_PATH = realInstructionEnv.userInstructionPath;
+  }
+
+  for (const dir of instructionEnvTempDirs) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  instructionEnvTempDirs.clear();
+}
+
 describe('Chat Route - Workspace Integration', () => {
   let testApp: InstanceType<typeof Hono>;
   let db: Database;
 
   beforeEach(() => {
     mockQuery.mockReset();
+    setBlankInstructionEnv();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -152,6 +225,8 @@ describe('Chat Route - Workspace Integration', () => {
   });
 
   afterEach(() => {
+    cleanupTempPaths();
+    restoreInstructionEnv();
     db.close();
   });
 
@@ -277,6 +352,167 @@ describe('Chat Route - Workspace Integration', () => {
 
     const callArgs = mockQuery.mock.calls[0][0] as any;
     expect(callArgs.options.cwd).toBeUndefined();
+  });
+
+  test('injects global/user/workspace CLAUDE.md instructions in priority order', async () => {
+    setupStandardMock('ws-repo-instructions-session', 'Reply');
+
+    const originalHome = process.env.HOME;
+    const originalGlobalPath = process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+    const originalUserPath = process.env.CLAUDE_USER_INSTRUCTION_PATH;
+
+    const tempHome = mkdtempSync(join(tmpdir(), 'chat-home-'));
+    const homeClaudeDir = join(tempHome, '.claude');
+    const userFile = join(homeClaudeDir, 'CLAUDE.md');
+    mkdirSync(homeClaudeDir, { recursive: true });
+    writeFileSync(userFile, 'User profile: concise answers');
+    tempPaths.add(tempHome);
+
+    const globalDir = mkdtempSync(join(tmpdir(), 'chat-global-'));
+    const globalFile = join(globalDir, 'CLAUDE.md');
+    writeFileSync(globalFile, 'Global guardrails');
+    tempPaths.add(globalDir);
+
+    const workspacePath = mkdtempSync(join(tmpdir(), 'chat-workspace-'));
+    const managedDir = join(workspacePath, '.claude');
+    const managedFile = join(managedDir, 'CLAUDE.md');
+    const projectFile = join(workspacePath, 'CLAUDE.md');
+    mkdirSync(managedDir, { recursive: true });
+    writeFileSync(managedFile, 'Repo managed instructions (should be overridden)');
+    writeFileSync(projectFile, 'Repo root instructions');
+    tempPaths.add(workspacePath);
+
+    try {
+      process.env.HOME = tempHome;
+      process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = globalFile;
+      process.env.CLAUDE_USER_INSTRUCTION_PATH = userFile;
+
+      const { workspaceId } = createTestWorkspace(db, {
+        workspacePath,
+        projectPath: workspacePath,
+      });
+
+      const body: ChatRequest = {
+        messages: [{ role: 'user', content: 'Summarize repository setup' }],
+        workspaceId,
+      };
+
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      await res.text();
+
+      expect(res.status).toBe(200);
+      const callArgs = mockQuery.mock.calls[0][0] as any;
+      const prompt = callArgs.prompt as string;
+
+      expect(prompt).toContain('[Global Instruction]');
+      expect(prompt).toContain('Global guardrails');
+      expect(prompt).toContain('[User Instruction]');
+      expect(prompt).toContain('User profile: concise answers');
+      expect(prompt).toContain('[Workspace Instruction]');
+      expect(prompt).toContain('Repo root instructions');
+      expect(prompt).not.toContain('[Workspace managed Instruction]');
+      expect(prompt).not.toContain('Repo managed instructions (should be overridden)');
+      expect(prompt.indexOf('[Global Instruction]')).toBeLessThan(prompt.indexOf('[User Instruction]'));
+      expect(prompt.indexOf('[User Instruction]')).toBeLessThan(
+        prompt.indexOf('[Workspace Instruction]')
+      );
+      expect(prompt.indexOf('[Workspace Instruction]')).toBeLessThan(
+        prompt.indexOf('Summarize repository setup')
+      );
+    } finally {
+      if (originalHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = originalHome;
+      }
+      if (originalGlobalPath === undefined) {
+        delete process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+      } else {
+        process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = originalGlobalPath;
+      }
+      if (originalUserPath === undefined) {
+        delete process.env.CLAUDE_USER_INSTRUCTION_PATH;
+      } else {
+        process.env.CLAUDE_USER_INSTRUCTION_PATH = originalUserPath;
+      }
+    }
+  });
+
+  test('injects system prompt after instructions and before the user prompt', async () => {
+    setupStandardMock('ws-system-startup-session', 'Reply');
+
+    const originalHome = process.env.HOME;
+    const originalGlobalPath = process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+    const originalUserPath = process.env.CLAUDE_USER_INSTRUCTION_PATH;
+
+    const tempHome = mkdtempSync(join(tmpdir(), 'chat-home-system-'));
+    tempPaths.add(tempHome);
+    process.env.HOME = tempHome;
+
+    const globalDir = mkdtempSync(join(tmpdir(), 'chat-global-system-'));
+    const globalFile = join(globalDir, 'CLAUDE.md');
+    writeFileSync(globalFile, 'Global policy');
+    tempPaths.add(globalDir);
+
+    const workspacePath = mkdtempSync(join(tmpdir(), 'chat-workspace-system-'));
+    writeFileSync(join(workspacePath, 'CLAUDE.md'), 'Repo startup policy');
+    tempPaths.add(workspacePath);
+
+    try {
+      process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = globalFile;
+      delete process.env.CLAUDE_USER_INSTRUCTION_PATH;
+
+      const { workspaceId } = createTestWorkspace(db, {
+        workspacePath,
+        projectPath: workspacePath,
+      });
+
+      const body: ChatRequest = {
+        messages: [{ role: 'user', content: 'Ship this patch' }],
+        workspaceId,
+        systemPrompt: 'You are a strict release reviewer.',
+      };
+
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      await res.text();
+
+      expect(res.status).toBe(200);
+      const callArgs = mockQuery.mock.calls[0][0] as any;
+      const prompt = callArgs.prompt as string;
+
+      expect(prompt).toContain('[Global Instruction]');
+      expect(prompt).toContain('[Workspace Instruction]');
+      expect(prompt).toContain('[System Prompt]');
+      expect(prompt).toContain('You are a strict release reviewer.');
+      expect(prompt.indexOf('[Workspace Instruction]')).toBeLessThan(prompt.indexOf('[System Prompt]'));
+      expect(prompt.indexOf('[System Prompt]')).toBeLessThan(prompt.indexOf('Ship this patch'));
+    } finally {
+      if (originalHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = originalHome;
+      }
+      if (originalGlobalPath === undefined) {
+        delete process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+      } else {
+        process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = originalGlobalPath;
+      }
+      if (originalUserPath === undefined) {
+        delete process.env.CLAUDE_USER_INSTRUCTION_PATH;
+      } else {
+        process.env.CLAUDE_USER_INSTRUCTION_PATH = originalUserPath;
+      }
+    }
   });
 
   test('accepts workspace attachment references and adds them to the prompt', async () => {
