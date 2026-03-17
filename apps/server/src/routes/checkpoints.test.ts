@@ -182,9 +182,10 @@ describe('Checkpoints Routes', () => {
         }),
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(201);
       const body = await res.json();
-      expect(body.code).toBe('VALIDATION_ERROR');
+      expect(body.id).toBeDefined();
+      expect(body.filesChanged).toEqual([]);
     });
 
     test('rejects checkpoint with missing userMessageId', async () => {

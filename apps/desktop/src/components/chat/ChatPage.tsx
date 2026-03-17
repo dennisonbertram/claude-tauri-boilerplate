@@ -11,6 +11,7 @@ import { PlanView } from './PlanView';
 import { SubagentPanel } from './SubagentPanel';
 import { CheckpointTimeline } from './CheckpointTimeline';
 import { RewindDialog } from './RewindDialog';
+import { LatestTurnChangesDialog } from './LatestTurnChangesDialog';
 import type { RewindMode } from './RewindDialog';
 import type { PermissionDecisionResult } from './PermissionDialog';
 import { useStreamEvents } from '@/hooks/useStreamEvents';
@@ -32,6 +33,7 @@ import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
+import * as workspaceApi from '@/lib/workspace-api';
 import type { AttachedImage } from './ChatInput';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
@@ -160,25 +162,15 @@ export function ChatPage({
   }, [workspaceId, fetchWorkspaceDiff]);
 
   // Checkpoint tracking state
-  const turnIndexRef = useRef(0);
   const lastUserPromptRef = useRef('');
   const lastUserMessageIdRef = useRef('');
   const [rewindTarget, setRewindTarget] = useState<Checkpoint | null>(null);
   const [rewindPreview, setRewindPreview] = useState<RewindPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-
-  const {
-    checkpoints,
-    previewRewind,
-    executeRewind,
-    reset: resetCheckpoints,
-  } = useCheckpoints({
-    sessionId,
-    toolCalls,
-    lastUserPrompt: lastUserPromptRef.current,
-    turnIndex: turnIndexRef.current,
-    userMessageId: lastUserMessageIdRef.current,
-  });
+  const [latestChangesOpen, setLatestChangesOpen] = useState(false);
+  const [latestChangesLoading, setLatestChangesLoading] = useState(false);
+  const [latestChangesDiff, setLatestChangesDiff] = useState('');
+  const [latestChangesError, setLatestChangesError] = useState<string | null>(null);
 
   // Auto-naming: track user message count per session
   const userMsgCountRef = useRef(0);
@@ -327,6 +319,21 @@ export function ChatPage({
       onData: handleDataPart as any,
     });
 
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  const {
+    checkpoints,
+    previewRewind,
+    executeRewind,
+    reset: resetCheckpoints,
+  } = useCheckpoints({
+    sessionId,
+    toolCalls,
+    lastUserPrompt: lastUserPromptRef.current,
+    userMessageId: lastUserMessageIdRef.current,
+    isStreaming: isLoading,
+  });
+
   // Prompt suggestions based on last assistant message
   const handleSuggestionAccept = useCallback(
     (suggestion: string) => {
@@ -381,7 +388,6 @@ export function ChatPage({
     resetCostTracking();
     resetSubagents();
     resetCheckpoints();
-    turnIndexRef.current = 0;
     lastUserPromptRef.current = '';
     lastUserMessageIdRef.current = '';
     setAttachments([]);
@@ -540,8 +546,6 @@ export function ChatPage({
       cancelled = true;
     };
   }, [sessionId, setMessages]);
-
-  const isLoading = status === 'submitted' || status === 'streaming';
 
   // Track when streaming completes to trigger auto-naming
   const wasStreamingRef = useRef(false);
@@ -737,17 +741,51 @@ export function ChatPage({
   const handleRewindConfirm = useCallback(
     async (mode: RewindMode) => {
       if (!rewindTarget) return;
-      await executeRewind(rewindTarget.id, mode);
+      const ok = await executeRewind(rewindTarget.id, mode);
+      if (ok && sessionId) {
+        try {
+          const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`);
+          if (res.ok) {
+            const saved: Message[] = await res.json();
+            setMessages(saved.map(toUIMessage));
+          }
+        } catch {
+          // ignore
+        }
+
+        if (workspaceId) {
+          void fetchWorkspaceDiff();
+        }
+      }
       setRewindTarget(null);
       setRewindPreview(null);
     },
-    [rewindTarget, executeRewind]
+    [rewindTarget, executeRewind, sessionId, setMessages, workspaceId, fetchWorkspaceDiff]
   );
 
   const handleRewindCancel = useCallback(() => {
     setRewindTarget(null);
     setRewindPreview(null);
   }, []);
+
+  const handleViewLatestChanges = useCallback(
+    async (range: { fromRef: string; toRef: string }) => {
+      if (!workspaceId) return;
+      setLatestChangesOpen(true);
+      setLatestChangesLoading(true);
+      setLatestChangesError(null);
+      try {
+        const result = await workspaceApi.fetchWorkspaceDiff(workspaceId, range);
+        setLatestChangesDiff(result.diff);
+      } catch (err) {
+        setLatestChangesError(err instanceof Error ? err.message : 'Failed to load diff');
+        setLatestChangesDiff('');
+      } finally {
+        setLatestChangesLoading(false);
+      }
+    },
+    [workspaceId]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -773,7 +811,6 @@ export function ChatPage({
     const attachmentRefs = attachments.map((file) => file.name).filter(Boolean);
     lastUserPromptRef.current = text;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
-    turnIndexRef.current += 1;
 
     setInput('');
     resetStreamEvents();
@@ -806,6 +843,14 @@ export function ChatPage({
       <CheckpointTimeline
         checkpoints={checkpoints}
         onRewind={handleRewindClick}
+        onViewLatestChanges={workspaceId ? handleViewLatestChanges : undefined}
+      />
+      <LatestTurnChangesDialog
+        open={latestChangesOpen}
+        loading={latestChangesLoading}
+        diff={latestChangesDiff}
+        error={latestChangesError}
+        onClose={() => setLatestChangesOpen(false)}
       />
       {/* Rewind dialog */}
       {rewindTarget && (

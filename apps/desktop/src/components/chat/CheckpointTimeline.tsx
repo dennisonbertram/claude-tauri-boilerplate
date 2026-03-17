@@ -4,6 +4,7 @@ import type { Checkpoint } from '@claude-tauri/shared';
 interface CheckpointTimelineProps {
   checkpoints: Checkpoint[];
   onRewind: (checkpointId: string) => void;
+  onViewLatestChanges?: (range: { fromRef: string; toRef: string }) => void;
 }
 
 function formatTime(timestamp: string): string {
@@ -24,10 +25,10 @@ function fileActionSummary(checkpoint: Checkpoint): string {
   if (counts.created > 0) parts.push(`${counts.created} created`);
   if (counts.modified > 0) parts.push(`${counts.modified} modified`);
   if (counts.deleted > 0) parts.push(`${counts.deleted} deleted`);
-  return parts.join(', ');
+  return parts.length > 0 ? parts.join(', ') : 'No file changes';
 }
 
-export function CheckpointTimeline({ checkpoints, onRewind }: CheckpointTimelineProps) {
+export function CheckpointTimeline({ checkpoints, onRewind, onViewLatestChanges }: CheckpointTimelineProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (checkpoints.length === 0) return null;
@@ -102,14 +103,16 @@ export function CheckpointTimeline({ checkpoints, onRewind }: CheckpointTimeline
                   </div>
 
                   {/* Individual file paths */}
-                  <div className="text-xs text-muted-foreground">
-                    {cp.filesChanged.map((fc, fIndex) => (
-                      <span key={fIndex}>
-                        {fc.path}
-                        {fIndex < cp.filesChanged.length - 1 ? ', ' : ''}
-                      </span>
-                    ))}
-                  </div>
+                  {cp.filesChanged.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      {cp.filesChanged.map((fc, fIndex) => (
+                        <span key={fIndex}>
+                          {fc.path}
+                          {fIndex < cp.filesChanged.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Timestamp and rewind button */}
                   <div className="flex items-center gap-2 mt-0.5">
@@ -126,6 +129,24 @@ export function CheckpointTimeline({ checkpoints, onRewind }: CheckpointTimeline
                     >
                       Rewind
                     </button>
+                    {onViewLatestChanges &&
+                      index === checkpoints.length - 1 &&
+                      checkpoints.length >= 2 &&
+                      checkpoints[checkpoints.length - 2]?.gitCommit &&
+                      checkpoints[checkpoints.length - 1]?.gitCommit && (
+                        <button
+                          data-testid={`checkpoint-view-changes-${cp.id}`}
+                          onClick={() =>
+                            onViewLatestChanges({
+                              fromRef: checkpoints[checkpoints.length - 2]!.gitCommit as string,
+                              toRef: checkpoints[checkpoints.length - 1]!.gitCommit as string,
+                            })
+                          }
+                          className="text-xs text-primary hover:underline"
+                        >
+                          View changes
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>

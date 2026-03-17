@@ -23,7 +23,7 @@ const fileChangeSchema = z.object({
 const createCheckpointSchema = z.object({
   userMessageId: z.string().min(1),
   promptPreview: z.string().max(200),
-  filesChanged: z.array(fileChangeSchema).min(1),
+  filesChanged: z.array(fileChangeSchema).optional().default([]),
   turnIndex: z.number().int().min(0).optional(),
 });
 

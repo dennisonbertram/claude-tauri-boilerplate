@@ -34,10 +34,10 @@ export interface UseCheckpointsOptions {
   toolCalls: Map<string, ToolCallState>;
   /** Current user message text (for prompt preview) */
   lastUserPrompt: string;
-  /** Current turn index (increments each time user sends a message) */
-  turnIndex: number;
   /** Latest user message ID */
   userMessageId: string;
+  /** Whether the current turn is still streaming */
+  isStreaming: boolean;
 }
 
 export interface UseCheckpointsReturn {
@@ -52,19 +52,28 @@ export function useCheckpoints({
   sessionId,
   toolCalls,
   lastUserPrompt,
-  turnIndex,
   userMessageId,
+  isStreaming,
 }: UseCheckpointsOptions): UseCheckpointsReturn {
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const processedTurnsRef = useRef<Set<number>>(new Set());
-  const prevToolCallsRef = useRef<Map<string, ToolCallState>>(new Map());
+  const processedTurnsRef = useRef<Set<string>>(new Set());
+  const prevSessionIdRef = useRef<string | null>(null);
+  const prevIsStreamingRef = useRef<boolean>(false);
 
   // Fetch existing checkpoints when session changes
   useEffect(() => {
     if (!sessionId) {
       setCheckpoints([]);
       processedTurnsRef.current.clear();
+      prevSessionIdRef.current = null;
+      prevIsStreamingRef.current = false;
       return;
+    }
+
+    if (prevSessionIdRef.current !== sessionId) {
+      prevSessionIdRef.current = sessionId;
+      processedTurnsRef.current.clear();
+      prevIsStreamingRef.current = false;
     }
 
     let cancelled = false;
@@ -89,45 +98,27 @@ export function useCheckpoints({
     };
   }, [sessionId]);
 
-  // Auto-create checkpoint when file-changing tools complete
+  // Create exactly one checkpoint when a turn finishes (streaming -> idle),
+  // even if there were no file changes.
   useEffect(() => {
     if (!sessionId || !userMessageId) return;
 
-    // Find newly completed file-changing tools
-    const fileChanges: FileChange[] = [];
-    for (const [id, tc] of toolCalls) {
-      const prev = prevToolCallsRef.current.get(id);
-      if (tc.status === 'complete' && prev?.status !== 'complete') {
+    const wasStreaming = prevIsStreamingRef.current;
+    prevIsStreamingRef.current = isStreaming;
+    if (!wasStreaming || isStreaming) return;
+
+    if (processedTurnsRef.current.has(userMessageId)) return;
+    processedTurnsRef.current.add(userMessageId);
+
+    const allChanges: FileChange[] = [];
+    for (const [, tc] of toolCalls) {
+      if (tc.status === 'complete') {
         const change = inferFileChange(tc);
-        if (change) {
-          fileChanges.push(change);
-        }
+        if (change) allChanges.push(change);
       }
     }
 
-    prevToolCallsRef.current = new Map(toolCalls);
-
-    // Only create a checkpoint if there are file changes and we haven't processed this turn
-    if (fileChanges.length === 0 || processedTurnsRef.current.has(turnIndex)) return;
-
-    // Debounce: wait a bit for more tool completions in the same turn
-    const timer = setTimeout(async () => {
-      if (processedTurnsRef.current.has(turnIndex)) return;
-      processedTurnsRef.current.add(turnIndex);
-
-      // Collect all file changes from completed tools in this turn
-      const allChanges: FileChange[] = [];
-      for (const [, tc] of toolCalls) {
-        if (tc.status === 'complete') {
-          const change = inferFileChange(tc);
-          if (change) {
-            allChanges.push(change);
-          }
-        }
-      }
-
-      if (allChanges.length === 0) return;
-
+    void (async () => {
       try {
         const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/checkpoints`, {
           method: 'POST',
@@ -136,7 +127,6 @@ export function useCheckpoints({
             userMessageId,
             promptPreview: lastUserPrompt.slice(0, 50),
             filesChanged: allChanges,
-            turnIndex,
           }),
         });
 
@@ -147,10 +137,8 @@ export function useCheckpoints({
       } catch {
         // Silently fail - checkpoint creation is non-critical
       }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [sessionId, toolCalls, lastUserPrompt, turnIndex, userMessageId]);
+    })();
+  }, [sessionId, toolCalls, lastUserPrompt, userMessageId, isStreaming]);
 
   const addCheckpoint = useCallback(
     async (data: Omit<Checkpoint, 'id' | 'timestamp'>): Promise<Checkpoint | null> => {
@@ -233,7 +221,7 @@ export function useCheckpoints({
   const reset = useCallback(() => {
     setCheckpoints([]);
     processedTurnsRef.current.clear();
-    prevToolCallsRef.current.clear();
+    prevIsStreamingRef.current = false;
   }, []);
 
   return {

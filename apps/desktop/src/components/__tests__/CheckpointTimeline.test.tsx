@@ -152,4 +152,28 @@ describe('CheckpointTimeline', () => {
     // The formatted time depends on locale, just check it's non-empty
     expect(timeEl.textContent!.length).toBeGreaterThan(0);
   });
+
+  it('shows a "View changes" action for the most recent checkpoint when git commits are available', () => {
+    const onViewLatestChanges = vi.fn();
+    const checkpoints = [
+      makeCheckpoint({ id: 'cp-1', turnIndex: 0, gitCommit: 'a'.repeat(40) }),
+      makeCheckpoint({ id: 'cp-2', turnIndex: 1, gitCommit: 'b'.repeat(40) }),
+    ];
+
+    render(
+      <CheckpointTimeline
+        checkpoints={checkpoints}
+        onRewind={vi.fn()}
+        onViewLatestChanges={onViewLatestChanges}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('checkpoint-toggle'));
+    fireEvent.click(screen.getByTestId('checkpoint-view-changes-cp-2'));
+
+    expect(onViewLatestChanges).toHaveBeenCalledWith({
+      fromRef: 'a'.repeat(40),
+      toRef: 'b'.repeat(40),
+    });
+  });
 });
