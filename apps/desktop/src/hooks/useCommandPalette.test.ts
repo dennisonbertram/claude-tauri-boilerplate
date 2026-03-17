@@ -218,7 +218,7 @@ describe('useCommandPalette', () => {
       expect(result.current.searchQuery).toBe('cl');
     });
 
-    it('does not open palette when "/" is not at start', () => {
+    it('opens palette when "/" appears after text', () => {
       const { result } = renderHook(() => useCommandPalette(mockCommands));
       let handled: boolean;
       act(() => {
@@ -229,10 +229,10 @@ describe('useCommandPalette', () => {
       expect(result.current.searchQuery).toBe('cmd');
     });
 
-    it('opens palette when "/" appears after arbitrary text including punctuation', () => {
+    it('opens palette when "/" appears after punctuation', () => {
       const { result } = renderHook(() => useCommandPalette(mockCommands));
       act(() => {
-        result.current.handleInputChange('hello world /clo');
+        result.current.handleInputChange('hello world, /clo');
       });
       expect(result.current.isOpen).toBe(true);
       expect(result.current.searchQuery).toBe('clo');

@@ -91,8 +91,9 @@ export function useCommandPalette(
    */
   const handleInputChange = useCallback(
     (value: string): boolean => {
-      if (value.startsWith('/')) {
-        const filter = value.slice(1);
+      const slashIndex = findSlashTriggerIndex(value);
+      if (slashIndex !== -1) {
+        const filter = value.slice(slashIndex + 1);
         setIsOpen(true);
         setSearchQueryInternal(filter);
         setSelectedIndex(0);
@@ -141,4 +142,19 @@ export function useCommandPalette(
     handleInputChange,
     handleCommandSelect,
   };
+}
+
+function findSlashTriggerIndex(value: string): number {
+  for (let index = value.lastIndexOf('/'); index >= 0; index = value.lastIndexOf('/', index - 1)) {
+    if (index === 0) {
+      return index;
+    }
+
+    const previousChar = value[index - 1];
+    if (/[\s.,;:!?()[\]{}-]/.test(previousChar)) {
+      return index;
+    }
+  }
+
+  return -1;
 }

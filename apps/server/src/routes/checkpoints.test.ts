@@ -283,6 +283,7 @@ describe('Checkpoints Routes', () => {
       const { repoPath } = setupGitWorkspace(db, sessionId);
       cleanupPaths.push(repoPath);
 
+      writeFileSync(join(repoPath, 'workspace.txt'), 'before');
       addMessage(db, 'msg-0', sessionId, 'user', 'Turn 0');
       const createRes = await app.request(`/api/sessions/${sessionId}/checkpoints`, {
         method: 'POST',
@@ -314,7 +315,7 @@ describe('Checkpoints Routes', () => {
       expect(body.message).toContain('code and conversation');
       expect(body.restoredWorktreePath).toBe(repoPath);
 
-      expect(readFileSync(join(repoPath, 'workspace.txt'), 'utf8')).toBe('start\n');
+      expect(readFileSync(join(repoPath, 'workspace.txt'), 'utf8')).toBe('before');
       expect(getMessages(db, sessionId)).toHaveLength(1);
     });
 
@@ -392,7 +393,7 @@ describe('Checkpoints Routes', () => {
       const body = await rewindRes.json();
       expect(body.success).toBe(true);
       expect(body.restoredWorktreePath).toBe(repoPath);
-      expect(readFileSync(join(repoPath, 'workspace.txt'), 'utf8')).toBe('start\n');
+      expect(readFileSync(join(repoPath, 'workspace.txt'), 'utf8')).toBe('before');
       expect(getMessages(db, sessionId)).toHaveLength(2);
     });
 

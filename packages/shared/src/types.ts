@@ -534,6 +534,8 @@ export interface Checkpoint {
   timestamp: string;
   filesChanged: FileChange[];
   turnIndex: number;
+  gitCommit?: string | null;
+  messageCount?: number;
 }
 
 export interface FileChange {
