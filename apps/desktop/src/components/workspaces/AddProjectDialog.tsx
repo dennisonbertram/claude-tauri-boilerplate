@@ -13,6 +13,7 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
   const [repoPath, setRepoPath] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [touched, setTouched] = useState(false);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,7 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
   const handleClose = useCallback(() => {
     setRepoPath('');
     setError(null);
+    setTouched(false);
     onClose();
   }, [onClose]);
 
@@ -47,6 +49,11 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
       console.warn('[AddProjectDialog] Browse failed:', err);
     }
   };
+
+  // Reset touched state whenever the dialog is opened fresh
+  useEffect(() => {
+    if (isOpen) setTouched(false);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -73,6 +80,7 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
                 placeholder="/path/to/your/repo"
                 value={repoPath}
                 onChange={(e) => setRepoPath(e.target.value)}
+                onBlur={() => setTouched(true)}
                 autoFocus
                 className="flex-1"
               />
@@ -82,8 +90,8 @@ export function AddProjectDialog({ isOpen, onClose, onSubmit }: AddProjectDialog
                 </Button>
               )}
             </div>
-            {!repoPath.trim() && error === null && (
-              <p className="mt-1.5 text-sm text-muted-foreground">Path is required</p>
+            {touched && !repoPath.trim() && error === null && (
+              <p className="mt-1.5 text-sm text-destructive">Path is required</p>
             )}
             {error && (
               <p className="mt-1.5 text-sm text-destructive">{error}</p>
