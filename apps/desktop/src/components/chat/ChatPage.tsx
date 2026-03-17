@@ -391,9 +391,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         const saved: Message[] = await res.json();
         if (cancelled) return;
 
-        if (saved.length > 0) {
-          setMessages(saved.map(toUIMessage));
-        }
+        setMessages(saved.map(toUIMessage));
       } catch {
         // Server not reachable — leave messages empty
       }
