@@ -13,3 +13,4 @@ Implementation notes and code change documentation.
 | [phase5-frontend-ui.md](phase5-frontend-ui.md) | Phase 5 frontend chat UI - React chat interface with shadcn/ui, AI SDK v6 useChat, session sidebar, and message streaming |
 | [phase6-onboarding.md](phase6-onboarding.md) | Phase 6 onboarding screen - AuthGate with step-by-step Claude Code setup instructions |
 | [phase7-sidecar-integration.md](phase7-sidecar-integration.md) | Phase 7 Tauri sidecar integration - Hono server as bundled sidecar with shell plugin, health polling, and dev/prod modes |
+| [issue-75-wave-1-subagent.md](issue-75-wave-1-subagent.md) | Issue #75 implementation progress for CI failure forwarding and `Fix Errors` support (Wave 1). |

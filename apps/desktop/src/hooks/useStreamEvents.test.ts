@@ -29,6 +29,9 @@ describe('streamEventsReducer', () => {
       expect(state.sessionInfo).toEqual({
         sessionId: 'sess-123',
         model: 'claude-opus-4',
+        tools: ['Read', 'Write', 'Bash'],
+        mcpServers: [],
+        claudeCodeVersion: '1.0.0',
       });
     });
   });
@@ -227,6 +230,61 @@ describe('streamEventsReducer', () => {
         costUsd: 0.05,
         durationMs: 3000,
       });
+    });
+
+    it('marks Bash tool results with detected CI failures', () => {
+      let state = streamEventsReducer(initialStreamEventsState, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'block:start',
+          blockIndex: 1,
+          blockType: 'tool_use',
+          toolUseId: 'tool-ci-1',
+          toolName: 'Bash',
+        },
+      });
+
+      state = streamEventsReducer(state, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'tool:result',
+          toolUseId: 'tool-ci-1',
+          result: 'Checking pull request checks...\n- lint check: FAILED\n- test suite: FAILED',
+        },
+      });
+
+      const toolCall = state.toolCalls.get('tool-ci-1');
+      expect(toolCall?.ciFailures).toEqual({
+        summary: '2 failing CI checks detected',
+        checks: ['lint check: FAILED', 'test suite: FAILED'],
+        rawOutput:
+          'Checking pull request checks...\n- lint check: FAILED\n- test suite: FAILED',
+      });
+    });
+
+    it('does not tag non-CI errors as CI failures', () => {
+      let state = streamEventsReducer(initialStreamEventsState, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'block:start',
+          blockIndex: 2,
+          blockType: 'tool_use',
+          toolUseId: 'tool-2',
+          toolName: 'Bash',
+        },
+      });
+
+      state = streamEventsReducer(state, {
+        type: 'PROCESS_EVENT',
+        event: {
+          type: 'tool:result',
+          toolUseId: 'tool-2',
+          result: 'Command completed successfully.',
+        },
+      });
+
+      const toolCall = state.toolCalls.get('tool-2');
+      expect(toolCall?.ciFailures).toBeUndefined();
     });
   });
 
