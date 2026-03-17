@@ -102,7 +102,18 @@ function setupStandardMock(sessionId: string, text: string) {
 }
 
 // Helper to create a project + workspace in the DB for testing
-function createTestWorkspace(db: Database, opts?: { status?: string }) {
+function createTestWorkspace(
+  db: Database,
+  opts?: {
+    status?: string;
+    linearIssue?: {
+      id: string;
+      title: string;
+      summary?: string;
+      url?: string;
+    };
+  }
+) {
   const projectId = `proj-${crypto.randomUUID().slice(0, 8)}`;
   createProject(db, projectId, 'Test Project', '/tmp/repo', '/tmp/repo', 'main');
 
@@ -115,7 +126,8 @@ function createTestWorkspace(db: Database, opts?: { status?: string }) {
     'workspace/test',
     '/tmp/worktrees/test',
     '/tmp/worktrees/test',
-    'main'
+    'main',
+    opts?.linearIssue
   );
 
   // Default status is 'creating', transition to 'ready' unless overridden
@@ -312,6 +324,76 @@ describe('Chat Route - Workspace Integration', () => {
     const session = getSession(db, sessionId);
     expect(session).toBeDefined();
     expect(session?.workspaceId).toBe(workspaceId);
+  });
+
+  test('persists linear issue context from workspace on chat session', async () => {
+    setupStandardMock('ws-issue-context', 'Issue context reply');
+    const { workspaceId } = createTestWorkspace(db, {
+      linearIssue: {
+        id: 'ISS-900',
+        title: 'Investigate race condition',
+        summary: 'Race in scheduler',
+        url: 'https://linear.app/org/issue/ISS-900',
+      },
+    });
+
+    const sessionId = crypto.randomUUID();
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'What should I do?' }],
+      sessionId,
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+    expect(res.status).toBe(200);
+
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.prompt).toContain('[Linear Issue Context]');
+    expect(callArgs.prompt).toContain('ISS-900');
+    expect(callArgs.prompt).toContain('Investigate race condition');
+
+    const session = getSession(db, sessionId);
+    expect(session?.linearIssueId).toBe('ISS-900');
+    expect(session?.linearIssueTitle).toBe('Investigate race condition');
+    expect(session?.linearIssueSummary).toBe('Race in scheduler');
+  });
+
+  test('persists linear issue context from request body', async () => {
+    setupStandardMock('ws-direct-linear', 'Direct linear reply');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Work on this issue' }],
+      linearIssue: {
+        id: 'ISS-901',
+        title: 'Manual import refactor',
+        summary: 'Simplify import surface',
+        url: 'https://linear.app/org/issue/ISS-901',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+    expect(res.status).toBe(200);
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.prompt).toContain('[Linear Issue Context]');
+    expect(callArgs.prompt).toContain('ISS-901');
+    const latestSession = db.prepare("SELECT id FROM sessions ORDER BY created_at DESC LIMIT 1").get() as
+      | { id: string }
+      | undefined;
+    const session = latestSession ? getSession(db, latestSession.id) : null;
+    expect(latestSession).toBeDefined();
+    expect(session?.linearIssueId).toBe('ISS-901');
   });
 
   test('uses workspace claudeSessionId for resume when no explicit session', async () => {

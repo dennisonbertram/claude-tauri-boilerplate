@@ -3,6 +3,10 @@ export const SCHEMA = `
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL DEFAULT 'New Chat',
     claude_session_id TEXT,
+    linear_issue_id TEXT,
+    linear_issue_title TEXT,
+    linear_issue_summary TEXT,
+    linear_issue_url TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -40,6 +44,10 @@ export const SCHEMA = `
     status TEXT NOT NULL DEFAULT 'creating'
       CHECK(status IN ('creating', 'setup_running', 'ready', 'active', 'merging', 'discarding', 'merged', 'archived', 'error')),
     claude_session_id TEXT,
+    linear_issue_id TEXT,
+    linear_issue_title TEXT,
+    linear_issue_summary TEXT,
+    linear_issue_url TEXT,
     setup_pid INTEGER,
     error_message TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -63,4 +71,43 @@ export function migrateSessionsWorkspaceId(db: import('bun:sqlite').Database): v
     db.exec(`ALTER TABLE sessions ADD COLUMN workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL`);
   }
   db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_workspace_id ON sessions(workspace_id)`);
+}
+
+export function migrateLinearIssueColumns(db: import('bun:sqlite').Database): void {
+  const workspaceColumns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+  const sessionColumns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+  const wsHasIssueId = workspaceColumns.some((col) => col.name === 'linear_issue_id');
+  const wsHasIssueTitle = workspaceColumns.some((col) => col.name === 'linear_issue_title');
+  const wsHasIssueSummary = workspaceColumns.some((col) => col.name === 'linear_issue_summary');
+  const wsHasIssueUrl = workspaceColumns.some((col) => col.name === 'linear_issue_url');
+  const sHasIssueId = sessionColumns.some((col) => col.name === 'linear_issue_id');
+  const sHasIssueTitle = sessionColumns.some((col) => col.name === 'linear_issue_title');
+  const sHasIssueSummary = sessionColumns.some((col) => col.name === 'linear_issue_summary');
+  const sHasIssueUrl = sessionColumns.some((col) => col.name === 'linear_issue_url');
+
+  if (!wsHasIssueId) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN linear_issue_id TEXT');
+  }
+  if (!wsHasIssueTitle) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN linear_issue_title TEXT');
+  }
+  if (!wsHasIssueSummary) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN linear_issue_summary TEXT');
+  }
+  if (!wsHasIssueUrl) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN linear_issue_url TEXT');
+  }
+
+  if (!sHasIssueId) {
+    db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_id TEXT');
+  }
+  if (!sHasIssueTitle) {
+    db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_title TEXT');
+  }
+  if (!sHasIssueSummary) {
+    db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_summary TEXT');
+  }
+  if (!sHasIssueUrl) {
+    db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_url TEXT');
+  }
 }

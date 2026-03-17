@@ -74,6 +74,15 @@ describe('Projects & Workspaces Database', () => {
       expect(indexNames).toContain('idx_workspaces_updated_at');
     });
 
+    test('workspaces table has linear issue columns', () => {
+      const columns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+      const columnNames = columns.map((col) => col.name);
+      expect(columnNames).toContain('linear_issue_id');
+      expect(columnNames).toContain('linear_issue_title');
+      expect(columnNames).toContain('linear_issue_summary');
+      expect(columnNames).toContain('linear_issue_url');
+    });
+
     test('sessions workspace_id index is created', () => {
       const indexes = db
         .prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='sessions' AND name='idx_sessions_workspace_id'")
@@ -270,6 +279,31 @@ describe('Projects & Workspaces Database', () => {
   // --- Workspace CRUD Tests ---
 
   describe('createWorkspace', () => {
+    test('stores linear issue metadata when provided', () => {
+      createProject(db, 'proj-ws-linear', 'WSProjectLinear', '/ws-linear', '/ws-linear', 'main');
+      const ws = createWorkspace(
+        db,
+        'ws-linear-1',
+        'proj-ws-linear',
+        'feat-login',
+        'workspace/feat-login',
+        '/wt/login',
+        '/wt/login',
+        'main',
+        {
+          id: 'ISS-303',
+          title: 'Login failure',
+          summary: 'Investigate auth edge case',
+          url: 'https://linear.app/org/issue/ISS-303',
+        }
+      );
+
+      expect(ws.linearIssueId).toBe('ISS-303');
+      expect(ws.linearIssueTitle).toBe('Login failure');
+      expect(ws.linearIssueSummary).toBe('Investigate auth edge case');
+      expect(ws.linearIssueUrl).toBe('https://linear.app/org/issue/ISS-303');
+    });
+
     test('creates a workspace and returns mapped object', () => {
       createProject(db, 'proj-ws', 'WSProject', '/ws', '/ws', 'main');
       const ws = createWorkspace(db, 'ws-1', 'proj-ws', 'feat-auth', 'workspace/feat-auth', '/wt/auth', '/wt/auth', 'main');

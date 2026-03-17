@@ -8,6 +8,7 @@ import {
   deleteSession,
   updateSessionTitle,
   updateClaudeSessionId,
+  setSessionLinearIssue,
   addMessage,
   getMessages,
 } from './index';
@@ -24,6 +25,20 @@ describe('Database Module', () => {
   });
 
   describe('createSession / getSession', () => {
+    test('creates a session with linear issue metadata', () => {
+      const session = createSession(db, 'sess-linear', 'Issue Chat', {
+        id: 'ISS-101',
+        title: 'Fix login bug',
+        summary: 'When user clicks sign in, app crashes',
+        url: 'https://linear.app/org/issue/ISS-101',
+      });
+
+      expect(session.linearIssueId).toBe('ISS-101');
+      expect(session.linearIssueTitle).toBe('Fix login bug');
+      expect(session.linearIssueSummary).toBe('When user clicks sign in, app crashes');
+      expect(session.linearIssueUrl).toBe('https://linear.app/org/issue/ISS-101');
+    });
+
     test('creates a session and retrieves it by ID', () => {
       const session = createSession(db, 'sess-1', 'My Chat');
 
@@ -143,6 +158,23 @@ describe('Database Module', () => {
 
       const session = getSession(db, 'sess-claude2');
       expect(session!.updatedAt).not.toBe('2024-01-01 00:00:00');
+    });
+  });
+
+  describe('linear issue associations on sessions', () => {
+    test('can update linear issue metadata for a session', () => {
+      createSession(db, 'sess-linear-update', 'Issue Update Chat');
+      setSessionLinearIssue(db, 'sess-linear-update', {
+        id: 'ISS-202',
+        title: 'Refactor parser',
+        summary: 'Simplify parser flow',
+      });
+
+      const session = getSession(db, 'sess-linear-update');
+      expect(session?.linearIssueId).toBe('ISS-202');
+      expect(session?.linearIssueTitle).toBe('Refactor parser');
+      expect(session?.linearIssueSummary).toBe('Simplify parser flow');
+      expect(session?.linearIssueUrl).toBeNull();
     });
   });
 

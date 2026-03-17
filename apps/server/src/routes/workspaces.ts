@@ -16,6 +16,14 @@ import type { WorkspaceStatus } from '@claude-tauri/shared';
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
   baseBranch: z.string().min(1).max(255).optional(),
+  linearIssue: z
+    .object({
+      id: z.string().min(1, 'issue id is required'),
+      title: z.string().min(1, 'issue title is required'),
+      summary: z.string().optional(),
+      url: z.string().url().optional(),
+    })
+    .optional(),
 });
 
 const workspaceOperationLocks = new Map<string, Promise<unknown>>();
@@ -57,7 +65,8 @@ export function createWorkspaceRouter(db: Database) {
       db,
       projectId,
       parsed.data.name,
-      parsed.data.baseBranch
+      parsed.data.baseBranch,
+      parsed.data.linearIssue
     );
     return c.json(workspace, 201);
   });
