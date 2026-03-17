@@ -77,6 +77,8 @@ The feature is done when:
 - [ ] All new components have tests (React Testing Library)
 - [ ] The registry is exported so future code can register additional renderers
 - [ ] TypeScript types are clean — no `any` casts in new code
+- [ ] All new components tested in both Vite dev server AND Tauri shell
+- [ ] No CSP violations in Tauri shell (check DevTools console)
 
 ---
 
@@ -252,6 +254,32 @@ const schemas = {
   'project-health': projectHealthSchema,
 };
 ```
+
+---
+
+## Tauri/WebView Considerations
+
+This feature runs inside a Tauri v2 WebView, not a browser. The following constraints and opportunities apply:
+
+### Performance Constraints
+- **WebView memory is shared** — generative UI components should avoid heavy DOM mutations or large canvas operations during streaming. Prefer CSS transitions over JS animations.
+- **No virtual scrolling library needed** for typical tool output volumes, but component lists exceeding ~100 items should use windowing (`@tanstack/react-virtual` already available or easy to add).
+- **React 19 concurrent features work** inside Tauri WebView — `useTransition` and `startTransition` can be used to defer non-urgent renders during streaming.
+
+### Native Integration Opportunities
+- **File system access** — tool outputs that are file paths can open native file dialogs or reveal files in Finder/Explorer via `@tauri-apps/plugin-shell` or `@tauri-apps/plugin-opener`. The `FileReadDisplay` component already exists as a model.
+- **Clipboard** — code block components can use Tauri's clipboard API (`@tauri-apps/plugin-clipboard-manager`) for copy-to-clipboard, avoiding the web `navigator.clipboard` API which may behave differently in WebView.
+- **Window management** — image or chart components can potentially open in a new Tauri window for a "pop out" view.
+
+### Security Model
+- Tauri's CSP (Content Security Policy) is configured in `tauri.conf.json`. Any generative UI component that loads external resources (images from URLs, iframes) must be compatible with the CSP. Do NOT loosen the CSP — instead, proxy external resources through the Hono sidecar if needed.
+- The `sanitizeToolOutput` utility (see Issue #[sanitization issue]) must validate URLs against the CSP-allowed origins before rendering as `<img>` or `<a>` tags.
+- `dangerouslySetInnerHTML` is strictly prohibited in all generative UI components.
+
+### Testing in Tauri vs Browser
+- Run Chrome browser tool tests at `http://localhost:1420` (Vite dev server) during development — this catches most issues.
+- Before any merge, test inside the actual Tauri shell (`pnpm tauri dev`) to catch WebView-specific rendering differences.
+- Known WebView quirk: CSS `backdrop-filter` and some `filter` values may render differently — test glassmorphism or blur effects in-shell.
 
 ---
 
