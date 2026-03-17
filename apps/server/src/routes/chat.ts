@@ -298,6 +298,11 @@ export function createChatRouter(db: Database) {
           }
           break; // stream completed successfully
         } catch (err) {
+          const isRawSessionIdError =
+            currentResumeId !== undefined &&
+            err instanceof Error &&
+            err.message.trim() === currentResumeId;
+
           // Auto-recover from stale session ID (e.g., after server restart).
           // If Claude can't find the session, clear the stale ID and retry once
           // without resuming — transparent to the user.
@@ -305,13 +310,14 @@ export function createChatRouter(db: Database) {
             !retried &&
             currentResumeId &&
             err instanceof Error &&
-            err.message.includes('No conversation found with session ID');
+            (err.message.includes('No conversation found with session ID') || isRawSessionIdError);
 
           if (isStaleSession) {
             retried = true;
             currentResumeId = undefined;
-            if (appSessionId) {
-              clearClaudeSessionId(db, appSessionId);
+            const sessionToClear = appSessionId || callerSessionId;
+            if (sessionToClear) {
+              clearClaudeSessionId(db, sessionToClear);
             }
             console.warn('[chat] Stale session ID detected, retrying without resume');
             continue;
