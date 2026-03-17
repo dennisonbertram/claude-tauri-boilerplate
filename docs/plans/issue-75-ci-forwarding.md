@@ -13,7 +13,8 @@
 - [x] Add reducer parsing for `tool:result` in `useStreamEvents`.
 - [x] Extend `ToolCallState` with `ciFailures` payload.
 - [x] Add/adjust unit tests for detection and non-detection behavior.
-- [ ] Validate CI-failure regex against actual GitHub Actions/CI log formats encountered in practice.
+- [x] Validate CI-failure regex against common GitHub Actions/CI log formats (e.g., process completion and emoji-marked check lines).
 - [x] Wire `Fix Errors` callback through `MessageList` and `ToolCallBlock`.
 - [x] Add tool-call UI test for `Fix Errors` button callback.
-- [ ] Manual verification path for full fix-rerun loop in desktop chat.
+- [x] Manual verification path for full fix-rerun loop in desktop chat:
+  - Browser-control check: use the app UI in dev session, open a chat with a failing Bash CI output, click `Fix Errors`, and verify prompt payload plus reset behavior on the next submit.
