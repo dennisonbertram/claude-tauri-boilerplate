@@ -71,6 +71,7 @@ export interface StreamEventsState {
     tools: string[];
     mcpServers: Array<{ name: string; status: string }>;
     claudeCodeVersion: string;
+    slashCommands: string[];
   } | null;
   /** Maps blockIndex -> toolUseId for correlating deltas to tool calls */
   blockIndexToToolId: Map<number, string>;
@@ -181,6 +182,7 @@ export function streamEventsReducer(
           tools: event.tools ?? [],
           mcpServers: event.mcpServers ?? [],
           claudeCodeVersion: event.claudeCodeVersion ?? '',
+          slashCommands: event.slashCommands ?? [],
         },
       };
     }

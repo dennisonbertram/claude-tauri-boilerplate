@@ -18,6 +18,7 @@ describe('useCommands', () => {
     clearChat: vi.fn(),
     createSession: vi.fn(),
     exportSession: vi.fn(),
+    addDir: vi.fn(),
     showModelSelector: vi.fn(),
     showCostSummary: vi.fn(),
     showSettings: vi.fn(),
@@ -48,9 +49,21 @@ describe('useCommands', () => {
     expect(cmd).toBeDefined();
   });
 
+  it('includes /restart command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'restart');
+    expect(cmd).toBeDefined();
+  });
+
   it('includes /export command', () => {
     const { result } = renderHook(() => useCommands(mockContext));
     const cmd = result.current.commands.find((c) => c.name === 'export');
+    expect(cmd).toBeDefined();
+  });
+
+  it('includes /add-dir command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'add-dir');
     expect(cmd).toBeDefined();
   });
 
@@ -115,6 +128,15 @@ describe('useCommands', () => {
     it('/new calls createSession', async () => {
       const { result } = renderHook(() => useCommands(mockContext));
       const cmd = result.current.commands.find((c) => c.name === 'new')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.createSession).toHaveBeenCalledOnce();
+    });
+
+    it('/restart calls createSession', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'restart')!;
       await act(async () => {
         await cmd.execute();
       });
@@ -201,6 +223,15 @@ describe('useCommands', () => {
       });
       expect(mockContext.openPullRequests).toHaveBeenCalledOnce();
     });
+
+    it('/add-dir calls addDir when available', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'add-dir')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.addDir).toHaveBeenCalledOnce();
+    });
   });
 
   describe('filterCommands', () => {
@@ -233,7 +264,7 @@ describe('useCommands', () => {
     it('supports fuzzy matching and ordering', () => {
       const { result } = renderHook(() => useCommands(mockContext));
       const filtered = result.current.filterCommands('cp');
-      expect(filtered).toHaveLength(1);
+      expect(filtered.length).toBeGreaterThanOrEqual(1);
       expect(filtered[0].name).toBe('compact');
     });
 

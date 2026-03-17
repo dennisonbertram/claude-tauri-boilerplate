@@ -21,6 +21,7 @@ describe('streamEventsReducer', () => {
         tools: ['Read', 'Write', 'Bash'],
         mcpServers: [],
         claudeCodeVersion: '1.0.0',
+        slashCommands: ['plugin-cmd'],
       };
       const state = streamEventsReducer(initialStreamEventsState, {
         type: 'PROCESS_EVENT',
@@ -32,6 +33,7 @@ describe('streamEventsReducer', () => {
         tools: ['Read', 'Write', 'Bash'],
         mcpServers: [],
         claudeCodeVersion: '1.0.0',
+        slashCommands: ['plugin-cmd'],
       });
     });
   });

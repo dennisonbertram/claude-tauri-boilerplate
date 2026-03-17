@@ -929,6 +929,26 @@ export function ChatPage({
           handleCommandSelect(matchedCommand);
           return;
         }
+
+        const pluginCommands = new Set(
+          (sessionInfo?.slashCommands ?? []).map((command) => command.toLowerCase())
+        );
+        if (!pluginCommands.has(commandToken)) {
+          setMessages([
+            ...messages,
+            {
+              id: `invalid-slash-${Date.now()}`,
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'text',
+                  text: `Invalid slash command: /${commandToken}`,
+                },
+              ],
+            } as UIMessage,
+          ]);
+          return;
+        }
       }
     }
 

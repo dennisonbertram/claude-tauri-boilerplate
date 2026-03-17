@@ -16,6 +16,7 @@ export interface CommandContext {
   clearChat: () => void;
   createSession: () => void | Promise<void>;
   exportSession: () => void | Promise<void>;
+  addDir?: () => void | Promise<void>;
   showSessionList?: () => void;
   showModelSelector?: () => void;
   showCostSummary?: () => void;
@@ -39,6 +40,13 @@ export function useCommands(context: CommandContext) {
       {
         name: 'new',
         description: 'Start a new session',
+        category: 'chat' as CommandCategory,
+        shortcut: 'Cmd+N',
+        execute: () => context.createSession(),
+      },
+      {
+        name: 'restart',
+        description: 'Restart the session',
         category: 'chat' as CommandCategory,
         shortcut: 'Cmd+N',
         execute: () => context.createSession(),
@@ -97,6 +105,20 @@ export function useCommands(context: CommandContext) {
         execute: () => {
           if (context.showLinearIssues) return context.showLinearIssues();
           toast.info('Linear issue picker is not available here');
+        },
+      },
+      {
+        name: 'add-dir',
+        description: 'Attach a directory from the workspace',
+        category: 'tools' as CommandCategory,
+        execute: () => {
+          if (context.addDir) {
+            return context.addDir();
+          }
+          toast.info('Attach directories with @path', {
+            description: 'Type a workspace-relative path like @src/components in the composer.',
+            duration: 6000,
+          });
         },
       },
       {

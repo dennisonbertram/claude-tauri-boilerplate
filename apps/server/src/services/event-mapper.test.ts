@@ -41,7 +41,7 @@ const mockInitEvent = {
   cwd: '/project',
   permissionMode: 'bypassPermissions',
   apiKeySource: 'env',
-  slash_commands: [],
+  slash_commands: ['plugin-cmd', 'my-tool'],
   output_style: 'text',
   skills: [],
   plugins: [],
@@ -504,6 +504,7 @@ describe('mapSdkEvent', () => {
         { name: 'filesystem', status: 'connected' },
       ]);
       expect(event.claudeCodeVersion).toBe('2.1.39');
+      expect(event.slashCommands).toEqual(['plugin-cmd', 'my-tool']);
     });
 
     test('maps compact_boundary to compact-boundary', () => {

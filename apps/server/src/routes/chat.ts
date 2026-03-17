@@ -72,6 +72,7 @@ const chatRequestSchema = z.object({
 const CLIENT_SLASH_COMMANDS = new Set([
   'clear',
   'new',
+  'restart',
   'sessions',
   'pr',
   'help',
@@ -80,6 +81,7 @@ const CLIENT_SLASH_COMMANDS = new Set([
   'cost',
   'export',
   'compact',
+  'add-dir',
 ]);
 
 function parseSlashCommand(prompt: string): string | null {
@@ -331,25 +333,16 @@ export function createChatRouter(db: Database) {
 
     const slashCommand = parseSlashCommand(prompt);
     if (slashCommand) {
-      if (!CLIENT_SLASH_COMMANDS.has(slashCommand)) {
+      if (CLIENT_SLASH_COMMANDS.has(slashCommand)) {
         return c.json(
           {
-            error: `Invalid slash command: /${slashCommand}`,
-            code: 'INVALID_COMMAND',
+            error: `Slash command /${slashCommand} must be executed in the desktop client`,
+            code: 'CLIENT_COMMAND',
             command: slashCommand,
           },
           400
         );
       }
-
-      return c.json(
-        {
-          error: `Slash command /${slashCommand} must be executed in the desktop client`,
-          code: 'CLIENT_COMMAND',
-          command: slashCommand,
-        },
-        400
-      );
     }
 
     // Workspace validation (when workspaceId is provided)

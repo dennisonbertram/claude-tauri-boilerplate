@@ -48,6 +48,7 @@ function mapSystemEvent(event: any): StreamEvent[] {
           tools: event.tools,
           mcpServers: event.mcp_servers,
           claudeCodeVersion: event.claude_code_version,
+          slashCommands: event.slash_commands,
         },
       ];
     case 'compact_boundary':

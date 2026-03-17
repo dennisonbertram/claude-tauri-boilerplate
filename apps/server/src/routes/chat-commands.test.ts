@@ -58,11 +58,10 @@ describe('Chat Route - Slash command handling', () => {
       body: JSON.stringify(body),
     });
 
-    expect(res.status).toBe(400);
-    const payload = await res.json();
-    expect((payload as any).code).toBe('INVALID_COMMAND');
-    expect((payload as any).command).toBe('does-not-exist');
-    expect(mockQuery).not.toHaveBeenCalled();
+    // Non-client slash commands (including plugin-installed ones) are handled by the SDK.
+    // The server should not reject them at the API boundary.
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalled();
   });
 
   test('rejects known client-side slash commands at the API boundary', async () => {

@@ -154,6 +154,7 @@ export interface StreamSessionInit {
   tools: string[];
   mcpServers: Array<{ name: string; status: string }>;
   claudeCodeVersion: string;
+  slashCommands?: string[];
 }
 
 // Session result (final event)
