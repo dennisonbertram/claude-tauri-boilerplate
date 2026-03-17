@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Project, Workspace } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,6 +33,14 @@ export function ProjectSidebar({
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     () => new Set(projects.map(p => p.id))
   );
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Close confirmation if the project disappears (e.g. already deleted)
+  useEffect(() => {
+    if (confirmDeleteId && !projects.find(p => p.id === confirmDeleteId)) {
+      setConfirmDeleteId(null);
+    }
+  }, [projects, confirmDeleteId]);
 
   const toggleProject = (id: string) => {
     setExpandedProjects(prev => {
@@ -124,30 +132,52 @@ export function ProjectSidebar({
                       {project.name}
                     </span>
                   </button>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => onCreateWorkspace(project)}
-                      className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                      title="New workspace"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </button>
-                    {onDeleteProject && (
+                  {confirmDeleteId === project.id ? (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => onDeleteProject(project.id)}
-                        className="rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Remove project"
+                        data-testid={`confirm-delete-project-${project.id}`}
+                        onClick={() => {
+                          setConfirmDeleteId(null);
+                          onDeleteProject?.(project.id);
+                        }}
+                        className="rounded px-1.5 py-0.5 text-xs text-destructive border border-destructive/40 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="rounded px-1.5 py-0.5 text-xs text-muted-foreground border border-border hover:bg-accent transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onCreateWorkspace(project)}
+                        className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        title="New workspace"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                       </button>
-                    )}
-                  </div>
+                      {onDeleteProject && (
+                        <button
+                          data-testid={`delete-project-${project.id}`}
+                          onClick={() => setConfirmDeleteId(project.id)}
+                          className="rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Remove project"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Workspace list */}

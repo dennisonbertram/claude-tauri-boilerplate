@@ -116,6 +116,14 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setSelectedWorkspace(null);
   }, [refreshWorkspaces]);
 
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    await removeProject(projectId);
+    if (selectedProjectId === projectId) {
+      setSelectedProjectId(null);
+      setSelectedWorkspace(null);
+    }
+  }, [removeProject, selectedProjectId]);
+
   // When switching to workspaces view, auto-select first project
   const handleSwitchView = useCallback((view: 'chat' | 'teams' | 'workspaces') => {
     setActiveView(view);
@@ -160,7 +168,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               handleProjectClick(project.id);
               setCreateWorkspaceProject(project);
             }}
-            onDeleteProject={removeProject}
+            onDeleteProject={handleDeleteProject}
             activeView={activeView}
             onSwitchView={handleSwitchView}
           />
