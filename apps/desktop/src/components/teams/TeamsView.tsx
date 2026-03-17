@@ -17,6 +17,7 @@ export function TeamsView() {
   } = useTeams();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // If we have an active team with detail, show the workspace
   if (activeTeam && activeTeamId) {
@@ -74,16 +75,37 @@ export function TeamsView() {
                   {new Date(team.createdAt).toLocaleDateString()}
                 </p>
               </div>
-              <button
-                data-testid={`delete-team-${team.id}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteTeam(team.id);
-                }}
-                className="text-xs text-destructive hover:text-destructive/80 transition-colors px-2 py-1"
-              >
-                Delete
-              </button>
+              {confirmDeleteId === team.id ? (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    data-testid={`confirm-delete-team-${team.id}`}
+                    onClick={() => {
+                      setConfirmDeleteId(null);
+                      deleteTeam(team.id);
+                    }}
+                    className="rounded px-1.5 py-0.5 text-xs text-destructive border border-destructive/40 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="rounded px-1.5 py-0.5 text-xs text-muted-foreground border border-border hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  data-testid={`delete-team-${team.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDeleteId(team.id);
+                  }}
+                  className="text-xs text-destructive hover:text-destructive/80 transition-colors px-2 py-1"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           ))
         )}
