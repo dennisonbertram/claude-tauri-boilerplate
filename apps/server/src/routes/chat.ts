@@ -17,6 +17,7 @@ import {
   getMessages,
   getWorkspace,
   updateClaudeSessionId,
+  updateSessionModel,
   updateWorkspaceClaudeSession,
   linkSessionToWorkspace,
   setSessionLinearIssue,
@@ -472,14 +473,18 @@ export function createChatRouter(db: Database) {
                 db,
                 callerSessionId,
                 generateRandomName(),
-                resolvedLinearIssue ?? undefined
+                resolvedLinearIssue ?? undefined,
+                model
               );
             } else if (resolvedLinearIssue) {
               setSessionLinearIssue(db, callerSessionId, resolvedLinearIssue);
             }
+            if (existingSession && model && existingSession.model !== model) {
+              updateSessionModel(db, callerSessionId, model);
+            }
           } else {
             appSessionId = crypto.randomUUID();
-            createSession(db, appSessionId, generateRandomName(), resolvedLinearIssue ?? undefined);
+            createSession(db, appSessionId, generateRandomName(), resolvedLinearIssue ?? undefined, model);
           }
 
           // Link the session to the workspace if applicable

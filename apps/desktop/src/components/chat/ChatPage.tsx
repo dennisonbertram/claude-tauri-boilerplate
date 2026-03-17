@@ -250,7 +250,7 @@ export function ChatPage({
         body: {
           sessionId,
           model: settings.model,
-          effort: settings.effort,
+          effort: settings.fastMode ? 'low' : settings.effort,
           permissionMode: settings.permissionMode,
           provider: settings.provider,
           systemPrompt: settings.systemPrompt || undefined,
@@ -269,6 +269,7 @@ export function ChatPage({
       sessionId,
       settings.model,
       settings.effort,
+      settings.fastMode,
       settings.permissionMode,
       settings.provider,
       settings.systemPrompt,

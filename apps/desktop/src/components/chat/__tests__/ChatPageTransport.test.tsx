@@ -545,4 +545,24 @@ describe('ChatPage transport provider payload', () => {
       'Implement this approved plan'
     );
   });
+  it('forces effort=low when fastMode is enabled', () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        effort: 'high',
+        fastMode: true,
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} />);
+
+    expect(mockDefaultChatTransport).toHaveBeenCalledTimes(1);
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        effort: 'low',
+      }),
+    });
+  });
 });

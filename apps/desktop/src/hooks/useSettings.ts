@@ -19,6 +19,8 @@ export interface AppSettings {
   temperature: number;
   systemPrompt: string;
   effort: 'low' | 'medium' | 'high' | 'max';
+  fastMode: boolean;
+  prReviewModel: string;
 
   // Workflows
   workflowPrompts: WorkflowPrompts;
@@ -53,6 +55,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   temperature: 1.0,
   systemPrompt: '',
   effort: 'high',
+  fastMode: false,
+  prReviewModel: 'claude-haiku-4-5-20251001',
 
   // Workflows
   workflowPrompts: { ...DEFAULT_WORKFLOW_PROMPTS },

@@ -1,7 +1,8 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 
 export async function generateSessionTitle(
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  model = 'claude-haiku-4-5-20251001'
 ): Promise<string> {
   // Take first 4-6 messages max to keep it cheap
   const context = messages.slice(0, 6);
@@ -14,7 +15,7 @@ export async function generateSessionTitle(
   const stream = query({
     prompt,
     options: {
-      model: 'claude-haiku-4-5-20251001',
+      model,
       maxTurns: 1,
     },
   });

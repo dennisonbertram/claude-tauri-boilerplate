@@ -121,6 +121,16 @@ describe('useSettings', () => {
       expect(result.current.settings.effort).toBe('high');
     });
 
+    it('has correct default fastMode', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect((result.current.settings as any).fastMode).toBe(false);
+    });
+
+    it('has correct default prReviewModel', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect((result.current.settings as any).prReviewModel).toBe('claude-haiku-4-5-20251001');
+    });
+
     it('has an empty default apiKey', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.apiKey).toBe('');

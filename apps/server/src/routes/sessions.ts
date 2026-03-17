@@ -15,6 +15,7 @@ import { generateSessionTitle } from '../services/auto-namer';
 
 const createSessionSchema = z.object({
   title: z.string().max(500).optional(),
+  model: z.string().max(200).optional(),
 });
 
 const renameSessionSchema = z.object({
@@ -50,7 +51,7 @@ export function createSessionsRouter(db: Database) {
     const title = (parsed.data.title && parsed.data.title !== 'New Chat')
       ? parsed.data.title
       : generateRandomName();
-    const session = createSession(db, id, title);
+    const session = createSession(db, id, title, undefined, parsed.data.model);
     return c.json(session, 201);
   });
 
@@ -241,8 +242,11 @@ export function createSessionsRouter(db: Database) {
       );
     }
 
+    const body = await c.req.json().catch(() => ({}));
+    const model = typeof body.model === 'string' ? body.model : undefined;
+
     try {
-      const title = await generateSessionTitle(messages);
+      const title = await generateSessionTitle(messages, model);
       updateSessionTitle(db, id, title);
       return c.json({ title });
     } catch (err) {

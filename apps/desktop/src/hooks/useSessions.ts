@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { Session, Message } from '@claude-tauri/shared';
+import { useSettings } from './useSettings';
 
 const API_BASE = 'http://localhost:3131';
 
 export function useSessions() {
+  const { settings } = useSettings();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
@@ -22,13 +24,13 @@ export function useSessions() {
     const res = await fetch(`${API_BASE}/api/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, model: settings.model }),
     });
     const session = await res.json();
     setSessions(prev => [session, ...prev]);
     setActiveSessionId(session.id);
     return session as Session;
-  }, []);
+  }, [settings.model]);
 
   const deleteSession = useCallback(async (id: string) => {
     await fetch(`${API_BASE}/api/sessions/${id}`, { method: 'DELETE' });
@@ -103,6 +105,8 @@ export function useSessions() {
     try {
       const res = await fetch(`${API_BASE}/api/sessions/${id}/auto-name`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: settings.prReviewModel }),
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -114,7 +118,7 @@ export function useSessions() {
     } catch {
       // Auto-naming is best-effort; don't throw on failure
     }
-  }, []);
+  }, [settings.prReviewModel]);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 

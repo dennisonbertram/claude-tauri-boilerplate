@@ -64,6 +64,23 @@ describe('Sessions Routes', () => {
       expect(body.updatedAt).toBeDefined();
     });
 
+    test('creates a session with the requested model when provided', async () => {
+      const res = await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Model Chat', model: 'claude-opus-4-6' }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.model).toBe('claude-opus-4-6');
+
+      const persisted = db
+        .prepare('SELECT model FROM sessions WHERE id = ?')
+        .get(body.id) as { model: string };
+      expect(persisted.model).toBe('claude-opus-4-6');
+    });
+
     test('creates a session with default title when no body provided', async () => {
       const res = await app.request('/api/sessions', {
         method: 'POST',

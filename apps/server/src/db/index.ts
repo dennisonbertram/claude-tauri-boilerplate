@@ -234,6 +234,13 @@ export function updateSessionTitle(db: Database, id: string, title: string) {
   return stmt.run(title, id);
 }
 
+export function updateSessionModel(db: Database, id: string, model: string) {
+  const stmt = db.prepare(
+    `UPDATE sessions SET model = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(model, id);
+}
+
 export function updateClaudeSessionId(
   db: Database,
   sessionId: string,

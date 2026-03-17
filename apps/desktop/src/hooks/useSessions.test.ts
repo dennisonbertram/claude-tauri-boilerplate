@@ -14,6 +14,11 @@ vi.mock('sonner', () => ({
   },
 }));
 
+const mockUseSettings = vi.hoisted(() => vi.fn());
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: mockUseSettings,
+}));
+
 describe('useSessions', () => {
   const mockFetch = vi.fn();
   const mockCreateObjectURL = vi.fn(() => 'blob:url');
@@ -26,9 +31,16 @@ describe('useSessions', () => {
     mockFetch.mockReset();
     mockToastSuccess.mockReset();
     mockToastError.mockReset();
+    mockUseSettings.mockReset();
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
     mockAnchorClick.mockClear();
+
+    mockUseSettings.mockReturnValue({
+      settings: {
+        prReviewModel: 'claude-haiku-4-5-20251001',
+      },
+    });
 
     vi.spyOn(URL, 'createObjectURL').mockImplementation(mockCreateObjectURL);
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(mockRevokeObjectURL);
@@ -124,5 +136,35 @@ describe('useSessions', () => {
       expect.objectContaining({ description: 'Could not reach the server' })
     );
     expect(mockToastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('passes prReviewModel when auto-naming a session', async () => {
+    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes('/api/sessions') && url.includes('/auto-name')) {
+        return {
+          ok: true,
+          json: async () => ({ title: 'Test Title' }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    const { result } = renderHook(() => useSessions());
+
+    await act(async () => {
+      await result.current.autoNameSession('session-123');
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3131/api/sessions/session-123/auto-name',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001' }),
+      })
+    );
   });
 });

@@ -725,6 +725,93 @@ describe('Chat Route - POST /chat', () => {
     expect(callArgs.options.resume).toBe('previous-claude-session-id');
   });
 
+  test('persists caller-supplied model onto the app session when creating on-demand', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'persist-model-sdk-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'hello' }],
+      sessionId: 'app-session-model-persist',
+      model: 'claude-opus-4-6',
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    await res.text();
+
+    const persisted = db
+      .prepare('SELECT model FROM sessions WHERE id = ?')
+      .get('app-session-model-persist') as { model: string };
+    expect(persisted.model).toBe('claude-opus-4-6');
+  });
+
+  test('updates an existing app session model when the caller switches models mid-session', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'switch-model-sdk-session',
+          model: 'claude-sonnet-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'app-session-switch-model', 'Test', undefined, 'claude-sonnet-4-6');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'switch it' }],
+      sessionId: session.id,
+      model: 'claude-haiku-4-5-20251001',
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    expect(res.status).toBe(200);
+    await res.text();
+
+    const persisted = db
+      .prepare('SELECT model FROM sessions WHERE id = ?')
+      .get(session.id) as { model: string };
+    expect(persisted.model).toBe('claude-haiku-4-5-20251001');
+  });
+
   test('injects prior DB messages into prompt when session exists without claudeSessionId', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
