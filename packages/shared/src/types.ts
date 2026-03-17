@@ -10,6 +10,10 @@ export interface Session {
   title: string;
   claudeSessionId?: string;
   workspaceId?: string;
+  linearIssueId?: string | null;
+  linearIssueTitle?: string | null;
+  linearIssueSummary?: string | null;
+  linearIssueUrl?: string | null;
   messageCount?: number;
   createdAt: string;
   updatedAt: string;
@@ -30,9 +34,23 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
+  provider?: 'anthropic' | 'bedrock' | 'vertex' | 'custom';
+  providerConfig?: {
+    bedrockBaseUrl?: string;
+    bedrockProjectId?: string;
+    vertexProjectId?: string;
+    vertexBaseUrl?: string;
+    customBaseUrl?: string;
+  };
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   workspaceId?: string;
+  linearIssue?: {
+    id: string;
+    title: string;
+    summary?: string;
+    url?: string;
+  };
 }
 
 // --- Content Block Types ---
@@ -566,6 +584,10 @@ export interface Workspace {
   claudeSessionId?: string;
   setupPid?: number;
   errorMessage?: string;
+  linearIssueId?: string;
+  linearIssueTitle?: string;
+  linearIssueSummary?: string;
+  linearIssueUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -577,6 +599,12 @@ export interface CreateProjectRequest {
 export interface CreateWorkspaceRequest {
   name: string;
   baseBranch?: string;
+  linearIssue?: {
+    id: string;
+    title: string;
+    summary?: string;
+    url?: string;
+  };
 }
 
 /** Valid workspace status transitions */

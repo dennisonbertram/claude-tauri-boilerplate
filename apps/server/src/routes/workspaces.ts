@@ -16,6 +16,14 @@ import type { WorkspaceStatus } from '@claude-tauri/shared';
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
   baseBranch: z.string().min(1).max(255).optional(),
+  linearIssue: z
+    .object({
+      id: z.string().min(1, 'issue id is required'),
+      title: z.string().min(1, 'issue title is required'),
+      summary: z.string().optional(),
+      url: z.string().url().optional(),
+    })
+    .optional(),
 });
 
 const workspaceOperationLocks = new Map<string, Promise<unknown>>();
@@ -57,7 +65,8 @@ export function createWorkspaceRouter(db: Database) {
       db,
       projectId,
       parsed.data.name,
-      parsed.data.baseBranch
+      parsed.data.baseBranch,
+      parsed.data.linearIssue
     );
     return c.json(workspace, 201);
   });
@@ -112,6 +121,8 @@ export function createFlatWorkspaceRouter(db: Database) {
   // GET /api/workspaces/:id/diff — Get diff for the workspace
   router.get('/:id/diff', async (c) => {
     const id = c.req.param('id');
+    const fromRef = c.req.query('fromRef');
+    const toRef = c.req.query('toRef');
     const workspace = getWorkspace(db, id);
     if (!workspace) {
       return c.json(
@@ -119,6 +130,18 @@ export function createFlatWorkspaceRouter(db: Database) {
         404
       );
     }
+
+    if ((fromRef && !toRef) || (toRef && !fromRef)) {
+      return c.json(
+        {
+          error: 'fromRef and toRef must be provided together',
+          code: 'VALIDATION_ERROR',
+        },
+        400
+      );
+    }
+
+    const range = fromRef && toRef ? { fromRef, toRef } : undefined;
 
     const usableStatuses: WorkspaceStatus[] = ['ready', 'active'];
     if (!usableStatuses.includes(workspace.status)) {
@@ -128,12 +151,57 @@ export function createFlatWorkspaceRouter(db: Database) {
       );
     }
 
-    const diff = await worktreeService.getWorktreeDiff(workspace.worktreePath, workspace.baseBranch);
+    const diff = await worktreeService.getWorktreeDiff(
+      workspace.worktreePath,
+      workspace.baseBranch,
+      range
+    );
     return c.json({ diff, workspaceId: id });
   });
 
   // GET /api/workspaces/:id/changed-files — List changed files
   router.get('/:id/changed-files', async (c) => {
+    const id = c.req.param('id');
+    const fromRef = c.req.query('fromRef');
+    const toRef = c.req.query('toRef');
+    const workspace = getWorkspace(db, id);
+    if (!workspace) {
+      return c.json(
+        { error: 'Workspace not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    if ((fromRef && !toRef) || (toRef && !fromRef)) {
+      return c.json(
+        {
+          error: 'fromRef and toRef must be provided together',
+          code: 'VALIDATION_ERROR',
+        },
+        400
+      );
+    }
+
+    const range = fromRef && toRef ? { fromRef, toRef } : undefined;
+
+    const usableStatuses: WorkspaceStatus[] = ['ready', 'active'];
+    if (!usableStatuses.includes(workspace.status)) {
+      return c.json(
+        { error: `Workspace is in '${workspace.status}' state`, code: 'INVALID_STATE' },
+        400
+      );
+    }
+
+    const files = await worktreeService.getChangedFiles(
+      workspace.worktreePath,
+      workspace.baseBranch,
+      range
+    );
+    return c.json({ files, workspaceId: id });
+  });
+
+  // GET /api/workspaces/:id/revisions — List recent revisions in workspace branch
+  router.get('/:id/revisions', async (c) => {
     const id = c.req.param('id');
     const workspace = getWorkspace(db, id);
     if (!workspace) {
@@ -151,8 +219,8 @@ export function createFlatWorkspaceRouter(db: Database) {
       );
     }
 
-    const files = await worktreeService.getChangedFiles(workspace.worktreePath, workspace.baseBranch);
-    return c.json({ files, workspaceId: id });
+    const revisions = await worktreeService.getWorkspaceRevisions(workspace.worktreePath);
+    return c.json({ workspaceId: id, revisions });
   });
 
   // POST /api/workspaces/:id/merge — Merge workspace branch into base branch

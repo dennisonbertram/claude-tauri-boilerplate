@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { rankCommandsByRelevance } from './commandSearch';
 
 export type CommandCategory = 'chat' | 'navigation' | 'tools';
 
@@ -15,10 +16,12 @@ export interface CommandContext {
   clearChat: () => void;
   createSession: () => void | Promise<void>;
   exportSession: () => void | Promise<void>;
+  showSessionList?: () => void;
   showModelSelector?: () => void;
   showCostSummary?: () => void;
   showSettings?: () => void;
   showHelp?: () => void;
+  openPullRequests?: () => void;
 }
 
 export function useCommands(context: CommandContext) {
@@ -38,6 +41,18 @@ export function useCommands(context: CommandContext) {
         category: 'chat' as CommandCategory,
         shortcut: 'Cmd+N',
         execute: () => context.createSession(),
+      },
+      {
+        name: 'sessions',
+        description: 'Open session navigation',
+        category: 'navigation' as CommandCategory,
+        execute: () => context.showSessionList?.(),
+      },
+      {
+        name: 'pr',
+        description: 'Open pull requests',
+        category: 'navigation' as CommandCategory,
+        execute: () => context.openPullRequests?.(),
       },
       {
         name: 'help',
@@ -96,12 +111,7 @@ export function useCommands(context: CommandContext) {
   const filterCommands = useCallback(
     (query: string): Command[] => {
       if (!query) return commands;
-      const q = query.toLowerCase();
-      return commands.filter(
-        (cmd) =>
-          cmd.name.toLowerCase().includes(q) ||
-          cmd.description.toLowerCase().includes(q)
-      );
+      return rankCommandsByRelevance(commands, query);
     },
     [commands]
   );

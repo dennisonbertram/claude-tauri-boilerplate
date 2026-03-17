@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+
+const { mockToastInfo } = vi.hoisted(() => ({
+  mockToastInfo: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    info: mockToastInfo,
+  },
+}));
+
 import { useCommands } from './useCommands';
 
 describe('useCommands', () => {
@@ -10,15 +21,18 @@ describe('useCommands', () => {
     showModelSelector: vi.fn(),
     showCostSummary: vi.fn(),
     showSettings: vi.fn(),
+    showSessionList: vi.fn(),
+    openPullRequests: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToastInfo.mockReset();
   });
 
   it('returns a list of built-in commands', () => {
     const { result } = renderHook(() => useCommands(mockContext));
-    expect(result.current.commands.length).toBeGreaterThanOrEqual(8);
+    expect(result.current.commands.length).toBeGreaterThanOrEqual(10);
   });
 
   it('includes /clear command', () => {
@@ -71,6 +85,21 @@ describe('useCommands', () => {
     const cmd = result.current.commands.find((c) => c.name === 'settings');
     expect(cmd).toBeDefined();
     expect(cmd!.shortcut).toBe('Cmd+,');
+  });
+
+  it('includes /sessions command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'sessions');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('navigation');
+    expect(cmd!.shortcut).toBeUndefined();
+  });
+
+  it('includes /pr command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'pr');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('navigation');
   });
 
   describe('command execution', () => {
@@ -127,6 +156,50 @@ describe('useCommands', () => {
       });
       expect(mockContext.showSettings).toHaveBeenCalledOnce();
     });
+
+    it('/compact shows feedback instead of silently doing nothing', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'compact')!;
+
+      await act(async () => {
+        await cmd.execute();
+      });
+
+      expect(mockToastInfo).toHaveBeenCalledOnce();
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        'Context compaction is automatic',
+        expect.objectContaining({
+          description: 'Configure Auto-Compact in Settings → Advanced',
+          action: expect.objectContaining({
+            label: 'Open Settings',
+          }),
+        })
+      );
+
+      const options = mockToastInfo.mock.calls[0]?.[1] as
+        | { action?: { onClick?: () => void } }
+        | undefined;
+      options?.action?.onClick?.();
+      expect(mockContext.showSettings).toHaveBeenCalledOnce();
+    });
+
+    it('/sessions calls showSessionList', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'sessions')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.showSessionList).toHaveBeenCalledOnce();
+    });
+
+    it('/pr calls openPullRequests', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'pr')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.openPullRequests).toHaveBeenCalledOnce();
+    });
   });
 
   describe('filterCommands', () => {
@@ -154,6 +227,20 @@ describe('useCommands', () => {
       const { result } = renderHook(() => useCommands(mockContext));
       const filtered = result.current.filterCommands('CLEAR');
       expect(filtered.some((c) => c.name === 'clear')).toBe(true);
+    });
+
+    it('supports fuzzy matching and ordering', () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const filtered = result.current.filterCommands('cp');
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].name).toBe('compact');
+    });
+
+    it('prioritizes prefix matches in ordering', () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const filtered = result.current.filterCommands('co');
+      expect(filtered[0].name).toBe('cost');
+      expect(filtered[1].name).toBe('compact');
     });
   });
 });

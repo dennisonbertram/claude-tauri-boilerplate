@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { Command, CommandCategory } from '@/hooks/useCommands';
+import { rankCommandsByRelevance } from '@/hooks/commandSearch';
 
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
   chat: 'Chat',
@@ -35,33 +36,29 @@ export function CommandPalette({
     );
   }, []);
 
-  // Filter commands by name or description
-  const filtered = filter
-    ? commands.filter(
-        (cmd) =>
-          cmd.name.toLowerCase().includes(filter.toLowerCase()) ||
-          cmd.description.toLowerCase().includes(filter.toLowerCase())
-      )
-    : commands;
+  const displayedCommands = useMemo(
+    () => (filter ? rankCommandsByRelevance(commands, filter) : commands),
+    [commands, filter]
+  );
 
   // Group filtered commands by category
   const grouped = useMemo(() => {
     const groups: { category: CommandCategory; label: string; commands: Command[] }[] = [];
     for (const cat of CATEGORY_ORDER) {
-      const cmds = filtered.filter((c) => c.category === cat);
+      const cmds = displayedCommands.filter((c) => c.category === cat);
       if (cmds.length > 0) {
         groups.push({ category: cat, label: CATEGORY_LABELS[cat], commands: cmds });
       }
     }
     // Handle commands without a recognized category
-    const uncategorized = filtered.filter(
+    const uncategorized = displayedCommands.filter(
       (c) => !CATEGORY_ORDER.includes(c.category)
     );
     if (uncategorized.length > 0) {
       groups.push({ category: 'chat' as CommandCategory, label: 'Other', commands: uncategorized });
     }
     return groups;
-  }, [filtered]);
+  }, [displayedCommands]);
 
   // Build a flat list for keyboard navigation
   const flatFiltered = useMemo(() => {
@@ -77,7 +74,7 @@ export function CommandPalette({
   useEffect(() => {
     const raf = requestAnimationFrame(updateScrollHint);
     return () => cancelAnimationFrame(raf);
-  }, [filtered, updateScrollHint]);
+  }, [displayedCommands, updateScrollHint]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -115,7 +112,7 @@ export function CommandPalette({
     setSelectedIndex(flatIndex);
   }, []);
 
-  if (filtered.length === 0) {
+  if (displayedCommands.length === 0) {
     return (
       <div
         data-testid="command-palette"
@@ -187,6 +184,7 @@ export function CommandPalette({
       ))}
       {showScrollHint && (
         <div
+          data-testid="command-palette-scroll-hint"
           aria-hidden="true"
           className="sticky bottom-0 h-8 bg-gradient-to-t from-popover to-transparent pointer-events-none"
         />

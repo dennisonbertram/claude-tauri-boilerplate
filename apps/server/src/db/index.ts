@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -12,6 +12,10 @@ interface SessionRow {
   title: string;
   claude_session_id: string | null;
   workspace_id: string | null;
+  linear_issue_id: string | null;
+  linear_issue_title: string | null;
+  linear_issue_summary: string | null;
+  linear_issue_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +50,10 @@ interface WorkspaceRow {
   base_branch: string;
   status: string;
   claude_session_id: string | null;
+  linear_issue_id: string | null;
+  linear_issue_title: string | null;
+  linear_issue_summary: string | null;
+  linear_issue_url: string | null;
   setup_pid: number | null;
   error_message: string | null;
   created_at: string;
@@ -58,6 +66,10 @@ function mapSession(row: SessionRow) {
     title: row.title,
     claudeSessionId: row.claude_session_id,
     workspaceId: row.workspace_id,
+    linearIssueId: row.linear_issue_id,
+    linearIssueTitle: row.linear_issue_title,
+    linearIssueSummary: row.linear_issue_summary,
+    linearIssueUrl: row.linear_issue_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -98,6 +110,10 @@ function mapWorkspace(row: WorkspaceRow) {
     baseBranch: row.base_branch,
     status: row.status as WorkspaceStatus,
     claudeSessionId: row.claude_session_id,
+    linearIssueId: row.linear_issue_id,
+    linearIssueTitle: row.linear_issue_title,
+    linearIssueSummary: row.linear_issue_summary,
+    linearIssueUrl: row.linear_issue_url,
     setupPid: row.setup_pid,
     errorMessage: row.error_message,
     createdAt: row.created_at,
@@ -114,14 +130,38 @@ export function createDb(path?: string): Database {
   db.exec('PRAGMA foreign_keys = ON');
   db.exec(SCHEMA);
   migrateSessionsWorkspaceId(db);
+  migrateLinearIssueColumns(db);
   return db;
 }
 
-export function createSession(db: Database, id: string, title?: string) {
+type LinearIssueMetadata = {
+  id: string;
+  title: string;
+  summary?: string;
+  url?: string;
+};
+
+export function createSession(
+  db: Database,
+  id: string,
+  title?: string,
+  linearIssue?: LinearIssueMetadata
+) {
+  const linearIssueId = linearIssue?.id ?? null;
+  const linearIssueTitle = linearIssue?.title ?? null;
+  const linearIssueSummary = linearIssue?.summary ?? null;
+  const linearIssueUrl = linearIssue?.url ?? null;
   const stmt = db.prepare(
-    `INSERT INTO sessions (id, title) VALUES (?, ?) RETURNING *`
+    `INSERT INTO sessions (id, title, linear_issue_id, linear_issue_title, linear_issue_summary, linear_issue_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
   );
-  const row = stmt.get(id, title || 'New Chat') as SessionRow;
+  const row = stmt.get(
+    id,
+    title || 'New Chat',
+    linearIssueId,
+    linearIssueTitle,
+    linearIssueSummary,
+    linearIssueUrl
+  ) as SessionRow;
   return mapSession(row);
 }
 
@@ -162,6 +202,23 @@ export function updateClaudeSessionId(
     `UPDATE sessions SET claude_session_id = ?, updated_at = datetime('now') WHERE id = ?`
   );
   return stmt.run(claudeSessionId, sessionId);
+}
+
+export function setSessionLinearIssue(
+  db: Database,
+  sessionId: string,
+  linearIssue: LinearIssueMetadata
+) {
+  const stmt = db.prepare(
+    `UPDATE sessions SET linear_issue_id = ?, linear_issue_title = ?, linear_issue_summary = ?, linear_issue_url = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(
+    linearIssue.id,
+    linearIssue.title,
+    linearIssue.summary ?? null,
+    linearIssue.url ?? null,
+    sessionId
+  );
 }
 
 export function clearClaudeSessionId(db: Database, sessionId: string) {
@@ -276,12 +333,41 @@ export function createWorkspace(
   branch: string,
   worktreePath: string,
   worktreePathCanonical: string,
-  baseBranch: string
+  baseBranch: string,
+  linearIssue?: LinearIssueMetadata
 ) {
+  const linearIssueId = linearIssue?.id ?? null;
+  const linearIssueTitle = linearIssue?.title ?? null;
+  const linearIssueSummary = linearIssue?.summary ?? null;
+  const linearIssueUrl = linearIssue?.url ?? null;
   const stmt = db.prepare(
-    `INSERT INTO workspaces (id, project_id, name, branch, worktree_path, worktree_path_canonical, base_branch) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO workspaces (
+      id,
+      project_id,
+      name,
+      branch,
+      worktree_path,
+      worktree_path_canonical,
+      base_branch,
+      linear_issue_id,
+      linear_issue_title,
+      linear_issue_summary,
+      linear_issue_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   );
-  const row = stmt.get(id, projectId, name, branch, worktreePath, worktreePathCanonical, baseBranch) as WorkspaceRow;
+  const row = stmt.get(
+    id,
+    projectId,
+    name,
+    branch,
+    worktreePath,
+    worktreePathCanonical,
+    baseBranch,
+    linearIssueId,
+    linearIssueTitle,
+    linearIssueSummary,
+    linearIssueUrl
+  ) as WorkspaceRow;
   return mapWorkspace(row);
 }
 

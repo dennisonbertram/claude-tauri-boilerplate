@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { useState, type ComponentProps } from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FileReadDisplay } from '../FileReadDisplay';
 import { ChatInput } from '../ChatInput';
@@ -182,9 +183,9 @@ describe('ChatInput - Image paste support', () => {
   const mockCommands: Command[] = [];
 
   function renderChatInput(
-    overrides: Partial<React.ComponentProps<typeof ChatInput>> = {}
+    overrides: Partial<ComponentProps<typeof ChatInput>> = {}
   ) {
-    const defaults: React.ComponentProps<typeof ChatInput> = {
+    const defaults: ComponentProps<typeof ChatInput> = {
       input: '',
       onInputChange: vi.fn(),
       onSubmit: vi.fn(),
@@ -199,6 +200,34 @@ describe('ChatInput - Image paste support', () => {
       ...overrides,
     };
     return render(<ChatInput {...defaults} />);
+  }
+
+  function StatefulChatInput(
+    overrides: Partial<ComponentProps<typeof ChatInput>> = {}
+  ) {
+    const [value, setValue] = useState(overrides.input ?? '');
+
+    return (
+      <ChatInput
+        input={value}
+        onInputChange={(next) => {
+          overrides.onInputChange?.(next);
+          setValue(next);
+        }}
+        onSubmit={overrides.onSubmit ?? vi.fn()}
+        isLoading={overrides.isLoading ?? false}
+        showPalette={overrides.showPalette ?? false}
+        paletteFilter={overrides.paletteFilter ?? ''}
+        paletteCommands={overrides.paletteCommands ?? mockCommands}
+        onCommandSelect={overrides.onCommandSelect ?? vi.fn()}
+        onPaletteClose={overrides.onPaletteClose ?? vi.fn()}
+        images={overrides.images ?? []}
+        onImagesChange={overrides.onImagesChange ?? vi.fn()}
+        availableFiles={overrides.availableFiles ?? []}
+        ghostText={overrides.ghostText}
+        onAcceptSuggestion={overrides.onAcceptSuggestion}
+      />
+    );
   }
 
   it('renders without images by default', () => {
@@ -229,7 +258,7 @@ describe('ChatInput - Image paste support', () => {
       { id: '1', dataUrl: 'data:image/png;base64,abc', name: 'test.png' },
     ];
     renderChatInput({ images });
-    expect(screen.getByLabelText('Remove image')).toBeInTheDocument();
+    expect(screen.getByLabelText('Remove attachment')).toBeInTheDocument();
   });
 
   it('calls onImagesChange when remove button is clicked', async () => {
@@ -240,7 +269,7 @@ describe('ChatInput - Image paste support', () => {
     ];
     renderChatInput({ images, onImagesChange });
 
-    await user.click(screen.getByLabelText('Remove image'));
+    await user.click(screen.getByLabelText('Remove attachment'));
     expect(onImagesChange).toHaveBeenCalledWith([]);
   });
 
@@ -303,7 +332,7 @@ describe('ChatInput - Image paste support', () => {
     expect(dropZone).toBeInTheDocument();
   });
 
-  it('ignores non-image files on drop', () => {
+  it('adds non-image files on drop', async () => {
     const onImagesChange = vi.fn();
     renderChatInput({ onImagesChange });
 
@@ -317,8 +346,59 @@ describe('ChatInput - Image paste support', () => {
       },
     });
 
-    // onImagesChange should NOT be called for non-image files
-    expect(onImagesChange).not.toHaveBeenCalled();
+    expect(dropZone).toBeInTheDocument();
+    await waitFor(() => expect(onImagesChange).toHaveBeenCalled());
+  });
+
+  it('supports file picker selection for attachments', async () => {
+    const onImagesChange = vi.fn();
+    renderChatInput({ onImagesChange });
+
+    const picker = screen.getByTestId('file-input');
+    const file = new File(['notes'], 'notes.txt', {
+      type: 'text/plain',
+    });
+
+    fireEvent.change(picker, {
+      target: {
+        files: [file],
+      },
+    });
+
+    await waitFor(() => expect(onImagesChange).toHaveBeenCalled());
+  });
+
+  it('renders non-image attachment previews', () => {
+    const images = [
+      { id: '1', dataUrl: '', name: 'notes.txt' },
+    ];
+    renderChatInput({ images });
+
+    expect(screen.getByTestId('image-thumbnails')).toBeInTheDocument();
+    expect(screen.getByText('notes.txt')).toBeInTheDocument();
+    expect(screen.getByTestId('file-attachment-item')).toBeInTheDocument();
+  });
+
+  it('filters and suggests files after @ mention', async () => {
+    const onInputChange = vi.fn();
+    render(
+      <StatefulChatInput
+        onInputChange={onInputChange}
+        availableFiles={['src/app.tsx', 'src/styles.css', 'README.md']}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(/type a message/i);
+    const user = userEvent.setup();
+    await user.click(textarea);
+    await user.type(textarea, 'review @');
+
+    expect(screen.getByTestId('file-mention-palette')).toBeInTheDocument();
+    expect(screen.getByText('src/app.tsx')).toBeInTheDocument();
+    expect(screen.getByText('README.md')).toBeInTheDocument();
+
+    await user.click(screen.getByText('README.md'));
+    expect(onInputChange).toHaveBeenLastCalledWith('review @README.md ');
   });
 
   it('renders with attached images without errors', () => {

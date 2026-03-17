@@ -44,7 +44,13 @@ export class WorktreeOrchestrator {
     db: Database,
     projectId: string,
     name: string,
-    baseBranch?: string
+    baseBranch?: string,
+    linearIssue?: {
+      id: string;
+      title: string;
+      summary?: string;
+      url?: string;
+    }
   ): Promise<Workspace> {
     // 1. Validate workspace name
     const sanitized = sanitizeWorkspaceName(name);
@@ -135,7 +141,8 @@ export class WorktreeOrchestrator {
         branchName,
         worktreePath,
         worktreePathCanonical,
-        effectiveBaseBranch
+        effectiveBaseBranch,
+        linearIssue
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

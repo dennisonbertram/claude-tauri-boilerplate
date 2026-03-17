@@ -30,6 +30,9 @@ import { SuggestionChips } from './SuggestionChips';
 import { useSettings } from '@/hooks/useSettings';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
+import type { ToolCallState } from '@/hooks/useStreamEvents';
+import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
+import type { AttachedImage } from './ChatInput';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -58,6 +61,23 @@ interface ChatPageProps {
   workspaceId?: string;
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
+  onOpenSessions?: () => void;
+  onOpenPullRequests?: () => void;
+}
+
+function extractCommandFromToolInput(input: string): string | undefined {
+  if (!input) return undefined;
+
+  try {
+    const parsed = JSON.parse(input);
+    if (typeof parsed === 'string') return parsed;
+    if (typeof parsed.command === 'string') return parsed.command;
+    if (Array.isArray(parsed.command)) return parsed.command.join(' ');
+  } catch {
+    return input;
+  }
+
+  return undefined;
 }
 
 /**
@@ -72,9 +92,21 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, onAutoName, workspaceId, onToggleSidebar, onOpenSettings }: ChatPageProps) {
+export function ChatPage({
+  sessionId,
+  onCreateSession,
+  onExportSession,
+  onStatusChange,
+  onAutoName,
+  workspaceId,
+  onToggleSidebar,
+  onOpenSettings,
+  onOpenSessions,
+  onOpenPullRequests,
+}: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<AttachedImage[]>([]);
   const [helpOpen, setHelpOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const {
@@ -107,6 +139,17 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     addMessageCost,
     reset: resetCostTracking,
   } = useCostTracking();
+
+  const { changedFiles, fetchDiff: fetchWorkspaceDiff } = useWorkspaceDiff(workspaceId ?? null);
+  const suggestedFiles = useMemo(
+    () => changedFiles.map((file) => file.path),
+    [changedFiles]
+  );
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    void fetchWorkspaceDiff();
+  }, [workspaceId, fetchWorkspaceDiff]);
 
   // Checkpoint tracking state
   const turnIndexRef = useRef(0);
@@ -191,9 +234,33 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     () =>
       new DefaultChatTransport({
         api: `${API_BASE}/api/chat`,
-        body: { sessionId, model: settings.model, effort: settings.effort, ...(workspaceId ? { workspaceId } : {}) },
+        body: {
+          sessionId,
+          model: settings.model,
+          effort: settings.effort,
+          provider: settings.provider,
+          providerConfig: {
+            bedrockBaseUrl: settings.bedrockBaseUrl,
+            bedrockProjectId: settings.bedrockProjectId,
+            vertexProjectId: settings.vertexProjectId,
+            vertexBaseUrl: settings.vertexBaseUrl,
+            customBaseUrl: settings.customBaseUrl,
+          },
+          ...(workspaceId ? { workspaceId } : {}),
+        },
       }),
-    [sessionId, settings.model, settings.effort, workspaceId]
+    [
+      sessionId,
+      settings.model,
+      settings.effort,
+      settings.provider,
+      settings.bedrockBaseUrl,
+      settings.bedrockProjectId,
+      settings.vertexProjectId,
+      settings.vertexBaseUrl,
+      settings.customBaseUrl,
+      workspaceId,
+    ]
   );
 
   // Stable fallback ID so we don't recreate the Chat on every render
@@ -250,6 +317,24 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     []
   );
 
+  const composePromptWithAttachments = useCallback(
+    (text: string, files: AttachedImage[]) => {
+      if (!files.length) return text;
+
+      const mentioned = new Set((text.match(/@([^\s]+)/g) || []).map((match) => match.slice(1)));
+      const additional = files.filter(
+        (file) =>
+          !mentioned.has(file.name) &&
+          !mentioned.has(file.name.split('/').pop() || '')
+      );
+      if (!additional.length) return text;
+
+      const lines = additional.map((file) => `- @${file.name}`);
+      return `${text}\n\nAttached files:\n${lines.join('\n')}`;
+    },
+    []
+  );
+
   // Command palette integration
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -260,6 +345,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     turnIndexRef.current = 0;
     lastUserPromptRef.current = '';
     lastUserMessageIdRef.current = '';
+    setAttachments([]);
   }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents, resetCheckpoints]);
 
   const commandContext = useMemo(
@@ -271,8 +357,17 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       showSettings: onOpenSettings,
       showModelSelector: onOpenSettings ? () => onOpenSettings('model') : undefined,
       showCostSummary: () => setCostOpen(true),
+      showSessionList: onOpenSessions,
+      openPullRequests: onOpenPullRequests,
     }),
-    [clearChat, onCreateSession, onExportSession, onOpenSettings]
+    [
+      clearChat,
+      onCreateSession,
+      onExportSession,
+      onOpenSettings,
+      onOpenSessions,
+      onOpenPullRequests,
+    ]
   );
 
   const { commands, filterCommands } = useCommands(commandContext);
@@ -491,6 +586,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
 
   const handlePermissionDecision = useCallback(
     async (result: PermissionDecisionResult) => {
+      if (!sessionId) return;
       resolvePermission(result.requestId);
 
       try {
@@ -513,6 +609,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
 
   const handlePlanApprove = useCallback(async () => {
     if (!plan) return;
+    if (!sessionId) return;
     approvePlan(plan.planId);
 
     try {
@@ -533,6 +630,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
   const handlePlanReject = useCallback(
     async (feedback?: string) => {
       if (!plan) return;
+      if (!sessionId) return;
       rejectPlan(plan.planId, feedback);
 
       try {
@@ -551,6 +649,28 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       }
     },
     [sessionId, plan, rejectPlan]
+  );
+
+  const handleFixErrors = useCallback(
+    async (toolCall: ToolCallState) => {
+      if (!toolCall.ciFailures || isLoading) return;
+
+      const command = extractCommandFromToolInput(toolCall.input);
+      const checks =
+        toolCall.ciFailures.checks.length > 0
+          ? `\nFailing checks:\n${toolCall.ciFailures.checks
+              .map((item) => `- ${item}`)
+              .join('\n')}`
+          : '';
+      const commandLine = command ? `\nLast command: ${command}` : '';
+      const prompt =
+        `The previous CI checks failed. Please fix the issues and rerun validation.${checks}${commandLine}\n\nRaw logs:\n${toolCall.ciFailures.rawOutput}`;
+
+      resetStreamEvents();
+      setInput('');
+      await sendMessage({ text: prompt });
+    },
+    [isLoading, resetStreamEvents, sendMessage]
   );
 
   const pendingPermissionEntries = useMemo(
@@ -597,13 +717,15 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     }
 
     // Track turn info for checkpoints
+    const payload = composePromptWithAttachments(text, attachments);
     lastUserPromptRef.current = text;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
     turnIndexRef.current += 1;
 
     setInput('');
     resetStreamEvents();
-    await sendMessage({ text });
+    setAttachments([]);
+    await sendMessage({ text: payload });
   };
 
   return (
@@ -613,6 +735,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         isLoading={isLoading}
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
+        onToolFixErrors={handleFixErrors}
       />
       {/* Subagent visualization panel */}
       {(subagents.length > 0 || subagentPanelVisible) && (
@@ -687,6 +810,9 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         paletteCommands={filteredCommands}
         onCommandSelect={handleCommandSelectAndClear}
         onPaletteClose={handlePaletteClose}
+        images={attachments}
+        onImagesChange={setAttachments}
+        availableFiles={suggestedFiles}
         ghostText={isLoading ? undefined : currentSuggestion}
         onAcceptSuggestion={handleAcceptGhostText}
       />

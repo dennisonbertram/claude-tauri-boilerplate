@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
 import * as api from '@/lib/workspace-api';
 
+type DiffRange = api.WorkspaceDiffRange | undefined;
+
 export interface ChangedFile {
   path: string;
   status: string;
 }
 
-export function useWorkspaceDiff(workspaceId: string | null) {
+export function useWorkspaceDiff(workspaceId: string | null, range: DiffRange = undefined) {
   const [diff, setDiff] = useState<string>('');
   const [changedFiles, setChangedFiles] = useState<ChangedFile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -18,8 +20,8 @@ export function useWorkspaceDiff(workspaceId: string | null) {
       setLoading(true);
       setError(null);
       const [diffResult, filesResult] = await Promise.all([
-        api.fetchWorkspaceDiff(workspaceId),
-        api.fetchChangedFiles(workspaceId),
+        api.fetchWorkspaceDiff(workspaceId, range),
+        api.fetchChangedFiles(workspaceId, range),
       ]);
       setDiff(diffResult.diff);
       setChangedFiles(filesResult.files);
@@ -28,7 +30,7 @@ export function useWorkspaceDiff(workspaceId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId]);
+  }, [workspaceId, range?.fromRef, range?.toRef]);
 
   return { diff, changedFiles, loading, error, fetchDiff };
 }

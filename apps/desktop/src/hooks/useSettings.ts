@@ -1,6 +1,14 @@
 import { useSettingsContext } from '@/contexts/SettingsContext';
 
 export interface AppSettings {
+  // Provider
+  provider: 'anthropic' | 'bedrock' | 'vertex' | 'custom';
+  bedrockBaseUrl: string;
+  bedrockProjectId: string;
+  vertexProjectId: string;
+  vertexBaseUrl: string;
+  customBaseUrl: string;
+
   // General
   apiKey: string;
   model: string;
@@ -24,6 +32,14 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  // Provider
+  provider: 'anthropic',
+  bedrockBaseUrl: '',
+  bedrockProjectId: '',
+  vertexProjectId: '',
+  vertexBaseUrl: '',
+  customBaseUrl: '',
+
   // General
   apiKey: '',
   model: 'claude-sonnet-4-6',

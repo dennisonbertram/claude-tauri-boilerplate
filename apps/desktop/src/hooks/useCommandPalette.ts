@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Command } from './useCommands';
+import { rankCommandsByRelevance } from './commandSearch';
 
 export interface UseCommandPaletteOptions {
   commands: Command[];
@@ -48,12 +49,7 @@ export function useCommandPalette(
       return externalFilter(searchQuery);
     }
 
-    const q = searchQuery.toLowerCase();
-    return commands.filter(
-      (cmd) =>
-        cmd.name.toLowerCase().includes(q) ||
-        cmd.description.toLowerCase().includes(q)
-    );
+    return rankCommandsByRelevance(commands, searchQuery);
   }, [commands, isOpen, searchQuery, externalFilter]);
 
   // Reset selectedIndex when search query changes
