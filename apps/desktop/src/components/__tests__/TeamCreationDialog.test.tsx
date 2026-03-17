@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TeamCreationDialog } from '../teams/TeamCreationDialog';
+import { AVAILABLE_MODELS } from '@/lib/models';
 
 const mockOnCreate = vi.fn().mockResolvedValue({ id: 'test-id', name: 'test' });
 const mockOnClose = vi.fn();
@@ -117,6 +118,56 @@ describe('TeamCreationDialog', () => {
             description: 'Researches topics',
           }),
         ]),
+        'auto'
+      );
+    });
+  });
+
+  it('renders model dropdown options matching settings model IDs and labels', () => {
+    renderDialog();
+    const modelSelect = screen.getByTestId('agent-model-0');
+    const optionElements = Array.from(modelSelect.querySelectorAll('option'));
+
+    expect(optionElements).toHaveLength(AVAILABLE_MODELS.length + 1);
+    expect(optionElements[0]).toHaveTextContent('Default model');
+    expect(optionElements[0]).toHaveValue('');
+
+    AVAILABLE_MODELS.forEach((model, index) => {
+      const option = optionElements[index + 1];
+      expect(option).toHaveValue(model.id);
+      expect(option).toHaveTextContent(model.label);
+    });
+  });
+
+  it('submits selected model value from the dropdown', async () => {
+    renderDialog();
+    fireEvent.change(screen.getByTestId('team-name-input'), {
+      target: { value: 'My Team' },
+    });
+    fireEvent.change(screen.getByTestId('agent-name-0'), {
+      target: { value: 'researcher' },
+    });
+    fireEvent.change(screen.getByTestId('agent-description-0'), {
+      target: { value: 'Researches topics' },
+    });
+
+    const expectedModel = AVAILABLE_MODELS[1]!.id;
+    fireEvent.change(screen.getByTestId('agent-model-0'), {
+      target: { value: expectedModel },
+    });
+
+    fireEvent.click(screen.getByTestId('team-creation-submit'));
+
+    await waitFor(() => {
+      expect(mockOnCreate).toHaveBeenCalledWith(
+        'My Team',
+        [
+          expect.objectContaining({
+            name: 'researcher',
+            description: 'Researches topics',
+            model: expectedModel,
+          }),
+        ],
         'auto'
       );
     });

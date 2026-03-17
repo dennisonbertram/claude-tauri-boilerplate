@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { AgentDefinition, TeamConfig } from '@claude-tauri/shared';
+import { AVAILABLE_MODELS } from '@/lib/models';
 
 interface TeamCreationDialogProps {
   isOpen: boolean;
@@ -11,11 +12,10 @@ interface TeamCreationDialogProps {
   ) => Promise<TeamConfig | null>;
 }
 
-const MODELS = [
-  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-  { value: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-];
+const MODEL_OPTIONS = AVAILABLE_MODELS.map((model) => ({
+  value: model.id,
+  label: model.label,
+}));
 const PERMISSION_MODES: AgentDefinition['permissionMode'][] = [
   'normal',
   'acceptEdits',
@@ -235,7 +235,7 @@ export function TeamCreationDialog({
                       className="h-7 rounded border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring"
                     >
                       <option value="">Default model</option>
-                      {MODELS.map((m) => (
+                      {MODEL_OPTIONS.map((m) => (
                         <option key={m.value} value={m.value}>
                           {m.label}
                         </option>
