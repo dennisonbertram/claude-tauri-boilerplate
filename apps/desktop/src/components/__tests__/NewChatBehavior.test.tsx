@@ -161,6 +161,130 @@ describe('New Chat behavior (issue #69)', () => {
     expect(createSession).toHaveBeenCalledTimes(1);
   });
 
+  // ── Regression tests for issue #73 ─────────────────────────────────────────
+
+  test('(#73) selecting a session with claudeSessionId=null marks it as having no messages', () => {
+    // Simulate what AppLayout does in onSelectSession after the fix:
+    // the guard uses session.claudeSessionId != null as the proxy for hasMessages.
+    const sessions = [
+      {
+        id: 'empty-session',
+        title: 'Empty Chat',
+        claudeSessionId: undefined, // no messages sent yet
+        createdAt: '2026-03-16T10:00:00.000Z',
+        updatedAt: '2026-03-16T10:00:00.000Z',
+      },
+    ];
+
+    let activeSessionHasMessages = false;
+    const createSession = vi.fn();
+
+    // Simulate onSelectSession (fixed version)
+    const onSelectSession = (id: string) => {
+      const session = sessions.find(s => s.id === id);
+      activeSessionHasMessages = session?.claudeSessionId != null;
+    };
+
+    // User selects the empty session
+    onSelectSession('empty-session');
+
+    // activeSessionHasMessages should be false because claudeSessionId is null/undefined
+    expect(activeSessionHasMessages).toBe(false);
+
+    // Now simulate handleNewChat — it should be a no-op because the session is empty
+    const activeSessionId = 'empty-session';
+    const handleNewChat = async () => {
+      if (activeSessionId !== null && !activeSessionHasMessages) {
+        return;
+      }
+      await createSession();
+    };
+
+    handleNewChat();
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  test('(#73) selecting a session with a non-null claudeSessionId marks it as having messages', () => {
+    // A session that has had at least one message will have claudeSessionId set.
+    const sessions = [
+      {
+        id: 'active-session',
+        title: 'Chat With History',
+        claudeSessionId: 'claude-abc-123', // messages were exchanged
+        createdAt: '2026-03-16T10:00:00.000Z',
+        updatedAt: '2026-03-16T10:00:00.000Z',
+      },
+    ];
+
+    let activeSessionHasMessages = false;
+    const createSession = vi.fn();
+
+    // Simulate onSelectSession (fixed version)
+    const onSelectSession = (id: string) => {
+      const session = sessions.find(s => s.id === id);
+      activeSessionHasMessages = session?.claudeSessionId != null;
+    };
+
+    // User selects the session that has messages
+    onSelectSession('active-session');
+
+    // activeSessionHasMessages should be true because claudeSessionId is set
+    expect(activeSessionHasMessages).toBe(true);
+
+    // Now simulate handleNewChat — it should create a new session
+    const activeSessionId = 'active-session';
+    const handleNewChat = async () => {
+      if (activeSessionId !== null && !activeSessionHasMessages) {
+        return;
+      }
+      await createSession();
+    };
+
+    handleNewChat();
+    expect(createSession).toHaveBeenCalledTimes(1);
+  });
+
+  test('(#73) clicking New Chat after selecting an empty session does NOT create a new session', () => {
+    // Full regression scenario: user clicks an empty session, then clicks New Chat.
+    // The guard should prevent creating another empty session.
+    let activeSessionId: string | null = null;
+    let activeSessionHasMessages = false;
+    const createSession = vi.fn();
+
+    const sessions = [
+      {
+        id: 'empty-session',
+        title: 'Empty Chat',
+        claudeSessionId: undefined, // no messages sent yet
+        createdAt: '2026-03-16T10:00:00.000Z',
+        updatedAt: '2026-03-16T10:00:00.000Z',
+      },
+    ];
+
+    // Simulate the fixed onSelectSession handler
+    const onSelectSession = (id: string) => {
+      activeSessionId = id;
+      const session = sessions.find(s => s.id === id);
+      activeSessionHasMessages = session?.claudeSessionId != null;
+    };
+
+    const handleNewChat = async () => {
+      if (activeSessionId !== null && !activeSessionHasMessages) {
+        return;
+      }
+      await createSession();
+      activeSessionHasMessages = false;
+    };
+
+    // User selects the empty session
+    onSelectSession('empty-session');
+    expect(activeSessionHasMessages).toBe(false);
+
+    // User then clicks New Chat — should be a no-op
+    handleNewChat();
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
   test('clicking New Chat three times consecutively only creates one session when starting fresh after first creation', async () => {
     // Simulate: user has no active session → clicks New Chat → session created.
     // Now they have an active session with no messages → clicking again is a no-op.
