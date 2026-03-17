@@ -48,6 +48,13 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
+  test('shows provider selector with default of anthropic', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    const providerSelect = screen.getByTestId('provider-select') as HTMLSelectElement;
+    expect(providerSelect.value).toBe('anthropic');
+  });
+
   test('does not render panel content when isOpen is false', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
@@ -171,6 +178,59 @@ describe('SettingsPanel', () => {
 
     const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.theme).toBe('light');
+  });
+
+  test('selecting provider updates provider in localStorage', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    const providerSelect = screen.getByTestId('provider-select');
+    await user.selectOptions(providerSelect, 'vertex');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.provider).toBe('vertex');
+  });
+
+  test('shows and saves Bedrock fields when Bedrock is selected', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.selectOptions(screen.getByTestId('provider-select'), 'bedrock');
+
+    const baseUrlInput = screen.getByTestId('provider-bedrock-base-url');
+    await user.type(baseUrlInput, 'https://bedrock.internal');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.bedrockBaseUrl).toBe('https://bedrock.internal');
+  });
+
+  test('shows and saves Vertex fields when Vertex is selected', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.selectOptions(screen.getByTestId('provider-select'), 'vertex');
+
+    const projectIdInput = screen.getByTestId('provider-vertex-project-id');
+    const baseUrlInput = screen.getByTestId('provider-vertex-base-url');
+    await user.type(projectIdInput, 'gcp-project');
+    await user.type(baseUrlInput, 'https://vertex.internal');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.vertexProjectId).toBe('gcp-project');
+    expect(stored.vertexBaseUrl).toBe('https://vertex.internal');
+  });
+
+  test('shows and saves custom base URL when Custom is selected', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.selectOptions(screen.getByTestId('provider-select'), 'custom');
+
+    const customUrlInput = screen.getByTestId('provider-custom-base-url');
+    await user.type(customUrlInput, 'https://gateway.internal');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.customBaseUrl).toBe('https://gateway.internal');
   });
 
   test('changing max turns persists to localStorage', async () => {

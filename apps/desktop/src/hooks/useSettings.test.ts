@@ -48,6 +48,11 @@ describe('useSettings', () => {
       expect(result.current.settings).toEqual(DEFAULT_SETTINGS);
     });
 
+    it('has correct default provider', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.provider).toBe('anthropic');
+    });
+
     it('has correct default model (full model ID)', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.model).toBe('claude-sonnet-4-6');
@@ -112,6 +117,15 @@ describe('useSettings', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.systemPrompt).toBe('');
     });
+
+    it('has empty default provider config values', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.bedrockBaseUrl).toBe('');
+      expect(result.current.settings.bedrockProjectId).toBe('');
+      expect(result.current.settings.vertexProjectId).toBe('');
+      expect(result.current.settings.vertexBaseUrl).toBe('');
+      expect(result.current.settings.customBaseUrl).toBe('');
+    });
   });
 
   describe('localStorage persistence', () => {
@@ -136,7 +150,9 @@ describe('useSettings', () => {
     it('loads saved settings from localStorage on mount', () => {
       const savedSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
+        provider: 'bedrock',
         model: 'claude-opus-4-6',
+        bedrockBaseUrl: 'https://bedrock.example.com',
         theme: 'light',
         maxTokens: 8192,
       };
@@ -148,6 +164,8 @@ describe('useSettings', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
 
       expect(result.current.settings.model).toBe('claude-opus-4-6');
+      expect(result.current.settings.provider).toBe('bedrock');
+      expect(result.current.settings.bedrockBaseUrl).toBe('https://bedrock.example.com');
       expect(result.current.settings.theme).toBe('light');
       expect(result.current.settings.maxTokens).toBe(8192);
     });

@@ -30,6 +30,14 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
+  provider?: 'anthropic' | 'bedrock' | 'vertex' | 'custom';
+  providerConfig?: {
+    bedrockBaseUrl?: string;
+    bedrockProjectId?: string;
+    vertexProjectId?: string;
+    vertexBaseUrl?: string;
+    customBaseUrl?: string;
+  };
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   workspaceId?: string;

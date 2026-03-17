@@ -2,8 +2,39 @@ import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
+type EnvSnapshot = Record<string, string | undefined>;
+const providerEnvKeys = [
+  'ANTHROPIC_API_KEY',
+  'CLAUDE_CODE_USE_BEDROCK',
+  'CLAUDE_CODE_USE_VERTEX',
+  'ANTHROPIC_BEDROCK_BASE_URL',
+  'ANTHROPIC_VERTEX_BASE_URL',
+  'ANTHROPIC_VERTEX_PROJECT_ID',
+  'ANTHROPIC_BASE_URL',
+];
+
+function captureProviderEnv(): EnvSnapshot {
+  return providerEnvKeys.reduce((acc, key) => {
+    acc[key] = process.env[key];
+    return acc;
+  }, {} as EnvSnapshot);
+}
+
+function resetProviderEnv() {
+  process.env.ANTHROPIC_API_KEY = 'sk-ant-fake-key-for-testing';
+  delete process.env.CLAUDE_CODE_USE_BEDROCK;
+  delete process.env.CLAUDE_CODE_USE_VERTEX;
+  delete process.env.ANTHROPIC_BEDROCK_BASE_URL;
+  delete process.env.ANTHROPIC_VERTEX_BASE_URL;
+  delete process.env.ANTHROPIC_VERTEX_PROJECT_ID;
+  delete process.env.ANTHROPIC_BASE_URL;
+}
+
+let envAtQueryCall: EnvSnapshot | undefined;
+
 // Mock the claude-agent-sdk before importing anything that uses it
 const mockQuery = mock(() => {
+  envAtQueryCall = captureProviderEnv();
   return (async function* () {
     yield {
       type: 'system',
@@ -420,6 +451,8 @@ describe('Chat Route - POST /chat', () => {
 
   beforeEach(() => {
     mockQuery.mockReset();
+    envAtQueryCall = undefined;
+    resetProviderEnv();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -428,6 +461,7 @@ describe('Chat Route - POST /chat', () => {
 
   afterEach(() => {
     db.close();
+    resetProviderEnv();
   });
 
   test('returns streaming response for valid chat request', async () => {
@@ -721,6 +755,49 @@ describe('Chat Route - POST /chat', () => {
     expect((finishEvent as any).messageMetadata?.sessionId).toBe('metadata-session');
   });
 
+  test('passes bedrock provider config to the SDK environment', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        envAtQueryCall = captureProviderEnv();
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'provider-beds',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'provider-bedrock-session', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider test' }],
+      sessionId: session.id,
+      provider: 'bedrock',
+      providerConfig: { bedrockBaseUrl: 'https://bedrock.internal' },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
+    expect(envAtQueryCall?.CLAUDE_CODE_USE_BEDROCK).toBe('1');
+    expect(envAtQueryCall?.ANTHROPIC_BEDROCK_BASE_URL).toBe('https://bedrock.internal');
+  });
+
   test('handles stream errors gracefully', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
@@ -772,6 +849,8 @@ describe('Chat Route - Message Persistence', () => {
 
   beforeEach(() => {
     mockQuery.mockReset();
+    envAtQueryCall = undefined;
+    resetProviderEnv();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -780,6 +859,7 @@ describe('Chat Route - Message Persistence', () => {
 
   afterEach(() => {
     db.close();
+    resetProviderEnv();
   });
 
   // Helper to create a standard mock that yields init + text delta

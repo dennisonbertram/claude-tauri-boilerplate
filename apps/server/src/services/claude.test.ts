@@ -1,10 +1,52 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 
-// Capture the env value at the moment query() is called
-let envAtQueryCall: string | undefined;
+type EnvSnapshot = Record<string, string | undefined>;
+
+// Capture the env values at the moment query() is called
+let envAtQueryCall: EnvSnapshot | undefined;
+
+const FAKE_KEY = 'sk-ant-fake-key-for-testing';
+const providerEnvKeys = [
+  'ANTHROPIC_API_KEY',
+  'CLAUDE_CODE_USE_BEDROCK',
+  'CLAUDE_CODE_USE_VERTEX',
+  'ANTHROPIC_BEDROCK_BASE_URL',
+  'ANTHROPIC_VERTEX_BASE_URL',
+  'ANTHROPIC_VERTEX_PROJECT_ID',
+  'ANTHROPIC_BASE_URL',
+];
+
+function captureProviderEnv(): EnvSnapshot {
+  return providerEnvKeys.reduce((acc, key) => {
+    acc[key] = process.env[key];
+    return acc;
+  }, {} as EnvSnapshot);
+}
+
+function setKnownProviderEnv(key: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
+}
+
+function resetProviderEnv() {
+  setKnownProviderEnv('ANTHROPIC_API_KEY', FAKE_KEY);
+  setKnownProviderEnv('CLAUDE_CODE_USE_BEDROCK', undefined);
+  setKnownProviderEnv('CLAUDE_CODE_USE_VERTEX', undefined);
+  setKnownProviderEnv('ANTHROPIC_BEDROCK_BASE_URL', undefined);
+  setKnownProviderEnv('ANTHROPIC_VERTEX_BASE_URL', undefined);
+  setKnownProviderEnv('ANTHROPIC_VERTEX_PROJECT_ID', undefined);
+  setKnownProviderEnv('ANTHROPIC_BASE_URL', undefined);
+}
+
+function snapshotMatches(expected: EnvSnapshot) {
+  expect(envAtQueryCall).toMatchObject(expected);
+}
 
 const mockQuery = mock(() => {
-  envAtQueryCall = process.env.ANTHROPIC_API_KEY;
+  envAtQueryCall = captureProviderEnv();
   return (async function* () {
     yield {
       type: 'system',
@@ -30,14 +72,13 @@ mock.module('@anthropic-ai/claude-agent-sdk', () => ({ query: mockQuery }));
 const { streamClaude } = await import('./claude');
 
 describe('streamClaude - subscription auth regression', () => {
-  const FAKE_KEY = 'sk-ant-fake-key-for-testing';
-
   beforeEach(() => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
+    resetProviderEnv();
     // Re-set the capture logic after reset
     mockQuery.mockImplementation(() => {
-      envAtQueryCall = process.env.ANTHROPIC_API_KEY;
+      envAtQueryCall = captureProviderEnv();
       return (async function* () {
         yield {
           type: 'system',
@@ -61,7 +102,7 @@ describe('streamClaude - subscription auth regression', () => {
   });
 
   afterEach(() => {
-    process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+    resetProviderEnv();
   });
 
   test('clears ANTHROPIC_API_KEY to "" before calling query()', async () => {
@@ -69,7 +110,7 @@ describe('streamClaude - subscription auth regression', () => {
     // consume the stream
     for await (const _ of gen) { /* drain */ }
 
-    expect(envAtQueryCall).toBe('');
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
   });
 
   test('restores ANTHROPIC_API_KEY after stream completes', async () => {
@@ -80,8 +121,9 @@ describe('streamClaude - subscription auth regression', () => {
   });
 
   test('restores ANTHROPIC_API_KEY even when stream throws', async () => {
+    process.env.CLAUDE_CODE_USE_BEDROCK = '1';
     mockQuery.mockImplementation(() => {
-      envAtQueryCall = process.env.ANTHROPIC_API_KEY;
+      envAtQueryCall = captureProviderEnv();
       return (async function* () {
         throw new Error('SDK error');
       })();
@@ -95,5 +137,70 @@ describe('streamClaude - subscription auth regression', () => {
     }
 
     expect(process.env.ANTHROPIC_API_KEY).toBe(FAKE_KEY);
+    expect(process.env.CLAUDE_CODE_USE_BEDROCK).toBe('1');
+  });
+
+  test('uses Bedrock env variables when provider=bedrock', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      provider: 'bedrock',
+      providerConfig: {
+        bedrockBaseUrl: 'https://bedrock.internal',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    snapshotMatches({
+      ANTHROPIC_API_KEY: '',
+      CLAUDE_CODE_USE_BEDROCK: '1',
+      CLAUDE_CODE_USE_VERTEX: undefined,
+      ANTHROPIC_BEDROCK_BASE_URL: 'https://bedrock.internal',
+      ANTHROPIC_VERTEX_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_PROJECT_ID: undefined,
+      ANTHROPIC_BASE_URL: undefined,
+    });
+  });
+
+  test('uses Vertex env variables when provider=vertex', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      provider: 'vertex',
+      providerConfig: {
+        vertexBaseUrl: 'https://vertex.internal',
+        vertexProjectId: 'vertex-project',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    snapshotMatches({
+      ANTHROPIC_API_KEY: '',
+      CLAUDE_CODE_USE_BEDROCK: undefined,
+      CLAUDE_CODE_USE_VERTEX: '1',
+      ANTHROPIC_BEDROCK_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_BASE_URL: 'https://vertex.internal',
+      ANTHROPIC_VERTEX_PROJECT_ID: 'vertex-project',
+      ANTHROPIC_BASE_URL: undefined,
+    });
+  });
+
+  test('uses custom base URL when provider=custom', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      provider: 'custom',
+      providerConfig: {
+        customBaseUrl: 'https://gateway.internal',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    snapshotMatches({
+      ANTHROPIC_API_KEY: '',
+      CLAUDE_CODE_USE_BEDROCK: undefined,
+      CLAUDE_CODE_USE_VERTEX: undefined,
+      ANTHROPIC_BEDROCK_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_PROJECT_ID: undefined,
+      ANTHROPIC_BASE_URL: 'https://gateway.internal',
+    });
   });
 });
