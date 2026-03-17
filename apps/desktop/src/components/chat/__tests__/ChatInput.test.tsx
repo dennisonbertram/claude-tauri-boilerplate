@@ -174,6 +174,23 @@ describe('ChatInput', () => {
       await user.keyboard('{Escape}');
       // The palette's onClose should be called via the dispatched event
     });
+
+    it('submits on Enter when slash input has no matching palette commands', async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn();
+      renderInput({
+        input: '/does-not-exist',
+        showPalette: true,
+        paletteFilter: 'does-not-exist',
+        paletteCommands: [],
+        onSubmit,
+      });
+
+      const textarea = screen.getByPlaceholderText(/type a message/i);
+      await user.click(textarea);
+      await user.keyboard('{Enter}');
+      expect(onSubmit).toHaveBeenCalled();
+    });
   });
 
   // -- Submit behavior --

@@ -64,6 +64,26 @@ const chatRequestSchema = z.object({
   attachments: z.array(z.string().min(1)).optional(),
 });
 
+const CLIENT_SLASH_COMMANDS = new Set([
+  'clear',
+  'new',
+  'sessions',
+  'pr',
+  'help',
+  'settings',
+  'model',
+  'cost',
+  'export',
+  'compact',
+]);
+
+function parseSlashCommand(prompt: string): string | null {
+  if (!prompt.startsWith('/')) return null;
+  const command = prompt.slice(1).trim().split(/\s+/)[0];
+  if (!command || !/^[a-z][a-z0-9-]*$/i.test(command)) return null;
+  return command.toLowerCase();
+}
+
 function sanitizeAttachmentReference(reference: string, workspaceCwd: string): string {
   const noPrefix = reference.replace(/^@/, '');
   if (isAbsolute(noPrefix)) {
@@ -229,6 +249,29 @@ export function createChatRouter(db: Database) {
     let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
+
+    const slashCommand = parseSlashCommand(prompt);
+    if (slashCommand) {
+      if (!CLIENT_SLASH_COMMANDS.has(slashCommand)) {
+        return c.json(
+          {
+            error: `Invalid slash command: /${slashCommand}`,
+            code: 'INVALID_COMMAND',
+            command: slashCommand,
+          },
+          400
+        );
+      }
+
+      return c.json(
+        {
+          error: `Slash command /${slashCommand} must be executed in the desktop client`,
+          code: 'CLIENT_COMMAND',
+          command: slashCommand,
+        },
+        400
+      );
+    }
 
     // Workspace validation (when workspaceId is provided)
     let workspaceCwd: string | undefined;

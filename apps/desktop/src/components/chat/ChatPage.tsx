@@ -716,7 +716,17 @@ export function ChatPage({
     if (!text || isLoading) return;
 
     if (text.startsWith('/')) {
-      return;
+      const commandToken = text.slice(1).trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+      if (commandToken) {
+        const matchedCommand = commands.find(
+          (cmd) => cmd.name.toLowerCase() === commandToken
+        );
+        if (matchedCommand) {
+          setInput('');
+          handleCommandSelect(matchedCommand);
+          return;
+        }
+      }
     }
 
     // Track turn info for checkpoints

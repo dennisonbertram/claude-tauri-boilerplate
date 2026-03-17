@@ -20,6 +20,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-73.md](issue-73.md) | Frontend regression for issue #73: session selection updates `activeSessionHasMessages` from message presence and preserves New Chat no-op behavior. |
 | [issue-79-file-attachments.md](issue-79-file-attachments.md) | File picker and attachments: inline file picker, drag-and-drop, @ mentions, and previews. |
 | [issue-75-ci-forwarding.md](issue-75-ci-forwarding.md) | Issue #75: forward failing CI checks to Claude for auto-fix, including stream detection and `Fix Errors` action wiring. |
+| [issue-91-wave7-handoff.md](issue-91-wave7-handoff.md) | Wave 7 handoff for issue #91 covering slash autocomplete/fuzzy regression coverage, invalid command handling, and manual browser verification notes. |
 | [issues-73-75-76-77-79-80-wave-5.md](issues-73-75-76-77-79-80-wave-5.md) | Wave-5 execution and verification for #73 plus partially-done issues #75-#80. |
 | [issue-78-wave7-handoff.md](issue-78-wave7-handoff.md) | Regression handoff for Issue #78 Wave 7: linear issue payload validation coverage and manual browser verification scope (auth/search TODO). |
 | [multi-workspace-worktrees.md](multi-workspace-worktrees.md) | Multi-workspace support via git worktrees. Users add projects (git repos), create isolated workspaces (worktrees with branches), each with its own Claude agent session. Includes project/workspace CRUD, diff review, merge/discard lifecycle, sidebar tree UI, and 6 implementation phases. |

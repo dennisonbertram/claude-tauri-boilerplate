@@ -207,6 +207,7 @@ describe('useCommandPalette', () => {
       });
       expect(handled!).toBe(true);
       expect(result.current.isOpen).toBe(true);
+      expect(result.current.filteredCommands).toHaveLength(mockCommands.length);
     });
 
     it('updates search query as user types after "/"', () => {
@@ -267,6 +268,15 @@ describe('useCommandPalette', () => {
         result.current.handleInputChange('/compact');
       });
       expect(result.current.searchQuery).toBe('compact');
+    });
+
+    it('supports fuzzy search via slash autocomplete input', () => {
+      const { result } = renderHook(() => useCommandPalette(mockCommands));
+      act(() => {
+        result.current.handleInputChange('/cmpt');
+      });
+      expect(result.current.filteredCommands).toHaveLength(1);
+      expect(result.current.filteredCommands[0].name).toBe('compact');
     });
   });
 
