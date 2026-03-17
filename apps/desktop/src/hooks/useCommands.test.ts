@@ -10,6 +10,8 @@ describe('useCommands', () => {
     showModelSelector: vi.fn(),
     showCostSummary: vi.fn(),
     showSettings: vi.fn(),
+    showSessionList: vi.fn(),
+    openPullRequests: vi.fn(),
   };
 
   beforeEach(() => {
@@ -18,7 +20,7 @@ describe('useCommands', () => {
 
   it('returns a list of built-in commands', () => {
     const { result } = renderHook(() => useCommands(mockContext));
-    expect(result.current.commands.length).toBeGreaterThanOrEqual(8);
+    expect(result.current.commands.length).toBeGreaterThanOrEqual(10);
   });
 
   it('includes /clear command', () => {
@@ -71,6 +73,21 @@ describe('useCommands', () => {
     const cmd = result.current.commands.find((c) => c.name === 'settings');
     expect(cmd).toBeDefined();
     expect(cmd!.shortcut).toBe('Cmd+,');
+  });
+
+  it('includes /sessions command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'sessions');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('navigation');
+    expect(cmd!.shortcut).toBeUndefined();
+  });
+
+  it('includes /pr command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'pr');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('navigation');
   });
 
   describe('command execution', () => {
@@ -127,6 +144,24 @@ describe('useCommands', () => {
       });
       expect(mockContext.showSettings).toHaveBeenCalledOnce();
     });
+
+    it('/sessions calls showSessionList', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'sessions')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.showSessionList).toHaveBeenCalledOnce();
+    });
+
+    it('/pr calls openPullRequests', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'pr')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.openPullRequests).toHaveBeenCalledOnce();
+    });
   });
 
   describe('filterCommands', () => {
@@ -154,6 +189,20 @@ describe('useCommands', () => {
       const { result } = renderHook(() => useCommands(mockContext));
       const filtered = result.current.filterCommands('CLEAR');
       expect(filtered.some((c) => c.name === 'clear')).toBe(true);
+    });
+
+    it('supports fuzzy matching and ordering', () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const filtered = result.current.filterCommands('cp');
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].name).toBe('compact');
+    });
+
+    it('prioritizes prefix matches in ordering', () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const filtered = result.current.filterCommands('co');
+      expect(filtered[0].name).toBe('cost');
+      expect(filtered[1].name).toBe('compact');
     });
   });
 });

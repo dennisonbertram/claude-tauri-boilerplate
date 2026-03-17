@@ -129,6 +129,12 @@ describe('CommandPalette', () => {
       expect(screen.getByText('/export')).toBeInTheDocument();
       expect(screen.queryByText('/clear')).not.toBeInTheDocument();
     });
+
+    it('supports fuzzy name matching', () => {
+      renderPalette({ filter: 'cmpt' });
+      expect(screen.getByText('/compact')).toBeInTheDocument();
+      expect(screen.queryByText('/help')).not.toBeInTheDocument();
+    });
   });
 
   // -- Keyboard Navigation --
