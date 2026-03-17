@@ -57,6 +57,7 @@ export function TeamCreationDialog({
       setAgents((prev) =>
         prev.map((a, i) => (i === index ? { ...a, ...updates } : a))
       );
+      setError(null);
     },
     []
   );
@@ -155,7 +156,7 @@ export function TeamCreationDialog({
                 data-testid="team-name-input"
                 type="text"
                 value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
+                onChange={(e) => { setTeamName(e.target.value); setError(null); }}
                 placeholder="my-team"
                 className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />

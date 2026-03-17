@@ -81,6 +81,7 @@ export function useCommands(context: CommandContext) {
         execute: () => {
           toast.info('Context compaction is automatic', {
             description: 'Configure Auto-Compact in Settings → Advanced',
+            duration: 6000,
             action: {
               label: 'Open Settings',
               onClick: () => context.showSettings?.(),
