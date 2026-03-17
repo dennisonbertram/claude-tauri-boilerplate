@@ -186,6 +186,7 @@ function getDefaultStreamEventsState(overrides = {}) {
 describe('ChatPage transport provider payload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.location.hash = '';
     mockUseChat.mockReturnValue({
       messages: [],
       sendMessage: vi.fn(),
@@ -385,6 +386,43 @@ describe('ChatPage transport provider payload', () => {
       planId: 'plan-456',
       decision: 'reject',
       feedback: 'Needs more detail',
+    });
+  });
+
+  it('includes linearIssue in transport body when deep link hash targets an issue', async () => {
+    window.location.hash = '#linear/issue/ENG-123';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: any) => {
+        const url = String(typeof input === 'string' ? input : input?.url ?? '');
+        if (url.includes('/api/linear/issues/ENG-123')) {
+          return {
+            ok: true,
+            json: async () => ({
+              id: 'ENG-123',
+              title: 'Deep link issue',
+              summary: 'Summary',
+              url: 'https://linear.app/org/issue/ENG-123/deep-link-issue',
+            }),
+          } as any;
+        }
+        return { ok: false, json: async () => ({}) } as any;
+      }) as any
+    );
+
+    render(<ChatPage sessionId={null} />);
+
+    await waitFor(() => {
+      expect(mockDefaultChatTransport).toHaveBeenCalledTimes(2);
+    });
+
+    const secondCall = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(secondCall?.body?.linearIssue).toMatchObject({
+      id: 'ENG-123',
+      title: 'Deep link issue',
+      summary: 'Summary',
+      url: 'https://linear.app/org/issue/ENG-123/deep-link-issue',
     });
   });
 });

@@ -14,6 +14,7 @@ import { createTeamsRouter } from './routes/teams';
 import { createCheckpointsRouter } from './routes/checkpoints';
 import { createProjectRouter } from './routes/projects';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './routes/workspaces';
+import { createLinearRouter } from './routes/linear';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -46,6 +47,7 @@ app.route('/api/memory', createMemoryRouter());
 app.route('/api/mcp', createMcpRouter());
 app.route('/api/hooks', createHooksRouter());
 app.route('/api/teams', createTeamsRouter());
+app.route('/api/linear', createLinearRouter(db));
 app.route('/api/projects', createProjectRouter(db));
 app.route('/api/projects', createWorkspaceRouter(db));
 app.route('/api/workspaces', createFlatWorkspaceRouter(db));

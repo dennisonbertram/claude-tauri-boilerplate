@@ -33,6 +33,9 @@ import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tau
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import type { AttachedImage } from './ChatInput';
+import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
+import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
+import * as linearApi from '@/lib/linear-api';
 import './gen-ui/defaultRenderers';
 
 const API_BASE = 'http://localhost:3131';
@@ -52,6 +55,8 @@ export interface ChatPageStatusData {
     claudeCodeVersion: string;
   } | null;
 }
+
+type LinearIssueContext = NonNullable<CreateWorkspaceRequest['linearIssue']>;
 
 interface ChatPageProps {
   sessionId: string | null;
@@ -108,6 +113,8 @@ export function ChatPage({
   const { settings } = useSettings();
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<AttachedImage[]>([]);
+  const [linearIssue, setLinearIssue] = useState<LinearIssueContext | null>(null);
+  const [linearPickerOpen, setLinearPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const {
@@ -249,6 +256,7 @@ export function ChatPage({
             customBaseUrl: settings.customBaseUrl,
           },
           ...(workspaceId ? { workspaceId } : {}),
+          ...(linearIssue ? { linearIssue } : {}),
         },
       }),
     [
@@ -263,8 +271,36 @@ export function ChatPage({
       settings.vertexBaseUrl,
       settings.customBaseUrl,
       workspaceId,
+      linearIssue,
     ]
   );
+
+  // Deep-link: #linear/issue/ENG-123 preselects a Linear issue context for this chat.
+  useEffect(() => {
+    const match = window.location.hash.match(/^#linear\/issue\/([^/?#]+)$/);
+    if (!match?.[1]) return;
+    const identifier = decodeURIComponent(match[1]);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const issue = await linearApi.getIssue(identifier);
+        if (cancelled) return;
+        setLinearIssue({
+          id: issue.id,
+          title: issue.title,
+          summary: issue.summary,
+          url: issue.url,
+        });
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Stable fallback ID so we don't recreate the Chat on every render
   // when sessionId is null. Using useRef + crypto ensures it persists
@@ -362,6 +398,7 @@ export function ChatPage({
       showCostSummary: () => setCostOpen(true),
       showSessionList: onOpenSessions,
       openPullRequests: onOpenPullRequests,
+      showLinearIssues: () => setLinearPickerOpen(true),
     }),
     [
       clearChat,
@@ -819,6 +856,28 @@ export function ChatPage({
           onDismiss={dismissSuggestion}
         />
       )}
+      {linearIssue ? (
+        <div className="border-t border-border px-4 py-2 flex items-center gap-2">
+          <div className="text-xs text-muted-foreground shrink-0">Issue:</div>
+          <button
+            className="text-xs font-mono text-primary hover:underline underline-offset-2 truncate"
+            onClick={() => setLinearPickerOpen(true)}
+            title={linearIssue.title}
+          >
+            {linearIssue.id}
+          </button>
+          <div className="text-xs text-muted-foreground truncate">{linearIssue.title}</div>
+          <button
+            className="ml-auto rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => {
+              setLinearIssue(null);
+              if (window.location.hash.startsWith('#linear/issue/')) window.location.hash = '';
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
       <ChatInput
         input={input}
         onInputChange={handleInputChange}
@@ -872,6 +931,21 @@ export function ChatPage({
           </div>
         </div>
       )}
+
+      <LinearIssuePicker
+        isOpen={linearPickerOpen}
+        onClose={() => setLinearPickerOpen(false)}
+        onSelectIssue={(issue) => {
+          setLinearIssue({
+            id: issue.id,
+            title: issue.title,
+            summary: issue.summary,
+            url: issue.url,
+          });
+          window.location.hash = `#linear/issue/${encodeURIComponent(issue.id)}`;
+        }}
+        onOpenSettings={() => onOpenSettings?.('linear')}
+      />
     </div>
   );
 }

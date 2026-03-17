@@ -72,6 +72,17 @@ export const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_workspaces_project_id ON workspaces(project_id);
   CREATE INDEX IF NOT EXISTS idx_workspaces_status ON workspaces(status);
   CREATE INDEX IF NOT EXISTS idx_workspaces_updated_at ON workspaces(updated_at);
+
+  CREATE TABLE IF NOT EXISTS linear_oauth (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    token_type TEXT,
+    scope TEXT,
+    expires_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `;
 
 /**

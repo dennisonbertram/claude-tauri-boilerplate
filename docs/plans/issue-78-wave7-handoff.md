@@ -1,30 +1,35 @@
-# Issue #78 Wave 7 handoff
+# Issue #78 Wave 8 completion handoff
 
-## Scope for this wave
-- Regression coverage was added for `linearIssue` request validation and override precedence.
-- Linear account auth and Linear search/browse flow are intentionally still out of scope and remain TODO.
+## Scope completed
+- Added Linear OAuth connection flow in Settings via the new **Linear** tab.
+- Added backend Linear routes for auth status, authorize URL generation, OAuth callback/token exchange, issue search, and issue lookup by identifier.
+- Added a chat-side Linear issue picker for browsing/searching issues in newest-first order.
+- Added Linear issue attachment to chat requests so Claude receives issue context.
+- Added workspace creation directly from a selected Linear issue.
+- Added Linear deep-link support so `#linear/issue/<IDENTIFIER>` can preselect issue context in chat.
+
+## Targeted automated validation
+- `cd apps/server && bun test src/routes/linear.test.ts`
+  - Result: `7 pass, 0 fail`
+- `cd apps/desktop && vitest run src/components/settings/SettingsPanel.test.tsx src/components/chat/__tests__/ChatPageTransport.test.tsx`
+  - Result: `28 pass, 0 fail`
 
 ## Manual browser-control verification note
-Use these steps as a quick UI sanity pass before/after backend regressions:
+Use these steps for a quick verification pass:
 
-1. Start services:
-   - `pnpm dev:all`
-   - Open `http://localhost:1420` in the browser automation tool.
-2. Verify app shell loads:
-   - Status bar renders at the bottom.
-   - Welcome screen appears when no active chat session exists.
-3. Switch to **Workspaces** view (right/top tab group).
-   - Expected state: Project sidebar renders (or empty-state prompt if no projects exist).
-4. Add or select a project, then open **Create workspace**.
-   - Expected state: dialog shows `Name`, `Base Branch`, `Cancel`, and `Create` only.
-   - Expected state: no Linear search/auth controls are present yet (still Wave 7+ TODO scope).
-5. Create a workspace and open it.
-   - Expected state: workspace panel loads with **Chat** and **Diff** tabs and workspace header/badge.
-6. Send one chat message.
-   - Expected state: message appears in chat and streaming response starts without UI errors.
-7. Open devtools console.
-   - Expected state: no new runtime/JS console errors introduced by this change set.
+1. Start the existing dev app on port `1420`.
+2. Open **Settings → Linear**.
+   - Expected: connection status loads and a connect action is available when not yet authorized.
+3. Complete Linear OAuth and return to the app.
+   - Expected: Settings shows a connected state.
+4. Open a chat and trigger the Linear issue picker.
+   - Expected: issues load in newest-first order and search narrows the list.
+5. Select an issue.
+   - Expected: the issue chip appears above the composer and the next chat request includes that issue as context.
+6. From the picker, create a workspace from a selected issue.
+   - Expected: workspace creation succeeds and references the chosen Linear issue.
+7. Open a deep link like `#linear/issue/ENG-123`.
+   - Expected: the matching Linear issue is resolved and preselected for the chat.
 
 ## Notes
-- Backend assertions are still the authoritative validation for Linear issue behavior this wave.
-- API-level validation/cov for auth/search is intentionally deferred to later waves.
+- This branch replaces the earlier wave-7 placeholder state; the previously deferred auth/search/browser pieces are now implemented.

@@ -6,8 +6,19 @@ import { InstructionsPanel } from '@/components/settings/InstructionsPanel';
 import { MemoryPanel } from '@/components/settings/MemoryPanel';
 import { McpPanel } from '@/components/settings/McpPanel';
 import { HooksPanel } from '@/components/settings/HooksPanel';
+import { LinearPanel } from '@/components/settings/LinearPanel';
 
-type TabId = 'general' | 'model' | 'appearance' | 'instructions' | 'memory' | 'mcp' | 'hooks' | 'advanced' | 'status';
+type TabId =
+  | 'general'
+  | 'model'
+  | 'appearance'
+  | 'instructions'
+  | 'memory'
+  | 'mcp'
+  | 'linear'
+  | 'hooks'
+  | 'advanced'
+  | 'status';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -16,6 +27,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'instructions', label: 'Instructions' },
   { id: 'memory', label: 'Memory' },
   { id: 'mcp', label: 'MCP' },
+  { id: 'linear', label: 'Linear' },
   { id: 'hooks', label: 'Hooks' },
   { id: 'advanced', label: 'Advanced' },
   { id: 'status', label: 'Status' },
@@ -125,6 +137,7 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
           {activeTab === 'instructions' && <InstructionsPanel />}
           {activeTab === 'memory' && <MemoryPanel />}
           {activeTab === 'mcp' && <McpPanel />}
+          {activeTab === 'linear' && <LinearPanel />}
           {activeTab === 'hooks' && <HooksPanel />}
           {activeTab === 'advanced' && (
             <AdvancedTab settings={settings} updateSettings={updateSettings} />

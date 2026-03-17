@@ -22,6 +22,7 @@ export interface CommandContext {
   showSettings?: () => void;
   showHelp?: () => void;
   openPullRequests?: () => void;
+  showLinearIssues?: () => void;
 }
 
 export function useCommands(context: CommandContext) {
@@ -88,6 +89,15 @@ export function useCommands(context: CommandContext) {
         description: 'Export current session',
         category: 'tools' as CommandCategory,
         execute: () => context.exportSession(),
+      },
+      {
+        name: 'linear',
+        description: 'Browse and attach Linear issues',
+        category: 'tools' as CommandCategory,
+        execute: () => {
+          if (context.showLinearIssues) return context.showLinearIssues();
+          toast.info('Linear issue picker is not available here');
+        },
       },
       {
         name: 'compact',

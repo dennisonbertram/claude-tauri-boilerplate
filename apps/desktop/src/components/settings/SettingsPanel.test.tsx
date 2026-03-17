@@ -45,7 +45,7 @@ describe('SettingsPanel', () => {
 
   test('renders panel when isOpen is true', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeTruthy();
   });
 
   test('shows provider selector with default of anthropic', () => {
@@ -57,7 +57,7 @@ describe('SettingsPanel', () => {
 
   test('does not render panel content when isOpen is false', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} isOpen={false} />);
-    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Settings')).toBeNull();
   });
 
   test('calls onClose when close button is clicked', async () => {
@@ -74,7 +74,7 @@ describe('SettingsPanel', () => {
 
   test('shows General tab by default', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
-    expect(screen.getByText('API Key')).toBeInTheDocument();
+    expect(screen.getByText('API Key')).toBeTruthy();
     // Max Tokens and Model are now in the Model tab, not General
     expect(screen.queryByText('Max Tokens')).toBeNull();
   });
@@ -85,9 +85,9 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('tab', { name: /model/i }));
 
-    expect(screen.getByText('Temperature')).toBeInTheDocument();
-    expect(screen.getByText('System Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Thinking Effort')).toBeInTheDocument();
+    expect(screen.getByText('Temperature')).toBeTruthy();
+    expect(screen.getByText('System Prompt')).toBeTruthy();
+    expect(screen.getByText('Thinking Effort')).toBeTruthy();
   });
 
   test('switches to Appearance tab on click', async () => {
@@ -96,10 +96,10 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('tab', { name: /appearance/i }));
 
-    expect(screen.getByText('Theme')).toBeInTheDocument();
-    expect(screen.getByText('Font Size')).toBeInTheDocument();
-    expect(screen.getByText('Show Thinking')).toBeInTheDocument();
-    expect(screen.getByText('Show Tool Calls')).toBeInTheDocument();
+    expect(screen.getByText('Theme')).toBeTruthy();
+    expect(screen.getByText('Font Size')).toBeTruthy();
+    expect(screen.getByText('Show Thinking')).toBeTruthy();
+    expect(screen.getByText('Show Tool Calls')).toBeTruthy();
   });
 
   test('switches to Advanced tab on click', async () => {
@@ -108,9 +108,24 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('tab', { name: /advanced/i }));
 
-    expect(screen.getByText('Permission Mode')).toBeInTheDocument();
-    expect(screen.getByText('Auto-Compact')).toBeInTheDocument();
-    expect(screen.getByText('Max Turns')).toBeInTheDocument();
+    expect(screen.getByText('Permission Mode')).toBeTruthy();
+    expect(screen.getByText('Auto-Compact')).toBeTruthy();
+    expect(screen.getByText('Max Turns')).toBeTruthy();
+  });
+
+  test('switches to Linear tab on click and shows connect controls', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ connected: false }) })) as any
+    );
+
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /linear/i }));
+
+    expect(screen.getByText('Linear Integration')).toBeTruthy();
+    expect(screen.getByTestId('linear-connect-button')).toBeTruthy();
   });
 
   // ─── Default values render correctly ───
