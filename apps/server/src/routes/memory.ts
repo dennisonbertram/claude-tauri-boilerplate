@@ -4,6 +4,11 @@ import { homedir } from 'os';
 import { readdir, stat, mkdir } from 'fs/promises';
 import type { MemoryFile, MemorySearchResult } from '@claude-tauri/shared';
 
+// import.meta.dir is the directory of this source file:
+//   apps/server/src/routes/
+// Go up 4 levels: routes -> src -> server -> apps -> project root
+const PROJECT_ROOT = process.env.PROJECT_ROOT ?? resolve(import.meta.dir, '../../../..');
+
 /**
  * Derive a project hash from the CWD path.
  * Claude uses a path-based hash for project directories:
@@ -16,12 +21,14 @@ function deriveProjectHash(cwd: string): string {
 
 /**
  * Get the memory directory for the current project.
+ * Uses PROJECT_ROOT (derived from import.meta.dir) instead of process.cwd()
+ * so that the path is always relative to the project root, not the server CWD.
  */
 function getMemoryDir(): string {
   const base =
     process.env.CLAUDE_MEMORY_DIR ||
     join(homedir(), '.claude', 'projects');
-  const projectHash = deriveProjectHash(process.cwd());
+  const projectHash = deriveProjectHash(PROJECT_ROOT);
   return join(base, projectHash, 'memory');
 }
 

@@ -1,14 +1,17 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
 import type { MemoryFile, MemorySearchResult } from '@claude-tauri/shared';
 
 const { createMemoryRouter } = await import('./memory');
 const { Hono } = await import('hono');
 
-// Use a temp directory as the memory dir
+// Use a temp directory as the memory dir.
+// PROJECT_ROOT is computed the same way as in memory.ts:
+//   import.meta.dir is apps/server/src/routes/, go up 4 levels to project root.
+const PROJECT_ROOT = process.env.PROJECT_ROOT ?? resolve(import.meta.dir, '../../../..');
 const tmpBase = join(process.cwd(), '.test-tmp-memory');
-const projectHash = process.cwd().replace(/\//g, '-');
+const projectHash = PROJECT_ROOT.replace(/\//g, '-');
 const memoryDir = join(tmpBase, projectHash, 'memory');
 
 describe('Memory Routes', () => {
