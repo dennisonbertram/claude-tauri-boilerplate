@@ -55,6 +55,18 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Global keyboard shortcuts (work from any view)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSettingsOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
