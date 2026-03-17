@@ -13,13 +13,18 @@ interface CreateWorkspaceDialogProps {
 export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onClose, onSubmit }: CreateWorkspaceDialogProps) {
   const [name, setName] = useState('');
   const [baseBranch, setBaseBranch] = useState('');
+  const [nameError, setNameError] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setNameError('Workspace name is required');
+      return;
+    }
+    setNameError('');
     const trimmedName = name.trim();
-    if (!trimmedName) return;
 
     try {
       setSubmitting(true);
@@ -39,6 +44,7 @@ export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onCl
   const handleClose = useCallback(() => {
     setName('');
     setBaseBranch('');
+    setNameError('');
     setError(null);
     onClose();
   }, [onClose]);
@@ -67,10 +73,11 @@ export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onCl
               type="text"
               placeholder="my-feature"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); if (nameError) setNameError(''); }}
               className="mt-1"
               autoFocus
             />
+            {nameError && <p className="text-sm text-destructive mt-1">{nameError}</p>}
           </div>
           <div>
             <label className="text-sm font-medium text-foreground">Base Branch</label>
@@ -92,7 +99,7 @@ export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onCl
             <Button type="button" variant="ghost" onClick={handleClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!name.trim() || submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Creating...' : 'Create'}
             </Button>
           </div>
