@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { createDb, createProject, getWorkspace } from '../db';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './workspaces';
+import { createProjectRouter } from './projects';
 import { errorHandler } from '../middleware/error-handler';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -62,6 +63,7 @@ beforeEach(() => {
   // Build app with both routers
   app = new Hono();
   app.onError(errorHandler);
+  app.route('/api/projects', createProjectRouter(db));
   app.route('/api/projects', createWorkspaceRouter(db));
   app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 });
@@ -348,6 +350,56 @@ describe('Workspace Routes', () => {
 
       const body = await res.json();
       expect(body.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('DELETE /api/projects/:id', () => {
+    test('removes workspace branches so names can be reused after project recreate', async () => {
+      const workspaceName = 'recreate-workspace-name';
+      const workspaceBranch = `workspace/${workspaceName}`;
+
+      const createWorkspaceRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: workspaceName }),
+        }
+      );
+      expect(createWorkspaceRes.status).toBe(201);
+      const createdWorkspace = await createWorkspaceRes.json();
+      expect(createdWorkspace.branch).toBe(workspaceBranch);
+      expect(existsSync(createdWorkspace.worktreePath)).toBe(true);
+
+      const delProjectRes = await app.request(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+      expect(delProjectRes.status).toBe(200);
+
+      const branchListAfterDelete = Bun.spawnSync(['git', 'branch', '--list', workspaceBranch], { cwd: repoPath });
+      expect(branchListAfterDelete.exitCode).toBe(0);
+      expect(branchListAfterDelete.stdout.toString().trim()).toBe('');
+
+      const recreateProjectRes = await app.request('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoPath }),
+      });
+      expect(recreateProjectRes.status).toBe(201);
+      const recreatedProject = await recreateProjectRes.json();
+
+      const recreateWorkspaceRes = await app.request(
+        `/api/projects/${recreatedProject.id}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: workspaceName }),
+        }
+      );
+      expect(recreateWorkspaceRes.status).toBe(201);
+      const recreatedWorkspace = await recreateWorkspaceRes.json();
+      expect(recreatedWorkspace.branch).toBe(workspaceBranch);
+      expect(recreatedWorkspace.name).toBe(workspaceName);
     });
   });
 
