@@ -35,7 +35,7 @@ Notes:
   - [x] regression coverage only when the fix already exists on the integration line.
 - [x] `docs/plans/` contains wave-level handoff status and manual browser-control verification notes for every worked issue.
 - [x] `docs/plans/INDEX.md` stays current.
-- [ ] GitHub issues touched in this wave receive the `partially-done` label and a handoff comment pointing to the integration branch/commit with manual verification notes.
+- [x] GitHub issues touched in this wave receive the `partially-done` label and a handoff comment pointing to the integration branch/commit with manual verification notes.
 - [x] All issue branches are merged into a single wave integration branch and validated there.
 - [x] A cleanup/review pass resolves red tests and integration conflicts before any merge to `main`.
 - [ ] The wave lands on `main` only if `main` is clean at merge time; otherwise it stops on the integration branch with a blocker note.
@@ -64,5 +64,5 @@ Notes:
 - [x] Merge second-batch branches into `codex/wave3-merge`
 - [x] Run cleanup review for conflicts, red tests, and integration regressions
 - [x] Validate browser/server behavior from the integration branch
-- [ ] Update GitHub issues with branch, commit, manual test notes, and handoff guidance
+- [x] Update GitHub issues with branch, commit, manual test notes, and handoff guidance
 - [ ] Merge `codex/wave3-merge` to `main` if `main` remains clean
