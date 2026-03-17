@@ -6,12 +6,14 @@ import { ToolCallBlock } from './ToolCallBlock';
 import { ThinkingBlock } from './ThinkingBlock';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { Loader2 } from 'lucide-react';
+import type { ToolCallBlockProps } from './ToolCallBlock';
 
 interface MessageListProps {
   messages: UIMessage[];
   isLoading: boolean;
   toolCalls?: Map<string, ToolCallState>;
   thinkingBlocks?: Map<string, string>;
+  onToolFixErrors?: ToolCallBlockProps['onFixErrors'];
 }
 
 export function MessageList({
@@ -19,6 +21,7 @@ export function MessageList({
   isLoading,
   toolCalls,
   thinkingBlocks,
+  onToolFixErrors,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -76,7 +79,11 @@ export function MessageList({
 
                   {/* Tool call blocks */}
                   {toolCallEntries.map(tc => (
-                    <ToolCallBlock key={tc.toolUseId} toolCall={tc} />
+                    <ToolCallBlock
+                      key={tc.toolUseId}
+                      toolCall={tc}
+                      onFixErrors={onToolFixErrors}
+                    />
                   ))}
                 </div>
               )}

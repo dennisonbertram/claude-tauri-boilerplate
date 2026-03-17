@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ToolCallBlock } from './ToolCallBlock';
@@ -135,5 +135,39 @@ describe('ToolCallBlock', () => {
     // Output is shown in the bash-output area (visible by default)
     const output = screen.getByTestId('bash-output');
     expect(output).toHaveTextContent('total 42');
+  });
+
+  it('renders Fix Errors action for CI failures and invokes handler', async () => {
+    const user = userEvent.setup();
+    const onFixErrors = vi.fn();
+
+    render(
+      <ToolCallBlock
+        toolCall={makeToolCall({
+          name: 'Bash',
+          status: 'complete',
+          input: '{"command":"npm run test:ci"}',
+          result: 'Checking CI checks...\n- lint check: FAILED',
+          ciFailures: {
+            summary: '1 failing CI check detected',
+            checks: ['lint check: FAILED'],
+            rawOutput: 'Checking CI checks...\n- lint check: FAILED',
+          },
+        })}
+        onFixErrors={onFixErrors}
+      />
+    );
+
+    const fixButton = screen.getByRole('button', { name: /fix errors/i });
+    await user.click(fixButton);
+
+    expect(onFixErrors).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolUseId: 'tool-1',
+        ciFailures: expect.objectContaining({
+          checks: ['lint check: FAILED'],
+        }),
+      })
+    );
   });
 });

@@ -11,6 +11,11 @@ export interface ToolCallState {
   result?: unknown;
   elapsedSeconds?: number;
   summary?: string;
+  ciFailures?: {
+    summary: string;
+    checks: string[];
+    rawOutput: string;
+  };
 }
 
 export interface PendingPermission {
@@ -221,11 +226,16 @@ export function streamEventsReducer(
     case 'tool:result': {
       const existing = state.toolCalls.get(event.toolUseId);
       if (!existing) return state;
+      const ciFailures =
+        existing.name === 'Bash'
+          ? extractCiFailuresFromToolResult(event.result)
+          : undefined;
       const newToolCalls = new Map(state.toolCalls);
       newToolCalls.set(event.toolUseId, {
         ...existing,
         status: 'complete',
         result: event.result,
+        ciFailures: ciFailures ?? existing.ciFailures,
       });
       return { ...state, toolCalls: newToolCalls };
     }
@@ -387,6 +397,59 @@ export function streamEventsReducer(
 
     default:
       return state;
+  }
+}
+
+function extractCiFailuresFromToolResult(result: unknown): {
+  summary: string;
+  checks: string[];
+  rawOutput: string;
+} | null {
+  const rawOutput = stringifyToolResult(result);
+  if (!rawOutput || rawOutput.length < 8) return null;
+
+  const hasFailureSignal =
+    /\b(fail(?:ed|ing)?|timed out|exit code)\b/i.test(rawOutput) &&
+    /\b(check|checks|workflow|action|job|ci|pipeline|pull request)\b/i.test(rawOutput);
+  if (!hasFailureSignal) return null;
+
+  const checks = rawOutput
+    .split('\n')
+    .map((line) => line.trim())
+    .map((line) =>
+      line
+        .replace(/^[\-*+•]\s*/, '')
+        .replace(/^\*+\s*/, '')
+        .trim()
+    )
+    .filter((line) => {
+      if (!line) return false;
+      if (!/\b(failed|failure|timed out|exit code)\b/i.test(line)) return false;
+      return /\b(check|checks|workflow|action|job|ci|pipeline|test|pull request)\b/i.test(
+        line
+      );
+    });
+
+  if (checks.length === 0) return null;
+
+  return {
+    summary: `${checks.length} failing CI checks detected`,
+    checks,
+    rawOutput,
+  };
+}
+
+function stringifyToolResult(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (typeof result === 'number' || typeof result === 'boolean') {
+    return String(result);
+  }
+  if (result == null) return '';
+
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
   }
 }
 

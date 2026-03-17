@@ -24,8 +24,9 @@ import { WebSearchDisplay } from './WebSearchDisplay';
 import { WebFetchDisplay } from './WebFetchDisplay';
 import { NotebookEditDisplay } from './NotebookEditDisplay';
 
-interface ToolCallBlockProps {
+export interface ToolCallBlockProps {
   toolCall: ToolCallState;
+  onFixErrors?: (toolCall: ToolCallState) => void;
 }
 
 /** Tool names that get specialized file operation displays */
@@ -135,7 +136,38 @@ function extractExitCode(
   return undefined;
 }
 
-export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
+export function ToolCallBlock({
+  toolCall,
+  onFixErrors,
+}: ToolCallBlockProps) {
+  const triggerFixErrors = () => {
+    onFixErrors?.(toolCall);
+  };
+
+  const renderCiFailureActions = () => {
+    if (!toolCall.ciFailures || !onFixErrors) return null;
+
+    return (
+      <div className="border-t border-border/50 px-3 py-2">
+        <div className="text-xs text-muted-foreground font-medium mb-2">
+          {toolCall.ciFailures.summary}
+        </div>
+        <ul className="text-xs text-foreground/90 space-y-1 mb-2">
+          {toolCall.ciFailures.checks.map((check) => (
+            <li key={check} className="max-w-full truncate">• {check}</li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          onClick={triggerFixErrors}
+          className="rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground"
+        >
+          Fix Errors
+        </button>
+      </div>
+    );
+  };
+
   // Route to specialized displays for file operations
   if (FILE_OPERATION_TOOLS.has(toolCall.name)) {
     switch (toolCall.name) {
@@ -186,15 +218,18 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
       : undefined;
 
     return (
-      <BashDisplay
-        command={bashInput.command}
-        description={bashInput.description}
-        output={output}
-        exitCode={exitCode}
-        isRunning={toolCall.status === 'running'}
-        isBackground={bashInput.isBackground}
-        duration={duration}
-      />
+      <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+        <BashDisplay
+          command={bashInput.command}
+          description={bashInput.description}
+          output={output}
+          exitCode={exitCode}
+          isRunning={toolCall.status === 'running'}
+          isBackground={bashInput.isBackground}
+          duration={duration}
+        />
+        {renderCiFailureActions()}
+      </div>
     );
   }
 
@@ -266,6 +301,8 @@ export function ToolCallBlock({ toolCall }: ToolCallBlockProps) {
               </span>
             </div>
           )}
+
+          {renderCiFailureActions()}
         </div>
       )}
     </div>

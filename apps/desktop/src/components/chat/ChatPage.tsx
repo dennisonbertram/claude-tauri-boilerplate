@@ -30,6 +30,7 @@ import { SuggestionChips } from './SuggestionChips';
 import { useSettings } from '@/hooks/useSettings';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
+import type { ToolCallState } from '@/hooks/useStreamEvents';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -58,6 +59,21 @@ interface ChatPageProps {
   workspaceId?: string;
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
+}
+
+function extractCommandFromToolInput(input: string): string | undefined {
+  if (!input) return undefined;
+
+  try {
+    const parsed = JSON.parse(input);
+    if (typeof parsed === 'string') return parsed;
+    if (typeof parsed.command === 'string') return parsed.command;
+    if (Array.isArray(parsed.command)) return parsed.command.join(' ');
+  } catch {
+    return input;
+  }
+
+  return undefined;
 }
 
 /**
@@ -553,6 +569,28 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     [sessionId, plan, rejectPlan]
   );
 
+  const handleFixErrors = useCallback(
+    async (toolCall: ToolCallState) => {
+      if (!toolCall.ciFailures || isLoading) return;
+
+      const command = extractCommandFromToolInput(toolCall.input);
+      const checks =
+        toolCall.ciFailures.checks.length > 0
+          ? `\nFailing checks:\n${toolCall.ciFailures.checks
+              .map((item) => `- ${item}`)
+              .join('\n')}`
+          : '';
+      const commandLine = command ? `\nLast command: ${command}` : '';
+      const prompt =
+        `The previous CI checks failed. Please fix the issues and rerun validation.${checks}${commandLine}\n\nRaw logs:\n${toolCall.ciFailures.rawOutput}`;
+
+      resetStreamEvents();
+      setInput('');
+      await sendMessage({ text: prompt });
+    },
+    [isLoading, resetStreamEvents, sendMessage]
+  );
+
   const pendingPermissionEntries = useMemo(
     () => Array.from(pendingPermissions.values()),
     [pendingPermissions]
@@ -613,6 +651,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         isLoading={isLoading}
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
+        onToolFixErrors={handleFixErrors}
       />
       {/* Subagent visualization panel */}
       {(subagents.length > 0 || subagentPanelVisible) && (
