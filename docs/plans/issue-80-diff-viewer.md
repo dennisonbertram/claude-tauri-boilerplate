@@ -18,3 +18,4 @@
 - [ ] File review actions and filter UI are available in the diff view.
 - [ ] Existing related tests are updated with focused coverage.
 - [ ] New implementation note includes verification outcomes and follow-up risks.
+- [ ] Add inline comment/preview flow manual browser-control verification note in this plan (target file: `src/components/workspaces/WorkspaceDiffView`).
