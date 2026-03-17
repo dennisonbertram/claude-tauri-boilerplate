@@ -79,7 +79,7 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan }: Set
         </div>
 
         {/* Tabs */}
-        <div className="flex overflow-x-auto border-b border-border scrollbar-hide" role="tablist">
+        <div className="flex flex-wrap border-b border-border" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
