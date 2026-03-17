@@ -38,9 +38,29 @@ const chatMessageSchema = z.object({
 const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1),
   sessionId: z.string().optional(),
+  provider: z
+    .enum(['anthropic', 'bedrock', 'vertex', 'custom'])
+    .optional(),
+  providerConfig: z
+    .object({
+      bedrockBaseUrl: z.string().optional(),
+      bedrockProjectId: z.string().optional(),
+      vertexProjectId: z.string().optional(),
+      vertexBaseUrl: z.string().optional(),
+      customBaseUrl: z.string().optional(),
+    })
+    .optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
   workspaceId: z.string().optional(),
+  linearIssue: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      summary: z.string().optional(),
+      url: z.string().optional(),
+    })
+    .optional(),
   attachments: z.array(z.string().min(1)).optional(),
 });
 
