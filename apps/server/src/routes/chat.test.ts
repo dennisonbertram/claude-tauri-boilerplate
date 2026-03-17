@@ -84,7 +84,7 @@ mock.module('@anthropic-ai/claude-agent-sdk', () => ({
 // Import AFTER mocking
 const { streamClaude } = await import('../services/claude');
 const { createChatRouter } = await import('./chat');
-const { createDb, createSession, getMessages, addMessage } = await import('../db');
+const { createDb, createSession, getMessages, addMessage, getSession, updateClaudeSessionId } = await import('../db');
 const { Hono } = await import('hono');
 
 // Helper: collect SSE events from a streaming response
@@ -753,6 +753,82 @@ describe('Chat Route - POST /chat', () => {
     const finishEvent = parsed.find((e: any) => e.type === 'finish');
     expect(finishEvent).toBeDefined();
     expect((finishEvent as any).messageMetadata?.sessionId).toBe('metadata-session');
+  });
+
+  test('retries once without resume when stale session error returns raw session id', async () => {
+    const staleSessionId = '11111111-2222-3333-4444-555555555555';
+    let attempt = 0;
+
+    mockQuery.mockImplementation(() => {
+      attempt += 1;
+      if (attempt === 1) {
+        return (async function* () {
+          const staleError = new Error(staleSessionId);
+          throw staleError;
+        })();
+      }
+
+      return (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'recovered-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        yield {
+          type: 'stream_event',
+          event: {
+            type: 'content_block_delta',
+            delta: { type: 'text_delta', text: 'Recovered' },
+            index: 0,
+          },
+          parent_tool_use_id: null,
+          uuid: 'uuid-1',
+          session_id: 'recovered-session',
+        };
+      })();
+    });
+
+    const session = createSession(db, 'stale-claude-session', 'Test');
+    updateClaudeSessionId(db, session.id, staleSessionId);
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Recover stale session' }],
+      sessionId: session.id,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+
+    const events = await collectSSEEvents(res);
+    const parsed = parseSSEData(events);
+    const textDeltas = parsed.filter((e: any) => e.type === 'text-delta');
+    expect(textDeltas).toHaveLength(1);
+
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    const firstCall = mockQuery.mock.calls[0][0] as any;
+    const secondCall = mockQuery.mock.calls[1][0] as any;
+
+    expect(firstCall.options.resume).toBe(staleSessionId);
+    expect(secondCall.options.resume).toBeUndefined();
+
+    const refreshed = getSession(db, session.id);
+    expect(refreshed?.claudeSessionId).toBe('recovered-session');
   });
 
   test('passes bedrock provider config to the SDK environment', async () => {
