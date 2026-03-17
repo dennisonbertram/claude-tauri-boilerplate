@@ -586,6 +586,7 @@ export function ChatPage({
 
   const handlePermissionDecision = useCallback(
     async (result: PermissionDecisionResult) => {
+      if (!sessionId) return;
       resolvePermission(result.requestId);
 
       try {
@@ -608,6 +609,7 @@ export function ChatPage({
 
   const handlePlanApprove = useCallback(async () => {
     if (!plan) return;
+    if (!sessionId) return;
     approvePlan(plan.planId);
 
     try {
@@ -628,6 +630,7 @@ export function ChatPage({
   const handlePlanReject = useCallback(
     async (feedback?: string) => {
       if (!plan) return;
+      if (!sessionId) return;
       rejectPlan(plan.planId, feedback);
 
       try {

@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import type { StreamEvent, StreamPermissionRequest } from '@claude-tauri/shared';
+import type { StreamEvent } from '@claude-tauri/shared';
 
 // --- State Types ---
 
