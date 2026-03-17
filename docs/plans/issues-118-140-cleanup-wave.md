@@ -18,4 +18,4 @@ These five bugs are already covered by the `codex/wave1-merge` UI cleanup branch
 - [x] Add missing regression tests only where coverage is absent
 - [x] Run targeted frontend test suites
 - [x] Manually verify the relevant flows in the browser
-- [ ] Update the GitHub issues with branch/commit handoff notes
+- [x] Update the GitHub issues with branch/commit handoff notes
