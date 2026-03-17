@@ -3,17 +3,26 @@ import {
   ClipboardList,
   Check,
   X,
+  MessageSquare,
   ChevronDown,
   ChevronRight,
   Loader2,
+  Copy,
+  Share2,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { PlanState, PlanStatus } from '@/hooks/useStreamEvents';
 
 interface PlanViewProps {
   plan: PlanState;
-  onApprove: () => void;
+  savedPath?: string | null;
+  onApprove: (feedback?: string) => void;
   onReject: (feedback?: string) => void;
+  onSendInput: (feedback: string) => void;
+  onCopy: () => void;
+  onExportToNewChat: () => void;
+  onHandoff: () => void;
 }
 
 const statusLabels: Record<PlanStatus, string> = {
@@ -32,29 +41,53 @@ const statusColorClass: Record<PlanStatus, string> = {
   rejected: 'text-red-400',
 };
 
-export function PlanView({ plan, onApprove, onReject }: PlanViewProps) {
-  const [showFeedbackInput, setShowFeedbackInput] = useState(false);
+export function PlanView({
+  plan,
+  savedPath,
+  onApprove,
+  onReject,
+  onSendInput,
+  onCopy,
+  onExportToNewChat,
+  onHandoff,
+}: PlanViewProps) {
+  const [inputMode, setInputMode] = useState<'approve' | 'reject' | 'input' | null>(null);
   const [feedback, setFeedback] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(plan.status === 'approved');
 
-  const handleRejectClick = () => {
-    setShowFeedbackInput(true);
-  };
-
-  const handleConfirmReject = () => {
-    onReject(feedback);
-    setShowFeedbackInput(false);
+  const handleConfirmInput = () => {
+    if (inputMode === 'approve') {
+      onApprove(feedback);
+    } else if (inputMode === 'reject') {
+      onReject(feedback);
+    } else if (inputMode === 'input') {
+      onSendInput(feedback);
+    }
+    setInputMode(null);
     setFeedback('');
   };
 
-  const handleCancelReject = () => {
-    setShowFeedbackInput(false);
+  const handleCancelInput = () => {
+    setInputMode(null);
     setFeedback('');
   };
 
   const isReviewState = plan.status === 'review';
   const isTerminalState = plan.status === 'approved' || plan.status === 'rejected';
   const showContent = isTerminalState ? !isCollapsed : true;
+  const isInputState = inputMode !== null;
+  const inputPlaceholder =
+    inputMode === 'approve'
+      ? 'Approval notes (optional)'
+      : inputMode === 'reject'
+        ? 'Feedback for changes (optional)'
+        : 'Answer Claude or provide clarifying input';
+  const confirmLabel =
+    inputMode === 'approve'
+      ? 'Approve with feedback'
+      : inputMode === 'reject'
+        ? 'Confirm Reject'
+        : 'Send Input';
 
   return (
     <div
@@ -63,7 +96,9 @@ export function PlanView({ plan, onApprove, onReject }: PlanViewProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
-        {plan.status === 'planning' ? (
+        {isInputState ? (
+          <MessageSquare className="h-4 w-4 text-amber-400" />
+        ) : plan.status === 'planning' ? (
           <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
         ) : plan.status === 'approved' ? (
           <Check className="h-4 w-4 text-green-400" />
@@ -76,7 +111,7 @@ export function PlanView({ plan, onApprove, onReject }: PlanViewProps) {
           data-testid="plan-status"
           className={`font-medium ${statusColorClass[plan.status]}`}
         >
-          {statusLabels[plan.status]}
+          {isInputState ? 'User Input Required' : statusLabels[plan.status]}
         </span>
 
         {/* Toggle button for collapsed states */}
@@ -109,51 +144,83 @@ export function PlanView({ plan, onApprove, onReject }: PlanViewProps) {
         </div>
       )}
 
+      {savedPath && (
+        <div className="px-3 pb-2 text-xs text-muted-foreground">
+          Saved to <span className="font-mono">{savedPath}</span>
+        </div>
+      )}
+
       {/* Actions - only in review state */}
-      {isReviewState && !showFeedbackInput && (
-        <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/50">
+      {isReviewState && !isInputState && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onCopy}>
+              <Copy className="mr-1 h-3.5 w-3.5" />
+              Copy
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onExportToNewChat}>
+              <ArrowRight className="mr-1 h-3.5 w-3.5" />
+              Export to New Chat
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onHandoff}>
+              <Share2 className="mr-1 h-3.5 w-3.5" />
+              Handoff
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setInputMode('input')}>
+              Provide Input
+            </Button>
           <Button
             variant="destructive"
             size="sm"
-            onClick={handleRejectClick}
+            onClick={() => setInputMode('reject')}
           >
             Reject
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setInputMode('approve')}
+          >
+            Approve with Feedback
           </Button>
           <Button size="sm" onClick={onApprove}>
             Approve
           </Button>
+          </div>
         </div>
       )}
 
-      {/* Feedback input for rejection */}
-      {isReviewState && showFeedbackInput && (
+      {/* Feedback input for approval, rejection, or clarifying user input */}
+      {isReviewState && isInputState && (
         <div className="px-3 py-2 border-t border-border/50 space-y-2">
           <input
             type="text"
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Feedback (optional)"
+            placeholder={inputPlaceholder}
             className="w-full bg-muted rounded px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-purple-400/50"
             autoFocus
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleConfirmReject();
-              if (e.key === 'Escape') handleCancelReject();
+              if (e.key === 'Enter') handleConfirmInput();
+              if (e.key === 'Escape') handleCancelInput();
             }}
           />
           <div className="flex items-center justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleCancelReject}
+              onClick={handleCancelInput}
             >
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant={inputMode === 'reject' ? 'destructive' : 'default'}
               size="sm"
-              onClick={handleConfirmReject}
+              onClick={handleConfirmInput}
             >
-              Confirm Reject
+              {confirmLabel}
             </Button>
           </div>
         </div>

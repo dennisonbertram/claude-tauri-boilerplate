@@ -1,5 +1,9 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { mkdtempSync } from 'fs';
+import { tmpdir } from 'os';
 import type { PlanDecisionRequest } from '@claude-tauri/shared';
 
 // Mock the claude-agent-sdk before importing anything that uses it
@@ -181,6 +185,35 @@ describe('Plan Route - POST /api/chat/plan', () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBeDefined();
+  });
+
+  test('archives plans under .context/plans', async () => {
+    const tempProjectRoot = mkdtempSync(join(tmpdir(), 'plan-archive-'));
+    process.env.PROJECT_ROOT = tempProjectRoot;
+
+    const res = await testApp.request('/api/chat/plan/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'plan-archive-session',
+        planId: 'plan-archive-1',
+        content: '1. Inspect the code\n2. Patch the bug',
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.path).toContain('.context/plans/plan-archive-1.md');
+
+    const saved = readFileSync(
+      join(tempProjectRoot, '.context', 'plans', 'plan-archive-1.md'),
+      'utf8'
+    );
+    expect(saved).toContain('# Plan plan-archive-1');
+    expect(saved).toContain('1. Inspect the code');
+
+    delete process.env.PROJECT_ROOT;
   });
 });
 

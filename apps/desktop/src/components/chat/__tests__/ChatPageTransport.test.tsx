@@ -106,13 +106,27 @@ vi.mock('@/components/chat/PermissionDialog', () => ({
 }));
 
 vi.mock('@/components/chat/PlanView', () => ({
-  PlanView: ({ onApprove, onReject }: { onApprove: () => void; onReject: (feedback?: string) => void }) => (
+  PlanView: ({
+    onApprove,
+    onReject,
+    onExportToNewChat,
+  }: {
+    onApprove: () => void;
+    onReject: (feedback?: string) => void;
+    onExportToNewChat: () => void;
+  }) => (
     <div>
       <button data-testid="plan-approve" onClick={() => void onApprove()}>
         Approve
       </button>
       <button data-testid="plan-reject" onClick={() => void onReject('Needs more detail')}>
         Reject
+      </button>
+      <button
+        data-testid="plan-export"
+        onClick={() => void onExportToNewChat()}
+      >
+        Export
       </button>
     </div>
   ),
@@ -424,5 +438,86 @@ describe('ChatPage transport provider payload', () => {
       summary: 'Summary',
       url: 'https://linear.app/org/issue/ENG-123/deep-link-issue',
     });
+  });
+
+  it('archives reviewable plans into .context via the plan route', async () => {
+    mockUseStreamEvents.mockReturnValue(
+      getDefaultStreamEventsState({
+        plan: {
+          planId: 'plan-archive',
+          status: 'review',
+          content: 'Archive this plan',
+        },
+      })
+    );
+
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith('/api/chat/plan/archive')) {
+        return {
+          ok: true,
+          json: async () => ({ path: '/repo/.context/plans/plan-archive.md' }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({}),
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    render(<ChatPage sessionId="session-archive" />);
+
+    await waitFor(() => {
+      const archiveCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith('/api/chat/plan/archive')
+      );
+      expect(archiveCall).toBeDefined();
+    });
+  });
+
+  it('exports the current plan into a new chat draft', async () => {
+    const onCreateSession = vi.fn();
+    mockUseStreamEvents.mockReturnValue(
+      getDefaultStreamEventsState({
+        plan: {
+          planId: 'plan-export',
+          status: 'review',
+          content: 'Implement this plan in the next chat',
+        },
+      })
+    );
+
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith('/api/chat/plan/archive')) {
+        return {
+          ok: true,
+          json: async () => ({ path: '/repo/.context/plans/plan-export.md' }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({}),
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    render(<ChatPage sessionId="session-export" onCreateSession={onCreateSession} />);
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([url]) =>
+          String(url).endsWith('/api/chat/plan/archive')
+        )
+      ).toBe(true);
+    });
+
+    fireEvent.click(screen.getByTestId('plan-export'));
+
+    expect(onCreateSession).toHaveBeenCalledOnce();
+    expect(window.sessionStorage.getItem('claude-tauri-plan-export-draft')).toContain(
+      'Implement this approved plan'
+    );
   });
 });

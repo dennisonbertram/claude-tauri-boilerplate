@@ -41,6 +41,7 @@ import * as linearApi from '@/lib/linear-api';
 import './gen-ui/defaultRenderers';
 
 const API_BASE = 'http://localhost:3131';
+const PLAN_EXPORT_DRAFT_KEY = 'claude-tauri-plan-export-draft';
 
 export interface ChatPageStatusData {
   model: string | null;
@@ -171,6 +172,8 @@ export function ChatPage({
   const [latestChangesLoading, setLatestChangesLoading] = useState(false);
   const [latestChangesDiff, setLatestChangesDiff] = useState('');
   const [latestChangesError, setLatestChangesError] = useState<string | null>(null);
+  const [archivedPlanId, setArchivedPlanId] = useState<string | null>(null);
+  const [archivedPlanPath, setArchivedPlanPath] = useState<string | null>(null);
 
   // Auto-naming: track user message count per session
   const userMsgCountRef = useRef(0);
@@ -673,6 +676,21 @@ export function ChatPage({
     }
   }, [sessionId, plan, approvePlan]);
 
+  const buildPlanDraft = useCallback(
+    (heading: string) => {
+      if (!plan) return '';
+      return [
+        heading,
+        archivedPlanPath ? `Plan file: ${archivedPlanPath}` : undefined,
+        '',
+        plan.content,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join('\n');
+    },
+    [plan, archivedPlanPath]
+  );
+
   const handlePlanReject = useCallback(
     async (feedback?: string) => {
       if (!plan) return;
@@ -696,6 +714,114 @@ export function ChatPage({
     },
     [sessionId, plan, rejectPlan]
   );
+
+  const handlePlanApproveWithFeedback = useCallback(
+    async (feedback?: string) => {
+      if (!plan) return;
+      if (!sessionId) return;
+      approvePlan(plan.planId);
+
+      try {
+        await fetch(`${API_BASE}/api/chat/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            planId: plan.planId,
+            decision: 'approve',
+            feedback,
+          } satisfies PlanDecisionRequest),
+        });
+      } catch (err) {
+        console.error('[plan] Failed to send approval feedback:', err);
+      }
+    },
+    [sessionId, plan, approvePlan]
+  );
+
+  const handlePlanInput = useCallback(
+    async (feedback: string) => {
+      const text = feedback.trim();
+      if (!text) return;
+
+      resetStreamEvents();
+      await sendMessage({
+        text: `Continue planning with this user input:\n${text}`,
+      } as any);
+    },
+    [resetStreamEvents, sendMessage]
+  );
+
+  const handlePlanCopy = useCallback(async () => {
+    const text = buildPlanDraft('Copy of current plan');
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+  }, [buildPlanDraft]);
+
+  const handlePlanExportToNewChat = useCallback(async () => {
+    const draft = buildPlanDraft('Implement this approved plan');
+    if (!draft) return;
+
+    window.sessionStorage.setItem(PLAN_EXPORT_DRAFT_KEY, draft);
+    if (onCreateSession) {
+      await onCreateSession();
+      return;
+    }
+
+    setInput(draft);
+  }, [buildPlanDraft, onCreateSession]);
+
+  const handlePlanHandoff = useCallback(async () => {
+    const text = buildPlanDraft('Handoff to another agent');
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+  }, [buildPlanDraft]);
+
+  useEffect(() => {
+    if (!plan || !sessionId) return;
+    if (!plan.content.trim()) return;
+    if (plan.planId === archivedPlanId) return;
+    if (plan.status !== 'review' && plan.status !== 'approved' && plan.status !== 'rejected') {
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetch(`${API_BASE}/api/chat/plan/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        planId: plan.planId,
+        content: plan.content,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { path?: string };
+      })
+      .then((result) => {
+        if (cancelled || !result?.path) return;
+        setArchivedPlanId(plan.planId);
+        setArchivedPlanPath(result.path);
+      })
+      .catch((error) => {
+        console.error('[plan] Failed to archive plan:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [plan, sessionId, archivedPlanId]);
+
+  useEffect(() => {
+    const draft = window.sessionStorage.getItem(PLAN_EXPORT_DRAFT_KEY);
+    if (!draft) return;
+    if (input.trim().length > 0) return;
+
+    setInput(draft);
+    window.sessionStorage.removeItem(PLAN_EXPORT_DRAFT_KEY);
+  }, [sessionId]);
 
   const handleFixErrors = useCallback(
     async (toolCall: ToolCallState) => {
@@ -873,8 +999,13 @@ export function ChatPage({
         <div className="border-t border-border px-4 py-2">
           <PlanView
             plan={plan}
+            savedPath={archivedPlanPath}
             onApprove={handlePlanApprove}
             onReject={handlePlanReject}
+            onSendInput={handlePlanInput}
+            onCopy={handlePlanCopy}
+            onExportToNewChat={handlePlanExportToNewChat}
+            onHandoff={handlePlanHandoff}
           />
         </div>
       )}

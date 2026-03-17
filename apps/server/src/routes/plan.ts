@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
+import { mkdir, writeFile } from 'fs/promises';
+import { join, resolve } from 'path';
 import type { PlanDecisionRequest, PlanDecisionAction } from '@claude-tauri/shared';
 import { planStore } from '../services/plan-store';
 
@@ -7,6 +9,48 @@ const VALID_DECISIONS: PlanDecisionAction[] = ['approve', 'reject'];
 
 export function createPlanRouter(_db: Database) {
   const router = new Hono();
+
+  router.post('/archive', async (c) => {
+    const body = (await c.req.json()) as Partial<{
+      sessionId: string;
+      planId: string;
+      content: string;
+    }>;
+
+    if (!body.sessionId) {
+      return c.json({ error: 'sessionId is required' }, 400);
+    }
+    if (!body.planId) {
+      return c.json({ error: 'planId is required' }, 400);
+    }
+    if (!body.content?.trim()) {
+      return c.json({ error: 'content is required' }, 400);
+    }
+
+    const projectRoot =
+      process.env.PROJECT_ROOT ?? resolve(import.meta.dir, '../../../..');
+    const plansDir = join(projectRoot, '.context', 'plans');
+    await mkdir(plansDir, { recursive: true });
+
+    const safePlanId = body.planId.replace(/[^a-zA-Z0-9._-]+/g, '-');
+    const filePath = join(plansDir, `${safePlanId}.md`);
+    const fileContent = [
+      `# Plan ${body.planId}`,
+      '',
+      `- sessionId: ${body.sessionId}`,
+      '',
+      body.content.trim(),
+      '',
+    ].join('\n');
+
+    await writeFile(filePath, fileContent, 'utf8');
+
+    return c.json({
+      ok: true,
+      planId: body.planId,
+      path: filePath,
+    });
+  });
 
   /**
    * POST /

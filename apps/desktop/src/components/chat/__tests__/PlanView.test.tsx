@@ -6,7 +6,11 @@ import type { PlanState } from '@/hooks/useStreamEvents';
 
 function renderPlan(
   overrides: Partial<PlanState> = {},
-  handlers: { onApprove?: () => void; onReject?: (feedback?: string) => void } = {}
+  handlers: {
+    onApprove?: (feedback?: string) => void;
+    onReject?: (feedback?: string) => void;
+    onSendInput?: (feedback: string) => void;
+  } = {}
 ) {
   const defaults: PlanState = {
     planId: 'plan-1',
@@ -17,8 +21,13 @@ function renderPlan(
   return render(
     <PlanView
       plan={defaults}
+      savedPath={null}
       onApprove={handlers.onApprove ?? vi.fn()}
       onReject={handlers.onReject ?? vi.fn()}
+      onSendInput={handlers.onSendInput ?? vi.fn()}
+      onCopy={vi.fn()}
+      onExportToNewChat={vi.fn()}
+      onHandoff={vi.fn()}
     />
   );
 }
@@ -80,10 +89,16 @@ describe('PlanView', () => {
     it('shows approve and reject buttons in review state', () => {
       renderPlan({ status: 'review' });
       expect(
-        screen.getByRole('button', { name: /approve/i })
+        screen.getByRole('button', { name: /^approve$/i })
       ).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: /reject/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /approve with feedback/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /provide input/i })
       ).toBeInTheDocument();
     });
 
@@ -122,7 +137,7 @@ describe('PlanView', () => {
       const onApprove = vi.fn();
       renderPlan({ status: 'review' }, { onApprove });
 
-      await user.click(screen.getByRole('button', { name: /approve/i }));
+      await user.click(screen.getByRole('button', { name: /^approve$/i }));
       expect(onApprove).toHaveBeenCalledOnce();
     });
   });
@@ -190,9 +205,49 @@ describe('PlanView', () => {
 
       // Should be back to showing approve/reject buttons
       expect(
-        screen.getByRole('button', { name: /approve/i })
+        screen.getByRole('button', { name: /^approve$/i })
       ).toBeInTheDocument();
       expect(onReject).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Approve with feedback and planning input', () => {
+    it('sends approval with feedback text', async () => {
+      const user = userEvent.setup();
+      const onApprove = vi.fn();
+      renderPlan({ status: 'review' }, { onApprove });
+
+      await user.click(
+        screen.getByRole('button', { name: /approve with feedback/i })
+      );
+      await user.type(
+        screen.getByPlaceholderText(/approval notes/i),
+        'Looks good, keep the API shape stable'
+      );
+      await user.click(
+        screen.getByRole('button', { name: /approve with feedback/i })
+      );
+
+      expect(onApprove).toHaveBeenCalledWith(
+        'Looks good, keep the API shape stable'
+      );
+    });
+
+    it('sends clarifying user input back to planning flow', async () => {
+      const user = userEvent.setup();
+      const onSendInput = vi.fn();
+      renderPlan({ status: 'review' }, { onSendInput });
+
+      await user.click(screen.getByRole('button', { name: /provide input/i }));
+      await user.type(
+        screen.getByPlaceholderText(/answer claude/i),
+        'The implementation should target only the desktop client.'
+      );
+      await user.click(screen.getByRole('button', { name: /send input/i }));
+
+      expect(onSendInput).toHaveBeenCalledWith(
+        'The implementation should target only the desktop client.'
+      );
     });
   });
 
