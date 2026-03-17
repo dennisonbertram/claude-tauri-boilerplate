@@ -354,7 +354,7 @@ function App() {
         </AuthGate>
         {import.meta.env.DEV && <Agentation />}
       </SettingsProvider>
-      <Toaster position="bottom-right" theme="dark" />
+      <Toaster position="top-right" theme="dark" />
     </ErrorBoundary>
   );
 }
