@@ -56,6 +56,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
+  const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
 
   // Workspace state
   const { projects, addProject, removeProject } = useProjects();
@@ -73,10 +74,18 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }
 
   const handleNewChat = async () => {
+    // If there's already an empty session active, don't create another
+    if (activeSessionId !== null && !activeSessionHasMessages) {
+      return;
+    }
     await createSession();
+    setActiveSessionHasMessages(false);
   };
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
+    if (data.isStreaming) {
+      setActiveSessionHasMessages(true);
+    }
     setStatusData(data);
   }, []);
 
@@ -121,7 +130,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             activeSessionId={activeSessionId}
             email={email}
             plan={plan}
-            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); }}
+            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); setActiveSessionHasMessages(true); }}
             onNewChat={handleNewChat}
             onDeleteSession={deleteSession}
             onRenameSession={renameSession}
@@ -173,11 +182,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
                 Teams
               </button>
             </div>
-            <div className="flex-1 flex items-center justify-center">
-              <p className="text-xs text-muted-foreground p-4 text-center">
-                Select a team from the main area or create a new one.
-              </p>
-            </div>
+            <div className="flex-1" />
           </div>
         )}
         {activeView === 'chat' ? (

@@ -68,6 +68,25 @@ describe('Instructions Routes', () => {
       expect(globalFile!.exists).toBe(false);
       expect(globalFile!.content).toBe('');
     });
+
+    test('returns exactly one entry with level "project"', async () => {
+      const res = await testApp.request('/api/instructions');
+      const body = await res.json() as { files: InstructionFile[] };
+
+      const projectFiles = body.files.filter((f) => f.level === 'project');
+      expect(projectFiles.length).toBe(1);
+    });
+
+    test('.claude/CLAUDE.md entry has level "managed"', async () => {
+      const res = await testApp.request('/api/instructions');
+      const body = await res.json() as { files: InstructionFile[] };
+
+      const managedFile = body.files.find((f) =>
+        f.path.endsWith(join('.claude', 'CLAUDE.md'))
+      );
+      expect(managedFile).toBeDefined();
+      expect(managedFile!.level).toBe('managed');
+    });
   });
 
   describe('GET /api/instructions/rules', () => {

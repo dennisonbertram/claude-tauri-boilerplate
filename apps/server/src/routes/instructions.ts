@@ -54,7 +54,7 @@ export function createInstructionsRouter() {
 
     const candidates: { path: string; level: InstructionFile['level'] }[] = [
       { path: join(projectRoot, 'CLAUDE.md'), level: 'project' },
-      { path: join(projectRoot, '.claude', 'CLAUDE.md'), level: 'project' },
+      { path: join(projectRoot, '.claude', 'CLAUDE.md'), level: 'managed' },
       { path: join(home, '.claude', 'CLAUDE.md'), level: 'user' },
       {
         path: '/Library/Application Support/ClaudeCode/CLAUDE.md',
