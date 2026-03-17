@@ -631,6 +631,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
 
     // Track turn info for checkpoints
     const payload = composePromptWithAttachments(text, attachments);
+    const attachmentRefs = attachments.map((file) => file.name).filter(Boolean);
     lastUserPromptRef.current = text;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
     turnIndexRef.current += 1;
@@ -638,7 +639,10 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
     setInput('');
     resetStreamEvents();
     setAttachments([]);
-    await sendMessage({ text: payload });
+    await sendMessage({
+      text: payload,
+      attachments: attachmentRefs,
+    } as any);
   };
 
   return (

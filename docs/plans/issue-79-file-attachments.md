@@ -23,6 +23,26 @@ Deliver the first vertical slice for file attachment support in chat input:
 - [x] Add inline `@` mention detection with candidate filtering and keyboard/ click selection.
 - [x] Thread file suggestions from `ChatPage` into `ChatInput` using workspace diff state.
 - [x] Append attachment references to message payload when sending so backend receives attachment context.
-- [ ] Add backend contract/validation for attachment references and server-side file resolution (next wave).
-- [ ] Add richer drag/drop/folder tests (folder-specific case with nested files).
+- [x] Add backend contract/validation for attachment references and server-side file resolution (next wave).
+- [x] Add richer drag/drop/folder tests (folder-specific case with nested files).
 - [ ] Add attachment preview rendering and mention-selection UX polish in existing visual styles.
+
+## Manual browser verification (desktop)
+
+- Start dev server: `pnpm dev:all`.
+- Open [http://localhost:1420](http://localhost:1420) in the app browser.
+- Validate picker:
+  - Click the paperclip attachment button.
+  - Pick an image and a `.txt` file.
+  - Confirm both render in the attachment bar and persist in the compose preview.
+- Validate `@` mention:
+  - Type `@` in the input.
+  - Verify file-suggestion dropdown appears from workspace files.
+  - Select a file with keyboard/ click and confirm token is inserted as `@filename`.
+- Validate drag-and-drop:
+  - Drag a regular file and confirm it appears in attachment list.
+  - Drag a folder containing nested files and confirm nested files are flattened into the attachment list.
+- Validate send contract:
+  - Open DevTools Network and send a message with attachments.
+  - Confirm `/api/chat` request payload includes `attachments: [ ... ]`.
+  - Confirm `/api/chat` response stream includes attachment context in the prompt.

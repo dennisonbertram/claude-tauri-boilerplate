@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
+import { isAbsolute, normalize, resolve } from 'node:path';
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from 'ai';
 import { streamClaude } from '../services/claude';
 import { generateRandomName } from '../services/name-generator';
+import { z } from 'zod';
 import {
   addMessage,
   clearClaudeSessionId,
@@ -17,6 +19,65 @@ import {
   linkSessionToWorkspace,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
+
+const chatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+  parts: z
+    .array(
+      z.object({
+        type: z.string(),
+        text: z.string().optional(),
+      })
+    )
+    .optional(),
+});
+
+const chatRequestSchema = z.object({
+  messages: z.array(chatMessageSchema).min(1),
+  sessionId: z.string().optional(),
+  model: z.string().optional(),
+  effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  workspaceId: z.string().optional(),
+  attachments: z.array(z.string().min(1)).optional(),
+});
+
+function sanitizeAttachmentReference(reference: string, workspaceCwd: string): string {
+  const noPrefix = reference.replace(/^@/, '');
+  if (isAbsolute(noPrefix)) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  const normalized = normalize(noPrefix);
+  if (normalized === '..' || /(?:^|[\\/])\.\.(?:$|[\\/])/.test(normalized)) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  const absolutePath = resolve(workspaceCwd, normalized);
+  const normalizedWorkspaceCwd = resolve(workspaceCwd);
+  if (!absolutePath.startsWith(normalizedWorkspaceCwd + '/')) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  return normalized;
+}
+
+function resolveWorkspaceAttachments(attachments: string[], workspaceCwd: string): string[] {
+  return attachments.map((attachment) => sanitizeAttachmentReference(attachment, workspaceCwd));
+}
+
+function appendAttachmentsToPrompt(prompt: string, attachments: string[]): string {
+  const normalized = attachments.map((attachment) => attachment.replace(/^@?/, ''));
+  const mentioned = new Set(
+    prompt
+      .match(/@\S+/g)
+      ?.map((item) => item.slice(1))
+      .map((item) => item.replace(/[)\],.]*$/, '')) ?? []
+  );
+  const additional = normalized.filter((item) => !mentioned.has(item));
+  if (additional.length === 0) {
+    return prompt;
+  }
+  const lines = additional.map((item) => `- @${item}`).join('\n');
+  return `${prompt}\n\nAttached files:\n${lines}`;
+}
 
 /**
  * Classify an error thrown during Claude streaming into a StreamError event
@@ -83,13 +144,23 @@ export function createChatRouter(db: Database) {
 
   router.post('/', async (c) => {
     console.log('[chat] === NEW CHAT REQUEST ===');
-    const body = (await c.req.json()) as ChatRequest;
+    const bodyRaw = await c.req.json();
+    const parsed = chatRequestSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
+      return c.json(
+        { error: 'Invalid chat request payload', details: parsed.error.issues },
+        400
+      );
+    }
+    const body = parsed.data as ChatRequest;
     console.log('[chat] body:', JSON.stringify(body, null, 2));
-    const messages = body.messages || [];
+    const messages = body.messages;
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
     const workspaceId = body.workspaceId;
+    const attachmentRefs = body.attachments ?? [];
+    let resolvedAttachmentRefs: string[] = attachmentRefs;
 
     // Extract the last user message as the prompt
     const lastUserMessage = messages
@@ -108,7 +179,8 @@ export function createChatRouter(db: Database) {
         .map((p: any) => p.text)
         .join('') ??
       '';
-    console.log('[chat] Extracted prompt:', prompt);
+    const promptWithAttachments = appendAttachmentsToPrompt(prompt, resolvedAttachmentRefs);
+    console.log('[chat] Extracted prompt:', promptWithAttachments);
     console.log('[chat] sessionId:', sessionId);
 
     // Workspace validation (when workspaceId is provided)
@@ -129,6 +201,19 @@ export function createChatRouter(db: Database) {
       workspaceCwd = workspace.worktreePath;
       workspaceClaudeSessionId = workspace.claudeSessionId ?? undefined;
       console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
+      if (attachmentRefs.length > 0) {
+        try {
+          resolvedAttachmentRefs = resolveWorkspaceAttachments(attachmentRefs, workspaceCwd);
+        } catch {
+          return c.json(
+            {
+              error: 'Invalid attachment reference',
+              code: 'INVALID_ATTACHMENT_REFERENCE',
+            },
+            400
+          );
+        }
+      }
     }
 
     // Look up an existing session (if provided) so we can resume
@@ -180,7 +265,7 @@ export function createChatRouter(db: Database) {
           }
 
           // Persist the user message now that we have a valid session
-          addMessage(db, crypto.randomUUID(), appSessionId, 'user', prompt);
+          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptWithAttachments);
         }
 
         // Determine the Claude session ID for resume:
@@ -194,7 +279,7 @@ export function createChatRouter(db: Database) {
         while (true) {
         try {
           for await (const event of streamClaude({
-            prompt,
+            prompt: promptWithAttachments,
             sessionId: currentResumeId,
             model,
             effort,

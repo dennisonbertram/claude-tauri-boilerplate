@@ -33,6 +33,7 @@ export interface ChatRequest {
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   workspaceId?: string;
+  attachments?: string[];
 }
 
 // --- Content Block Types ---

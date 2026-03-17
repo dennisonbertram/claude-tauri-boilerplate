@@ -669,6 +669,23 @@ describe('Chat Route - POST /chat', () => {
     expect(res.status).toBe(400);
   });
 
+  test('returns 400 when attachment references fail schema validation', async () => {
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'test' }],
+      attachments: ['', null as unknown as string],
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe('Invalid chat request payload');
+  });
+
   test('includes sessionId in the stream metadata', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
