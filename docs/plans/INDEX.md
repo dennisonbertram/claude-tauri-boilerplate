@@ -14,6 +14,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-77-command-palette.md](issue-77-command-palette.md) | Command palette (Cmd+K) plan for session/PR/settings navigation and fuzzy relevance-based action search. |
 | [issue-79-file-attachments.md](issue-79-file-attachments.md) | File picker and attachments: inline file picker, drag-and-drop, @ mentions, and previews. |
 | [issue-75-ci-forwarding.md](issue-75-ci-forwarding.md) | Issue #75: forward failing CI checks to Claude for auto-fix, including stream detection and `Fix Errors` action wiring. |
+| [issues-73-75-76-77-79-80-wave-5.md](issues-73-75-76-77-79-80-wave-5.md) | Wave-5 execution and verification for #73 plus partially-done issues #75-#80. |
 | [issue-78-linear-integration.md](issue-78-linear-integration.md) | Linear issue integration for GitHub issue #78: link Linear issues to sessions/workspaces, inject issue context into chat prompts, and provide remaining connect/search roadmap. |
 | [issue-80-diff-viewer.md](issue-80-diff-viewer.md) | Diff viewer enhancements for unified/side-by-side mode, range-aware diff review, inline comments, and file review actions. |
 | [issues-75-80-handoff-status.md](issues-75-80-handoff-status.md) | Local handoff marker for feature wave issues #75-#80, including integrated branch status, landing blocker, and the next recommended ticket queue. |
