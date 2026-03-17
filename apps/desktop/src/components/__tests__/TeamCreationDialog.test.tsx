@@ -60,6 +60,18 @@ describe('TeamCreationDialog', () => {
     expect(screen.getByTestId('team-creation-error')).toHaveTextContent('Team name is required');
   });
 
+  it('clears team name error immediately when user types a valid name', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByTestId('team-creation-submit'));
+    expect(screen.getByTestId('team-creation-error')).toHaveTextContent('Team name is required');
+
+    fireEvent.change(screen.getByTestId('team-name-input'), {
+      target: { value: 'My Team' },
+    });
+
+    expect(screen.queryByTestId('team-creation-error')).not.toBeInTheDocument();
+  });
+
   it('shows error when agent name is empty', async () => {
     renderDialog();
     fireEvent.change(screen.getByTestId('team-name-input'), {
