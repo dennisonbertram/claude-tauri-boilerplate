@@ -1,5 +1,8 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
 type EnvSnapshot = Record<string, string | undefined>;
@@ -112,6 +115,51 @@ function extractStreamEvents(parsed: unknown[]): StreamEvent[] {
     }
   }
   return events;
+}
+
+type InstructionEnvSnapshot = {
+  home: string | undefined;
+  globalInstructionPath: string | undefined;
+  userInstructionPath: string | undefined;
+};
+
+const realInstructionEnv: InstructionEnvSnapshot = {
+  home: process.env.HOME,
+  globalInstructionPath: process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH,
+  userInstructionPath: process.env.CLAUDE_USER_INSTRUCTION_PATH,
+};
+
+const instructionEnvTempDirs = new Set<string>();
+
+function setBlankInstructionEnv() {
+  const tempHome = mkdtempSync(join(tmpdir(), 'chat-test-home-'));
+  instructionEnvTempDirs.add(tempHome);
+  process.env.HOME = tempHome;
+  process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = join(tempHome, 'global-claude.md');
+  process.env.CLAUDE_USER_INSTRUCTION_PATH = join(tempHome, 'user-claude.md');
+}
+
+function restoreInstructionEnv() {
+  if (realInstructionEnv.home === undefined) {
+    delete process.env.HOME;
+  } else {
+    process.env.HOME = realInstructionEnv.home;
+  }
+  if (realInstructionEnv.globalInstructionPath === undefined) {
+    delete process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH;
+  } else {
+    process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH = realInstructionEnv.globalInstructionPath;
+  }
+  if (realInstructionEnv.userInstructionPath === undefined) {
+    delete process.env.CLAUDE_USER_INSTRUCTION_PATH;
+  } else {
+    process.env.CLAUDE_USER_INSTRUCTION_PATH = realInstructionEnv.userInstructionPath;
+  }
+
+  for (const dir of instructionEnvTempDirs) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  instructionEnvTempDirs.clear();
 }
 
 describe('Claude Service - streamClaude()', () => {
@@ -453,6 +501,7 @@ describe('Chat Route - POST /chat', () => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
     resetProviderEnv();
+    setBlankInstructionEnv();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -462,6 +511,7 @@ describe('Chat Route - POST /chat', () => {
   afterEach(() => {
     db.close();
     resetProviderEnv();
+    restoreInstructionEnv();
   });
 
   test('returns streaming response for valid chat request', async () => {
@@ -1101,6 +1151,7 @@ describe('Chat Route - Message Persistence', () => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
     resetProviderEnv();
+    setBlankInstructionEnv();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -1110,6 +1161,7 @@ describe('Chat Route - Message Persistence', () => {
   afterEach(() => {
     db.close();
     resetProviderEnv();
+    restoreInstructionEnv();
   });
 
   // Helper to create a standard mock that yields init + text delta

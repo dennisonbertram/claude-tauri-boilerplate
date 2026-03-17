@@ -1,4 +1,5 @@
-import { isAbsolute, normalize, resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { isAbsolute, join, normalize, resolve } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { Hono } from 'hono';
 import {
@@ -56,6 +57,7 @@ const chatRequestSchema = z.object({
     .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
     .optional(),
   workspaceId: z.string().optional(),
+  systemPrompt: z.string().optional(),
   linearIssue: z
     .object({
       id: z.string(),
@@ -122,6 +124,78 @@ function appendAttachmentsToPrompt(prompt: string, attachments: string[]): strin
   }
   const lines = additional.map((item) => `- @${item}`).join('\n');
   return `${prompt}\n\nAttached files:\n${lines}`;
+}
+
+const DEFAULT_GLOBAL_INSTRUCTION_PATH = '/Library/Application Support/ClaudeCode/CLAUDE.md';
+
+function resolveInstructionPath(
+  overridePath: string | undefined,
+  fallbackPath: string
+): string {
+  const trimmed = overridePath?.trim();
+  return trimmed ? trimmed : fallbackPath;
+}
+
+async function readInstructionFile(
+  filePath: string
+): Promise<{ path: string; exists: boolean; content: string }> {
+  try {
+    const file = Bun.file(filePath);
+    const exists = await file.exists();
+    if (!exists) {
+      return { path: filePath, exists: false, content: '' };
+    }
+    return { path: filePath, exists: true, content: await file.text() };
+  } catch {
+    return { path: filePath, exists: false, content: '' };
+  }
+}
+
+async function buildStartupPrompt(
+  workspaceRoot?: string,
+  systemPrompt?: string
+): Promise<string> {
+  const resolvedWorkspaceRoot = workspaceRoot ?? process.cwd();
+  const userHome = homedir();
+  const globalPath = resolveInstructionPath(
+    process.env.CLAUDE_GLOBAL_INSTRUCTION_PATH,
+    DEFAULT_GLOBAL_INSTRUCTION_PATH
+  );
+  const userPath = resolveInstructionPath(
+    process.env.CLAUDE_USER_INSTRUCTION_PATH,
+    join(userHome, '.claude', 'CLAUDE.md')
+  );
+  const workspaceManagedPath = join(resolvedWorkspaceRoot, '.claude', 'CLAUDE.md');
+  const workspacePath = join(resolvedWorkspaceRoot, 'CLAUDE.md');
+
+  const [globalFile, userFile, workspaceManagedFile, workspaceFile] = await Promise.all([
+    readInstructionFile(globalPath),
+    readInstructionFile(userPath),
+    readInstructionFile(workspaceManagedPath),
+    readInstructionFile(workspacePath),
+  ]);
+
+  const preferredWorkspaceFile =
+    workspaceFile.exists && workspaceFile.content.trim()
+      ? { label: 'Workspace', content: workspaceFile.content.trim() }
+      : workspaceManagedFile.exists && workspaceManagedFile.content.trim()
+        ? { label: 'Workspace managed', content: workspaceManagedFile.content.trim() }
+        : undefined;
+
+  const instructionBlocks = [
+    globalFile.exists && globalFile.content.trim()
+      ? `[Global Instruction]\n${globalFile.content.trim()}`
+      : undefined,
+    userFile.exists && userFile.content.trim()
+      ? `[User Instruction]\n${userFile.content.trim()}`
+      : undefined,
+    preferredWorkspaceFile
+      ? `[${preferredWorkspaceFile.label} Instruction]\n${preferredWorkspaceFile.content}`
+      : undefined,
+    systemPrompt?.trim() ? `[System Prompt]\n${systemPrompt.trim()}` : undefined,
+  ].filter((item): item is string => item !== undefined);
+
+  return instructionBlocks.join('\n\n');
 }
 
 /**
@@ -229,6 +303,7 @@ export function createChatRouter(db: Database) {
     const provider = body.provider;
     const providerConfig = body.providerConfig;
     const workspaceId = body.workspaceId;
+    const systemPrompt = body.systemPrompt;
     const requestLinearIssue = body.linearIssue;
     const attachmentRefs = body.attachments ?? [];
     let resolvedAttachmentRefs: string[] = attachmentRefs;
@@ -318,6 +393,8 @@ export function createChatRouter(db: Database) {
       }
     }
 
+    const startupPrompt = await buildStartupPrompt(workspaceCwd, systemPrompt);
+
     const resolvedLinearIssue = requestLinearIssue ?? workspaceLinearIssue;
     const linearIssuePrompt = resolvedLinearIssue
       ? [
@@ -330,7 +407,9 @@ export function createChatRouter(db: Database) {
           .filter(Boolean)
           .join('\n')
       : undefined;
-    const promptWithContext = linearIssuePrompt ? `${linearIssuePrompt}\n\n${prompt}` : prompt;
+    const promptWithContext = [startupPrompt, linearIssuePrompt, prompt]
+      .filter((value): value is string => Boolean(value))
+      .join('\n\n');
     const promptWithContextAndAttachments = appendAttachmentsToPrompt(
       promptWithContext,
       resolvedAttachmentRefs
