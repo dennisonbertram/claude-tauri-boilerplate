@@ -48,6 +48,28 @@ describe('WebFetchDisplay', () => {
     expect(urlLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('sanitizes control characters from prompt and content', () => {
+    render(
+      <WebFetchDisplay
+        toolCall={makeToolCall({
+          name: 'WebFetch',
+          input: JSON.stringify({
+            url: 'https://react.dev/learn',
+            prompt: 'Extract\u0000the\nmain content',
+          }),
+          result: 'Line one\u0000\u000bLine two',
+        })}
+      />
+    );
+
+    expect(screen.getByTestId('webfetch-prompt')).toHaveTextContent(
+      'Extractthe main content'
+    );
+    expect(screen.getByTestId('webfetch-content')).toHaveTextContent(
+      'Line oneLine two'
+    );
+  });
+
   it('renders the content preview', () => {
     render(
       <WebFetchDisplay
@@ -257,6 +279,25 @@ describe('WebFetchDisplay', () => {
     );
     // Should not show content section for empty result
     expect(screen.queryByTestId('webfetch-content')).not.toBeInTheDocument();
+  });
+
+  it('blocks javascript URLs from being rendered as links', () => {
+    render(
+      <WebFetchDisplay
+        toolCall={makeToolCall({
+          name: 'WebFetch',
+          input: JSON.stringify({
+            url: 'javascript:alert(1)',
+            prompt: 'Get content',
+          }),
+          result: shortContent,
+        })}
+      />
+    );
+
+    const url = screen.getByTestId('webfetch-url');
+    expect(url).toHaveTextContent('Blocked URL');
+    expect(url).not.toHaveAttribute('href');
   });
 });
 

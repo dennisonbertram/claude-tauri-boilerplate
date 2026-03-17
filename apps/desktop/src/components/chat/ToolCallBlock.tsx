@@ -23,6 +23,7 @@ import { GlobDisplay } from './GlobDisplay';
 import { WebSearchDisplay } from './WebSearchDisplay';
 import { WebFetchDisplay } from './WebFetchDisplay';
 import { NotebookEditDisplay } from './NotebookEditDisplay';
+import { sanitizeToolOutputText } from '@/lib/sanitizeToolOutput';
 
 export interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -82,18 +83,18 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
 function formatInput(input: string): string {
   try {
     const parsed = JSON.parse(input);
-    return JSON.stringify(parsed, null, 2);
+    return sanitizeToolOutputText(JSON.stringify(parsed, null, 2));
   } catch {
-    return input;
+    return sanitizeToolOutputText(input);
   }
 }
 
 function formatResult(result: unknown): string {
-  if (typeof result === 'string') return result;
+  if (typeof result === 'string') return sanitizeToolOutputText(result);
   try {
-    return JSON.stringify(result, null, 2);
+    return sanitizeToolOutputText(JSON.stringify(result, null, 2));
   } catch {
-    return String(result);
+    return sanitizeToolOutputText(String(result));
   }
 }
 

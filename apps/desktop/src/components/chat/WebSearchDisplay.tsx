@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { parseToolInput } from './file-utils';
+import {
+  sanitizeToolOutputText,
+  sanitizeToolOutputUrl,
+} from '@/lib/sanitizeToolOutput';
 
 interface WebSearchDisplayProps {
   toolCall: ToolCallState;
@@ -53,7 +57,13 @@ function parseSearchResults(result: unknown): SearchResult[] {
       typeof item === 'object' &&
       typeof item.title === 'string' &&
       typeof item.url === 'string'
-  );
+  ).map((item) => ({
+    title: sanitizeToolOutputText(item.title),
+    url: sanitizeToolOutputUrl(item.url),
+    snippet: sanitizeToolOutputText(
+      typeof item.snippet === 'string' ? item.snippet : ''
+    ),
+  }));
 }
 
 function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
@@ -85,7 +95,7 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
 export function WebSearchDisplay({ toolCall }: WebSearchDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const input = parseToolInput<WebSearchInput>(toolCall.input);
-  const query = input.query || '';
+  const query = sanitizeToolOutputText(input.query || '');
   const results = parseSearchResults(toolCall.result);
   const hasResults = results.length > 0;
   const needsCollapse = results.length > INITIAL_RESULT_COUNT;
@@ -136,23 +146,32 @@ export function WebSearchDisplay({ toolCall }: WebSearchDisplayProps) {
         <div className="border-t border-border">
           {visibleResults.map((result, i) => (
             <div
-              key={`${result.url}-${i}`}
+              key={`${result.url || 'blocked-url'}-${i}`}
               data-testid="websearch-result-card"
               className="px-3 py-2 border-b border-border/30 last:border-b-0 hover:bg-muted/30 transition-colors"
             >
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                  <a
-                    data-testid="websearch-result-link"
-                    href={result.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline transition-colors truncate block"
-                  >
-                    {result.title}
-                  </a>
+                  {result.url ? (
+                    <a
+                      data-testid="websearch-result-link"
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline transition-colors truncate block"
+                    >
+                      {result.title}
+                    </a>
+                  ) : (
+                    <span
+                      data-testid="websearch-result-link"
+                      className="text-sm font-medium text-muted-foreground truncate block"
+                    >
+                      {result.title || 'Blocked URL'}
+                    </span>
+                  )}
                   <div className="text-xs text-muted-foreground font-mono truncate mt-0.5">
-                    {result.url}
+                    {result.url || 'Blocked URL'}
                   </div>
                   {result.snippet && (
                     <div className="text-xs text-foreground/70 mt-1 line-clamp-2">
