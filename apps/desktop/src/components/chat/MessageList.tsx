@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type UIEvent } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -40,8 +40,26 @@ export function MessageList({
   }, []);
 
   const handleViewportScroll = useCallback(
-    (event: Event) => {
-      updateScrollButtonVisibility(event.target as Element | null);
+    (event: UIEvent<HTMLDivElement>) => {
+      updateScrollButtonVisibility(event.currentTarget);
+    },
+    [updateScrollButtonVisibility]
+  );
+
+  const handleViewportMount = useCallback(
+    (viewport: HTMLDivElement | null) => {
+      viewportRef.current = viewport;
+
+      if (!viewport) {
+        setShowScrollToBottom(false);
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        if (viewportRef.current === viewport) {
+          updateScrollButtonVisibility(viewport);
+        }
+      });
     },
     [updateScrollButtonVisibility]
   );
@@ -58,58 +76,6 @@ export function MessageList({
 
     setShowScrollToBottom(false);
   }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let cancelled = false;
-    let animationFrame = 0;
-    let attachedViewport: HTMLElement | null = null;
-    const observer = new MutationObserver(() => {
-      bindViewport();
-    });
-
-    const attachViewport = (viewport: HTMLElement) => {
-      if (attachedViewport === viewport) return;
-
-      attachedViewport?.removeEventListener('scroll', handleViewportScroll);
-      attachedViewport = viewport;
-      viewportRef.current = viewport;
-      updateScrollButtonVisibility(viewport);
-      viewport.addEventListener('scroll', handleViewportScroll);
-    };
-
-    const bindViewport = () => {
-      if (cancelled) return;
-
-      const viewport = container.querySelector(
-        '[data-slot="scroll-area-viewport"]'
-      ) as HTMLElement | null;
-
-      if (viewport) {
-        attachViewport(viewport);
-        return;
-      }
-
-      animationFrame = window.requestAnimationFrame(bindViewport);
-    };
-
-    bindViewport();
-    observer.observe(container, { childList: true, subtree: true });
-
-    return () => {
-      cancelled = true;
-      observer.disconnect();
-      if (animationFrame) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-      attachedViewport?.removeEventListener('scroll', handleViewportScroll);
-      if (viewportRef.current === attachedViewport) {
-        viewportRef.current = null;
-      }
-    };
-  }, [handleViewportScroll, updateScrollButtonVisibility]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -156,6 +122,8 @@ export function MessageList({
       <ScrollArea
         className="h-full"
         data-testid="message-list-scroll-area"
+        viewportRef={handleViewportMount}
+        viewportProps={{ onScroll: handleViewportScroll }}
       >
         <div className="mx-auto max-w-3xl space-y-4 p-4">
           {visibleMessages.map((message, index) => (
