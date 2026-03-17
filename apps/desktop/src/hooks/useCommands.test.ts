@@ -170,6 +170,7 @@ describe('useCommands', () => {
         'Context compaction is automatic',
         expect.objectContaining({
           description: 'Configure Auto-Compact in Settings → Advanced',
+          duration: 6000,
           action: expect.objectContaining({
             label: 'Open Settings',
           }),

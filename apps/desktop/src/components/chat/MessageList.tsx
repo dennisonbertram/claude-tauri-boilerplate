@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ToolCallBlock } from './ToolCallBlock';
 import { ThinkingBlock } from './ThinkingBlock';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { Loader2 } from 'lucide-react';
+import { ArrowDown, Loader2 } from 'lucide-react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
 
 interface MessageListProps {
@@ -24,9 +24,96 @@ export function MessageList({
   onToolFixErrors,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  const updateScrollButtonVisibility = useCallback((element?: Element | null) => {
+    const viewport = element as HTMLElement | null;
+    if (!viewport) return;
+
+    const isScrollable = viewport.scrollHeight > viewport.clientHeight + 4;
+    const atBottom =
+      viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 4;
+
+    setShowScrollToBottom(isScrollable && !atBottom);
+  }, []);
+
+  const handleViewportScroll = useCallback(
+    (event: Event) => {
+      updateScrollButtonVisibility(event.target as Element | null);
+    },
+    [updateScrollButtonVisibility]
+  );
+
+  const handleScrollToBottom = useCallback(() => {
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    setShowScrollToBottom(false);
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let cancelled = false;
+    let animationFrame = 0;
+    let attachedViewport: HTMLElement | null = null;
+    const observer = new MutationObserver(() => {
+      bindViewport();
+    });
+
+    const attachViewport = (viewport: HTMLElement) => {
+      if (attachedViewport === viewport) return;
+
+      attachedViewport?.removeEventListener('scroll', handleViewportScroll);
+      attachedViewport = viewport;
+      viewportRef.current = viewport;
+      updateScrollButtonVisibility(viewport);
+      viewport.addEventListener('scroll', handleViewportScroll);
+    };
+
+    const bindViewport = () => {
+      if (cancelled) return;
+
+      const viewport = container.querySelector(
+        '[data-slot="scroll-area-viewport"]'
+      ) as HTMLElement | null;
+
+      if (viewport) {
+        attachViewport(viewport);
+        return;
+      }
+
+      animationFrame = window.requestAnimationFrame(bindViewport);
+    };
+
+    bindViewport();
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+      attachedViewport?.removeEventListener('scroll', handleViewportScroll);
+      if (viewportRef.current === attachedViewport) {
+        viewportRef.current = null;
+      }
+    };
+  }, [handleViewportScroll, updateScrollButtonVisibility]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    updateScrollButtonVisibility(viewportRef.current);
   }, [messages, toolCalls, thinkingBlocks]);
 
   if (messages.length === 0) {
@@ -62,65 +149,86 @@ export function MessageList({
   });
 
   return (
-    <ScrollArea className="flex-1 min-h-0 overflow-hidden">
-      <div className="mx-auto max-w-3xl space-y-4 p-4">
-        {visibleMessages.map((message, index) => (
-          <div key={message.id}>
-            <MessageBubble message={message} />
+    <div
+      ref={containerRef}
+      className="relative flex-1 min-h-0 overflow-hidden"
+    >
+      <ScrollArea
+        className="h-full"
+        data-testid="message-list-scroll-area"
+      >
+        <div className="mx-auto max-w-3xl space-y-4 p-4">
+          {visibleMessages.map((message, index) => (
+            <div key={message.id}>
+              <MessageBubble message={message} />
 
-            {/* Render stream event blocks after the last assistant message, only while streaming */}
-            {isLoading && message.role === 'assistant' &&
-              index === visibleMessages.length - 1 && (
-                <div className="mt-2 space-y-1">
-                  {/* Thinking blocks */}
-                  {thinkingEntries.map(([key, text]) => (
-                    <ThinkingBlock key={key} text={text} />
-                  ))}
+              {/* Render stream event blocks after the last assistant message, only while streaming */}
+              {isLoading && message.role === 'assistant' &&
+                index === visibleMessages.length - 1 && (
+                  <div className="mt-2 space-y-1">
+                    {/* Thinking blocks */}
+                    {thinkingEntries.map(([key, text]) => (
+                      <ThinkingBlock key={key} text={text} />
+                    ))}
 
-                  {/* Tool call blocks */}
-                  {toolCallEntries.map(tc => (
-                    <ToolCallBlock
-                      key={tc.toolUseId}
-                      toolCall={tc}
-                      onFixErrors={onToolFixErrors}
-                    />
-                  ))}
-                </div>
-              )}
-          </div>
-        ))}
-
-        {/* Streaming indicator when waiting for first response */}
-        {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
-          <div className="flex justify-start">
-            <div className="rounded-lg bg-muted px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Claude is thinking...
-                </span>
-              </div>
+                    {/* Tool call blocks */}
+                    {toolCallEntries.map(tc => (
+                      <ToolCallBlock
+                        key={tc.toolUseId}
+                        toolCall={tc}
+                        onFixErrors={onToolFixErrors}
+                      />
+                    ))}
+                  </div>
+                )}
             </div>
-          </div>
-        )}
+          ))}
 
-        {/* Streaming indicator when assistant is actively generating */}
-        {isLoading &&
-          visibleMessages[visibleMessages.length - 1]?.role === 'assistant' &&
-          toolCallEntries.length === 0 && (
-            <div className="flex justify-start pl-4">
-              <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
-                <span className="text-xs text-muted-foreground">
-                  Generating...
-                </span>
+          {/* Streaming indicator when waiting for first response */}
+          {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
+            <div className="flex justify-start">
+              <div className="rounded-lg bg-muted px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Claude is thinking...
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
-        <div ref={bottomRef} />
-      </div>
-    </ScrollArea>
+          {/* Streaming indicator when assistant is actively generating */}
+          {isLoading &&
+            visibleMessages[visibleMessages.length - 1]?.role === 'assistant' &&
+            toolCallEntries.length === 0 && (
+              <div className="flex justify-start pl-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+                  <span className="text-xs text-muted-foreground">
+                    Generating...
+                  </span>
+                </div>
+              </div>
+            )}
+
+          <div ref={bottomRef} />
+        </div>
+      </ScrollArea>
+
+      {showScrollToBottom && (
+        <button
+          type="button"
+          onClick={handleScrollToBottom}
+          data-testid="message-list-scroll-to-bottom"
+          className="absolute right-4 bottom-4 z-10 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs shadow-sm transition hover:bg-muted/60"
+          aria-label="Scroll to bottom"
+        >
+          <ArrowDown className="h-4 w-4" />
+          <span>Latest</span>
+        </button>
+      )}
+    </div>
   );
 }
 

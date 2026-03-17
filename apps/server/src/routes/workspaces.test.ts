@@ -1,8 +1,15 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
-import { createDb, createProject, getWorkspace } from '../db';
+import {
+  createDb,
+  createProject,
+  createSession,
+  getWorkspace,
+  linkSessionToWorkspace,
+} from '../db';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './workspaces';
+import { createProjectRouter } from './projects';
 import { errorHandler } from '../middleware/error-handler';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -62,6 +69,7 @@ beforeEach(() => {
   // Build app with both routers
   app = new Hono();
   app.onError(errorHandler);
+  app.route('/api/projects', createProjectRouter(db));
   app.route('/api/projects', createWorkspaceRouter(db));
   app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 });
@@ -114,6 +122,8 @@ describe('Workspace Routes', () => {
       expect(res.status).toBe(409);
       const body = await res.json();
       expect(body.code).toBe('CONFLICT');
+      expect(body.error).toBe("A workspace named 'dupe-test' already exists in this project");
+      expect(body.error).not.toContain('workspace/');
     });
 
     test('returns 400 for invalid (empty) name', async () => {
@@ -288,6 +298,57 @@ describe('Workspace Routes', () => {
     });
   });
 
+  describe('GET /api/workspaces/:id/session', () => {
+    test('returns latest linked workspace session', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'workspace-session-test' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const oldSession = createSession(db, 'session-old');
+      const newSession = createSession(db, 'session-new');
+
+      linkSessionToWorkspace(db, oldSession.id, workspace.id);
+      db.prepare("UPDATE sessions SET updated_at = datetime('now', '-1 day') WHERE id = ?").run(oldSession.id);
+      linkSessionToWorkspace(db, newSession.id, workspace.id);
+
+      const res = await app.request(`/api/workspaces/${workspace.id}/session`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toEqual(expect.objectContaining({ id: newSession.id }));
+    });
+
+    test('returns null for workspace with no linked session', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'workspace-no-session' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const res = await app.request(`/api/workspaces/${workspace.id}/session`);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toBeNull();
+    });
+
+    test('returns 404 for non-existent workspace', async () => {
+      const res = await app.request('/api/workspaces/no-such-workspace/session');
+      expect(res.status).toBe(404);
+
+      const body = await res.json();
+      expect(body.code).toBe('NOT_FOUND');
+    });
+  });
+
   describe('DELETE /api/workspaces/:id', () => {
     test('deletes a workspace and removes worktree from disk', async () => {
       const createRes = await app.request(
@@ -348,6 +409,56 @@ describe('Workspace Routes', () => {
 
       const body = await res.json();
       expect(body.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('DELETE /api/projects/:id', () => {
+    test('removes workspace branches so names can be reused after project recreate', async () => {
+      const workspaceName = 'recreate-workspace-name';
+      const workspaceBranch = `workspace/${workspaceName}`;
+
+      const createWorkspaceRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: workspaceName }),
+        }
+      );
+      expect(createWorkspaceRes.status).toBe(201);
+      const createdWorkspace = await createWorkspaceRes.json();
+      expect(createdWorkspace.branch).toBe(workspaceBranch);
+      expect(existsSync(createdWorkspace.worktreePath)).toBe(true);
+
+      const delProjectRes = await app.request(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+      expect(delProjectRes.status).toBe(200);
+
+      const branchListAfterDelete = Bun.spawnSync(['git', 'branch', '--list', workspaceBranch], { cwd: repoPath });
+      expect(branchListAfterDelete.exitCode).toBe(0);
+      expect(branchListAfterDelete.stdout.toString().trim()).toBe('');
+
+      const recreateProjectRes = await app.request('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoPath }),
+      });
+      expect(recreateProjectRes.status).toBe(201);
+      const recreatedProject = await recreateProjectRes.json();
+
+      const recreateWorkspaceRes = await app.request(
+        `/api/projects/${recreatedProject.id}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: workspaceName }),
+        }
+      );
+      expect(recreateWorkspaceRes.status).toBe(201);
+      const recreatedWorkspace = await recreateWorkspaceRes.json();
+      expect(recreatedWorkspace.branch).toBe(workspaceBranch);
+      expect(recreatedWorkspace.name).toBe(workspaceName);
     });
   });
 

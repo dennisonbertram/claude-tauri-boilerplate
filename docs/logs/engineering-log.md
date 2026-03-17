@@ -35,6 +35,15 @@ Each entry follows this format:
 **Regression Test**: None yet — needs one.
 **Related Issue**: None filed yet.
 
+### 2026-03-17: Issues 121-139 Wave 4 Integration
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Processed the Wave 4 issue batch on `codex/wave4-merge` for GitHub issues `#121`, `#122`, `#123`, `#124`, `#125`, `#128`, `#131`, `#132`, `#137`, `#138`, and `#139`. Added regression coverage for fixes that were already present on the integration line (`#121`, `#122`, `#124`, `#125`, `#131`, `#132`, `#137`, `#138`, `#139`), implemented the missing shared Team model source fix for `#123`, and merged the new chat scroll-affordance implementation for `#128`. Targeted Bun/Vitest and curl checks passed on the merge branch. Live browser verification also passed for Team dialog model values, stale validation clearing, export feedback, `/compact` auto-dismiss, status-bar permission labels, and the New Chat loaded-session path. The remaining blocker is `#128`: in the live browser, scrolling a long chat upward still does not surface the `Latest` affordance even after a merge-branch cleanup attempt, so the wave should stop on the integration branch until that behavior is resolved.
+
+**Regression Test**: `apps/server/src/routes/memory.path-regression.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/desktop/src/components/__tests__/TeamCreationDialog.test.tsx`, `apps/desktop/src/hooks/useSessions.test.ts`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`, `apps/desktop/src/hooks/useCommands.test.ts`, `apps/desktop/src/components/__tests__/StatusBar.test.tsx`, `apps/desktop/src/components/__tests__/NewChatBehavior.test.tsx`
+**Related Issue**: GitHub issues `#121`, `#122`, `#123`, `#124`, `#125`, `#128`, `#131`, `#132`, `#137`, `#138`, `#139`
+
 ---
 
 ### 2026-03-17: Generative UI registry foundation landed

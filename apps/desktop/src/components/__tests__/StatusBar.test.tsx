@@ -5,6 +5,7 @@ expect.extend(matchers);
 import type { ReactNode } from 'react';
 import { StatusBar } from '../StatusBar';
 import type { StatusBarProps } from '../StatusBar';
+import { SettingsPanel } from '../settings/SettingsPanel';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -83,6 +84,27 @@ describe('StatusBar', () => {
     it('shows "Normal" when permission mode is default', () => {
       renderWithSettings(<StatusBar {...makeProps()} />);
       expect(screen.getByTestId('permission-mode-segment')).toHaveTextContent('Normal');
+    });
+
+    it('updates displayed label when permission mode changes in settings', () => {
+      renderWithSettings(
+        <>
+          <StatusBar {...makeProps()} />
+          <SettingsPanel isOpen={true} onClose={() => {}} initialTab="advanced" />
+        </>,
+      );
+
+      const permissionSelect = screen.getByTestId('permission-mode-select');
+      const permissionSegment = screen.getByTestId('permission-mode-segment');
+
+      fireEvent.change(permissionSelect, { target: { value: 'plan' } });
+      expect(permissionSegment).toHaveTextContent('Plan');
+
+      fireEvent.change(permissionSelect, { target: { value: 'acceptEdits' } });
+      expect(permissionSegment).toHaveTextContent('Accept Edits');
+
+      fireEvent.change(permissionSelect, { target: { value: 'bypassPermissions' } });
+      expect(permissionSegment).toHaveTextContent('Bypass');
     });
 
     it('calls onShowSettings with "advanced" tab when clicked', () => {
