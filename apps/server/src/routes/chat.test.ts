@@ -675,6 +675,51 @@ describe('Chat Route - POST /chat', () => {
     expect(callArgs.options.resume).toBe('previous-claude-session-id');
   });
 
+  test('injects prior DB messages into prompt when session exists without claudeSessionId', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'resumed',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'forked-session', 'Forked');
+    addMessage(db, 'prior-user-message', session.id, 'user', 'Earlier user prompt');
+    addMessage(db, 'prior-assistant-message', session.id, 'assistant', 'Earlier assistant reply');
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'New turn message' }],
+      sessionId: session.id,
+    };
+
+    await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.prompt).toContain('<previous_conversation>');
+    expect(callArgs.prompt).toContain('Human: Earlier user prompt');
+    expect(callArgs.prompt).toContain('Assistant: Earlier assistant reply');
+    expect(callArgs.prompt).toContain('\n</previous_conversation>\n\nHuman: New turn message');
+    expect(callArgs.options.resume).toBeUndefined();
+  });
+
   test('returns 400 when no user message is provided', async () => {
     const body = { messages: [] };
 
