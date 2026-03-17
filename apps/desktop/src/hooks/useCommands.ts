@@ -45,15 +45,6 @@ export function useCommands(context: CommandContext) {
         shortcut: 'Cmd+?',
         execute: () => context.showHelp?.(),
       },
-      {
-        name: 'compact',
-        description: 'Compact conversation context',
-        category: 'chat' as CommandCategory,
-        execute: () => {
-          // Placeholder: trigger context compaction via SDK
-        },
-      },
-
       // -- Navigation commands --
       {
         name: 'settings',
