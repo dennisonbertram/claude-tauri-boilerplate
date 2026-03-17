@@ -266,7 +266,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           plan={plan}
         />
       </div>
-      <StatusBar {...statusData} />
+      <StatusBar {...statusData} onShowSettings={handleOpenSettings} />
 
       {/* Workspace dialogs */}
       <AddProjectDialog

@@ -1,7 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import { render, screen, act, fireEvent } from '@testing-library/react';
+expect.extend(matchers);
+import type { ReactNode } from 'react';
 import { StatusBar } from '../StatusBar';
 import type { StatusBarProps } from '../StatusBar';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+
+function wrapper({ children }: { children: ReactNode }) {
+  return <SettingsProvider>{children}</SettingsProvider>;
+}
+
+function renderWithSettings(ui: React.ReactElement) {
+  return render(ui, { wrapper });
+}
 
 // Mock fetch for GitBranchSegment
 const mockFetch = vi.fn();
@@ -46,7 +58,7 @@ function makeProps(overrides: Partial<StatusBarProps> = {}): StatusBarProps {
 
 describe('StatusBar', () => {
   it('renders the status bar container with three sections', () => {
-    render(<StatusBar {...makeProps()} />);
+    renderWithSettings(<StatusBar {...makeProps()} />);
     expect(screen.getByTestId('status-bar')).toBeInTheDocument();
     expect(screen.getByTestId('status-bar-left')).toBeInTheDocument();
     expect(screen.getByTestId('status-bar-center')).toBeInTheDocument();
@@ -54,27 +66,36 @@ describe('StatusBar', () => {
   });
 
   describe('ModelSegment', () => {
-    it('shows model name when provided', () => {
-      render(<StatusBar {...makeProps({ model: 'claude-sonnet-4' })} />);
-      expect(screen.getByTestId('model-segment')).toHaveTextContent('claude-sonnet-4');
+    it('shows friendly model display name from settings', () => {
+      // Default settings model is 'claude-sonnet-4-6' which displays as 'Sonnet 4.6'
+      renderWithSettings(<StatusBar {...makeProps({ model: 'claude-sonnet-4-6' })} />);
+      expect(screen.getByTestId('model-segment')).toHaveTextContent('Sonnet 4.6');
     });
 
-    it('does not render model segment when model is null', () => {
-      render(<StatusBar {...makeProps({ model: null })} />);
-      expect(screen.queryByTestId('model-segment')).not.toBeInTheDocument();
+    it('always renders model segment (allows model switching)', () => {
+      // Model segment renders regardless of active session model — uses settings.model
+      renderWithSettings(<StatusBar {...makeProps({ model: null })} />);
+      expect(screen.getByTestId('model-segment')).toBeInTheDocument();
     });
   });
 
   describe('PermissionModeSegment', () => {
-    it('shows "Normal" mode indicator', () => {
-      render(<StatusBar {...makeProps()} />);
+    it('shows "Normal" when permission mode is default', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
       expect(screen.getByTestId('permission-mode-segment')).toHaveTextContent('Normal');
+    });
+
+    it('calls onShowSettings with "advanced" tab when clicked', () => {
+      const onShowSettings = vi.fn();
+      renderWithSettings(<StatusBar {...makeProps({ onShowSettings })} />);
+      fireEvent.click(screen.getByTestId('permission-mode-segment'));
+      expect(onShowSettings).toHaveBeenCalledWith('advanced');
     });
   });
 
   describe('ConnectionIndicator', () => {
     it('shows green dot when connected', async () => {
-      render(<StatusBar {...makeProps()} />);
+      renderWithSettings(<StatusBar {...makeProps()} />);
 
       // Wait for the fetch to resolve
       await act(async () => {
@@ -88,7 +109,7 @@ describe('StatusBar', () => {
     it('shows red dot when disconnected (fetch fails)', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      render(<StatusBar {...makeProps()} />);
+      renderWithSettings(<StatusBar {...makeProps()} />);
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(0);
@@ -109,7 +130,7 @@ describe('StatusBar', () => {
           cacheCreationTokens: 0,
         },
       });
-      render(<StatusBar {...props} />);
+      renderWithSettings(<StatusBar {...props} />);
 
       const segment = screen.getByTestId('context-usage-segment');
       expect(segment).toBeInTheDocument();
@@ -126,7 +147,7 @@ describe('StatusBar', () => {
           cacheCreationTokens: 0,
         },
       });
-      render(<StatusBar {...props} />);
+      renderWithSettings(<StatusBar {...props} />);
 
       const fill = screen.getByTestId('context-usage-fill');
       expect(fill.className).toMatch(/yellow/);
@@ -141,7 +162,7 @@ describe('StatusBar', () => {
           cacheCreationTokens: 0,
         },
       });
-      render(<StatusBar {...props} />);
+      renderWithSettings(<StatusBar {...props} />);
 
       const fill = screen.getByTestId('context-usage-fill');
       expect(fill.className).toMatch(/red/);
@@ -156,48 +177,48 @@ describe('StatusBar', () => {
           cacheCreationTokens: 0,
         },
       });
-      render(<StatusBar {...props} />);
+      renderWithSettings(<StatusBar {...props} />);
 
       expect(screen.getByTestId('context-usage-segment')).toHaveTextContent('50%');
     });
 
     it('does not render when usage is zero', () => {
-      render(<StatusBar {...makeProps()} />);
+      renderWithSettings(<StatusBar {...makeProps()} />);
       expect(screen.queryByTestId('context-usage-segment')).not.toBeInTheDocument();
     });
   });
 
   describe('CostSegment', () => {
     it('formats cost correctly', () => {
-      render(<StatusBar {...makeProps({ sessionTotalCost: 1.24 })} />);
+      renderWithSettings(<StatusBar {...makeProps({ sessionTotalCost: 1.24 })} />);
       expect(screen.getByTestId('cost-segment')).toHaveTextContent('$1.24');
     });
 
     it('formats sub-cent costs with precision', () => {
-      render(<StatusBar {...makeProps({ sessionTotalCost: 0.001 })} />);
+      renderWithSettings(<StatusBar {...makeProps({ sessionTotalCost: 0.001 })} />);
       expect(screen.getByTestId('cost-segment')).toHaveTextContent('$0.0010');
     });
 
     it('does not render when cost is zero', () => {
-      render(<StatusBar {...makeProps({ sessionTotalCost: 0 })} />);
+      renderWithSettings(<StatusBar {...makeProps({ sessionTotalCost: 0 })} />);
       expect(screen.queryByTestId('cost-segment')).not.toBeInTheDocument();
     });
   });
 
   describe('TurnTimer', () => {
     it('is hidden when not streaming', () => {
-      render(<StatusBar {...makeProps({ isStreaming: false })} />);
+      renderWithSettings(<StatusBar {...makeProps({ isStreaming: false })} />);
       expect(screen.queryByTestId('turn-timer')).not.toBeInTheDocument();
     });
 
     it('shows timer when streaming', () => {
-      render(<StatusBar {...makeProps({ isStreaming: true })} />);
+      renderWithSettings(<StatusBar {...makeProps({ isStreaming: true })} />);
       expect(screen.getByTestId('turn-timer')).toBeInTheDocument();
       expect(screen.getByTestId('turn-timer')).toHaveTextContent('0:00');
     });
 
     it('counts up while streaming', () => {
-      render(<StatusBar {...makeProps({ isStreaming: true })} />);
+      renderWithSettings(<StatusBar {...makeProps({ isStreaming: true })} />);
 
       act(() => {
         vi.advanceTimersByTime(5000);
@@ -207,7 +228,7 @@ describe('StatusBar', () => {
     });
 
     it('resets when streaming stops and restarts', () => {
-      const { rerender } = render(<StatusBar {...makeProps({ isStreaming: true })} />);
+      const { rerender } = renderWithSettings(<StatusBar {...makeProps({ isStreaming: true })} />);
 
       act(() => {
         vi.advanceTimersByTime(5000);
@@ -226,7 +247,7 @@ describe('StatusBar', () => {
 
   describe('ActiveToolDisplay', () => {
     it('is hidden when no tools are running', () => {
-      render(<StatusBar {...makeProps({ toolCalls: new Map() })} />);
+      renderWithSettings(<StatusBar {...makeProps({ toolCalls: new Map() })} />);
       expect(screen.queryByTestId('active-tool-display')).not.toBeInTheDocument();
     });
 
@@ -242,7 +263,7 @@ describe('StatusBar', () => {
           },
         ],
       ]);
-      render(<StatusBar {...makeProps({ toolCalls })} />);
+      renderWithSettings(<StatusBar {...makeProps({ toolCalls })} />);
 
       const display = screen.getByTestId('active-tool-display');
       expect(display).toBeInTheDocument();
@@ -261,7 +282,7 @@ describe('StatusBar', () => {
           },
         ],
       ]);
-      render(<StatusBar {...makeProps({ toolCalls })} />);
+      renderWithSettings(<StatusBar {...makeProps({ toolCalls })} />);
 
       expect(screen.queryByTestId('active-tool-display')).not.toBeInTheDocument();
     });
@@ -269,12 +290,12 @@ describe('StatusBar', () => {
 
   describe('AgentCountBadge', () => {
     it('is hidden when subagent count is 0', () => {
-      render(<StatusBar {...makeProps({ subagentActiveCount: 0 })} />);
+      renderWithSettings(<StatusBar {...makeProps({ subagentActiveCount: 0 })} />);
       expect(screen.queryByTestId('agent-count-badge')).not.toBeInTheDocument();
     });
 
     it('shows badge with count when subagents are active', () => {
-      render(<StatusBar {...makeProps({ subagentActiveCount: 3 })} />);
+      renderWithSettings(<StatusBar {...makeProps({ subagentActiveCount: 3 })} />);
       const badge = screen.getByTestId('agent-count-badge');
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveTextContent('3');
@@ -283,7 +304,7 @@ describe('StatusBar', () => {
 
   describe('GitBranchSegment', () => {
     it('shows branch name from git status', async () => {
-      render(<StatusBar {...makeProps()} />);
+      renderWithSettings(<StatusBar {...makeProps()} />);
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(0);

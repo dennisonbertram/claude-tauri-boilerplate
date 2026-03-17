@@ -16,6 +16,7 @@ export interface StatusBarProps {
   cumulativeUsage: CumulativeUsage;
   sessionTotalCost: number;
   subagentActiveCount: number;
+  onShowSettings?: (tab?: string) => void;
 }
 
 // --- Main StatusBar ---
@@ -27,6 +28,7 @@ export function StatusBar({
   cumulativeUsage,
   sessionTotalCost,
   subagentActiveCount,
+  onShowSettings,
 }: StatusBarProps) {
   return (
     <div
@@ -36,7 +38,7 @@ export function StatusBar({
       {/* Left section */}
       <div data-testid="status-bar-left" className="flex items-center gap-0.5 px-2 min-w-0">
         <ModelSegment model={model} />
-        <PermissionModeSegment />
+        <PermissionModeSegment onShowSettings={onShowSettings} />
         <GitBranchSegment />
         <ConnectionIndicator />
       </div>
@@ -164,9 +166,24 @@ function ModelSegment({
 
 // --- PermissionModeSegment ---
 
-function PermissionModeSegment() {
+const PERMISSION_MODE_LABELS: Record<string, string> = {
+  default: 'Normal',
+  acceptEdits: 'Accept Edits',
+  plan: 'Plan',
+  bypassPermissions: 'Bypass',
+};
+
+function PermissionModeSegment({ onShowSettings }: { onShowSettings?: (tab?: string) => void }) {
+  const { settings } = useSettings();
+  const label = PERMISSION_MODE_LABELS[settings.permissionMode] ?? 'Normal';
+
   return (
-    <div data-testid="permission-mode-segment" className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
+    <button
+      type="button"
+      data-testid="permission-mode-segment"
+      onClick={() => onShowSettings?.('advanced')}
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="14"
@@ -181,8 +198,8 @@ function PermissionModeSegment() {
       >
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       </svg>
-      <span>Normal</span>
-    </div>
+      <span>{label}</span>
+    </button>
   );
 }
 
