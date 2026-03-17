@@ -173,6 +173,50 @@ describe('Workspace Routes', () => {
       const body = await res.json();
       expect(body.baseBranch).toBe('main');
     });
+
+    test('accepts linear issue metadata on create', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'issue-workspace',
+            linearIssue: {
+              id: 'ISS-404',
+              title: 'Fix dashboard crash',
+              summary: 'Investigate crash in workspace panel',
+              url: 'https://linear.app/org/issue/ISS-404',
+            },
+          }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.linearIssueId).toBe('ISS-404');
+      expect(body.linearIssueTitle).toBe('Fix dashboard crash');
+      expect(body.linearIssueSummary).toBe('Investigate crash in workspace panel');
+      expect(body.linearIssueUrl).toBe('https://linear.app/org/issue/ISS-404');
+    });
+
+    test('returns 400 for incomplete linear issue payload', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'bad-issue-workspace',
+            linearIssue: {
+              title: 'Missing ID',
+            },
+          }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('GET /api/projects/:projectId/workspaces', () => {

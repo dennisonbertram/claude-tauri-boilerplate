@@ -15,6 +15,7 @@ import {
   updateClaudeSessionId,
   updateWorkspaceClaudeSession,
   linkSessionToWorkspace,
+  setSessionLinearIssue,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
 
@@ -90,6 +91,7 @@ export function createChatRouter(db: Database) {
     const model = body.model;
     const effort = body.effort;
     const workspaceId = body.workspaceId;
+    const requestLinearIssue = body.linearIssue;
 
     // Extract the last user message as the prompt
     const lastUserMessage = messages
@@ -108,6 +110,8 @@ export function createChatRouter(db: Database) {
         .map((p: any) => p.text)
         .join('') ??
       '';
+
+    let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
 
@@ -128,8 +132,30 @@ export function createChatRouter(db: Database) {
       }
       workspaceCwd = workspace.worktreePath;
       workspaceClaudeSessionId = workspace.claudeSessionId ?? undefined;
+      if (workspace.linearIssueId && workspace.linearIssueTitle) {
+        workspaceLinearIssue = {
+          id: workspace.linearIssueId,
+          title: workspace.linearIssueTitle,
+          summary: workspace.linearIssueSummary ?? undefined,
+          url: workspace.linearIssueUrl ?? undefined,
+        };
+      }
       console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
     }
+
+    const resolvedLinearIssue = requestLinearIssue ?? workspaceLinearIssue;
+    const linearIssuePrompt = resolvedLinearIssue
+      ? [
+          '[Linear Issue Context]',
+          `- id: ${resolvedLinearIssue.id}`,
+          `- title: ${resolvedLinearIssue.title}`,
+          resolvedLinearIssue.summary ? `- summary: ${resolvedLinearIssue.summary}` : undefined,
+          resolvedLinearIssue.url ? `- url: ${resolvedLinearIssue.url}` : undefined,
+        ]
+          .filter(Boolean)
+          .join('\n')
+      : undefined;
+    const promptWithContext = linearIssuePrompt ? `${linearIssuePrompt}\n\n${prompt}` : prompt;
 
     // Look up an existing session (if provided) so we can resume
     // the Claude conversation. Session creation is deferred until
@@ -167,11 +193,18 @@ export function createChatRouter(db: Database) {
           if (callerSessionId) {
             appSessionId = callerSessionId;
             if (!existingSession) {
-              createSession(db, callerSessionId, generateRandomName());
+              createSession(
+                db,
+                callerSessionId,
+                generateRandomName(),
+                resolvedLinearIssue ?? undefined
+              );
+            } else if (resolvedLinearIssue) {
+              setSessionLinearIssue(db, callerSessionId, resolvedLinearIssue);
             }
           } else {
             appSessionId = crypto.randomUUID();
-            createSession(db, appSessionId, generateRandomName());
+            createSession(db, appSessionId, generateRandomName(), resolvedLinearIssue ?? undefined);
           }
 
           // Link the session to the workspace if applicable
@@ -180,7 +213,7 @@ export function createChatRouter(db: Database) {
           }
 
           // Persist the user message now that we have a valid session
-          addMessage(db, crypto.randomUUID(), appSessionId, 'user', prompt);
+          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptWithContext);
         }
 
         // Determine the Claude session ID for resume:
@@ -194,7 +227,7 @@ export function createChatRouter(db: Database) {
         while (true) {
         try {
           for await (const event of streamClaude({
-            prompt,
+            prompt: promptWithContext,
             sessionId: currentResumeId,
             model,
             effort,

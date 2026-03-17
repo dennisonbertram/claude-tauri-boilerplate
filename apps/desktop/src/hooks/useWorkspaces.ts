@@ -28,12 +28,19 @@ export function useWorkspaces(projectId: string | null) {
     refresh();
   }, [refresh]);
 
-  const addWorkspace = useCallback(async (name: string, baseBranch?: string) => {
+  const addWorkspace = useCallback(
+    async (
+      name: string,
+      baseBranch?: string,
+      linearIssue?: Parameters<typeof api.createWorkspace>[3]
+    ) => {
     if (!projectId) return;
-    const ws = await api.createWorkspace(projectId, name, baseBranch);
+    const ws = await api.createWorkspace(projectId, name, baseBranch, linearIssue);
     setWorkspaces(prev => [...prev, ws]);
     return ws;
-  }, [projectId]);
+    },
+    [projectId]
+  );
 
   const removeWorkspace = useCallback(async (id: string, force?: boolean) => {
     await api.deleteWorkspace(id, force);

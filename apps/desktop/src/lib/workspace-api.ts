@@ -1,4 +1,9 @@
-import type { Project, Workspace, CreateProjectRequest, CreateWorkspaceRequest } from '@claude-tauri/shared';
+import type {
+  Project,
+  Workspace,
+  CreateProjectRequest,
+  CreateWorkspaceRequest,
+} from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -52,9 +57,15 @@ export async function fetchWorkspaces(projectId: string): Promise<Workspace[]> {
   return res.json();
 }
 
-export async function createWorkspace(projectId: string, name: string, baseBranch?: string): Promise<Workspace> {
+export async function createWorkspace(
+  projectId: string,
+  name: string,
+  baseBranch?: string,
+  linearIssue?: CreateWorkspaceRequest['linearIssue']
+): Promise<Workspace> {
   const body: CreateWorkspaceRequest = { name };
   if (baseBranch) body.baseBranch = baseBranch;
+  if (linearIssue) body.linearIssue = linearIssue;
 
   const res = await fetch(`${API_BASE}/api/projects/${projectId}/workspaces`, {
     method: 'POST',
