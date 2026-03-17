@@ -230,6 +230,31 @@ describe('ChatInput - Image paste support', () => {
     );
   }
 
+  function makeEntryFromFile(file: File, name = file.name): any {
+    return {
+      isFile: true,
+      isDirectory: false,
+      name,
+      file: (cb: (file: File) => void) => {
+        cb(file);
+      },
+    };
+  }
+
+  function makeEntryFromDirectory(entries: any[], name = 'folder'): any {
+    const queue = [...entries];
+    return {
+      isFile: false,
+      isDirectory: true,
+      name,
+      createReader: () => ({
+        readEntries: (onSuccess: (items: any[]) => void) => {
+          onSuccess(queue.splice(0, entries.length));
+        },
+      }),
+    };
+  }
+
   it('renders without images by default', () => {
     renderChatInput();
     expect(screen.queryByTestId('image-thumbnails')).not.toBeInTheDocument();
@@ -348,6 +373,45 @@ describe('ChatInput - Image paste support', () => {
 
     expect(dropZone).toBeInTheDocument();
     await waitFor(() => expect(onImagesChange).toHaveBeenCalled());
+  });
+
+  it('supports folder drop and flattens nested files from DataTransfer entries', async () => {
+    const onImagesChange = vi.fn();
+    renderChatInput({ onImagesChange });
+
+    const dropZone = screen.getByTestId('chat-input-form');
+    const rootText = new File(['root'], 'root.txt', { type: 'text/plain' });
+    const nestedText = new File(['nested'], 'nested.txt', { type: 'text/plain' });
+
+    const nestedFolder = makeEntryFromDirectory([
+      makeEntryFromFile(nestedText, 'nested.txt'),
+    ], 'nested');
+
+    const rootEntry = makeEntryFromDirectory([
+      makeEntryFromFile(rootText, 'root.txt'),
+      nestedFolder,
+    ], 'root');
+
+    fireEvent.drop(dropZone, {
+      dataTransfer: {
+        items: [
+          {
+            kind: 'file',
+            webkitGetAsEntry: () => rootEntry,
+          },
+        ],
+        files: [],
+        types: ['Files'],
+      },
+    });
+
+    await waitFor(() => expect(onImagesChange).toHaveBeenCalled());
+    const calls = onImagesChange.mock.calls;
+    const lastCall = calls[calls.length - 1]?.[0] as Array<{
+      name: string;
+    }>;
+    expect(lastCall.some((file) => file.name === 'root.txt')).toBeTruthy();
+    expect(lastCall.some((file) => file.name === 'nested.txt')).toBeTruthy();
   });
 
   it('supports file picker selection for attachments', async () => {

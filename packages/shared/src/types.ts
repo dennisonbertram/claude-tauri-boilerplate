@@ -51,6 +51,7 @@ export interface ChatRequest {
     summary?: string;
     url?: string;
   };
+  attachments?: string[];
 }
 
 // --- Content Block Types ---

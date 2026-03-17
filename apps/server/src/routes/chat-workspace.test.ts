@@ -279,6 +279,54 @@ describe('Chat Route - Workspace Integration', () => {
     expect(callArgs.options.cwd).toBeUndefined();
   });
 
+  test('accepts workspace attachment references and adds them to the prompt', async () => {
+    setupStandardMock('ws-attachment-session', 'Reply with attachments');
+    const { workspaceId } = createTestWorkspace(db);
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Inspect these files' }],
+      attachments: ['README.md', '@src/index.ts', 'notes/todo.txt'],
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.prompt).toContain('Attached files:');
+    expect(callArgs.prompt).toContain('@README.md');
+    expect(callArgs.prompt).toContain('@src/index.ts');
+    expect(callArgs.prompt).toContain('@notes/todo.txt');
+  });
+
+  test('rejects attachment references that escape workspace path', async () => {
+    setupStandardMock('ws-escape-session', 'Should not be called');
+    const { workspaceId } = createTestWorkspace(db);
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Inspect this file' }],
+      attachments: ['../../secrets.txt'],
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe('INVALID_ATTACHMENT_REFERENCE');
+  });
+
   test('saves claude session ID on workspace after streaming', async () => {
     setupStandardMock('ws-claude-id-123', 'Reply');
     const { workspaceId } = createTestWorkspace(db);

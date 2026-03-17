@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
+import { isAbsolute, normalize, resolve } from 'node:path';
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from 'ai';
 import { streamClaude } from '../services/claude';
 import { generateRandomName } from '../services/name-generator';
+import { z } from 'zod';
 import {
   addMessage,
   clearClaudeSessionId,
@@ -19,6 +21,65 @@ import {
   setSessionLinearIssue,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
+
+const chatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+  parts: z
+    .array(
+      z.object({
+        type: z.string(),
+        text: z.string().optional(),
+      })
+    )
+    .optional(),
+});
+
+const chatRequestSchema = z.object({
+  messages: z.array(chatMessageSchema).min(1),
+  sessionId: z.string().optional(),
+  model: z.string().optional(),
+  effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  workspaceId: z.string().optional(),
+  attachments: z.array(z.string().min(1)).optional(),
+});
+
+function sanitizeAttachmentReference(reference: string, workspaceCwd: string): string {
+  const noPrefix = reference.replace(/^@/, '');
+  if (isAbsolute(noPrefix)) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  const normalized = normalize(noPrefix);
+  if (normalized === '..' || /(?:^|[\\/])\.\.(?:$|[\\/])/.test(normalized)) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  const absolutePath = resolve(workspaceCwd, normalized);
+  const normalizedWorkspaceCwd = resolve(workspaceCwd);
+  if (!absolutePath.startsWith(normalizedWorkspaceCwd + '/')) {
+    throw new Error(`Invalid attachment reference: ${reference}`);
+  }
+  return normalized;
+}
+
+function resolveWorkspaceAttachments(attachments: string[], workspaceCwd: string): string[] {
+  return attachments.map((attachment) => sanitizeAttachmentReference(attachment, workspaceCwd));
+}
+
+function appendAttachmentsToPrompt(prompt: string, attachments: string[]): string {
+  const normalized = attachments.map((attachment) => attachment.replace(/^@?/, ''));
+  const mentioned = new Set(
+    prompt
+      .match(/@\S+/g)
+      ?.map((item) => item.slice(1))
+      .map((item) => item.replace(/[)\],.]*$/, '')) ?? []
+  );
+  const additional = normalized.filter((item) => !mentioned.has(item));
+  if (additional.length === 0) {
+    return prompt;
+  }
+  const lines = additional.map((item) => `- @${item}`).join('\n');
+  return `${prompt}\n\nAttached files:\n${lines}`;
+}
 
 /**
  * Classify an error thrown during Claude streaming into a StreamError event
@@ -85,9 +146,17 @@ export function createChatRouter(db: Database) {
 
   router.post('/', async (c) => {
     console.log('[chat] === NEW CHAT REQUEST ===');
-    const body = (await c.req.json()) as ChatRequest;
+    const bodyRaw = await c.req.json();
+    const parsed = chatRequestSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
+      return c.json(
+        { error: 'Invalid chat request payload', details: parsed.error.issues },
+        400
+      );
+    }
+    const body = parsed.data as ChatRequest;
     console.log('[chat] body:', JSON.stringify(body, null, 2));
-    const messages = body.messages || [];
+    const messages = body.messages;
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
@@ -95,6 +164,8 @@ export function createChatRouter(db: Database) {
     const providerConfig = body.providerConfig;
     const workspaceId = body.workspaceId;
     const requestLinearIssue = body.linearIssue;
+    const attachmentRefs = body.attachments ?? [];
+    let resolvedAttachmentRefs: string[] = attachmentRefs;
 
     // Extract the last user message as the prompt
     const lastUserMessage = messages
@@ -113,7 +184,6 @@ export function createChatRouter(db: Database) {
         .map((p: any) => p.text)
         .join('') ??
       '';
-
     let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
@@ -144,6 +214,19 @@ export function createChatRouter(db: Database) {
         };
       }
       console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
+      if (attachmentRefs.length > 0) {
+        try {
+          resolvedAttachmentRefs = resolveWorkspaceAttachments(attachmentRefs, workspaceCwd);
+        } catch {
+          return c.json(
+            {
+              error: 'Invalid attachment reference',
+              code: 'INVALID_ATTACHMENT_REFERENCE',
+            },
+            400
+          );
+        }
+      }
     }
 
     const resolvedLinearIssue = requestLinearIssue ?? workspaceLinearIssue;
@@ -159,6 +242,11 @@ export function createChatRouter(db: Database) {
           .join('\n')
       : undefined;
     const promptWithContext = linearIssuePrompt ? `${linearIssuePrompt}\n\n${prompt}` : prompt;
+    const promptWithContextAndAttachments = appendAttachmentsToPrompt(
+      promptWithContext,
+      resolvedAttachmentRefs
+    );
+    console.log('[chat] Extracted prompt with attachments:', promptWithContextAndAttachments);
 
     // Look up an existing session (if provided) so we can resume
     // the Claude conversation. Session creation is deferred until
@@ -170,14 +258,14 @@ export function createChatRouter(db: Database) {
     // (e.g., a forked session), inject the conversation history into the prompt
     // so Claude has full context. Once the first response completes, the new
     // claudeSessionId is stored and subsequent turns resume normally via the SDK.
-    let effectivePrompt = promptWithContext;
+    let effectivePrompt = promptWithContextAndAttachments;
     if (existingSession && !existingSession.claudeSessionId) {
       const priorMessages = getMessages(db, existingSession.id);
       if (priorMessages.length > 0) {
         const historyText = priorMessages
           .map((m) => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
           .join('\n\n');
-        effectivePrompt = `<previous_conversation>\n${historyText}\n</previous_conversation>\n\nHuman: ${promptWithContext}`;
+        effectivePrompt = `<previous_conversation>\n${historyText}\n</previous_conversation>\n\nHuman: ${promptWithContextAndAttachments}`;
       }
     }
 
@@ -231,7 +319,7 @@ export function createChatRouter(db: Database) {
           }
 
           // Persist the user message now that we have a valid session
-          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptWithContext);
+          addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptWithContextAndAttachments);
         }
 
         // Determine the Claude session ID for resume:
