@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { Database } from 'bun:sqlite';
 import { createDb, addMessage } from '../db';
 import { createSessionsRouter } from './sessions';
@@ -443,6 +444,91 @@ describe('Session Management - Rename, Fork, Export', () => {
       const text = await res.text();
       expect(text).toContain('Line 1\nLine 2\nLine 3');
       expect(text).toContain('Response line 1\nResponse line 2');
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  // CORS: Access-Control-Expose-Headers regression
+  // Regression test for GitHub issue #72:
+  // Content-Disposition must be exposed so browser JS can read the filename.
+  // ═══════════════════════════════════════════════
+
+  describe('CORS exposeHeaders regression (issue #72)', () => {
+    let corsApp: Hono;
+
+    beforeEach(() => {
+      // Build a fresh app that mirrors the production CORS config from app.ts,
+      // including exposeHeaders: ['Content-Disposition'].
+      const sessionsRouter = createSessionsRouter(db);
+      corsApp = new Hono();
+      corsApp.onError(errorHandler);
+      corsApp.use(
+        '*',
+        cors({
+          origin: ['http://localhost:1420', 'tauri://localhost'],
+          credentials: true,
+          exposeHeaders: ['Content-Disposition'],
+        })
+      );
+      corsApp.route('/api/sessions', sessionsRouter);
+    });
+
+    test('Access-Control-Expose-Headers includes Content-Disposition for JSON export with cross-origin request', async () => {
+      const session = await createSessionWithMessages('CORS Test JSON', [
+        { role: 'user', content: 'Hello' },
+      ]);
+
+      const res = await corsApp.request(
+        `/api/sessions/${session.id}/export?format=json`,
+        {
+          headers: { Origin: 'http://localhost:1420' },
+        }
+      );
+
+      expect(res.status).toBe(200);
+
+      const exposeHeaders = res.headers.get('access-control-expose-headers');
+      expect(exposeHeaders).not.toBeNull();
+      // The header value may be a comma-separated list; verify Content-Disposition is present.
+      expect(exposeHeaders!.toLowerCase()).toContain('content-disposition');
+    });
+
+    test('Access-Control-Expose-Headers includes Content-Disposition for Markdown export with cross-origin request', async () => {
+      const session = await createSessionWithMessages('CORS Test MD', [
+        { role: 'user', content: 'Hello' },
+      ]);
+
+      const res = await corsApp.request(
+        `/api/sessions/${session.id}/export?format=md`,
+        {
+          headers: { Origin: 'http://localhost:1420' },
+        }
+      );
+
+      expect(res.status).toBe(200);
+
+      const exposeHeaders = res.headers.get('access-control-expose-headers');
+      expect(exposeHeaders).not.toBeNull();
+      expect(exposeHeaders!.toLowerCase()).toContain('content-disposition');
+    });
+
+    test('Content-Disposition header contains session-specific filename (not hardcoded fallback)', async () => {
+      const session = await createSessionWithMessages('My Special Session', [
+        { role: 'user', content: 'Hi' },
+      ]);
+
+      const res = await corsApp.request(
+        `/api/sessions/${session.id}/export?format=json`,
+        {
+          headers: { Origin: 'http://localhost:1420' },
+        }
+      );
+
+      const disposition = res.headers.get('content-disposition');
+      expect(disposition).not.toBeNull();
+      // The filename should be derived from the session title, not a generic fallback.
+      expect(disposition).toContain('My_Special_Session');
+      expect(disposition).not.toContain('session-export');
     });
   });
 });

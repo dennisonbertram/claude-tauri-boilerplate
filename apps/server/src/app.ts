@@ -28,6 +28,7 @@ app.use(
   cors({
     origin: ['http://localhost:1420', 'tauri://localhost'],
     credentials: true,
+    exposeHeaders: ['Content-Disposition'],
   })
 );
 
