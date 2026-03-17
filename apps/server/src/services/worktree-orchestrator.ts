@@ -102,7 +102,7 @@ export class WorktreeOrchestrator {
     );
     if (branchAlreadyExists) {
       throw Object.assign(
-        new Error(`Branch '${branchName}' already exists`),
+        new Error(`A workspace named '${name}' already exists in this project`),
         { status: 409, code: 'CONFLICT' }
       );
     }
