@@ -468,7 +468,7 @@ function StatusTab({
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Email</span>
-            <span className="font-mono">{email || 'Not signed in'}</span>
+            <span className="font-mono">{email || '—'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Plan</span>
