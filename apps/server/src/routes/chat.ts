@@ -11,6 +11,7 @@ import {
   clearClaudeSessionId,
   createSession,
   getSession,
+  getMessages,
   getWorkspace,
   updateClaudeSessionId,
   updateWorkspaceClaudeSession,
@@ -137,6 +138,21 @@ export function createChatRouter(db: Database) {
     // sessions when the SDK call fails (Bug #37).
     const existingSession = sessionId ? getSession(db, sessionId) : null;
 
+    // If the session has prior DB messages but no claudeSessionId to resume
+    // (e.g., a forked session), inject the conversation history into the prompt
+    // so Claude has full context. Once the first response completes, the new
+    // claudeSessionId is stored and subsequent turns resume normally via the SDK.
+    let effectivePrompt = prompt;
+    if (existingSession && !existingSession.claudeSessionId) {
+      const priorMessages = getMessages(db, existingSession.id);
+      if (priorMessages.length > 0) {
+        const historyText = priorMessages
+          .map((m) => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
+          .join('\n\n');
+        effectivePrompt = `<previous_conversation>\n${historyText}\n</previous_conversation>\n\nHuman: ${prompt}`;
+      }
+    }
+
     // Capture the caller-supplied sessionId (may be null for new chats)
     const callerSessionId = sessionId;
 
@@ -194,7 +210,7 @@ export function createChatRouter(db: Database) {
         while (true) {
         try {
           for await (const event of streamClaude({
-            prompt,
+            prompt: effectivePrompt,
             sessionId: currentResumeId,
             model,
             effort,
