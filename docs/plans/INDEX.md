@@ -23,6 +23,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issues-75-80-handoff-status.md](issues-75-80-handoff-status.md) | Local handoff marker for feature wave issues #75-#80, including integrated branch status, landing blocker, and the next recommended ticket queue. |
 | [issues-118-140-cleanup-wave.md](issues-118-140-cleanup-wave.md) | Follow-up cleanup wave for issues #118, #120, #126, #127, and #140, focused on regression coverage and issue handoff notes for fixes already present in `codex/wave1-merge`. |
 | [issue-140-wave152-handoff.md](issue-140-wave152-handoff.md) | Wave 152 handoff note for issue #140: verification steps for the command-palette tools overflow affordance and existing test coverage. |
+| [issues-73-75-76-77-79-80-wave-5.md](issues-73-75-76-77-79-80-wave-5.md) | Wave 5 execution plan for bug #73 plus partially-done issues #75, #76, #77, #79, and #80. Includes finish criteria, test plan, and integration flow. |
 | [issue-141-wave-3-handoff.md](issue-141-wave-3-handoff.md) | Handoff note for issue #141 covering the stale `claudeSessionId` retry fix, targeted server regression coverage, and follow-up validation notes. |
 | [issue-142-wave-3-handoff.md](issue-142-wave-3-handoff.md) | Handoff note for issue #142 documenting the export filename sanitization regression coverage and quick manual API verification guidance. |
 | [issue-143-wave-3-handoff.md](issue-143-wave-3-handoff.md) | Handoff note for issue #143 recording the Add Project dialog touched-state regression coverage and browser verification note. |
