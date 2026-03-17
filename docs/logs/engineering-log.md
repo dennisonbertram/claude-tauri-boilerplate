@@ -17,6 +17,17 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-17: Persistent Toast Bug Found in Session Export
+
+**Type**: Bug
+**Impact**: Medium
+**Description**: During browser automation testing, discovered that session export toasts (triggered by `/export` command) never auto-dismiss and have no close button. Multiple exports stack indefinitely as `data-visible="true"` toast elements, covering the status bar. The toasts use Sonner library (`data-sonner-toaster`). The fix is to ensure the `toast()` call for export success includes a `duration` (e.g., 4000ms) or that Sonner's default auto-dismiss behavior is not inadvertently disabled (e.g., by passing `duration: Infinity`).
+
+**Regression Test**: None yet — needs one.
+**Related Issue**: None filed yet.
+
+---
+
 ### 2026-03-15: Settings Status Tab & SSE Data Pipeline Fix
 
 **Type**: Bug Fix + Feature
