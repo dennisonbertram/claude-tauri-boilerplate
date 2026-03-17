@@ -1,5 +1,7 @@
 # Issue #76: Provider Support (Wave 1)
 
+Status: Completed on 2026-03-17
+
 ## Scope
 - Add provider selection in settings for Anthropic, AWS Bedrock, Google Vertex, and Custom base URL.
 - Persist provider fields in app settings so values survive restarts.
@@ -16,3 +18,6 @@
 - [x] Server service maps provider config to environment variables used by Claude Agent SDK.
 - [x] Provider env state is restored after each stream, including error paths.
 - [x] Automated tests added/updated for provider selection and provider env behavior.
+
+## Manual Verification
+- Browser-control check: open Settings, switch provider across Anthropic/Bedrock/Vertex/Custom, send a chat message, and verify `/api/chat` payloads include matching `provider` and `providerConfig` fields in devtools network for each mode.

@@ -919,6 +919,97 @@ describe('Chat Route - POST /chat', () => {
     expect(envAtQueryCall?.ANTHROPIC_BEDROCK_BASE_URL).toBe('https://bedrock.internal');
   });
 
+  test('passes vertex provider config to the SDK environment', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        envAtQueryCall = captureProviderEnv();
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'provider-vertex',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'provider-vertex-session', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider test' }],
+      sessionId: session.id,
+      provider: 'vertex',
+      providerConfig: {
+        vertexProjectId: 'test-vertex-project',
+        vertexBaseUrl: 'https://vertex.internal',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
+    expect(envAtQueryCall?.CLAUDE_CODE_USE_VERTEX).toBe('1');
+    expect(envAtQueryCall?.ANTHROPIC_VERTEX_PROJECT_ID).toBe('test-vertex-project');
+    expect(envAtQueryCall?.ANTHROPIC_VERTEX_BASE_URL).toBe('https://vertex.internal');
+  });
+
+  test('passes custom provider config to the SDK environment', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        envAtQueryCall = captureProviderEnv();
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'provider-custom',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'provider-custom-session', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider test' }],
+      sessionId: session.id,
+      provider: 'custom',
+      providerConfig: {
+        customBaseUrl: 'https://custom.local/v1',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
+    expect(envAtQueryCall?.ANTHROPIC_BASE_URL).toBe('https://custom.local/v1');
+  });
+
   test('handles stream errors gracefully', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
