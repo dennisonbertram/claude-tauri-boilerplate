@@ -77,6 +77,10 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
+  const selectedSessionHasMessages = (session?: (typeof sessions)[number]) => {
+    if (!session) return false;
+    return session.claudeSessionId != null || (session.messageCount ?? 0) > 0;
+  };
 
   // Workspace state
   const { projects, addProject, removeProject } = useProjects();
@@ -98,10 +102,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     // Use messageCount (from the server) as the reliable signal — timestamp
     // comparison is unreliable due to SQLite second-level precision.
     const activeSession = sessions.find(s => s.id === activeSessionId);
-    const isTrulyEmpty = activeSession &&
-      (activeSession.messageCount ?? 0) === 0 &&
-      !activeSession.claudeSessionId;
-    if (activeSessionId !== null && isTrulyEmpty) {
+    const hasActiveSessionMessages = activeSession ? selectedSessionHasMessages(activeSession) : false;
+    if (activeSessionId !== null && !hasActiveSessionMessages) {
       return;
     }
     await createSession();
@@ -173,7 +175,12 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             activeSessionId={activeSessionId}
             email={email}
             plan={plan}
-            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); const session = sessions.find(s => s.id === id); setActiveSessionHasMessages(session?.claudeSessionId != null); }}
+            onSelectSession={(id) => {
+              setActiveView('chat');
+              setActiveSessionId(id);
+              const session = sessions.find(s => s.id === id);
+              setActiveSessionHasMessages(selectedSessionHasMessages(session));
+            }}
             onNewChat={handleNewChat}
             onDeleteSession={deleteSession}
             onRenameSession={renameSession}
