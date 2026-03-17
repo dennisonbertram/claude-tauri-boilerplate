@@ -335,6 +335,14 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         handler: onToggleSidebar ?? (() => {}),
       },
       {
+        id: 'settings',
+        key: ',',
+        meta: true,
+        label: 'Open Settings',
+        category: 'navigation' as const,
+        handler: onOpenSettings ?? (() => {}),
+      },
+      {
         id: 'help',
         key: '?',
         meta: true,
@@ -359,7 +367,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
         },
       },
     ],
-    [onCreateSession, clearChat, costOpen, helpOpen, paletteOpen, handlePaletteClose, onToggleSidebar]
+    [onCreateSession, clearChat, costOpen, helpOpen, paletteOpen, handlePaletteClose, onToggleSidebar, onOpenSettings]
   );
 
   const { shortcuts } = useKeyboardShortcuts(shortcutDefs);
