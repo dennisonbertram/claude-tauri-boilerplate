@@ -130,7 +130,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             activeSessionId={activeSessionId}
             email={email}
             plan={plan}
-            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); setActiveSessionHasMessages(true); }}
+            onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); const session = sessions.find(s => s.id === id); setActiveSessionHasMessages(session?.claudeSessionId != null); }}
             onNewChat={handleNewChat}
             onDeleteSession={deleteSession}
             onRenameSession={renameSession}
