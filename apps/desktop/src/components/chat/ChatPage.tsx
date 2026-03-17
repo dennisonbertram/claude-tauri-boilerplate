@@ -31,6 +31,8 @@ import { useSettings } from '@/hooks/useSettings';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
+import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
+import type { AttachedImage } from './ChatInput';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -104,6 +106,7 @@ export function ChatPage({
 }: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<AttachedImage[]>([]);
   const [helpOpen, setHelpOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const {
@@ -136,6 +139,17 @@ export function ChatPage({
     addMessageCost,
     reset: resetCostTracking,
   } = useCostTracking();
+
+  const { changedFiles, fetchDiff: fetchWorkspaceDiff } = useWorkspaceDiff(workspaceId ?? null);
+  const suggestedFiles = useMemo(
+    () => changedFiles.map((file) => file.path),
+    [changedFiles]
+  );
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    void fetchWorkspaceDiff();
+  }, [workspaceId, fetchWorkspaceDiff]);
 
   // Checkpoint tracking state
   const turnIndexRef = useRef(0);
@@ -303,6 +317,24 @@ export function ChatPage({
     []
   );
 
+  const composePromptWithAttachments = useCallback(
+    (text: string, files: AttachedImage[]) => {
+      if (!files.length) return text;
+
+      const mentioned = new Set((text.match(/@([^\s]+)/g) || []).map((match) => match.slice(1)));
+      const additional = files.filter(
+        (file) =>
+          !mentioned.has(file.name) &&
+          !mentioned.has(file.name.split('/').pop() || '')
+      );
+      if (!additional.length) return text;
+
+      const lines = additional.map((file) => `- @${file.name}`);
+      return `${text}\n\nAttached files:\n${lines.join('\n')}`;
+    },
+    []
+  );
+
   // Command palette integration
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -313,6 +345,7 @@ export function ChatPage({
     turnIndexRef.current = 0;
     lastUserPromptRef.current = '';
     lastUserMessageIdRef.current = '';
+    setAttachments([]);
   }, [setMessages, resetStreamEvents, resetCostTracking, resetSubagents, resetCheckpoints]);
 
   const commandContext = useMemo(
@@ -681,13 +714,15 @@ export function ChatPage({
     }
 
     // Track turn info for checkpoints
+    const payload = composePromptWithAttachments(text, attachments);
     lastUserPromptRef.current = text;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
     turnIndexRef.current += 1;
 
     setInput('');
     resetStreamEvents();
-    await sendMessage({ text });
+    setAttachments([]);
+    await sendMessage({ text: payload });
   };
 
   return (
@@ -772,6 +807,9 @@ export function ChatPage({
         paletteCommands={filteredCommands}
         onCommandSelect={handleCommandSelectAndClear}
         onPaletteClose={handlePaletteClose}
+        images={attachments}
+        onImagesChange={setAttachments}
+        availableFiles={suggestedFiles}
         ghostText={isLoading ? undefined : currentSuggestion}
         onAcceptSuggestion={handleAcceptGhostText}
       />
