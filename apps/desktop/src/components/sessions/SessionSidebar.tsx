@@ -83,7 +83,7 @@ export function SessionSidebar({
         {onOpenSettings && (
           <button
             data-testid="settings-gear-button"
-            onClick={onOpenSettings}
+            onClick={() => onOpenSettings()}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             aria-label="Open settings"
           >

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Toaster } from 'sonner';
 import { isTauri } from './lib/platform';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
@@ -354,6 +355,7 @@ function App() {
         </AuthGate>
         {import.meta.env.DEV && <Agentation />}
       </SettingsProvider>
+      <Toaster position="bottom-right" theme="dark" />
     </ErrorBoundary>
   );
 }

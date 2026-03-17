@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import type { Session, Message } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
@@ -61,27 +62,36 @@ export function useSessions() {
   }, []);
 
   const exportSession = useCallback(async (id: string, format: 'json' | 'md') => {
-    const res = await fetch(`${API_BASE}/api/sessions/${id}/export?format=${format}`);
-    if (!res.ok) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/sessions/${id}/export?format=${format}`);
+      if (!res.ok) {
+        toast.error('Export failed', { description: `Server returned ${res.status}` });
+        return;
+      }
 
-    // Get filename from Content-Disposition header or generate one
-    const disposition = res.headers.get('content-disposition');
-    let filename = `session-export.${format === 'md' ? 'md' : 'json'}`;
-    if (disposition) {
-      const match = disposition.match(/filename="?([^"]+)"?/);
-      if (match) filename = match[1];
+      // Get filename from Content-Disposition header or generate one
+      const disposition = res.headers.get('content-disposition');
+      let filename = `session-export.${format === 'md' ? 'md' : 'json'}`;
+      if (disposition) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
+      }
+
+      // Create blob and trigger download
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Session exported', { description: filename });
+    } catch {
+      toast.error('Export failed', { description: 'Could not reach the server' });
     }
-
-    // Create blob and trigger download
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }, []);
 
   const fetchMessages = useCallback(async (sessionId: string): Promise<Message[]> => {
