@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 expect.extend(matchers);
 import userEvent from '@testing-library/user-event';
 import { CommandPalette } from '../CommandPalette';
@@ -354,6 +354,72 @@ describe('CommandPalette', () => {
     it('does not crash with empty commands list', () => {
       renderPalette({ commands: [] });
       expect(screen.getByText(/no commands/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Overflow affordance', () => {
+    it('shows a bottom scroll hint when the palette content overflows', () => {
+      const manyCommands: Command[] = Array.from({ length: 12 }, (_, index) => ({
+        name: `cmd-${index}`,
+        description: `Command ${index}`,
+        category: index < 4 ? 'chat' : index < 8 ? 'navigation' : 'tools',
+        execute: vi.fn(),
+      }));
+
+      renderPalette({ commands: manyCommands });
+
+      const palette = screen.getByTestId('command-palette');
+      Object.defineProperty(palette, 'scrollHeight', {
+        configurable: true,
+        value: 480,
+      });
+      Object.defineProperty(palette, 'clientHeight', {
+        configurable: true,
+        value: 240,
+      });
+      Object.defineProperty(palette, 'scrollTop', {
+        configurable: true,
+        value: 0,
+        writable: true,
+      });
+
+      fireEvent.scroll(palette);
+
+      expect(
+        screen.getByTestId('command-palette-scroll-hint')
+      ).toBeInTheDocument();
+    });
+
+    it('hides the bottom scroll hint when scrolled to the end', () => {
+      const manyCommands: Command[] = Array.from({ length: 12 }, (_, index) => ({
+        name: `cmd-${index}`,
+        description: `Command ${index}`,
+        category: index < 4 ? 'chat' : index < 8 ? 'navigation' : 'tools',
+        execute: vi.fn(),
+      }));
+
+      renderPalette({ commands: manyCommands });
+
+      const palette = screen.getByTestId('command-palette');
+      Object.defineProperty(palette, 'scrollHeight', {
+        configurable: true,
+        value: 480,
+      });
+      Object.defineProperty(palette, 'clientHeight', {
+        configurable: true,
+        value: 240,
+      });
+      Object.defineProperty(palette, 'scrollTop', {
+        configurable: true,
+        value: 241,
+        writable: true,
+      });
+
+      fireEvent.scroll(palette);
+
+      expect(
+        screen.queryByTestId('command-palette-scroll-hint')
+      ).not.toBeInTheDocument();
     });
   });
 });

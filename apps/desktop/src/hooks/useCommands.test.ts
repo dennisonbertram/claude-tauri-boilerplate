@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+
+const { mockToastInfo } = vi.hoisted(() => ({
+  mockToastInfo: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    info: mockToastInfo,
+  },
+}));
+
 import { useCommands } from './useCommands';
 
 describe('useCommands', () => {
@@ -16,6 +27,7 @@ describe('useCommands', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToastInfo.mockReset();
   });
 
   it('returns a list of built-in commands', () => {
@@ -142,6 +154,32 @@ describe('useCommands', () => {
       await act(async () => {
         await cmd.execute();
       });
+      expect(mockContext.showSettings).toHaveBeenCalledOnce();
+    });
+
+    it('/compact shows feedback instead of silently doing nothing', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'compact')!;
+
+      await act(async () => {
+        await cmd.execute();
+      });
+
+      expect(mockToastInfo).toHaveBeenCalledOnce();
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        'Context compaction is automatic',
+        expect.objectContaining({
+          description: 'Configure Auto-Compact in Settings → Advanced',
+          action: expect.objectContaining({
+            label: 'Open Settings',
+          }),
+        })
+      );
+
+      const options = mockToastInfo.mock.calls[0]?.[1] as
+        | { action?: { onClick?: () => void } }
+        | undefined;
+      options?.action?.onClick?.();
       expect(mockContext.showSettings).toHaveBeenCalledOnce();
     });
 

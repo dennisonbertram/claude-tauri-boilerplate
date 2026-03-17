@@ -184,6 +184,7 @@ export function CommandPalette({
       ))}
       {showScrollHint && (
         <div
+          data-testid="command-palette-scroll-hint"
           aria-hidden="true"
           className="sticky bottom-0 h-8 bg-gradient-to-t from-popover to-transparent pointer-events-none"
         />
