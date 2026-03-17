@@ -122,7 +122,7 @@ describe('useCommandPalette', () => {
     it('filters commands by name', () => {
       const { result } = renderHook(() => useCommandPalette(mockCommands));
       act(() => result.current.open());
-      act(() => result.current.setSearchQuery('cl'));
+      act(() => result.current.setSearchQuery('cle'));
       expect(result.current.filteredCommands).toHaveLength(1);
       expect(result.current.filteredCommands[0].name).toBe('clear');
     });
@@ -133,6 +133,14 @@ describe('useCommandPalette', () => {
       act(() => result.current.setSearchQuery('session'));
       expect(result.current.filteredCommands).toHaveLength(1);
       expect(result.current.filteredCommands[0].name).toBe('export');
+    });
+
+    it('fuzzy-filters commands by subsequence', () => {
+      const { result } = renderHook(() => useCommandPalette(mockCommands));
+      act(() => result.current.open());
+      act(() => result.current.setSearchQuery('cmpt'));
+      expect(result.current.filteredCommands).toHaveLength(1);
+      expect(result.current.filteredCommands[0].name).toBe('compact');
     });
 
     it('filters case-insensitively', () => {

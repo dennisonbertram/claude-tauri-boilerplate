@@ -59,6 +59,8 @@ interface ChatPageProps {
   workspaceId?: string;
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
+  onOpenSessions?: () => void;
+  onOpenPullRequests?: () => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -88,7 +90,18 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
-export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatusChange, onAutoName, workspaceId, onToggleSidebar, onOpenSettings }: ChatPageProps) {
+export function ChatPage({
+  sessionId,
+  onCreateSession,
+  onExportSession,
+  onStatusChange,
+  onAutoName,
+  workspaceId,
+  onToggleSidebar,
+  onOpenSettings,
+  onOpenSessions,
+  onOpenPullRequests,
+}: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
@@ -311,8 +324,17 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       showSettings: onOpenSettings,
       showModelSelector: onOpenSettings ? () => onOpenSettings('model') : undefined,
       showCostSummary: () => setCostOpen(true),
+      showSessionList: onOpenSessions,
+      openPullRequests: onOpenPullRequests,
     }),
-    [clearChat, onCreateSession, onExportSession, onOpenSettings]
+    [
+      clearChat,
+      onCreateSession,
+      onExportSession,
+      onOpenSettings,
+      onOpenSessions,
+      onOpenPullRequests,
+    ]
   );
 
   const { commands, filterCommands } = useCommands(commandContext);

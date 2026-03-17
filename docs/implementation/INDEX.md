@@ -15,3 +15,4 @@ Implementation notes and code change documentation.
 | [phase7-sidecar-integration.md](phase7-sidecar-integration.md) | Phase 7 Tauri sidecar integration - Hono server as bundled sidecar with shell plugin, health polling, and dev/prod modes |
 | [issue-75-wave-1-subagent.md](issue-75-wave-1-subagent.md) | Issue #75 implementation progress for CI failure forwarding and `Fix Errors` support (Wave 1). |
 | [issue-76-wave-1-subagent.md](issue-76-wave-1-subagent.md) | Issue #76 provider support implementation notes and verification summary (wave 1: provider selection, env routing, persistence) |
+| [issue-77-wave-1-subagent.md](issue-77-wave-1-subagent.md) | Initial implementation slice for Issue #77: command palette integration, fuzzy filtering, and command-driven navigation. |

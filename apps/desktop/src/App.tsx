@@ -134,6 +134,15 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setSelectedWorkspace(null);
   }, [refreshWorkspaces]);
 
+  const handleOpenSessions = useCallback(() => {
+    setActiveView('chat');
+    setSidebarOpen(true);
+  }, []);
+
+  const handleOpenPullRequests = useCallback(() => {
+    setActiveView('teams');
+  }, []);
+
   const handleDeleteProject = useCallback(async (projectId: string) => {
     await removeProject(projectId);
     if (selectedProjectId === projectId) {
@@ -229,6 +238,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onAutoName={autoNameSession}
               onToggleSidebar={() => setSidebarOpen((open) => !open)}
               onOpenSettings={handleOpenSettings}
+              onOpenSessions={handleOpenSessions}
+              onOpenPullRequests={handleOpenPullRequests}
             />
           ) : (
             <WelcomeScreen onNewChat={handleNewChat} />
