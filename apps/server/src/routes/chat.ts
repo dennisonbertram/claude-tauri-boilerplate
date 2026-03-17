@@ -8,6 +8,7 @@ import { streamClaude } from '../services/claude';
 import { generateRandomName } from '../services/name-generator';
 import {
   addMessage,
+  clearClaudeSessionId,
   createSession,
   getSession,
   getWorkspace,
@@ -182,16 +183,19 @@ export function createChatRouter(db: Database) {
           addMessage(db, crypto.randomUUID(), appSessionId, 'user', prompt);
         }
 
-        try {
-          // Determine the Claude session ID for resume:
-          // 1. Existing app session's claudeSessionId (explicit sessionId provided)
-          // 2. Workspace's stored claudeSessionId (workspaceId provided, no explicit sessionId)
-          const resumeSessionId =
-            existingSession?.claudeSessionId ?? workspaceClaudeSessionId ?? undefined;
+        // Determine the Claude session ID for resume:
+        // 1. Existing app session's claudeSessionId (explicit sessionId provided)
+        // 2. Workspace's stored claudeSessionId (workspaceId provided, no explicit sessionId)
+        let currentResumeId: string | undefined =
+          existingSession?.claudeSessionId ?? workspaceClaudeSessionId ?? undefined;
+        let retried = false;
 
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+        try {
           for await (const event of streamClaude({
             prompt,
-            sessionId: resumeSessionId,
+            sessionId: currentResumeId,
             model,
             effort,
             cwd: workspaceCwd,
@@ -239,7 +243,27 @@ export function createChatRouter(db: Database) {
               }
             }
           }
+          break; // stream completed successfully
         } catch (err) {
+          // Auto-recover from stale session ID (e.g., after server restart).
+          // If Claude can't find the session, clear the stale ID and retry once
+          // without resuming — transparent to the user.
+          const isStaleSession =
+            !retried &&
+            currentResumeId &&
+            err instanceof Error &&
+            err.message.includes('No conversation found with session ID');
+
+          if (isStaleSession) {
+            retried = true;
+            currentResumeId = undefined;
+            if (appSessionId) {
+              clearClaudeSessionId(db, appSessionId);
+            }
+            console.warn('[chat] Stale session ID detected, retrying without resume');
+            continue;
+          }
+
           streamErrored = true;
 
           // Classify the error and send it on the data channel so
@@ -275,6 +299,7 @@ export function createChatRouter(db: Database) {
             updateWorkspaceClaudeSession(db, workspaceId, claudeSessionId);
           }
         }
+        } // end while (true) retry loop
 
         // Ensure `start` was sent (AI SDK requires it before `finish`)
         if (!startSent) {

@@ -160,6 +160,13 @@ export function updateClaudeSessionId(
   return stmt.run(claudeSessionId, sessionId);
 }
 
+export function clearClaudeSessionId(db: Database, sessionId: string) {
+  const stmt = db.prepare(
+    `UPDATE sessions SET claude_session_id = NULL, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(sessionId);
+}
+
 export function addMessage(
   db: Database,
   id: string,
