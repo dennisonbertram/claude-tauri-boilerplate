@@ -1,0 +1,131 @@
+import '@testing-library/jest-dom/vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { UIMessage } from '@ai-sdk/react';
+import { MessageList } from '../MessageList';
+
+Element.prototype.scrollIntoView = vi.fn();
+
+function makeMessage(index: number): UIMessage {
+  return {
+    id: `message-${index}`,
+    role: index % 2 === 0 ? 'user' : 'assistant',
+    parts: [{ type: 'text', text: `message ${index}` }],
+  };
+}
+
+function getViewport(container: HTMLElement): HTMLDivElement {
+  const viewport = container.querySelector(
+    '[data-slot="scroll-area-viewport"]'
+  ) as HTMLDivElement | null;
+  if (!viewport) {
+    throw new Error('scroll area viewport not found');
+  }
+  return viewport;
+}
+
+function mockScrollableViewport(
+  viewport: HTMLDivElement,
+  options: { scrollHeight: number; clientHeight: number; scrollTop: number }
+) {
+  Object.defineProperty(viewport, 'scrollHeight', {
+    configurable: true,
+    value: options.scrollHeight,
+    writable: true,
+  });
+  Object.defineProperty(viewport, 'clientHeight', {
+    configurable: true,
+    value: options.clientHeight,
+    writable: true,
+  });
+  Object.defineProperty(viewport, 'scrollTop', {
+    configurable: true,
+    value: options.scrollTop,
+    writable: true,
+  });
+}
+
+describe('MessageList scroll affordance', () => {
+  it('shows the scroll-to-bottom button when scrolled above the bottom', () => {
+    const messages = Array.from({ length: 20 }, (_, index) =>
+      makeMessage(index)
+    );
+
+    const { container } = render(
+      <MessageList messages={messages} isLoading={false} />
+    );
+    const viewport = getViewport(container);
+
+    mockScrollableViewport(viewport, {
+      scrollHeight: 1200,
+      clientHeight: 300,
+      scrollTop: 0,
+    });
+
+    fireEvent.scroll(viewport);
+
+    expect(screen.getByTestId('message-list-scroll-to-bottom')).toBeInTheDocument();
+  });
+
+  it('scrolls to latest and hides when the affordance is clicked', async () => {
+    const messages = Array.from({ length: 20 }, (_, index) =>
+      makeMessage(index)
+    );
+    const { container } = render(
+      <MessageList messages={messages} isLoading={false} />
+    );
+    const viewport = getViewport(container);
+    const scrollTo = vi.fn();
+
+    mockScrollableViewport(viewport, {
+      scrollHeight: 1400,
+      clientHeight: 350,
+      scrollTop: 0,
+    });
+    Object.defineProperty(viewport, 'scrollTo', { value: scrollTo });
+
+    fireEvent.scroll(viewport);
+    expect(screen.getByTestId('message-list-scroll-to-bottom')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('message-list-scroll-to-bottom'));
+
+    expect(scrollTo).toHaveBeenCalledOnce();
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 1400,
+      behavior: 'smooth',
+    });
+    expect(
+      screen.queryByTestId('message-list-scroll-to-bottom')
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides the button when the user scrolls to the bottom', () => {
+    const messages = Array.from({ length: 20 }, (_, index) =>
+      makeMessage(index)
+    );
+    const { container } = render(
+      <MessageList messages={messages} isLoading={false} />
+    );
+    const viewport = getViewport(container);
+
+    mockScrollableViewport(viewport, {
+      scrollHeight: 1000,
+      clientHeight: 300,
+      scrollTop: 0,
+    });
+
+    fireEvent.scroll(viewport);
+    expect(screen.getByTestId('message-list-scroll-to-bottom')).toBeInTheDocument();
+
+    Object.defineProperty(viewport, 'scrollTop', {
+      configurable: true,
+      value: 700,
+      writable: true,
+    });
+    fireEvent.scroll(viewport);
+
+    expect(
+      screen.queryByTestId('message-list-scroll-to-bottom')
+    ).not.toBeInTheDocument();
+  });
+});
