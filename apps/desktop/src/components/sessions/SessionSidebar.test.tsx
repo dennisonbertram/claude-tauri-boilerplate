@@ -70,6 +70,18 @@ describe('SessionSidebar', () => {
     expect(menuButton).toBeInTheDocument();
   });
 
+  test('opens context menu with right-click on session item', async () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    fireEvent.contextMenu(sessionItem);
+
+    await waitFor(() => {
+      expect(screen.getByText('Rename')).toBeInTheDocument();
+      expect(screen.getByText('Fork')).toBeInTheDocument();
+    });
+  });
+
   test('context menu contains Rename option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
