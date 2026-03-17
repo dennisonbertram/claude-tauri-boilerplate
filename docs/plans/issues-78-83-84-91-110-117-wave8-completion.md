@@ -1,5 +1,7 @@
 # Wave 8 Completion (Issues #78, #83, #84, #91, #110, #117)
 
+Status: complete on `codex/wave8-merge` at `eafe30a`
+
 ## Goal
 
 Finish the six wave-7 issues that remain open and close any issue whose full acceptance criteria land on `main`.
@@ -35,64 +37,64 @@ Finish the six wave-7 issues that remain open and close any issue whose full acc
 ## Completion checklist
 
 ### `#78`
-- [ ] Add or complete Linear auth/connect flow.
-- [ ] Add issue browse/search UI with chronological sorting.
-- [ ] Support linking Linear issues to sessions and workspaces.
-- [ ] Support attaching Linear issue context in chat.
-- [ ] Support creating a workspace from a Linear issue.
-- [ ] Add deeplink support into a workspace from a Linear issue context.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Add or complete Linear auth/connect flow.
+- [x] Add issue browse/search UI with chronological sorting.
+- [x] Support linking Linear issues to sessions and workspaces.
+- [x] Support attaching Linear issue context in chat.
+- [x] Support creating a workspace from a Linear issue.
+- [x] Add deeplink support into a workspace from a Linear issue context.
+- [x] Add/update regression tests and manual verification note.
 
 ### `#83`
-- [ ] Ensure each message turn creates a git-backed checkpoint.
-- [ ] Support reverting to any previous turn from the UI.
-- [ ] Wipe conversation history after the selected turn when required.
-- [ ] Restore file state to the selected checkpoint.
-- [ ] Show changes from Claude's most recent turn.
-- [ ] Add a confirmation dialog before destructive revert.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Ensure each message turn creates a git-backed checkpoint.
+- [x] Support reverting to any previous turn from the UI.
+- [x] Wipe conversation history after the selected turn when required.
+- [x] Restore file state to the selected checkpoint.
+- [x] Show changes from Claude's most recent turn.
+- [x] Add a confirmation dialog before destructive revert.
+- [x] Add/update regression tests and manual verification note.
 
 ### `#84`
-- [ ] Toggle plan mode on and off.
-- [ ] Render plans in a dedicated panel before implementation.
-- [ ] Support approve, reject, and approve-with-feedback actions.
-- [ ] Support interactive questions during planning.
-- [ ] Support copy plan to clipboard.
-- [ ] Support export plan into a new chat.
-- [ ] Support handoff to another agent.
-- [ ] Store plans in `.context`.
-- [ ] Use distinct icons for plan approval and user-input states.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Toggle plan mode on and off.
+- [x] Render plans in a dedicated panel before implementation.
+- [x] Support approve, reject, and approve-with-feedback actions.
+- [x] Support interactive questions during planning.
+- [x] Support copy plan to clipboard.
+- [x] Support export plan into a new chat.
+- [x] Support handoff to another agent.
+- [x] Store plans in `.context`.
+- [x] Use distinct icons for plan approval and user-input states.
+- [x] Add/update regression tests and manual verification note.
 
 ### `#91`
-- [ ] Trigger slash autocomplete from `/`.
-- [ ] Support fuzzy search across commands.
-- [ ] Include `/clear`, `/compact`, `/restart`, and `/add-dir`.
-- [ ] Support plugin-installed commands.
-- [ ] Support autocomplete anywhere in the message.
-- [ ] Show invalid slash command errors in chat.
-- [ ] Support commands with file attachments.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Trigger slash autocomplete from `/`.
+- [x] Support fuzzy search across commands.
+- [x] Include `/clear`, `/compact`, `/restart`, and `/add-dir`.
+- [x] Support plugin-installed commands.
+- [x] Support autocomplete anywhere in the message.
+- [x] Show invalid slash command errors in chat.
+- [x] Support commands with file attachments.
+- [x] Add/update regression tests and manual verification note.
 
 ### `#110`
-- [ ] Add global agent instructions in settings.
-- [ ] Add per-repository custom review prompts.
-- [ ] Add per-repository custom PR creation prompts.
-- [ ] Add per-repository custom branch naming prompts.
-- [ ] Send instructions to the agent on startup.
-- [ ] Send permission mode changes to Claude in real time.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Add global agent instructions in settings.
+- [x] Add per-repository custom review prompts.
+- [x] Add per-repository custom PR creation prompts.
+- [x] Add per-repository custom branch naming prompts.
+- [x] Send instructions to the agent on startup.
+- [x] Send permission mode changes to Claude in real time.
+- [x] Add/update regression tests and manual verification note.
 
 ### `#117`
-- [ ] Ensure the picker exposes all available models.
-- [ ] Allow default model changes from the picker.
-- [ ] Support number-key quick switching.
-- [ ] Support keyboard navigation in the picker.
-- [ ] Preserve model selection when forking sessions.
-- [ ] Make mid-session switching instant.
-- [ ] Add PR cheap-model control.
-- [ ] Add fast-mode toggle.
-- [ ] Add/update regression tests and manual verification note.
+- [x] Ensure the picker exposes all available models.
+- [x] Allow default model changes from the picker.
+- [x] Support number-key quick switching.
+- [x] Support keyboard navigation in the picker.
+- [x] Preserve model selection when forking sessions.
+- [x] Make mid-session switching instant.
+- [x] Add PR cheap-model control.
+- [x] Add fast-mode toggle.
+- [x] Add/update regression tests and manual verification note.
 
 ## Integration and closeout
 
@@ -101,3 +103,10 @@ Finish the six wave-7 issues that remain open and close any issue whose full acc
 3. Do a cleanup pass for regressions and merge conflicts.
 4. Merge the integration branch to `main` only if `main` is clean.
 5. Close any fully completed GitHub issue and leave a final comment with branch, commit, tests, and manual verification note.
+
+## Final validation
+
+- `cd apps/server && bun test src/routes/linear.test.ts src/routes/checkpoints.test.ts src/routes/plan.test.ts src/routes/chat-commands.test.ts src/services/event-mapper.test.ts src/routes/chat-workspace.test.ts src/routes/memory.path-regression.test.ts src/routes/chat.test.ts src/routes/sessions.test.ts src/routes/sessions-auto-name-model.test.ts`
+  - Result: `159 pass, 0 fail`
+- `cd apps/desktop && ./node_modules/.bin/vitest run src/components/settings/SettingsPanel.test.tsx src/components/chat/__tests__/ChatPageTransport.test.tsx src/components/__tests__/CheckpointTimeline.test.tsx src/components/chat/__tests__/ChatPageRewindRefresh.test.tsx src/hooks/__tests__/useCheckpoints.test.tsx src/components/chat/__tests__/PlanView.test.tsx src/components/chat/__tests__/ChatPageSlashCommands.test.tsx src/hooks/useCommands.test.ts src/hooks/useStreamEvents.test.ts src/lib/workflowPrompts.test.ts src/hooks/useSettings.test.ts src/components/__tests__/SettingsTabsOverflow.test.tsx src/hooks/useSessions.test.ts`
+  - Result: `173 pass, 0 fail`

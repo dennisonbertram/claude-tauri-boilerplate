@@ -48,6 +48,7 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
       'Instructions',
       'Memory',
       'MCP',
+      'Linear',
       'Hooks',
       'Advanced',
       'Status',
@@ -58,10 +59,10 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
     }
   });
 
-  it('renders exactly 10 tabs', () => {
+  it('renders exactly 11 tabs', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(10);
+    expect(tabs).toHaveLength(11);
   });
 
   it('tab container has flex-wrap class', () => {
