@@ -12,6 +12,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issues-75-80-wave-1.md](issues-75-80-wave-1.md) | Coordination plan for the first six-issue parallel worktree batch. Covers issues #75-#80, TDD expectations, subagent artifacts, and review/merge follow-up steps. |
 | [issue-76-provider-support.md](issue-76-provider-support.md) | Issue #76 provider support for Anthropic/Bedrock/Vertex/custom configuration with persistence and env propagation tests. |
 | [issue-77-command-palette.md](issue-77-command-palette.md) | Command palette (Cmd+K) plan for session/PR/settings navigation and fuzzy relevance-based action search. |
+| [issue-118-wave152-handoff.md](issue-118-wave152-handoff.md) | Handoff and validation notes for GitHub issue #118 covering settings tabs overflow regression checks and manual browser verification steps. |
 | [issue-79-file-attachments.md](issue-79-file-attachments.md) | File picker and attachments: inline file picker, drag-and-drop, @ mentions, and previews. |
 | [issue-75-ci-forwarding.md](issue-75-ci-forwarding.md) | Issue #75: forward failing CI checks to Claude for auto-fix, including stream detection and `Fix Errors` action wiring. |
 | [issue-78-linear-integration.md](issue-78-linear-integration.md) | Linear issue integration for GitHub issue #78: link Linear issues to sessions/workspaces, inject issue context into chat prompts, and provide remaining connect/search roadmap. |
