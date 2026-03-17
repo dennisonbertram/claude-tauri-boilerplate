@@ -18,7 +18,7 @@ interface SessionSidebarProps {
   onRenameSession: (id: string, title: string) => void;
   onForkSession: (id: string) => void;
   onExportSession: (id: string, format: 'json' | 'md') => void;
-  onOpenSettings?: () => void;
+  onOpenSettings?: (tab?: string) => void;
   activeView?: ViewType;
   onSwitchView?: (view: ViewType) => void;
 }

@@ -54,19 +54,25 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   } = useSessions();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const handleOpenSettings = useCallback((tab?: string) => {
+    setSettingsInitialTab(tab);
+    setSettingsOpen(true);
+  }, []);
 
   // Global keyboard shortcuts (work from any view)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setSettingsOpen(true);
+        handleOpenSettings();
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [handleOpenSettings]);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
@@ -164,7 +170,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             onRenameSession={renameSession}
             onForkSession={forkSession}
             onExportSession={exportSession}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={handleOpenSettings}
             activeView={activeView}
             onSwitchView={handleSwitchView}
           />
@@ -222,7 +228,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onStatusChange={handleStatusChange}
               onAutoName={autoNameSession}
               onToggleSidebar={() => setSidebarOpen((open) => !open)}
-              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSettings={handleOpenSettings}
             />
           ) : (
             <WelcomeScreen onNewChat={handleNewChat} />
@@ -247,6 +253,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         <SettingsPanel
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}
+          initialTab={settingsInitialTab as any}
           sessionInfo={statusData.sessionInfo ? {
             model: statusData.sessionInfo.model,
             tools: statusData.sessionInfo.tools,

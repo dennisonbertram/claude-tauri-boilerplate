@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import type { AppSettings } from '@/hooks/useSettings';
 import { AVAILABLE_MODELS } from '@/lib/models';
@@ -35,10 +35,15 @@ interface SettingsPanelProps {
   sessionInfo?: SessionRuntimeInfo;
   email?: string;
   plan?: string;
+  initialTab?: TabId;
 }
 
-export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('general');
+export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initialTab }: SettingsPanelProps) {
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'general');
+
+  useEffect(() => {
+    if (isOpen) setActiveTab(initialTab ?? 'general');
+  }, [isOpen, initialTab]);
   const [showApiKey, setShowApiKey] = useState(false);
   const { settings, updateSettings } = useSettings();
 

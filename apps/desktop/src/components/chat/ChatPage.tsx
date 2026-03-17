@@ -57,7 +57,7 @@ interface ChatPageProps {
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
   onToggleSidebar?: () => void;
-  onOpenSettings?: () => void;
+  onOpenSettings?: (tab?: string) => void;
 }
 
 /**
@@ -269,7 +269,7 @@ export function ChatPage({ sessionId, onCreateSession, onExportSession, onStatus
       exportSession: onExportSession ?? (() => {}),
       showHelp: () => setHelpOpen(true),
       showSettings: onOpenSettings,
-      showModelSelector: onOpenSettings,
+      showModelSelector: onOpenSettings ? () => onOpenSettings('model') : undefined,
       showCostSummary: () => setCostOpen(true),
     }),
     [clearChat, onCreateSession, onExportSession, onOpenSettings]
