@@ -52,6 +52,9 @@ const chatRequestSchema = z.object({
     .optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  permissionMode: z
+    .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
+    .optional(),
   workspaceId: z.string().optional(),
   linearIssue: z
     .object({
@@ -222,6 +225,7 @@ export function createChatRouter(db: Database) {
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
+    const permissionMode = body.permissionMode;
     const provider = body.provider;
     const providerConfig = body.providerConfig;
     const workspaceId = body.workspaceId;
@@ -422,6 +426,7 @@ export function createChatRouter(db: Database) {
             sessionId: currentResumeId,
             model,
             effort,
+            permissionMode,
             provider,
             providerConfig,
             cwd: workspaceCwd,

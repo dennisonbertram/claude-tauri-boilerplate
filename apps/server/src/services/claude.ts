@@ -17,6 +17,7 @@ export interface ClaudeStreamOptions {
   sessionId?: string;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
+  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   cwd?: string;
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
@@ -115,6 +116,10 @@ export async function* streamClaude(
 
   if (options.effort) {
     queryOptions.effort = options.effort;
+  }
+
+  if (options.permissionMode) {
+    queryOptions.permissionMode = options.permissionMode;
   }
 
   if (options.cwd) {

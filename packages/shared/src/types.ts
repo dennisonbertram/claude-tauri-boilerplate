@@ -44,6 +44,7 @@ export interface ChatRequest {
   };
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
+  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   workspaceId?: string;
   linearIssue?: {
     id: string;

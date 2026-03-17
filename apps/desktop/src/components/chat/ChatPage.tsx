@@ -239,6 +239,7 @@ export function ChatPage({
           sessionId,
           model: settings.model,
           effort: settings.effort,
+          permissionMode: settings.permissionMode,
           provider: settings.provider,
           providerConfig: {
             bedrockBaseUrl: settings.bedrockBaseUrl,
@@ -254,6 +255,7 @@ export function ChatPage({
       sessionId,
       settings.model,
       settings.effort,
+      settings.permissionMode,
       settings.provider,
       settings.bedrockBaseUrl,
       settings.bedrockProjectId,
