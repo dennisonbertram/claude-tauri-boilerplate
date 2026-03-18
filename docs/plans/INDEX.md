@@ -22,6 +22,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-118-wave152-handoff.md](issue-118-wave152-handoff.md) | Handoff and validation notes for GitHub issue #118 covering settings tabs overflow regression checks and manual browser verification steps. |
 | [issue-114-multi-repo-editing.md](issue-114-multi-repo-editing.md) | Issue #114 plan for multi-repo editing with `/add-dir`, covering workspace directory persistence, Claude passthrough, and workspace UI management. |
 | [issue-119-wave152-handoff.md](issue-119-wave152-handoff.md) | Handoff checklist for issue #119 covering model selector regression checks and manual browser verification notes. |
+| [issue-115-ai-memory-update.md](issue-115-ai-memory-update.md) | Issue #115 MVP plan for prompting memory updates after review feedback and workspace merge, with repo-scoped memory persistence and existing Memory tab reuse. |
 | [issue-117-wave7-handoff.md](issue-117-wave7-handoff.md) | Wave 7 handoff note for issue #117 covering fast model switching, persistence regressions, fork model carryover, and manual browser verification steps. |
 | [issue-110-wave7-handoff.md](issue-110-wave7-handoff.md) | Wave 7 handoff note for issue #110 covering startup instruction injection, `systemPrompt` ordering, and manual browser/API verification steps. |
 | [issue-73.md](issue-73.md) | Frontend regression for issue #73: session selection updates `activeSessionHasMessages` from message presence and preserves New Chat no-op behavior. |

@@ -34,6 +34,15 @@ Each entry follows this format:
 **Regression Test**: `apps/server/src/db/db-workspaces.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/server/src/routes/chat-workspace.test.ts`, `apps/server/src/services/claude.test.ts`, `apps/desktop/src/components/workspaces/__tests__/WorkspacePanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageSlashCommands.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/hooks/useCommands.test.ts`
 **Related Issue**: GitHub issue `#114`
 
+### 2026-03-18: Issue 115 memory-update prompt flow completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed GitHub issue `#115` in the issue worktree by replacing the earlier toast-only memory nudges with a real repo-memory update flow. Added repo-scoped `reviewMemory` and `mergeMemory` workflow prompts stored through the existing `/api/memory` files, wired review-feedback and post-merge actions to queue a pending `MEMORY.md` draft, and updated the Memory tab to consume that draft directly into the editor so saving persists through the normal memory routes and future sessions keep using the same repository memory files. Follow-up manual verification found and fixed a first-run bug where the queued draft was dropped when the repo had no memory files yet.
+
+**Regression Test**: `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/desktop/src/lib/__tests__/memoryUpdatePrompt.test.ts`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/__tests__/MemoryPanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/components/workspaces/__tests__/WorkspacePanel.test.tsx`, `apps/desktop/src/hooks/useSettings.test.ts`
+**Related Issue**: GitHub issue `#115`
+
 ### 2026-03-17: Issues 141-151 Wave 3 Integration
 
 **Type**: Bug Fix

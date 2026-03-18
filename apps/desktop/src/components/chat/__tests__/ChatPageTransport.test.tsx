@@ -2,13 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 // Mock hooks used by ChatPage so we only validate transport payload shape.
-const mockUseChat = vi.hoisted(() => vi.fn());
-const mockUseSettings = vi.hoisted(() => vi.fn());
-const mockDefaultChatTransport = vi.hoisted(() => vi.fn());
-const mockUseStreamEvents = vi.hoisted(() => vi.fn());
+const {
+  mockUseChat,
+  mockUseSettings,
+  mockDefaultChatTransport,
+  mockUseStreamEvents,
+  mockPromptMemoryUpdate,
+} = vi.hoisted(() => ({
+  mockUseChat: vi.fn(),
+  mockUseSettings: vi.fn(),
+  mockDefaultChatTransport: vi.fn(),
+  mockUseStreamEvents: vi.fn(),
+  mockPromptMemoryUpdate: vi.fn(),
+}));
 
 vi.mock('@ai-sdk/react', () => ({
-  useChat: mockUseChat,
+  useChat: (...args: unknown[]) => mockUseChat(...args),
 }));
 
 vi.mock('ai', () => ({
@@ -16,11 +25,15 @@ vi.mock('ai', () => ({
 }));
 
 vi.mock('@/hooks/useSettings', () => ({
-  useSettings: mockUseSettings,
+  useSettings: (...args: unknown[]) => mockUseSettings(...args),
+}));
+
+vi.mock('@/lib/memoryUpdatePrompt', () => ({
+  promptMemoryUpdate: (...args: unknown[]) => mockPromptMemoryUpdate(...args),
 }));
 
 vi.mock('@/hooks/useStreamEvents', () => ({
-  useStreamEvents: mockUseStreamEvents,
+  useStreamEvents: (...args: unknown[]) => mockUseStreamEvents(...args),
 }));
 
 vi.mock('@/hooks/useSubagents', () => ({
@@ -429,6 +442,7 @@ describe('ChatPage transport provider payload', () => {
       planId: 'plan-123',
       decision: 'approve',
     });
+    expect(mockPromptMemoryUpdate).not.toHaveBeenCalled();
   });
 
   it('sends reject decision to /api/chat/plan with feedback', async () => {
@@ -470,6 +484,44 @@ describe('ChatPage transport provider payload', () => {
       decision: 'reject',
       feedback: 'Needs more detail',
     });
+  });
+
+  it('prompts to update memory when review feedback is submitted', async () => {
+    const rejectPlan = vi.fn();
+    const onOpenSettings = vi.fn();
+    mockUseStreamEvents.mockReturnValue(
+      getDefaultStreamEventsState({
+        plan: {
+          planId: 'plan-memory',
+          status: 'review',
+          content: 'Plan content',
+        },
+        rejectPlan,
+      })
+    );
+
+    const fetchMock = vi.fn(async () => ({ ok: false, json: async () => [] }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    render(<ChatPage sessionId="session-memory" onOpenSettings={onOpenSettings} />);
+    fireEvent.click(screen.getByTestId('plan-reject'));
+
+    await waitFor(() => {
+      expect(mockPromptMemoryUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: 'review-feedback',
+          onOpenMemory: expect.any(Function),
+        })
+      );
+    });
+
+    const args = mockPromptMemoryUpdate.mock.calls.at(-1)?.[0] as {
+      onOpenMemory?: () => void;
+    };
+    args.onOpenMemory?.();
+
+    expect(onOpenSettings).toHaveBeenCalledWith('memory');
+    expect(rejectPlan).toHaveBeenCalledWith('plan-memory', 'Needs more detail');
   });
 
   it('includes linearIssue in transport body when deep link hash targets an issue', async () => {

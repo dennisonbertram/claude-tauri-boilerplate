@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { MemoryFile, MemorySearchResult } from '@claude-tauri/shared';
+import { consumeMemoryUpdateDraft } from '@/lib/memoryUpdatePrompt';
 
 const API_BASE = 'http://localhost:3131';
 
@@ -46,6 +47,29 @@ export function MemoryPanel() {
   useEffect(() => {
     fetchMemoryFiles();
   }, [fetchMemoryFiles]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const draft = consumeMemoryUpdateDraft();
+    if (!draft) return;
+
+    const existingFile = files.find((file) => file.name === draft.fileName);
+    if (existingFile) {
+      const nextContent = existingFile.content.includes(draft.content)
+        ? existingFile.content
+        : `${existingFile.content.trim()}\n\n${draft.content.trim()}`;
+      setSelectedFile(existingFile);
+      setEditingFile(existingFile.name);
+      setEditContent(nextContent);
+      setCreating(false);
+      return;
+    }
+
+    setCreating(true);
+    setCreateName(draft.fileName);
+    setCreateContent(draft.content);
+  }, [files, loading]);
 
   const handleSave = async (filename: string, content: string) => {
     setSaving(true);

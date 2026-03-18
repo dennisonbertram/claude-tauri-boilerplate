@@ -23,3 +23,4 @@ Implementation notes and code change documentation.
 | [issue-116-wave13.md](issue-116-wave13.md) | Issue #116 follow-up wiring for the persisted resource-usage toggle, Status-tab controls, and targeted desktop regression coverage. |
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |
 | [issue-114-wave13.md](issue-114-wave13.md) | Issue #114 implementation notes for multi-repo workspace attachments, `/add-dir` routing, and manual validation. |
+| [issue-115-ai-memory-update.md](issue-115-ai-memory-update.md) | Issue #115 implementation note covering repo-scoped memory-update prompts, queued `MEMORY.md` drafts, regression coverage, and live browser validation. |

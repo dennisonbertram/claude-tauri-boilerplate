@@ -644,6 +644,46 @@ function WorkflowsTab({ settings, updateSettings }: TabProps) {
         />
       </SettingField>
 
+      <SettingField
+        label="Review Memory Prompt"
+        description="Draft template used when durable review feedback should become repository memory"
+      >
+        <textarea
+          data-testid="workflow-review-memory-prompt"
+          value={settings.workflowPrompts.reviewMemory}
+          onChange={(e) =>
+            updateSettings({
+              workflowPrompts: {
+                ...settings.workflowPrompts,
+                reviewMemory: e.target.value,
+              },
+            })
+          }
+          rows={6}
+          className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none resize-y focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      </SettingField>
+
+      <SettingField
+        label="Merge Memory Prompt"
+        description="Draft template used after a merge when lasting guidance should be recorded"
+      >
+        <textarea
+          data-testid="workflow-merge-memory-prompt"
+          value={settings.workflowPrompts.mergeMemory}
+          onChange={(e) =>
+            updateSettings({
+              workflowPrompts: {
+                ...settings.workflowPrompts,
+                mergeMemory: e.target.value,
+              },
+            })
+          }
+          rows={6}
+          className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none resize-y focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      </SettingField>
+
       <div className="flex items-center justify-between gap-3">
         <div
           data-testid="workflow-prompts-status"

@@ -1,9 +1,16 @@
-export type WorkflowPromptKey = 'review' | 'pr' | 'branch';
+export type WorkflowPromptKey =
+  | 'review'
+  | 'pr'
+  | 'branch'
+  | 'reviewMemory'
+  | 'mergeMemory';
 
 export interface WorkflowPrompts {
   review: string;
   pr: string;
   branch: string;
+  reviewMemory: string;
+  mergeMemory: string;
 }
 
 const API_BASE = 'http://localhost:3131';
@@ -12,12 +19,16 @@ export const WORKFLOW_PROMPT_KEYS: WorkflowPromptKey[] = [
   'review',
   'pr',
   'branch',
+  'reviewMemory',
+  'mergeMemory',
 ];
 
 export const REPO_WORKFLOW_PROMPT_FILES: Record<WorkflowPromptKey, string> = {
   review: 'workflow-review.md',
   pr: 'workflow-pr.md',
   branch: 'workflow-branch.md',
+  reviewMemory: 'workflow-review-memory.md',
+  mergeMemory: 'workflow-merge-memory.md',
 };
 
 export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
@@ -51,6 +62,22 @@ export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
     '- Prefer prefix like feature/, fix/, chore/',
     '- Keep it short but specific',
     '- Output ONLY the branch name',
+  ].join('\n'),
+  reviewMemory: [
+    'Summarize the durable lessons from review feedback as repository memory notes.',
+    '',
+    'Requirements:',
+    '- Keep only guidance that should persist across future sessions',
+    '- Prefer concise markdown bullets',
+    '- Avoid one-off task details',
+  ].join('\n'),
+  mergeMemory: [
+    'Summarize the durable lessons from this merged workspace as repository memory notes.',
+    '',
+    'Requirements:',
+    '- Capture lasting workflow, architecture, or testing guidance',
+    '- Prefer concise markdown bullets',
+    '- Avoid branch-specific trivia unless it changes future work',
   ].join('\n'),
 };
 
@@ -208,4 +235,39 @@ export function buildBranchNameWorkflowMessage(input: {
   const filesBlock = formatChangedFiles(input.changedFiles);
   if (filesBlock) sections.push(filesBlock);
   return sections.filter(Boolean).join('\n\n');
+}
+
+export function buildReviewMemoryDraft(input: {
+  prompt: string;
+  feedback: string;
+}): string {
+  return [
+    '## Memory Update',
+    '',
+    input.prompt.trim(),
+    '',
+    'Review feedback:',
+    input.feedback.trim(),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function buildMergeMemoryDraft(input: {
+  prompt: string;
+  workspaceName: string;
+  branch: string;
+  baseBranch: string;
+}): string {
+  return [
+    '## Memory Update',
+    '',
+    input.prompt.trim(),
+    '',
+    `Merged workspace: ${input.workspaceName}`,
+    `Branch: ${input.branch}`,
+    `Base branch: ${input.baseBranch}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
