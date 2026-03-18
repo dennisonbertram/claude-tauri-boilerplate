@@ -48,6 +48,9 @@ export interface AppSettings {
   // Runtime environment variables
   runtimeEnv: Record<string, string>;
   workspaceBranchPrefix: string;
+
+  // Privacy
+  privacyMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -91,6 +94,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Runtime environment variables
   runtimeEnv: {},
   workspaceBranchPrefix: 'workspace',
+
+  // Privacy
+  privacyMode: false,
 };
 
 const STORAGE_KEY = 'claude-tauri-settings';
