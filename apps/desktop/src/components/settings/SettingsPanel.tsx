@@ -16,6 +16,7 @@ import {
   getProviderSettingsFields,
   type ProviderConfigFieldKey,
 } from '@claude-tauri/shared';
+import { IDE_CONFIGS, type IdeId } from '@/lib/ide-opener';
 
 const MIN_THINKING_BUDGET_TOKENS = 1024;
 const MAX_THINKING_BUDGET_TOKENS = 32000;
@@ -384,6 +385,46 @@ function GeneralTab({
           </div>
         </div>
       </SettingField>
+
+      {/* Preferred IDE */}
+      <SettingField
+        label="Preferred IDE"
+        description="IDE used by the 'Open In' button on workspaces"
+      >
+        <select
+          data-testid="preferred-ide-select"
+          value={settings.preferredIde}
+          onChange={(e) =>
+            updateSettings({ preferredIde: e.target.value as IdeId })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {(Object.entries(IDE_CONFIGS) as [IdeId, { label: string }][]).map(
+            ([id, config]) => (
+              <option key={id} value={id}>
+                {config.label}
+              </option>
+            )
+          )}
+        </select>
+      </SettingField>
+
+      {/* Custom IDE URL — only shown when custom is selected */}
+      {settings.preferredIde === 'custom' && (
+        <SettingField
+          label="Custom IDE URL"
+          description="URL template with {path} as the path placeholder, e.g. myide://open?path={path}"
+        >
+          <input
+            data-testid="custom-ide-url-input"
+            type="text"
+            value={settings.customIdeUrl}
+            onChange={(e) => updateSettings({ customIdeUrl: e.target.value })}
+            placeholder="myide://open?path={path}"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        </SettingField>
+      )}
     </>
   );
 }
