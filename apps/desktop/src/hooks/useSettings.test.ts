@@ -347,6 +347,7 @@ describe('useSettings', () => {
       saveSettings({
         ...DEFAULT_SETTINGS,
         workflowPrompts: {
+          ...DEFAULT_SETTINGS.workflowPrompts,
           review: 'Repo review prompt',
           pr: 'Repo PR prompt',
           branch: 'Repo branch prompt',

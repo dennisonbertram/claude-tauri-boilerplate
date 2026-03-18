@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownRenderer } from '../chat/MarkdownRenderer';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
+import { useSettings } from '@/hooks/useSettings';
 import * as api from '@/lib/workspace-api';
+import type { CodeReviewResult, CodeReviewComment } from '@claude-tauri/shared';
+import { CodeReviewDialog } from './CodeReviewDialog';
+import { CodeReviewSummary } from './CodeReviewSummary';
+import { getWorkflowPrompt } from '@/lib/workflowPrompts';
 
 interface WorkspaceDiffViewProps {
   workspaceId: string;
@@ -43,6 +48,8 @@ export interface ParsedDiffFile {
 export interface InlineComment {
   id: string;
   markdown: string;
+  isAI?: boolean;
+  severity?: CodeReviewComment['severity'];
 }
 
 export function parseWorkspaceDiff(rawDiff: string): ParsedDiffFile[] {
@@ -153,6 +160,15 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, InlineComment[]>>({});
   const [commentIdCounter, setCommentIdCounter] = useState(0);
+
+  // AI Code Review state
+  const { settings } = useSettings();
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewResult, setReviewResult] = useState<CodeReviewResult | null>(null);
+  // Ref for scrolling to a specific file/line in the diff
+  const diffContainerRef = useRef<HTMLDivElement>(null);
 
   const { diff, changedFiles, loading, error, fetchDiff } = useWorkspaceDiff(
     workspaceId,
@@ -282,6 +298,81 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
     setCommentDrafts((prev) => ({ ...prev, [target]: value }));
   };
 
+  // Inject AI review comments into the inline comments state
+  const injectAIComments = useCallback((result: CodeReviewResult) => {
+    setComments((prev) => {
+      const next = { ...prev };
+      for (const comment of result.comments) {
+        // Try to find the line in parsedFiles that matches file + line number
+        const fileData = parsedFiles.find((f) => f.path === comment.file);
+        let targetKey: string | null = null;
+
+        if (fileData && comment.line) {
+          // Find the line index that matches the new line number
+          const lineIndex = fileData.lines.findIndex(
+            (l) => l.newLine === comment.line
+          );
+          if (lineIndex >= 0) {
+            targetKey = commentKey(comment.file, lineIndex);
+          }
+        }
+
+        // Fall back to file-level comment (index -1 as a sentinel for "file comment")
+        if (!targetKey) {
+          targetKey = `${comment.file}:file`;
+        }
+
+        const inlineComment: InlineComment = {
+          id: comment.id,
+          markdown: `**${comment.severity.toUpperCase()}**: ${comment.body}`,
+          isAI: true,
+          severity: comment.severity,
+        };
+
+        next[targetKey] = [...(next[targetKey] ?? []), inlineComment];
+      }
+      return next;
+    });
+  }, [parsedFiles]);
+
+  const startReview = useCallback(
+    async (prompt: string, model: string, effort: 'low' | 'medium' | 'high' | 'max') => {
+      setReviewLoading(true);
+      setReviewError(null);
+      setReviewResult(null);
+      try {
+        const result = await api.fetchCodeReview(workspaceId, { prompt, model, effort });
+        setReviewResult(result);
+        injectAIComments(result);
+      } catch (err) {
+        setReviewError(err instanceof Error ? err.message : 'Review failed');
+      } finally {
+        setReviewLoading(false);
+      }
+    },
+    [workspaceId, injectAIComments]
+  );
+
+  const handleReviewClick = useCallback(() => {
+    const prompt = getWorkflowPrompt(settings.workflowPrompts, 'codeReview');
+    void startReview(prompt, settings.codeReviewModel, settings.codeReviewEffort);
+  }, [settings, startReview]);
+
+  const handleReviewContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setReviewDialogOpen(true);
+  }, []);
+
+  const handleScrollToComment = useCallback((file: string, line?: number) => {
+    if (!diffContainerRef.current) return;
+    // Find the element that corresponds to this file/line
+    const selector = line
+      ? `[data-diff-file="${CSS.escape(file)}"][data-diff-line="${line}"]`
+      : `[data-diff-file="${CSS.escape(file)}"]`;
+    const el = diffContainerRef.current.querySelector(selector);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -326,6 +417,16 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
             </Button>
             <Button variant="ghost" size="sm" onClick={fetchDiff}>
               Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={reviewLoading}
+              onClick={handleReviewClick}
+              onContextMenu={handleReviewContextMenu}
+              title="Left-click: start AI review. Right-click: customize prompt."
+            >
+              {reviewLoading ? 'Reviewing...' : 'Review'}
             </Button>
           </div>
         </div>
@@ -385,6 +486,23 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
         </div>
       </div>
 
+      {/* Review error */}
+      {reviewError && (
+        <div className="px-3 py-2 text-sm text-destructive border-b border-border bg-destructive/10">
+          Review failed: {reviewError}
+        </div>
+      )}
+
+      {/* AI Review Summary */}
+      {reviewResult && (
+        <div className="px-3 py-2 border-b border-border">
+          <CodeReviewSummary
+            result={reviewResult}
+            onCommentClick={handleScrollToComment}
+          />
+        </div>
+      )}
+
       <div className="grid h-1/3 min-h-0 border-b border-border">
         {/* File list */}
         <ScrollArea className="border-r border-border">
@@ -424,13 +542,13 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
 
         {/* Diff content */}
         <ScrollArea className="min-h-0 h-full">
-          <div className="font-mono text-xs">
+          <div className="font-mono text-xs" ref={diffContainerRef}>
             {parsedFiles.length > 0 ? (
               parsedFiles.map((file) => {
                 const status = changedFiles.find((f) => f.path === file.path)?.status ?? 'modified';
                 const fileCommentable = comments[file.path] ?? [];
                 return (
-                  <div key={file.path} className="border-b border-border/80">
+                  <div key={file.path} className="border-b border-border/80" data-diff-file={file.path}>
                     <div className="flex items-center justify-between border-b border-border bg-zinc-900/50 px-2 py-1">
                       <span className={`font-bold ${statusColors[status] || 'text-muted-foreground'}`}>
                         {statusLabels[status] || '?'} {file.path}
@@ -463,7 +581,11 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                             const prefix =
                               line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' ';
                             return (
-                              <div key={key}>
+                              <div
+                                key={key}
+                                data-diff-file={file.path}
+                                data-diff-line={line.newLine ?? undefined}
+                              >
                                 <div
                                   className={`grid grid-cols-[3.2rem_3.2rem_1.5rem_1fr_4.5rem] ${baseLineClass}`}
                                 >
@@ -493,7 +615,19 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                                 {hasComments > 0 && (
                                   <div className="px-3 py-2 border-t border-border/70 bg-zinc-950/20 text-zinc-200 space-y-2">
                                     {comments[key]?.map((comment) => (
-                                      <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30">
+                                      <div
+                                        key={comment.id}
+                                        className={`rounded border p-2 ${
+                                          comment.isAI
+                                            ? 'border-primary/40 bg-primary/5'
+                                            : 'border-border bg-zinc-900/30'
+                                        }`}
+                                      >
+                                        {comment.isAI && (
+                                          <span className="mb-1 inline-block rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
+                                            AI
+                                          </span>
+                                        )}
                                         <MarkdownRenderer content={comment.markdown} />
                                       </div>
                                     ))}
@@ -554,7 +688,19 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                               {hasComments > 0 && (
                                 <div className="px-3 py-2 border-t border-border/70 bg-zinc-950/20 text-zinc-200 space-y-2">
                                   {comments[key]?.map((comment) => (
-                                    <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30">
+                                    <div
+                                      key={comment.id}
+                                      className={`rounded border p-2 ${
+                                        comment.isAI
+                                          ? 'border-primary/40 bg-primary/5'
+                                          : 'border-border bg-zinc-900/30'
+                                      }`}
+                                    >
+                                      {comment.isAI && (
+                                        <span className="mb-1 inline-block rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
+                                          AI
+                                        </span>
+                                      )}
                                       <MarkdownRenderer content={comment.markdown} />
                                     </div>
                                   ))}
@@ -610,6 +756,17 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
           {revisions.find((r) => r.id === draftToRef)?.shortId ?? draftToRef}
         </div>
       )}
+
+      <CodeReviewDialog
+        isOpen={reviewDialogOpen}
+        initialPrompt={getWorkflowPrompt(settings.workflowPrompts, 'codeReview')}
+        model={settings.codeReviewModel}
+        effort={settings.codeReviewEffort}
+        onClose={() => setReviewDialogOpen(false)}
+        onStartReview={(prompt, model, effort) => {
+          void startReview(prompt, model, effort);
+        }}
+      />
     </div>
   );
 }

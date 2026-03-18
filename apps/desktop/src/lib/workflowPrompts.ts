@@ -4,7 +4,8 @@ export type WorkflowPromptKey =
   | 'branch'
   | 'browser'
   | 'reviewMemory'
-  | 'mergeMemory';
+  | 'mergeMemory'
+  | 'codeReview';
 
 export interface WorkflowPrompts {
   review: string;
@@ -13,6 +14,7 @@ export interface WorkflowPrompts {
   reviewMemory: string;
   mergeMemory: string;
   browser: string;
+  codeReview: string;
 }
 
 const API_BASE = 'http://localhost:3131';
@@ -24,6 +26,7 @@ export const WORKFLOW_PROMPT_KEYS: WorkflowPromptKey[] = [
   'browser',
   'reviewMemory',
   'mergeMemory',
+  'codeReview',
 ];
 
 export const REPO_WORKFLOW_PROMPT_FILES: Record<WorkflowPromptKey, string> = {
@@ -33,7 +36,37 @@ export const REPO_WORKFLOW_PROMPT_FILES: Record<WorkflowPromptKey, string> = {
   browser: 'workflow-browser.md',
   reviewMemory: 'workflow-review-memory.md',
   mergeMemory: 'workflow-merge-memory.md',
+  codeReview: 'workflow-code-review.md',
 };
+
+export const DEFAULT_CODE_REVIEW_PROMPT = [
+  'You are a senior software engineer performing a thorough code review.',
+  '',
+  'Review the git diff below and provide structured feedback.',
+  '',
+  'Requirements:',
+  '- Identify bugs, edge cases, and unsafe changes',
+  '- Suggest concrete improvements with file/line references where possible',
+  '- Call out missing tests and propose test cases',
+  '- Assign each comment a severity: critical | warning | suggestion | info',
+  '',
+  'Output format (MUST be valid JSON, no markdown fences):',
+  '{',
+  '  "summary": "Brief overall assessment in 1-3 sentences.",',
+  '  "comments": [',
+  '    {',
+  '      "file": "path/to/file.ts",',
+  '      "line": 42,',
+  '      "severity": "warning",',
+  '      "body": "Explanation of the issue and suggested fix."',
+  '    }',
+  '  ]',
+  '}',
+  '',
+  'Use line numbers that match the new file (+ lines in the diff).',
+  'Omit "line" if the comment applies to the whole file.',
+  'Output ONLY valid JSON. Do not include explanation outside the JSON object.',
+].join('\n');
 
 export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
   review: [
@@ -83,6 +116,7 @@ export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
     '- Prefer concise markdown bullets',
     '- Avoid branch-specific trivia unless it changes future work',
   ].join('\n'),
+  codeReview: DEFAULT_CODE_REVIEW_PROMPT,
   browser: [
     'Use the browser tooling to test the app from the desktop workflow.',
     '',
