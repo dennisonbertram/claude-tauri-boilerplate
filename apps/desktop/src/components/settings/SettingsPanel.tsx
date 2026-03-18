@@ -717,6 +717,72 @@ function WorkflowsTab({ settings, updateSettings }: TabProps) {
         />
       </SettingField>
 
+      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 mt-2">
+        <div className="text-sm font-medium text-foreground">AI Code Review</div>
+        <div className="mt-1 text-xs text-muted-foreground">
+          Configure the model, effort level, and prompt for inline diff reviews.
+        </div>
+      </div>
+
+      <SettingField
+        label="Code Review Model"
+        description="Model used for AI-powered inline diff reviews"
+      >
+        <select
+          data-testid="code-review-model-select"
+          value={settings.codeReviewModel}
+          onChange={(e) => updateSettings({ codeReviewModel: e.target.value })}
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {AVAILABLE_MODELS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </SettingField>
+
+      <SettingField
+        label="Code Review Effort"
+        description="Thinking effort level for AI code reviews"
+      >
+        <select
+          data-testid="code-review-effort-select"
+          value={settings.codeReviewEffort}
+          onChange={(e) =>
+            updateSettings({
+              codeReviewEffort: e.target.value as AppSettings['codeReviewEffort'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="low">Low (fast, less thorough)</option>
+          <option value="medium">Medium</option>
+          <option value="high">High (slower, more thorough)</option>
+          <option value="max">Max (extended thinking)</option>
+        </select>
+      </SettingField>
+
+      <SettingField
+        label="Code Review Prompt"
+        description="System prompt for AI diff reviews. Must instruct Claude to output JSON."
+      >
+        <textarea
+          data-testid="workflow-code-review-prompt"
+          value={settings.workflowPrompts.codeReview}
+          onChange={(e) =>
+            updateSettings({
+              workflowPrompts: {
+                ...settings.workflowPrompts,
+                codeReview: e.target.value,
+              },
+            })
+          }
+          rows={10}
+          className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none resize-y focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      </SettingField>
+
       <div className="flex items-center justify-between gap-3">
         <div
           data-testid="workflow-prompts-status"
