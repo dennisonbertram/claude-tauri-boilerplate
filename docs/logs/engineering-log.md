@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 103 notifications, sounds, unread indicators, quit confirmation
+
+**Type**: Feature
+**Impact**: Medium
+**Description**: Implemented GitHub issue `#103`. Added browser Notification API integration via `notifications.ts` service with `requestNotificationPermission`, `sendNotification`, and `playNotificationSound` (Web Audio API). Added `useUnread` hook for transient per-workspace unread tracking. Extended `useSubagents` with an `onRootTaskComplete` callback that fires when a root-level agent task reaches a terminal state. Threaded `onTaskComplete` through `ChatPage` and `WorkspacePanel`. Wired everything in `AppLayout`: requests notification permission on load, plays sound and shows desktop notification on task completion, marks workspaces unread, clears unread when workspace is selected. Added `beforeunload` handler for quit confirmation when agents are running. Added a Notifications tab to SettingsPanel with permission UI, sound selector with test button, and unread indicator toggle.
+**Regression Test**: `apps/desktop/src/lib/__tests__/notifications.test.ts`, `apps/desktop/src/hooks/__tests__/useUnread.test.ts`
+**Related Issue**: GitHub issue `#103`
+
 ### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
 
 **Type**: Bug Fix
