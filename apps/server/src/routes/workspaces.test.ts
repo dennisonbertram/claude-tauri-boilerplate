@@ -11,7 +11,7 @@ import {
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './workspaces';
 import { createProjectRouter } from './projects';
 import { errorHandler } from '../middleware/error-handler';
-import { mkdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -40,6 +40,19 @@ beforeAll(async () => {
   await Bun.write(initFile, '# Test');
   Bun.spawnSync(['git', 'add', '.'], { cwd: repoPath });
   Bun.spawnSync(['git', 'commit', '-m', 'initial'], { cwd: repoPath });
+  const currentBranch = Bun.spawnSync(['git', 'branch', '--show-current'], {
+    cwd: repoPath,
+  }).stdout.toString().trim();
+  if (currentBranch !== 'main') {
+    Bun.spawnSync(['git', 'branch', '-m', 'main'], { cwd: repoPath });
+  }
+
+  // Create a feature branch used by source-branch workspace creation tests
+  Bun.spawnSync(['git', 'checkout', '-b', 'feature-branch'], { cwd: repoPath });
+  writeFileSync(join(repoPath, 'feature.txt'), 'feature branch');
+  Bun.spawnSync(['git', 'add', '.'], { cwd: repoPath });
+  Bun.spawnSync(['git', 'commit', '-m', 'add feature file'], { cwd: repoPath });
+  Bun.spawnSync(['git', 'checkout', 'main'], { cwd: repoPath });
 });
 
 afterAll(() => {
@@ -191,12 +204,51 @@ describe('Workspace Routes', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: 'branch-pref', branchPrefix: 'feature' }),
+          body: JSON.stringify({ name: 'branch-pref', branchPrefix: 'feature' }),
         }
       );
 
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.branch).toBe('feature/branch-pref');
+    });
+
+    test('accepts sourceBranch override for workspace base', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'source-branch',
+            sourceBranch: 'feature-branch',
+          }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.baseBranch).toBe('feature-branch');
+      expect(existsSync(body.worktreePath)).toBe(true);
+    });
+
+    test('rejects missing sourceBranch', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'bad-source-branch',
+            sourceBranch: 'missing-branch',
+          }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe('VALIDATION_ERROR');
+      expect(body.error).toContain("Source branch 'missing-branch' does not exist");
     });
 
     test('accepts linear issue metadata on create', async () => {
@@ -223,6 +275,32 @@ describe('Workspace Routes', () => {
       expect(body.linearIssueTitle).toBe('Fix dashboard crash');
       expect(body.linearIssueSummary).toBe('Investigate crash in workspace panel');
       expect(body.linearIssueUrl).toBe('https://linear.app/org/issue/ISS-404');
+    });
+
+    test('accepts github issue metadata on create', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'github-issue-workspace',
+            githubIssue: {
+              id: 'GH-1234',
+              title: 'Fix GitHub issue',
+              summary: 'Update workspace title handling',
+              url: 'https://github.com/org/repo/issues/1234',
+            },
+          }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.linearIssueId).toBe('GH-1234');
+      expect(body.linearIssueTitle).toBe('Fix GitHub issue');
+      expect(body.linearIssueSummary).toBe('Update workspace title handling');
+      expect(body.linearIssueUrl).toBe('https://github.com/org/repo/issues/1234');
     });
 
     test('returns 400 for incomplete linear issue payload', async () => {

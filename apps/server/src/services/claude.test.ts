@@ -15,6 +15,7 @@ const providerEnvKeys = [
   'ANTHROPIC_VERTEX_PROJECT_ID',
   'ANTHROPIC_BASE_URL',
   'RUNTIME_TOKEN',
+  'CUSTOM_RUNTIME_TOKEN',
 ];
 
 function captureProviderEnv(): EnvSnapshot {
@@ -41,6 +42,7 @@ function resetProviderEnv() {
   setKnownProviderEnv('ANTHROPIC_VERTEX_PROJECT_ID', undefined);
   setKnownProviderEnv('ANTHROPIC_BASE_URL', undefined);
   setKnownProviderEnv('RUNTIME_TOKEN', undefined);
+  setKnownProviderEnv('CUSTOM_RUNTIME_TOKEN', undefined);
 }
 
 function snapshotMatches(expected: EnvSnapshot) {
@@ -206,30 +208,93 @@ describe('streamClaude - subscription auth regression', () => {
     });
   });
 
-  test('applies runtime environment variables for Claude stream', async () => {
+  test('applies runtimeEnv variables for the query call', async () => {
     const gen = streamClaude({
       prompt: 'hello',
       runtimeEnv: {
-        RUNTIME_TOKEN: 'token-123',
+        RUNTIME_TOKEN: 'runtime-abc',
+        CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
       },
     });
-    for await (const _ of gen) { /* drain */ }
+    for await (const _ of gen) {
+      // drain
+    }
 
-    expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('token-123');
+    snapshotMatches({
+      ANTHROPIC_API_KEY: '',
+      CLAUDE_CODE_USE_BEDROCK: undefined,
+      CLAUDE_CODE_USE_VERTEX: undefined,
+      ANTHROPIC_BEDROCK_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_BASE_URL: undefined,
+      ANTHROPIC_VERTEX_PROJECT_ID: undefined,
+      ANTHROPIC_BASE_URL: undefined,
+      RUNTIME_TOKEN: 'runtime-abc',
+      CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
+    });
   });
 
-  test('restores custom runtime environment variables after streaming', async () => {
-    process.env.RUNTIME_TOKEN = 'base';
+  test('restores runtimeEnv variables after a successful stream', async () => {
+    process.env.RUNTIME_TOKEN = 'original-runtime-token';
+    process.env.CUSTOM_RUNTIME_TOKEN = 'original-custom-runtime';
 
     const gen = streamClaude({
       prompt: 'hello',
       runtimeEnv: {
-        RUNTIME_TOKEN: 'token-123',
+        RUNTIME_TOKEN: 'runtime-abc',
+        CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
       },
     });
-    for await (const _ of gen) { /* drain */ }
+    for await (const _ of gen) {
+      // drain
+    }
 
-    expect(process.env.RUNTIME_TOKEN).toBe('base');
+    expect(process.env.RUNTIME_TOKEN).toBe('original-runtime-token');
+    expect(process.env.CUSTOM_RUNTIME_TOKEN).toBe('original-custom-runtime');
+  });
+
+  test('restores runtimeEnv variables when stream fails', async () => {
+    process.env.RUNTIME_TOKEN = 'original-runtime-token';
+    process.env.CUSTOM_RUNTIME_TOKEN = 'original-custom-runtime';
+    mockQuery.mockImplementation(() => {
+      envAtQueryCall = captureProviderEnv();
+      return (async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'test-session',
+          model: 'claude-sonnet-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '1.0.0',
+          cwd: '/tmp',
+          permissionMode: 'default',
+          apiKeySource: 'claude_ai',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+        throw new Error('stream failed');
+      })();
+    });
+
+    const gen = streamClaude({
+      prompt: 'hello',
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'runtime-abc',
+        CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
+      },
+    });
+    try {
+      for await (const _ of gen) {
+        // drain
+      }
+    } catch {
+      // expected
+    }
+
+    expect(process.env.RUNTIME_TOKEN).toBe('original-runtime-token');
+    expect(process.env.CUSTOM_RUNTIME_TOKEN).toBe('original-custom-runtime');
   });
 
   test('overwrites ANTHROPIC_API_KEY with runtime env value when explicitly provided', async () => {

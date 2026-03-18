@@ -24,8 +24,9 @@ export interface ClaudeStreamOptions {
   runtimeEnv?: Record<string, string>;
 }
 
-type EnvKey = string;
 type EnvSnapshot = Record<string, string | undefined>;
+
+type EnvKey = string;
 
 function setProviderEnv(
   env: EnvSnapshot,
@@ -66,7 +67,6 @@ function applyProviderEnv(
       setProviderEnv(original, 'CLAUDE_CODE_USE_BEDROCK', undefined);
       setProviderEnv(original, 'ANTHROPIC_VERTEX_BASE_URL', config.vertexBaseUrl);
       setProviderEnv(original, 'ANTHROPIC_VERTEX_PROJECT_ID', config.vertexProjectId);
-      setProviderEnv(original, 'ANTHROPIC_BEDROCK_BASE_URL', undefined);
       setProviderEnv(original, 'ANTHROPIC_BASE_URL', undefined);
       break;
     case 'custom':
@@ -132,7 +132,11 @@ export async function* streamClaude(
     queryOptions.cwd = options.cwd;
   }
 
-  const originalEnv = applyProviderEnv(options.provider, options.providerConfig, options.runtimeEnv);
+  const originalEnv = applyProviderEnv(
+    options.provider,
+    options.providerConfig,
+    options.runtimeEnv ?? {}
+  );
 
   const stream = query({
     prompt: options.prompt,

@@ -67,7 +67,29 @@ describe('CreateWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 
     await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith('my-workspace', undefined);
+      expect(mockOnSubmit).toHaveBeenCalledWith('my-workspace', undefined, undefined);
+    });
+  });
+
+  it('passes base branch and source branch when values are provided', async () => {
+    renderDialog();
+    fireEvent.change(screen.getByPlaceholderText('my-feature'), {
+      target: { value: 'branch-workspace' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('main'), {
+      target: { value: 'develop' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('feature/auth'), {
+      target: { value: 'feature/login-fix' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        'branch-workspace',
+        'develop',
+        'feature/login-fix'
+      );
     });
   });
 

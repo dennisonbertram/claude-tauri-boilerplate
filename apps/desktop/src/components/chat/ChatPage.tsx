@@ -253,6 +253,7 @@ export function ChatPage({
           effort: settings.fastMode ? 'low' : settings.effort,
           permissionMode: settings.permissionMode,
           provider: settings.provider,
+          runtimeEnv: settings.runtimeEnv,
           systemPrompt: settings.systemPrompt || undefined,
           providerConfig: {
             bedrockBaseUrl: settings.bedrockBaseUrl,
@@ -261,7 +262,6 @@ export function ChatPage({
             vertexBaseUrl: settings.vertexBaseUrl,
             customBaseUrl: settings.customBaseUrl,
           },
-          runtimeEnv: settings.runtimeEnv,
           ...(workspaceId ? { workspaceId } : {}),
           ...(linearIssue ? { linearIssue } : {}),
         },
@@ -273,6 +273,7 @@ export function ChatPage({
       settings.fastMode,
       settings.permissionMode,
       settings.provider,
+      settings.runtimeEnv,
       settings.systemPrompt,
       settings.bedrockBaseUrl,
       settings.bedrockProjectId,

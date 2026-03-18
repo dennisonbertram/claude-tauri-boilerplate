@@ -141,6 +141,7 @@ export function LinearIssuePicker({
         projectId,
         workspaceName.trim(),
         baseBranch.trim() || undefined,
+        undefined,
         {
           id: selectedIssue.id,
           title: selectedIssue.title,
@@ -345,4 +346,3 @@ export function LinearIssuePicker({
     </>
   );
 }
-

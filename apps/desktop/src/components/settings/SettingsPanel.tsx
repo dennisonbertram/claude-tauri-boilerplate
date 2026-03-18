@@ -370,67 +370,67 @@ function GeneralTab({
         </SettingField>
       )}
 
+      {/* Runtime Environment Variables */}
       <SettingField
         label="Runtime Environment Variables"
-        description="Add custom environment variables passed to Claude at runtime."
+        description="Inject environment variables for the Claude process"
       >
-        <div className="space-y-3">
-          {runtimeEnvEntries.length === 0 && (
-            <p className="text-xs text-muted-foreground">No environment variables configured.</p>
+        <div className="space-y-2">
+          {runtimeEnvEntries.length > 0 ? (
+            <div className="space-y-2">
+              {runtimeEnvEntries.map(([key, value]) => (
+                <div key={key} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <input
+                    value={key}
+                    readOnly
+                    className="h-8 rounded-lg border border-input bg-background/50 px-2.5 py-1 text-sm text-muted-foreground"
+                  />
+                  <input
+                    data-testid={`runtime-env-value-${key}`}
+                    type="text"
+                    value={value}
+                    onChange={(e) =>
+                      handleRuntimeEnvValueChange(key, e.target.value)
+                    }
+                    className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+                  <button
+                    data-testid={`runtime-env-remove-${key}`}
+                    onClick={() => handleRemoveRuntimeEnv(key)}
+                    className="rounded-lg border border-input px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No runtime variables configured.</p>
           )}
 
-          {runtimeEnvEntries.map(([key, value], index) => (
-            <div
-              key={`${key}-${index}`}
-              className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center"
-            >
-              <input
-                data-testid={`runtime-env-key-${index}`}
-                type="text"
-                value={key}
-                readOnly
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-              <input
-                data-testid={`runtime-env-value-${index}`}
-                type="text"
-                value={value}
-                onChange={(e) => handleRuntimeEnvValueChange(key, e.target.value)}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-              <button
-                type="button"
-                data-testid={`runtime-env-remove-${index}`}
-                onClick={() => handleRemoveRuntimeEnv(key)}
-                className="h-8 rounded-lg border border-input px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-
-          <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 pt-1">
             <input
               data-testid="runtime-env-key-input"
               type="text"
               value={newEnvKey}
-              placeholder="Variable name"
               onChange={(e) => setNewEnvKey(e.target.value)}
+              placeholder="VARIABLE_NAME"
               className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
             <input
               data-testid="runtime-env-value-input"
               type="text"
               value={newEnvValue}
-              placeholder="Value"
               onChange={(e) => setNewEnvValue(e.target.value)}
+              placeholder="value"
               className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
             <button
-              type="button"
-              data-testid="runtime-env-add"
+              data-testid="runtime-env-add-button"
               onClick={handleAddRuntimeEnv}
-              className="h-8 rounded-lg bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+              type="button"
+              className="rounded-lg bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               Add
             </button>
