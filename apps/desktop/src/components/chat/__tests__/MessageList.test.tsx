@@ -4,10 +4,23 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { UIMessage } from '@ai-sdk/react';
 import { MessageList } from '../MessageList';
 
+const mockUseSettings = vi.hoisted(() => vi.fn());
+
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: mockUseSettings,
+}));
+
 Element.prototype.scrollIntoView = vi.fn();
 
 beforeEach(() => {
   vi.useFakeTimers();
+  mockUseSettings.mockReturnValue({
+    settings: {
+      chatFont: 'proportional',
+      chatDensity: 'comfortable',
+      chatWidth: 'standard',
+    },
+  });
   vi.stubGlobal(
     'requestAnimationFrame',
     ((callback: FrameRequestCallback) =>
@@ -169,5 +182,43 @@ describe('MessageList scroll affordance', () => {
     expect(
       screen.queryByTestId('message-list-scroll-to-bottom')
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('MessageList appearance settings', () => {
+  it('applies the selected chat density, width, and font controls', () => {
+    mockUseSettings.mockReturnValue({
+      settings: {
+        chatFont: 'mono',
+        chatDensity: 'compact',
+        chatWidth: 'wide',
+      },
+    });
+
+    const messages = [
+      {
+        id: 'message-1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'hello world' }],
+      } as UIMessage,
+      {
+        id: 'message-2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'reply' }],
+      } as UIMessage,
+    ];
+
+    render(
+      <MessageList messages={messages} isLoading={false} />
+    );
+
+    const content = screen.getByTestId('message-list-content');
+    expect(content).toHaveClass('max-w-5xl');
+    expect(content).toHaveClass('space-y-2');
+    expect(content).toHaveClass('p-3');
+
+    const bubbles = screen.getAllByTestId('message-bubble');
+    expect(bubbles[0]).toHaveClass('font-mono');
+    expect(bubbles[1]).toHaveClass('font-mono');
   });
 });

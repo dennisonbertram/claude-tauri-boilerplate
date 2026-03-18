@@ -685,6 +685,29 @@ function AppearanceTab({ settings, updateSettings }: TabProps) {
         </select>
       </SettingField>
 
+      {/* Accent Color */}
+      <SettingField
+        label="Accent Color"
+        description="Custom accent for buttons, rings, and highlights"
+      >
+        <select
+          data-testid="accent-color-select"
+          value={settings.accentColor}
+          onChange={(e) =>
+            updateSettings({
+              accentColor: e.target.value as AppSettings['accentColor'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="slate">Slate</option>
+          <option value="blue">Blue</option>
+          <option value="emerald">Emerald</option>
+          <option value="amber">Amber</option>
+          <option value="rose">Rose</option>
+        </select>
+      </SettingField>
+
       {/* Font Size */}
       <SettingField
         label="Font Size"
@@ -702,6 +725,67 @@ function AppearanceTab({ settings, updateSettings }: TabProps) {
           }
           className="w-full accent-primary"
         />
+      </SettingField>
+
+      {/* Chat Font */}
+      <SettingField
+        label="Chat Font"
+        description="Choose proportional or monospace chat text"
+      >
+        <select
+          data-testid="chat-font-select"
+          value={settings.chatFont}
+          onChange={(e) =>
+            updateSettings({
+              chatFont: e.target.value as AppSettings['chatFont'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="proportional">Proportional</option>
+          <option value="mono">Monospace</option>
+        </select>
+      </SettingField>
+
+      {/* Chat Density */}
+      <SettingField
+        label="Chat Density"
+        description="Adjust spacing between messages and controls"
+      >
+        <select
+          data-testid="chat-density-select"
+          value={settings.chatDensity}
+          onChange={(e) =>
+            updateSettings({
+              chatDensity: e.target.value as AppSettings['chatDensity'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+      </SettingField>
+
+      {/* Chat Width */}
+      <SettingField
+        label="Chat Width"
+        description="Set how wide chat messages and the composer may grow"
+      >
+        <select
+          data-testid="chat-width-select"
+          value={settings.chatWidth}
+          onChange={(e) =>
+            updateSettings({
+              chatWidth: e.target.value as AppSettings['chatWidth'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="standard">Standard</option>
+          <option value="wide">Wide</option>
+          <option value="full">Full Width</option>
+        </select>
       </SettingField>
 
       {/* Show Thinking */}

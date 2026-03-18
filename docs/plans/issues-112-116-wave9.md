@@ -40,8 +40,9 @@ Complete a five-issue wave for the next open feature batch and land the finished
 
 ### `#113`
 - [ ] Pull live issue details and inspect appearance/settings architecture.
-- [ ] Add failing tests for appearance settings.
-- [ ] Implement font/theme/accent/density/chat-width controls.
+- [ ] Add failing tests for appearance settings persistence and DOM application.
+- [ ] Implement a bounded MVP with persisted theme, accent color, monospace chat, chat density, and chat width controls.
+- [ ] Apply the selected appearance settings in the chat surface and document theme/root variables.
 - [ ] Add/update handoff doc with manual verification notes.
 
 ### `#114`

@@ -27,7 +27,11 @@ export interface AppSettings {
 
   // Appearance
   theme: 'dark' | 'light' | 'system';
+  accentColor: 'slate' | 'blue' | 'emerald' | 'amber' | 'rose';
   fontSize: number;
+  chatFont: 'proportional' | 'mono';
+  chatDensity: 'comfortable' | 'compact';
+  chatWidth: 'standard' | 'wide' | 'full';
   showThinking: boolean;
   showToolCalls: boolean;
 
@@ -66,7 +70,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
   // Appearance
   theme: 'dark',
+  accentColor: 'slate',
   fontSize: 14,
+  chatFont: 'proportional',
+  chatDensity: 'comfortable',
+  chatWidth: 'standard',
   showThinking: true,
   showToolCalls: true,
 

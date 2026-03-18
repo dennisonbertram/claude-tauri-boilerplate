@@ -1,8 +1,15 @@
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatInput } from '../ChatInput';
 import type { Command } from '@/hooks/useCommands';
+
+const mockUseSettings = vi.hoisted(() => vi.fn());
+
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: mockUseSettings,
+}));
 
 const mockCommands: Command[] = [
   {
@@ -43,6 +50,13 @@ function renderInput(
 describe('ChatInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseSettings.mockReturnValue({
+      settings: {
+        chatFont: 'proportional',
+        chatDensity: 'comfortable',
+        chatWidth: 'standard',
+      },
+    });
   });
 
   // -- Basic rendering --
@@ -338,5 +352,24 @@ describe('ChatInput', () => {
       await user.keyboard('{ArrowRight}');
       expect(onAcceptSuggestion).toHaveBeenCalled();
     });
+  });
+});
+
+describe('ChatInput appearance settings', () => {
+  it('applies chat width and density controls to the composer shell', () => {
+    mockUseSettings.mockReturnValue({
+      settings: {
+        chatFont: 'mono',
+        chatDensity: 'compact',
+        chatWidth: 'wide',
+      },
+    });
+
+    renderInput();
+    const shell = screen.getByTestId('chat-input-shell');
+    const form = screen.getByTestId('chat-input-form');
+
+    expect(shell).toHaveClass('max-w-5xl');
+    expect(form).toHaveClass('p-3');
   });
 });
