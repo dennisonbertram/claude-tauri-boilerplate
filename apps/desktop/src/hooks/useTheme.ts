@@ -3,6 +3,7 @@ import { useSettings } from './useSettings';
 
 type EffectiveTheme = 'dark' | 'light';
 type AccentColor = 'slate' | 'blue' | 'emerald' | 'amber' | 'rose';
+type MonoFontFamily = 'system' | 'menlo' | 'courier';
 
 type AccentTokens = {
   primary: string;
@@ -121,6 +122,13 @@ const ACCENT_PALETTES: Record<
 };
 
 const MEDIA_QUERY = '(prefers-color-scheme: dark)';
+const CHAT_MONO_FONT_STACKS: Record<MonoFontFamily, string> = {
+  system:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  menlo:
+    'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  courier: '"Courier New", Courier, monospace',
+};
 
 /**
  * Resolves the effective theme based on the user's setting and system preference.
@@ -162,6 +170,13 @@ function applyAccentToDocument(
   root.style.setProperty('--sidebar-primary-foreground', tokens.sidebarPrimaryForeground);
 }
 
+function applyMonoFontToDocument(monoFontFamily: MonoFontFamily): void {
+  document.documentElement.style.setProperty(
+    '--chat-mono-font',
+    CHAT_MONO_FONT_STACKS[monoFontFamily]
+  );
+}
+
 /**
  * Hook that bridges the theme setting from useSettings to the DOM.
  *
@@ -175,6 +190,7 @@ export function useTheme() {
   const { settings } = useSettings();
   const theme = settings.theme;
   const accentColor = settings.accentColor;
+  const monoFontFamily = settings.monoFontFamily;
 
   // Track system preference
   const [systemPrefersDark, setSystemPrefersDark] = useState(() => {
@@ -201,7 +217,8 @@ export function useTheme() {
   useEffect(() => {
     applyThemeToDocument(effectiveTheme);
     applyAccentToDocument(effectiveTheme, accentColor);
-  }, [accentColor, effectiveTheme]);
+    applyMonoFontToDocument(monoFontFamily);
+  }, [accentColor, effectiveTheme, monoFontFamily]);
 
   // Add transition class on mount for smooth theme switches
   useEffect(() => {

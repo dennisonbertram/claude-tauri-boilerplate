@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type UIEvent,
+} from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -34,6 +42,8 @@ interface TocItem {
   label: string;
   summary: string;
 }
+
+const MONO_FONT_STYLE: CSSProperties = { fontFamily: 'var(--chat-mono-font)' };
 
 function getMessageText(message: UIMessage): string {
   return (
@@ -376,6 +386,7 @@ export function MessageList({
   const chatWidthClass = getChatWidthClass(settings.chatWidth);
   const densityClasses = getChatDensityClasses(settings.chatDensity);
   const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
+  const chatFontStyle = settings.chatFont === 'mono' ? MONO_FONT_STYLE : undefined;
 
   return (
     <div
@@ -557,6 +568,7 @@ export function MessageList({
                   isMatch={isMatch}
                   densityClass={densityClasses.bubble}
                   chatFontClass={chatFontClass}
+                  chatFontStyle={chatFontStyle}
                 />
               </div>
             );
@@ -643,12 +655,14 @@ function MessageBubble({
   isMatch,
   densityClass,
   chatFontClass,
+  chatFontStyle,
 }: {
   message: UIMessage;
   highlightQuery: string;
   isMatch: boolean;
   densityClass: string;
   chatFontClass: string;
+  chatFontStyle?: CSSProperties;
 }) {
   const isUser = message.role === 'user';
   const text = getMessageText(message);
@@ -663,6 +677,7 @@ function MessageBubble({
           chatFontClass,
           isMatch ? 'ring-2 ring-primary-foreground/50' : ''
         )}
+        style={chatFontStyle}
       >
         <div className="text-sm whitespace-pre-wrap break-words">
           {highlightQuery
@@ -682,9 +697,10 @@ function MessageBubble({
         chatFontClass,
         isMatch ? 'ring-2 ring-foreground/40' : ''
       )}
+      style={chatFontStyle}
     >
       <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
-      <div className={chatFontClass}>
+      <div className={chatFontClass} style={chatFontStyle}>
         <MarkdownRenderer content={text} />
       </div>
     </div>

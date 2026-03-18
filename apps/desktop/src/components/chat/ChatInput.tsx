@@ -454,6 +454,10 @@ export function ChatInput({
   const chatWidthClass = getChatWidthClass(settings.chatWidth);
   const densityClass = getChatDensityClass(settings.chatDensity);
   const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
+  const chatFontStyle =
+    settings.chatFont === 'mono'
+      ? { fontFamily: 'var(--chat-mono-font)' }
+      : undefined;
 
   return (
     <form
@@ -563,7 +567,11 @@ export function ChatInput({
             disabled={isLoading}
             rows={1}
             className={`w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 ${chatFontClass}`}
-            style={{ maxHeight: '120px', minHeight: '40px' }}
+            style={{
+              maxHeight: '120px',
+              minHeight: '40px',
+              ...chatFontStyle,
+            }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = 'auto';

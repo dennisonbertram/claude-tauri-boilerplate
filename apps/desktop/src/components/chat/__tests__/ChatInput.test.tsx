@@ -360,6 +360,7 @@ describe('ChatInput appearance settings', () => {
     mockUseSettings.mockReturnValue({
       settings: {
         chatFont: 'mono',
+        monoFontFamily: 'courier',
         chatDensity: 'compact',
         chatWidth: 'wide',
       },
@@ -368,8 +369,10 @@ describe('ChatInput appearance settings', () => {
     renderInput();
     const shell = screen.getByTestId('chat-input-shell');
     const form = screen.getByTestId('chat-input-form');
+    const textarea = screen.getByRole('textbox');
 
     expect(shell).toHaveClass('max-w-5xl');
     expect(form).toHaveClass('p-3');
+    expect(textarea).toHaveStyle({ fontFamily: 'var(--chat-mono-font)' });
   });
 });

@@ -190,6 +190,7 @@ describe('MessageList appearance settings', () => {
     mockUseSettings.mockReturnValue({
       settings: {
         chatFont: 'mono',
+        monoFontFamily: 'courier',
         chatDensity: 'compact',
         chatWidth: 'wide',
       },
@@ -220,5 +221,7 @@ describe('MessageList appearance settings', () => {
     const bubbles = screen.getAllByTestId('message-bubble');
     expect(bubbles[0]).toHaveClass('font-mono');
     expect(bubbles[1]).toHaveClass('font-mono');
+    expect(bubbles[0]).toHaveStyle({ fontFamily: 'var(--chat-mono-font)' });
+    expect(bubbles[1]).toHaveStyle({ fontFamily: 'var(--chat-mono-font)' });
   });
 });

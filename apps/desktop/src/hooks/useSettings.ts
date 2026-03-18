@@ -30,7 +30,9 @@ export interface AppSettings {
   accentColor: 'slate' | 'blue' | 'emerald' | 'amber' | 'rose';
   fontSize: number;
   chatFont: 'proportional' | 'mono';
+  monoFontFamily: 'system' | 'menlo' | 'courier';
   chatDensity: 'comfortable' | 'compact';
+  tabDensity: 'comfortable' | 'compact';
   chatWidth: 'standard' | 'wide' | 'full';
   showThinking: boolean;
   showToolCalls: boolean;
@@ -73,7 +75,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   accentColor: 'slate',
   fontSize: 14,
   chatFont: 'proportional',
+  monoFontFamily: 'system',
   chatDensity: 'comfortable',
+  tabDensity: 'comfortable',
   chatWidth: 'standard',
   showThinking: true,
   showToolCalls: true,

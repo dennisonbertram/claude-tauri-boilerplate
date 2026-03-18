@@ -107,7 +107,9 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Accent Color')).toBeTruthy();
     expect(screen.getByText('Font Size')).toBeTruthy();
     expect(screen.getByText('Chat Font')).toBeTruthy();
+    expect(screen.getByText('Monospace Family')).toBeTruthy();
     expect(screen.getByText('Chat Density')).toBeTruthy();
+    expect(screen.getByText('Tab Density')).toBeTruthy();
     expect(screen.getByText('Chat Width')).toBeTruthy();
     expect(screen.getByText('Show Thinking')).toBeTruthy();
     expect(screen.getByText('Show Tool Calls')).toBeTruthy();
@@ -226,13 +228,17 @@ describe('SettingsPanel', () => {
 
     await user.selectOptions(screen.getByTestId('accent-color-select'), 'emerald');
     await user.selectOptions(screen.getByTestId('chat-font-select'), 'mono');
+    await user.selectOptions(screen.getByTestId('mono-font-family-select'), 'courier');
     await user.selectOptions(screen.getByTestId('chat-density-select'), 'compact');
+    await user.selectOptions(screen.getByTestId('tab-density-select'), 'compact');
     await user.selectOptions(screen.getByTestId('chat-width-select'), 'wide');
 
     const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.accentColor).toBe('emerald');
     expect(stored.chatFont).toBe('mono');
+    expect(stored.monoFontFamily).toBe('courier');
     expect(stored.chatDensity).toBe('compact');
+    expect(stored.tabDensity).toBe('compact');
     expect(stored.chatWidth).toBe('wide');
   });
 
