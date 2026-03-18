@@ -13,6 +13,7 @@ import {
 } from '../db';
 import { basename } from 'node:path';
 import { WorktreeService, worktreeService } from './worktree';
+import { loadWorkspaceConfig } from './workspace-config';
 
 /**
  * Validate that a path exists on disk and is a git repository.
@@ -94,7 +95,7 @@ export async function addProject(db: Database, repoPath: string) {
 }
 
 /**
- * List all projects enriched with health status and workspace count.
+ * List all projects enriched with health status, workspace count, and repo config.
  */
 export async function listProjectsWithHealth(db: Database) {
   const projects = listProjects(db);
@@ -108,10 +109,13 @@ export async function listProjectsWithHealth(db: Database) {
         .prepare(`SELECT COUNT(*) as count FROM workspaces WHERE project_id = ?`)
         .get(project.id) as { count: number };
 
+      const repoConfig = await loadWorkspaceConfig(project.repoPathCanonical).catch(() => null);
+
       return {
         ...project,
         health,
         workspaceCount: row.count,
+        repoConfig: repoConfig ?? undefined,
       };
     })
   );
