@@ -36,7 +36,8 @@ export function useWorkspaces(projectId: string | null) {
       baseBranch?: string,
       sourceBranch?: string,
       linearIssue?: Parameters<typeof api.createWorkspace>[4],
-      branchPrefix?: Parameters<typeof api.createWorkspace>[5]
+      branchPrefix?: Parameters<typeof api.createWorkspace>[5],
+      githubIssue?: Parameters<typeof api.createWorkspace>[6]
     ) => {
       if (!projectId) return;
       const ws = await api.createWorkspace(
@@ -45,7 +46,8 @@ export function useWorkspaces(projectId: string | null) {
         baseBranch,
         sourceBranch,
         linearIssue,
-        branchPrefix
+        branchPrefix,
+        githubIssue
       );
       setWorkspaces((prev) => [...prev, ws]);
       return ws;

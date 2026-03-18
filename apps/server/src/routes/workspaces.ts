@@ -31,10 +31,10 @@ const createWorkspaceSchema = z.object({
     .optional(),
   githubIssue: z
     .object({
-      id: z.string().min(1, 'issue id is required'),
+      number: z.number().int().positive('issue number must be a positive integer'),
       title: z.string().min(1, 'issue title is required'),
-      summary: z.string().optional(),
       url: z.string().url().optional(),
+      repo: z.string().optional(),
     })
     .optional(),
 });
@@ -127,8 +127,9 @@ export function createWorkspaceRouter(db: Database) {
       parsed.data.baseBranch,
       parsed.data.sourceBranch,
       parsed.data.branchPrefix,
-      parsed.data.linearIssue ?? parsed.data.githubIssue,
-      additionalDirectories
+      parsed.data.linearIssue,
+      additionalDirectories,
+      parsed.data.githubIssue
     );
     return c.json(workspace, 201);
   });
