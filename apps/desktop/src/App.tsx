@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Toaster } from 'sonner';
 import { isTauri } from './lib/platform';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -23,6 +23,12 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Agentation } from 'agentation';
 import type { Project, Workspace } from '@claude-tauri/shared';
 import { useSettings } from './hooks/useSettings';
+import { useUnread } from './hooks/useUnread';
+import {
+  requestNotificationPermission,
+  sendNotification,
+  playNotificationSound,
+} from './lib/notifications';
 
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
@@ -92,6 +98,63 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [createWorkspaceProject, setCreateWorkspaceProject] = useState<Project | null>(null);
   const { settings } = useSettings();
+
+  // Unread workspace tracking
+  const { markAsUnread, markAsRead, isUnread } = useUnread();
+
+  // Track active subagent count for quit confirmation
+  const subagentActiveCountRef = useRef(0);
+
+  // Request notification permission on app load
+  useEffect(() => {
+    void requestNotificationPermission();
+  }, []);
+
+  // Handle task completion: send notification and mark workspace unread
+  const handleTaskComplete = useCallback(
+    (params: {
+      status: 'completed' | 'failed' | 'stopped';
+      summary: string;
+      workspaceId?: string;
+      branch?: string;
+      workspaceName?: string;
+    }) => {
+      if (!settings.notificationsEnabled) return;
+
+      const label = params.workspaceName
+        ? `${params.workspaceName} (${params.branch ?? ''})`
+        : 'Agent task';
+
+      const statusLabel =
+        params.status === 'completed'
+          ? 'completed'
+          : params.status === 'failed'
+            ? 'failed'
+            : 'stopped';
+
+      sendNotification(`Task ${statusLabel}`, `${label}: ${params.summary}`);
+      playNotificationSound(settings.notificationSound);
+
+      // Mark workspace unread if we have an ID and it is not focused
+      if (settings.notificationsWorkspaceUnread && params.workspaceId) {
+        markAsUnread(params.workspaceId);
+      }
+    },
+    [settings.notificationsEnabled, settings.notificationSound, settings.notificationsWorkspaceUnread, markAsUnread]
+  );
+
+  // Quit confirmation when agents are running
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (subagentActiveCountRef.current > 0) {
+        e.preventDefault();
+        // returnValue is required for Chrome/legacy browsers
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
   const {
     workspaces,
     addWorkspace,
@@ -126,13 +189,15 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     if (data.isStreaming) {
       setActiveSessionHasMessages(true);
     }
+    subagentActiveCountRef.current = data.subagentActiveCount;
     setStatusData(data);
   }, []);
 
   const handleSelectWorkspace = useCallback((ws: Workspace) => {
     setSelectedProjectId(ws.projectId);
     setSelectedWorkspace(ws);
-  }, []);
+    markAsRead(ws.id);
+  }, [markAsRead]);
 
   const handleAddProject = useCallback(async (repoPath: string) => {
     const project = await addProject(repoPath);
@@ -247,6 +312,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             onDeleteProject={handleDeleteProject}
             activeView={activeView}
             onSwitchView={handleSwitchView}
+            isWorkspaceUnread={isUnread}
           />
         )}
         {activeView === 'teams' && (
@@ -289,6 +355,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onOpenSettings={handleOpenSettings}
               onOpenSessions={handleOpenSessions}
               onOpenPullRequests={handleOpenPullRequests}
+              onTaskComplete={(params) => handleTaskComplete(params)}
             />
           ) : (
             <WelcomeScreen onNewChat={handleNewChat} />
@@ -300,6 +367,10 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onStatusChange={handleStatusChange}
               onWorkspaceUpdate={handleWorkspaceUpdate}
               onOpenSettings={handleOpenSettings}
+              onTaskComplete={(params) => handleTaskComplete({
+                ...params,
+                workspaceId: selectedWorkspace.id,
+              })}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">

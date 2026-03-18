@@ -21,6 +21,8 @@ interface ProjectSidebarProps {
   onDeleteProject?: (id: string) => void;
   activeView?: ViewType;
   onSwitchView?: (view: ViewType) => void;
+  /** Returns true if the given workspace ID has unread activity */
+  isWorkspaceUnread?: (workspaceId: string) => boolean;
 }
 
 export function ProjectSidebar({
@@ -34,6 +36,7 @@ export function ProjectSidebar({
   onDeleteProject,
   activeView,
   onSwitchView,
+  isWorkspaceUnread,
 }: ProjectSidebarProps) {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     () => new Set(projects.map(p => p.id))
@@ -286,9 +289,16 @@ export function ProjectSidebar({
                           <button
                             type="button"
                             onClick={() => onSelectWorkspace(ws)}
-                            className="min-w-0 flex-1 text-left"
+                            className="min-w-0 flex-1 text-left flex items-center gap-1.5"
                           >
                             <span className="text-sm truncate">{ws.name}</span>
+                            {isWorkspaceUnread?.(ws.id) && (
+                              <span
+                                data-testid={`unread-dot-${ws.id}`}
+                                className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
+                                aria-label="Unread activity"
+                              />
+                            )}
                           </button>
                           <WorkspaceStatusBadge status={ws.status} />
                         </div>

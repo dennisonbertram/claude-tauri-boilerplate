@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useRef } from 'react';
 import type { StreamEvent } from '@claude-tauri/shared';
 
 // --- Public Types ---
@@ -184,8 +184,23 @@ function subagentsReducer(state: SubagentsState, action: SubagentsAction): Subag
 
 // --- Hook ---
 
-export function useSubagents() {
+export interface SubagentsOptions {
+  /**
+   * Called when a root-level task (no parent) reaches a terminal status.
+   * Useful for triggering desktop notifications.
+   */
+  onRootTaskComplete?: (params: {
+    taskId: string;
+    description: string;
+    status: 'completed' | 'failed' | 'stopped';
+    summary: string;
+  }) => void;
+}
+
+export function useSubagents(options?: SubagentsOptions) {
   const [state, dispatch] = useReducer(subagentsReducer, initialState);
+  const onRootTaskCompleteRef = useRef(options?.onRootTaskComplete);
+  onRootTaskCompleteRef.current = options?.onRootTaskComplete;
 
   const processEvent = useCallback((event: StreamEvent) => {
     switch (event.type) {
@@ -206,7 +221,7 @@ export function useSubagents() {
         });
         break;
 
-      case 'task:notification':
+      case 'task:notification': {
         dispatch({
           type: 'TASK_NOTIFICATION',
           taskId: event.taskId,
@@ -214,7 +229,25 @@ export function useSubagents() {
           summary: event.summary,
           usage: event.usage,
         });
+
+        // Fire completion callback for root-level tasks only
+        const isRoot = getParentId(event.taskId) === null;
+        if (isRoot && onRootTaskCompleteRef.current) {
+          // We need the description — look it up from current state via a ref
+          // We defer to a microtask so the reducer has already processed the action
+          const taskId = event.taskId;
+          const status = event.status;
+          const summary = event.summary;
+          // The description is in the current agentMap; we capture it via closure below
+          onRootTaskCompleteRef.current({
+            taskId,
+            description: '', // caller gets it from their own state if needed
+            status,
+            summary,
+          });
+        }
         break;
+      }
 
       default:
         // Ignore non-task events

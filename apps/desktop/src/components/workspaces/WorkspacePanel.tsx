@@ -22,6 +22,12 @@ interface WorkspacePanelProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   onWorkspaceUpdate?: () => void;
   onOpenSettings?: (tab?: string) => void;
+  onTaskComplete?: (params: {
+    status: 'completed' | 'failed' | 'stopped';
+    summary: string;
+    branch: string;
+    workspaceName: string;
+  }) => void;
 }
 
 function getDirectoryLabel(path: string): string {
@@ -30,7 +36,7 @@ function getDirectoryLabel(path: string): string {
   return parts[parts.length - 1] || normalized;
 }
 
-export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings }: WorkspacePanelProps) {
+export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings, onTaskComplete }: WorkspacePanelProps) {
   const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
@@ -341,6 +347,11 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
               workspaceId={workspace.id}
               additionalDirectories={additionalDirectories}
               onOpenWorkspacePaths={handleOpenWorkspacePaths}
+              onTaskComplete={onTaskComplete ? (params) => onTaskComplete({
+                ...params,
+                branch: workspace.branch,
+                workspaceName: workspace.name,
+              }) : undefined}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
