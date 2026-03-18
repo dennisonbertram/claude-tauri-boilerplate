@@ -17,6 +17,24 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 85 AI code review feature implementation
+
+**Type**: New Feature
+**Impact**: High
+**Description**: Implemented AI-powered code review for workspace diffs (issue #85). Added `POST /api/workspaces/:id/code-review` backend endpoint that fetches the workspace diff, calls Claude via `streamClaude`, and parses the JSON response into a structured `CodeReviewResult`. Frontend additions: `CodeReviewDialog` for editing the prompt before review, `CodeReviewSummary` for displaying the review result with severity badges and a comment index, and inline AI comment rendering in `WorkspaceDiffView` with an AI badge. Settings: added `codeReviewModel`, `codeReviewEffort`, and `codeReview` workflow prompt to `AppSettings`. Left-click Review button starts with defaults; right-click opens the dialog to customize prompt/model/effort.
+**Regression Test**: `apps/server/src/routes/code-review.test.ts` (5 tests)
+**Related Issue**: #85
+
+---
+
+### 2026-03-18: Issue 90 workspace notes/scratchpad with .context directory
+
+**Type**: Feature
+**Impact**: Medium
+**Description**: Implemented GitHub issue #90. Created GET/PUT `/api/workspaces/:id/notes` endpoints that read/write `.context/notes.md` in the workspace worktree. On workspace creation, the orchestrator now creates `.context/notes.md` and adds `.context` to the repo's `.git/info/exclude` so the directory is invisible to git (no changes in status/diffs/changed-files). Added a Notes tab to WorkspacePanel with a textarea editor, markdown preview toggle (uses existing MarkdownRenderer), debounced auto-save, and a brief "Saved" confirmation. Notes are injected as `<notes>...</notes>` context block in the chat system prompt when a workspaceId is provided.
+**Regression Test**: `apps/server/src/routes/workspace-notes.test.ts` (9 tests)
+**Related Issue**: GitHub issue `#90`
+
 ### 2026-03-18: Issue #102 LaTeX and Mermaid rendering in MarkdownRenderer
 
 **Type**: Feature
@@ -48,6 +66,14 @@ Each entry follows this format:
 **Description**: Re-ran targeted baseline suites called out as historical red tests in prior handoff notes before beginning this feature sweep. On this branch, the targeted suites (`auto-namer`, `ImageFeatures`, and `SettingsPanel`) all passed, so no unrelated baseline-fix scope was required for Phase 1.
 **Regression Test**: `docs/testing/persistent-dashboard-artifacts-v1-baseline-2026-03-18.md`
 **Related Issue**: N/A
+
+### 2026-03-18: Issue 92 assistant response metadata completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed the remaining assistant-response transparency work for GitHub issue `#92`. Added per-message response metadata in the chat transcript, including duration, aggregate token totals, hoverable model/cache details, changed-file chips sourced from the workspace diff hook, and a one-click copy-as-markdown action. Existing retryable error handling in `ErrorBanner` and context-usage hover/pulse behavior in `ContextIndicator` already covered the rest of the issue acceptance criteria and were preserved unchanged. Manual browser verification was attempted, but the sandbox blocked local Vite listeners with `listen EPERM`, so only automated coverage could be completed in this environment.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageErrorBanner.test.tsx`, `apps/desktop/src/components/chat/__tests__/ContextIndicator.test.tsx`
+**Related Issue**: GitHub issue `#92`
 
 ### 2026-03-18: Issue 100 Bash display controls completed
 

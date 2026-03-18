@@ -17,6 +17,18 @@ vi.mock('@/hooks/useWorkspaceDiff', () => ({
   useWorkspaceDiff: vi.fn(),
 }));
 
+vi.mock('@/hooks/useSettings', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/useSettings')>('@/hooks/useSettings');
+  return {
+    ...actual,
+    useSettings: () => ({
+      settings: actual.DEFAULT_SETTINGS,
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    }),
+  };
+});
+
 const mockFetchWorkspaceRevisions = vi.mocked(workspaceApi.fetchWorkspaceRevisions);
 const mockUseWorkspaceDiff = vi.mocked(workspaceDiffHook.useWorkspaceDiff);
 
