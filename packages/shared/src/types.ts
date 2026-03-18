@@ -1,3 +1,16 @@
+import type {
+  PermissionMode,
+  ProviderConfig,
+  ProviderType,
+} from './runtime-capabilities';
+export type {
+  PermissionMode,
+  ProviderConfig,
+  ProviderConfigFieldKey,
+  ProviderSettingsField,
+  ProviderType,
+} from './runtime-capabilities';
+
 export interface AuthStatus {
   authenticated: boolean;
   email?: string;
@@ -35,19 +48,13 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
-  provider?: 'anthropic' | 'bedrock' | 'vertex' | 'custom';
-  providerConfig?: {
-    bedrockBaseUrl?: string;
-    bedrockProjectId?: string;
-    vertexProjectId?: string;
-    vertexBaseUrl?: string;
-    customBaseUrl?: string;
-  };
+  provider?: ProviderType;
+  providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   thinkingBudgetTokens?: number;
-  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
+  permissionMode?: PermissionMode;
   workspaceId?: string;
   systemPrompt?: string;
   linearIssue?: {

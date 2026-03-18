@@ -11,6 +11,11 @@ import { MemoryPanel } from '@/components/settings/MemoryPanel';
 import { McpPanel } from '@/components/settings/McpPanel';
 import { HooksPanel } from '@/components/settings/HooksPanel';
 import { LinearPanel } from '@/components/settings/LinearPanel';
+import {
+  PROVIDER_CAPABILITY_LIST,
+  getProviderSettingsFields,
+  type ProviderConfigFieldKey,
+} from '@claude-tauri/shared';
 
 const MIN_THINKING_BUDGET_TOKENS = 1024;
 const MAX_THINKING_BUDGET_TOKENS = 32000;
@@ -212,6 +217,13 @@ function GeneralTab({
   const [newEnvValue, setNewEnvValue] = useState('');
 
   const runtimeEnvEntries = Object.entries(settings.runtimeEnv);
+  const providerFields = getProviderSettingsFields(settings.provider);
+
+  const updateProviderField = (key: ProviderConfigFieldKey, value: string) => {
+    updateSettings({
+      [key]: value,
+    } as Pick<AppSettings, ProviderConfigFieldKey>);
+  };
 
   const handleAddRuntimeEnv = () => {
     const key = newEnvKey.trim();
@@ -280,98 +292,30 @@ function GeneralTab({
           }
           className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="anthropic">Anthropic</option>
-          <option value="bedrock">AWS Bedrock</option>
-          <option value="vertex">Google Vertex</option>
-          <option value="custom">Custom Base URL</option>
+          {PROVIDER_CAPABILITY_LIST.map((provider) => (
+            <option key={provider.id} value={provider.id}>
+              {provider.label}
+            </option>
+          ))}
         </select>
       </SettingField>
 
-      {settings.provider === 'bedrock' && (
-        <>
-          <SettingField
-            label="Bedrock Base URL"
-            description="Optional Bedrock endpoint override"
-          >
-            <input
-              data-testid="provider-bedrock-base-url"
-              type="text"
-              value={settings.bedrockBaseUrl}
-              onChange={(e) =>
-                updateSettings({ bedrockBaseUrl: e.target.value })
-              }
-              placeholder="https://bedrock.example.com"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </SettingField>
-          <SettingField
-            label="Bedrock Project ID"
-            description="Optional Bedrock project identifier"
-          >
-            <input
-              data-testid="provider-bedrock-project-id"
-              type="text"
-              value={settings.bedrockProjectId}
-              onChange={(e) =>
-                updateSettings({ bedrockProjectId: e.target.value })
-              }
-              placeholder="project-id"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </SettingField>
-        </>
-      )}
-
-      {settings.provider === 'vertex' && (
-        <>
-          <SettingField
-            label="Vertex Project ID"
-            description="Google Cloud project ID"
-          >
-            <input
-              data-testid="provider-vertex-project-id"
-              type="text"
-              value={settings.vertexProjectId}
-              onChange={(e) =>
-                updateSettings({ vertexProjectId: e.target.value })
-              }
-              placeholder="project-id"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </SettingField>
-          <SettingField
-            label="Vertex Base URL"
-            description="Optional Vertex endpoint override"
-          >
-            <input
-              data-testid="provider-vertex-base-url"
-              type="text"
-              value={settings.vertexBaseUrl}
-              onChange={(e) =>
-                updateSettings({ vertexBaseUrl: e.target.value })
-              }
-              placeholder="https://us-central1-aiplatform.googleapis.com"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </SettingField>
-        </>
-      )}
-
-      {settings.provider === 'custom' && (
+      {providerFields.map((field) => (
         <SettingField
-          label="Custom Base URL"
-          description="Override Claude API base URL"
+          key={field.key}
+          label={field.label}
+          description={field.description}
         >
           <input
-            data-testid="provider-custom-base-url"
+            data-testid={`provider-${field.key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}`}
             type="text"
-            value={settings.customBaseUrl}
-            onChange={(e) => updateSettings({ customBaseUrl: e.target.value })}
-            placeholder="https://gateway.example.com/v1"
+            value={settings[field.key]}
+            onChange={(e) => updateProviderField(field.key, e.target.value)}
+            placeholder={field.placeholder}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </SettingField>
-      )}
+      ))}
 
       {/* Runtime Environment Variables */}
       <SettingField

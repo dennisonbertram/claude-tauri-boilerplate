@@ -16,6 +16,7 @@ import { createProjectRouter } from './routes/projects';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './routes/workspaces';
 import { createLinearRouter } from './routes/linear';
 import { createSystemRouter } from './routes/system';
+import { createRuntimeCapabilitiesRouter } from './routes/runtime-capabilities';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -53,6 +54,7 @@ app.route('/api/projects', createProjectRouter(db));
 app.route('/api/projects', createWorkspaceRouter(db));
 app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 app.route('/api/system', createSystemRouter());
+app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
 
 // Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
 // We mount a sub-router that receives sessionId as a param.
