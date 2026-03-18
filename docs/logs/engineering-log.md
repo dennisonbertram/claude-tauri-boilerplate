@@ -17,6 +17,15 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 114 multi-repo workspace attachments
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Added persistent workspace `additionalDirectories`, routed `/add-dir <path>` from chat into the workspace Paths flow, forwarded multi-repo attachments into Claude query options, and updated the Paths UI to show repo-derived labels plus repo/path filtering. Verified the backend with successful and invalid `PATCH /api/workspaces/:id` curl checks plus a streamed `/api/chat` request, and verified the frontend in the browser by reloading the app and confirming the attached `shared` directory persisted in the Paths tab.
+
+**Regression Test**: `apps/server/src/db/db-workspaces.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/server/src/routes/chat-workspace.test.ts`, `apps/server/src/services/claude.test.ts`, `apps/desktop/src/components/workspaces/__tests__/WorkspacePanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageSlashCommands.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/hooks/useCommands.test.ts`
+**Related Issue**: GitHub issue `#114`
+
 ### 2026-03-17: Issues 141-151 Wave 3 Integration
 
 **Type**: Bug Fix

@@ -20,3 +20,4 @@ Implementation notes and code change documentation.
 | [issue-79-wave-1-subagent.md](issue-79-wave-1-subagent.md) | Wave 1 for Issue #79: file picker, @-mentions, drag-and-drop file attachments, and inline preview rendering. |
 | [issue-80-wave-1-subagent.md](issue-80-wave-1-subagent.md) | Issue #80 wave 1 subagent implementation notes for diff viewer enhancements. |
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |
+| [issue-114-wave13.md](issue-114-wave13.md) | Issue #114 implementation notes for multi-repo workspace attachments, `/add-dir` routing, and manual validation. |
