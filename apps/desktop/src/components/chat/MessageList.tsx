@@ -472,8 +472,6 @@ export function MessageList({
                       Search hit
                     </span>
                   ) : null}
-                >
-                  {truncateText(summaryText, 50)}
                 </button>
               );
             })}

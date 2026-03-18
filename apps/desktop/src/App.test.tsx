@@ -44,6 +44,11 @@ vi.mock('@/components/ErrorBoundary', () => ({
 
 vi.mock('@/contexts/SettingsContext', () => ({
   SettingsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useSettingsContext: vi.fn(() => ({
+    settings: {
+      workspaceBranchPrefix: 'codex/',
+    },
+  })),
 }));
 
 vi.mock('@/components/sessions/SessionSidebar', () => ({
