@@ -235,6 +235,7 @@ describe('useSettings', () => {
         provider: 'bedrock',
         model: 'claude-opus-4-6',
         bedrockBaseUrl: 'https://bedrock.example.com',
+        runtimeEnv: { RUNTIME_TOKEN: 'abc', FEATURE_FLAG: 'true' },
         theme: 'light',
         maxTokens: 8192,
       };
@@ -248,6 +249,10 @@ describe('useSettings', () => {
       expect(result.current.settings.model).toBe('claude-opus-4-6');
       expect(result.current.settings.provider).toBe('bedrock');
       expect(result.current.settings.bedrockBaseUrl).toBe('https://bedrock.example.com');
+      expect(result.current.settings.runtimeEnv).toEqual({
+        RUNTIME_TOKEN: 'abc',
+        FEATURE_FLAG: 'true',
+      });
       expect(result.current.settings.theme).toBe('light');
       expect(result.current.settings.maxTokens).toBe(8192);
     });

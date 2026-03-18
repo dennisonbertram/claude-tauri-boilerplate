@@ -1187,14 +1187,14 @@ describe('Chat Route - POST /chat', () => {
     expect(envAtQueryCall?.ANTHROPIC_BASE_URL).toBe('https://custom.local/v1');
   });
 
-  test('passes runtime env map to the SDK environment', async () => {
+  test('passes runtimeEnv values to the SDK environment and does not leak default API key', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
         envAtQueryCall = captureProviderEnv();
         yield {
           type: 'system',
           subtype: 'init',
-          session_id: 'runtime-env-session',
+          session_id: 'provider-runtime-env',
           model: 'claude-opus-4-6',
           tools: [],
           mcp_servers: [],
@@ -1210,12 +1210,12 @@ describe('Chat Route - POST /chat', () => {
       })()
     );
 
-    const session = createSession(db, 'provider-runtime-session', 'Test');
+    const session = createSession(db, 'provider-runtime-env-session', 'Test');
     const body: ChatRequest = {
-      messages: [{ role: 'user', content: 'route provider test' }],
+      messages: [{ role: 'user', content: 'runtime env route test' }],
       sessionId: session.id,
       runtimeEnv: {
-        RUNTIME_TOKEN: 'abc123',
+        RUNTIME_TOKEN: 'runtime-abc',
       },
     };
 
@@ -1226,7 +1226,8 @@ describe('Chat Route - POST /chat', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('abc123');
+    expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('runtime-abc');
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
   });
 
   test('restores custom runtime env after each request', async () => {
