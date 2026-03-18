@@ -156,6 +156,11 @@ describe('useSettings', () => {
       expect(result.current.settings.effort).toBe('high');
     });
 
+    it('has correct default thinking budget tokens', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect((result.current.settings as any).thinkingBudgetTokens).toBe(16000);
+    });
+
     it('has correct default fastMode', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect((result.current.settings as any).fastMode).toBe(false);
@@ -218,6 +223,17 @@ describe('useSettings', () => {
         localStorageMock.setItem.mock.calls.at(-1)![1]
       );
       expect(savedValue.model).toBe('claude-opus-4-6');
+    });
+
+    it('persists thinking budget token changes to localStorage', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      act(() => {
+        result.current.updateSettings({ thinkingBudgetTokens: 24000 } as Partial<AppSettings>);
+      });
+
+      const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+      expect(stored.thinkingBudgetTokens).toBe(24000);
     });
 
     it('adds and updates runtime env variables', () => {

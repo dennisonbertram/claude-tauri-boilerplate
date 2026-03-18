@@ -7,6 +7,8 @@ Element.prototype.scrollIntoView = vi.fn();
 const mockSendMessage = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
+const mockUpdateSettings = vi.fn();
+const mockMessageList = vi.fn(() => <div data-testid="message-list" />);
 
 let useChatReturn: Record<string, unknown> = {};
 
@@ -82,6 +84,7 @@ vi.mock('@/hooks/useSettings', () => ({
     settings: {
       model: 'claude-sonnet-4-6',
       effort: 'medium',
+      showThinking: true,
       provider: 'anthropic',
       bedrockBaseUrl: '',
       bedrockProjectId: '',
@@ -89,6 +92,7 @@ vi.mock('@/hooks/useSettings', () => ({
       vertexBaseUrl: '',
       customBaseUrl: '',
     },
+    updateSettings: mockUpdateSettings,
   }),
 }));
 
@@ -102,7 +106,7 @@ vi.mock('@/hooks/useCostTracking', () => ({
 }));
 
 vi.mock('../MessageList', () => ({
-  MessageList: () => <div data-testid="message-list" />,
+  MessageList: (props: unknown) => mockMessageList(props),
 }));
 
 vi.mock('../ChatInput', () => ({
@@ -182,5 +186,22 @@ describe('ChatPage keyboard shortcuts', () => {
 
     expect(screen.getByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeInTheDocument();
     expect(screen.getByText('Open Settings')).toBeInTheDocument();
+  });
+
+  it('toggles the thinking visibility setting when Option+T is pressed', () => {
+    render(<ChatPage sessionId={null} onOpenSettings={vi.fn()} />);
+
+    fireEvent.keyDown(window, { key: 't', altKey: true });
+
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ showThinking: false });
+  });
+
+  it('expands thinking blocks when Cmd+Shift+. is pressed', () => {
+    render(<ChatPage sessionId={null} onOpenSettings={vi.fn()} />);
+
+    fireEvent.keyDown(window, { key: '.', metaKey: true, shiftKey: true });
+
+    const lastMessageListProps = mockMessageList.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(lastMessageListProps.thinkingExpanded).toBe(true);
   });
 });

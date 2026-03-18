@@ -4,10 +4,11 @@ import { ChevronRight, ChevronDown, Brain } from 'lucide-react';
 interface ThinkingBlockProps {
   text: string;
   durationMs?: number;
+  defaultExpanded?: boolean;
 }
 
-export function ThinkingBlock({ text, durationMs }: ThinkingBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function ThinkingBlock({ text, durationMs, defaultExpanded = false }: ThinkingBlockProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   // Don't render anything if there's no thinking text
   if (!text) return null;

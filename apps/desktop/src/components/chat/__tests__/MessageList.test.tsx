@@ -225,3 +225,32 @@ describe('MessageList appearance settings', () => {
     expect(bubbles[1]).toHaveStyle({ fontFamily: 'var(--chat-mono-font)' });
   });
 });
+
+describe('MessageList thinking visibility', () => {
+  const streamingAssistantMessage: UIMessage = {
+    id: 'assistant-1',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'Visible assistant text' }],
+  };
+
+  it('hides thinking blocks when showThinking is disabled', () => {
+    mockUseSettings.mockReturnValue({
+      settings: {
+        chatFont: 'proportional',
+        chatDensity: 'comfortable',
+        chatWidth: 'standard',
+        showThinking: false,
+      },
+    });
+
+    render(
+      <MessageList
+        messages={[streamingAssistantMessage]}
+        isLoading
+        thinkingBlocks={new Map([['block-0', 'private reasoning']])}
+      />
+    );
+
+    expect(screen.queryByText('Thinking...')).not.toBeInTheDocument();
+  });
+});

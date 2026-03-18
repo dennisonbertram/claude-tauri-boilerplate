@@ -7,6 +7,7 @@ import { ChatInput } from '../ChatInput';
 import { isImageFile } from '../file-utils';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import type { Command } from '@/hooks/useCommands';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 
 // --- Helper to build a ToolCallState ---
 function makeToolCall(overrides: Partial<ToolCallState> & { name: string }): ToolCallState {
@@ -199,7 +200,11 @@ describe('ChatInput - Image paste support', () => {
       onImagesChange: vi.fn(),
       ...overrides,
     };
-    return render(<ChatInput {...defaults} />);
+    return render(
+      <SettingsProvider>
+        <ChatInput {...defaults} />
+      </SettingsProvider>
+    );
   }
 
   function StatefulChatInput(
@@ -208,25 +213,27 @@ describe('ChatInput - Image paste support', () => {
     const [value, setValue] = useState(overrides.input ?? '');
 
     return (
-      <ChatInput
-        input={value}
-        onInputChange={(next) => {
-          overrides.onInputChange?.(next);
-          setValue(next);
-        }}
-        onSubmit={overrides.onSubmit ?? vi.fn()}
-        isLoading={overrides.isLoading ?? false}
-        showPalette={overrides.showPalette ?? false}
-        paletteFilter={overrides.paletteFilter ?? ''}
-        paletteCommands={overrides.paletteCommands ?? mockCommands}
-        onCommandSelect={overrides.onCommandSelect ?? vi.fn()}
-        onPaletteClose={overrides.onPaletteClose ?? vi.fn()}
-        images={overrides.images ?? []}
-        onImagesChange={overrides.onImagesChange ?? vi.fn()}
-        availableFiles={overrides.availableFiles ?? []}
-        ghostText={overrides.ghostText}
-        onAcceptSuggestion={overrides.onAcceptSuggestion}
-      />
+      <SettingsProvider>
+        <ChatInput
+          input={value}
+          onInputChange={(next) => {
+            overrides.onInputChange?.(next);
+            setValue(next);
+          }}
+          onSubmit={overrides.onSubmit ?? vi.fn()}
+          isLoading={overrides.isLoading ?? false}
+          showPalette={overrides.showPalette ?? false}
+          paletteFilter={overrides.paletteFilter ?? ''}
+          paletteCommands={overrides.paletteCommands ?? mockCommands}
+          onCommandSelect={overrides.onCommandSelect ?? vi.fn()}
+          onPaletteClose={overrides.onPaletteClose ?? vi.fn()}
+          images={overrides.images ?? []}
+          onImagesChange={overrides.onImagesChange ?? vi.fn()}
+          availableFiles={overrides.availableFiles ?? []}
+          ghostText={overrides.ghostText}
+          onAcceptSuggestion={overrides.onAcceptSuggestion}
+        />
+      </SettingsProvider>
     );
   }
 

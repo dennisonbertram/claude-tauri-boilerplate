@@ -12,6 +12,9 @@ import { McpPanel } from '@/components/settings/McpPanel';
 import { HooksPanel } from '@/components/settings/HooksPanel';
 import { LinearPanel } from '@/components/settings/LinearPanel';
 
+const MIN_THINKING_BUDGET_TOKENS = 1024;
+const MAX_THINKING_BUDGET_TOKENS = 32000;
+
 type TabId =
   | 'general'
   | 'git'
@@ -553,6 +556,31 @@ function ModelTab({ settings, updateSettings }: TabProps) {
           <option value="high">High</option>
           <option value="max">Max</option>
         </select>
+      </SettingField>
+
+      <SettingField
+        label="Thinking Budget"
+        description={`Maximum thinking tokens: ${settings.thinkingBudgetTokens.toLocaleString()}`}
+      >
+        <input
+          data-testid="thinking-budget-input"
+          type="number"
+          min={MIN_THINKING_BUDGET_TOKENS}
+          max={MAX_THINKING_BUDGET_TOKENS}
+          step="1024"
+          value={settings.thinkingBudgetTokens}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10);
+            if (Number.isNaN(parsed)) return;
+            updateSettings({
+              thinkingBudgetTokens: Math.min(
+                MAX_THINKING_BUDGET_TOKENS,
+                Math.max(MIN_THINKING_BUDGET_TOKENS, parsed)
+              ),
+            });
+          }}
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
       </SettingField>
     </>
   );

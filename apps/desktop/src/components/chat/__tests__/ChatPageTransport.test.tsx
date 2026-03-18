@@ -181,6 +181,7 @@ function getDefaultSettings(overrides = {}) {
     customBaseUrl: '',
     model: 'claude-sonnet-4-6',
     effort: 'high',
+    thinkingBudgetTokens: 16000,
     permissionMode: 'default',
     systemPrompt: '',
     workflowPrompts: {
@@ -659,6 +660,25 @@ describe('ChatPage transport provider payload', () => {
     expect(call).toMatchObject({
       body: expect.objectContaining({
         effort: 'low',
+      }),
+    });
+  });
+
+  it('includes thinking budget tokens in the chat transport payload', () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        thinkingBudgetTokens: 24000,
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} />);
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        thinkingBudgetTokens: 24000,
       }),
     });
   });

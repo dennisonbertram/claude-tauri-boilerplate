@@ -73,15 +73,19 @@ const mockQuery = mock(() => {
 
 mock.module('@anthropic-ai/claude-agent-sdk', () => ({ query: mockQuery }));
 
+let queryArgsAtCall: unknown;
+
 const { streamClaude } = await import('./claude');
 
 describe('streamClaude - subscription auth regression', () => {
   beforeEach(() => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
+    queryArgsAtCall = undefined;
     resetProviderEnv();
     // Re-set the capture logic after reset
-    mockQuery.mockImplementation(() => {
+    mockQuery.mockImplementation((args) => {
+      queryArgsAtCall = args;
       envAtQueryCall = captureProviderEnv();
       return (async function* () {
         yield {
@@ -230,6 +234,25 @@ describe('streamClaude - subscription auth regression', () => {
       ANTHROPIC_BASE_URL: undefined,
       RUNTIME_TOKEN: 'runtime-abc',
       CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
+    });
+  });
+
+  test('passes thinking budget tokens through to the Claude SDK', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      thinkingBudgetTokens: 24000,
+    } as any);
+    for await (const _ of gen) {
+      // drain
+    }
+
+    expect(queryArgsAtCall).toMatchObject({
+      options: {
+        thinkingConfig: {
+          type: 'enabled',
+          budgetTokens: 24000,
+        },
+      },
     });
   });
 

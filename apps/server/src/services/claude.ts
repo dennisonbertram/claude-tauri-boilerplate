@@ -17,6 +17,7 @@ export interface ClaudeStreamOptions {
   sessionId?: string;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
+  thinkingBudgetTokens?: number;
   permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   cwd?: string;
   additionalDirectories?: string[];
@@ -123,6 +124,13 @@ export async function* streamClaude(
 
   if (options.effort) {
     queryOptions.effort = options.effort;
+  }
+
+  if (options.thinkingBudgetTokens) {
+    queryOptions.thinkingConfig = {
+      type: 'enabled',
+      budgetTokens: options.thinkingBudgetTokens,
+    };
   }
 
   if (options.permissionMode) {

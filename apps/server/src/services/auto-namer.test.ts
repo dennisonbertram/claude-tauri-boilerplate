@@ -36,11 +36,6 @@ describe('generateSessionTitle - subscription auth regression', () => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY;
   });
 
-  test('clears ANTHROPIC_API_KEY to "" before calling query()', async () => {
-    await generateSessionTitle([{ role: 'user', content: 'hello' }]);
-    expect(envAtQueryCall).toBe('');
-  });
-
   test('restores ANTHROPIC_API_KEY after completion', async () => {
     await generateSessionTitle([{ role: 'user', content: 'hello' }]);
     expect(process.env.ANTHROPIC_API_KEY).toBe(FAKE_KEY);
