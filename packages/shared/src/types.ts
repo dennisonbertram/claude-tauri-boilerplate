@@ -579,6 +579,19 @@ export interface RewindPreview {
   messagesRemoved: number;
 }
 
+// --- Workspace Repo Config Types ---
+
+export interface WorkspaceRepoConfig {
+  lifecycle?: {
+    setup?: string;
+    teardown?: string;
+  };
+  env?: Record<string, string>;
+  preserve?: {
+    files?: string[];
+  };
+}
+
 // --- Project & Workspace Types ---
 
 export type WorkspaceStatus =
@@ -604,6 +617,7 @@ export interface Project {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  repoConfig?: WorkspaceRepoConfig;
 }
 
 export interface Workspace {
