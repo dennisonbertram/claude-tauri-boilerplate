@@ -41,6 +41,13 @@ Each entry follows this format:
 **Regression Test**: `docs/testing/persistent-dashboard-artifacts-v1-baseline-2026-03-18.md`
 **Related Issue**: N/A
 
+### 2026-03-18: Issue 92 assistant response metadata completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed the remaining assistant-response transparency work for GitHub issue `#92`. Added per-message response metadata in the chat transcript, including duration, aggregate token totals, hoverable model/cache details, changed-file chips sourced from the workspace diff hook, and a one-click copy-as-markdown action. Existing retryable error handling in `ErrorBanner` and context-usage hover/pulse behavior in `ContextIndicator` already covered the rest of the issue acceptance criteria and were preserved unchanged. Manual browser verification was attempted, but the sandbox blocked local Vite listeners with `listen EPERM`, so only automated coverage could be completed in this environment.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageErrorBanner.test.tsx`, `apps/desktop/src/components/chat/__tests__/ContextIndicator.test.tsx`
+**Related Issue**: GitHub issue `#92`
 
 ### 2026-03-18: Issue 100 Bash display controls completed
 
