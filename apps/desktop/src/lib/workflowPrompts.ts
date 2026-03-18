@@ -147,33 +147,46 @@ async function getErrorMessage(
   return fallback;
 }
 
-export async function loadRepoWorkflowPrompts(): Promise<Partial<WorkflowPrompts>> {
+async function listMemoryFiles(): Promise<Set<string>> {
   const response = await fetch(`${API_BASE}/api/memory`);
-
   if (!response.ok) {
     throw new Error(
-      await getErrorMessage(
-        response,
-        'Failed to load repository workflow prompts'
-      )
+      await getErrorMessage(response, 'Failed to list repository memory files')
     );
   }
 
   const body = (await response.json()) as {
-    files?: Array<{ name?: string; content?: string }>;
+    files?: Array<{ name?: string }>;
   };
-  const files = Array.isArray(body.files) ? body.files : [];
+
+  return new Set(
+    (body.files ?? [])
+      .map((file) => (typeof file.name === 'string' ? file.name : ''))
+      .filter((name) => name.length > 0)
+  );
+}
+
+export async function loadRepoWorkflowPrompts(): Promise<Partial<WorkflowPrompts>> {
   const loaded: Partial<WorkflowPrompts> = {};
+  const existingFiles = await listMemoryFiles();
 
   for (const key of WORKFLOW_PROMPT_KEYS) {
     const filename = REPO_WORKFLOW_PROMPT_FILES[key];
-    const matchingFile = files.find((file) => file?.name === filename);
-    if (
-      matchingFile &&
-      typeof matchingFile.content === 'string' &&
-      matchingFile.content.trim().length > 0
-    ) {
-      loaded[key] = matchingFile.content;
+    if (!existingFiles.has(filename)) continue;
+
+    const response = await fetch(`${API_BASE}/api/memory/${filename}`);
+    if (!response.ok) {
+      throw new Error(
+        await getErrorMessage(
+          response,
+          `Failed to load repository workflow prompt: ${key}`
+        )
+      );
+    }
+
+    const body = (await response.json()) as { content?: string };
+    if (typeof body.content === 'string' && body.content.trim().length > 0) {
+      loaded[key] = body.content;
     }
   }
 
