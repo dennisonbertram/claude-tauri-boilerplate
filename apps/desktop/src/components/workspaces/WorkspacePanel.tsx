@@ -7,6 +7,7 @@ import { WorkspaceMergeDialog } from './WorkspaceMergeDialog';
 import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { copyTextToClipboard } from '@/lib/clipboard';
+import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
 import * as api from '@/lib/workspace-api';
 
 type Tab = 'chat' | 'diff';
@@ -15,9 +16,10 @@ interface WorkspacePanelProps {
   workspace: Workspace;
   onStatusChange?: (data: ChatPageStatusData) => void;
   onWorkspaceUpdate?: () => void;
+  onOpenSettings?: (tab?: string) => void;
 }
 
-export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }: WorkspacePanelProps) {
+export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -41,7 +43,11 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
   const handleMerge = useCallback(async () => {
     await api.mergeWorkspace(workspace.id);
     onWorkspaceUpdate?.();
-  }, [workspace.id, onWorkspaceUpdate]);
+    promptMemoryUpdate({
+      trigger: 'workspace-merge',
+      onOpenMemory: () => onOpenSettings?.('memory'),
+    });
+  }, [workspace.id, onWorkspaceUpdate, onOpenSettings]);
 
   const handleDiscard = useCallback(async () => {
     await api.discardWorkspace(workspace.id);

@@ -290,6 +290,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               workspace={selectedWorkspace}
               onStatusChange={handleStatusChange}
               onWorkspaceUpdate={handleWorkspaceUpdate}
+              onOpenSettings={handleOpenSettings}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">

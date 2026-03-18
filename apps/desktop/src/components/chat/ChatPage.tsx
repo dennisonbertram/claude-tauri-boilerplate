@@ -38,6 +38,7 @@ import type { AttachedImage } from './ChatInput';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import * as linearApi from '@/lib/linear-api';
+import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
 import './gen-ui/defaultRenderers';
 import {
   getWorkflowPrompt,
@@ -754,11 +755,17 @@ export function ChatPage({
             feedback,
           } satisfies PlanDecisionRequest),
         });
+        if (feedback?.trim()) {
+          promptMemoryUpdate({
+            trigger: 'review-feedback',
+            onOpenMemory: () => onOpenSettings?.('memory'),
+          });
+        }
       } catch (err) {
         console.error('[plan] Failed to send rejection:', err);
       }
     },
-    [sessionId, plan, rejectPlan]
+    [sessionId, plan, rejectPlan, onOpenSettings]
   );
 
   const handlePlanApproveWithFeedback = useCallback(
@@ -778,11 +785,17 @@ export function ChatPage({
             feedback,
           } satisfies PlanDecisionRequest),
         });
+        if (feedback?.trim()) {
+          promptMemoryUpdate({
+            trigger: 'review-feedback',
+            onOpenMemory: () => onOpenSettings?.('memory'),
+          });
+        }
       } catch (err) {
         console.error('[plan] Failed to send approval feedback:', err);
       }
     },
-    [sessionId, plan, approvePlan]
+    [sessionId, plan, approvePlan, onOpenSettings]
   );
 
   const handlePlanInput = useCallback(
