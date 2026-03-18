@@ -1,8 +1,9 @@
 import { Database } from 'bun:sqlite';
 import { existsSync, rmSync } from 'node:fs';
-import type { Project, ProjectHealth } from '@claude-tauri/shared';
+import type { Project, ProjectHealth, ProjectLocation } from '@claude-tauri/shared';
 import { canonicalizePath } from '../utils/paths';
 import { gitCommand } from './git-command';
+import { createProjectAdapter } from './project-adapter';
 import {
   createProject,
   deleteProject as dbDeleteProject,
@@ -56,9 +57,28 @@ export async function validateRepoPath(path: string): Promise<string> {
 }
 
 /**
- * Check the health of a project's repository on disk.
+ * Check the health of a project's repository.
+ * Uses the ProjectAdapter when a location is present; falls back to direct
+ * local filesystem checks for backward compatibility with projects that have
+ * no location field (all existing data).
  */
 export async function getProjectHealth(project: Project): Promise<ProjectHealth> {
+  // Use adapter if a location is explicitly set on the project.
+  if (project.location) {
+    const adapter = createProjectAdapter(project.location);
+    const access = await adapter.checkAccess();
+    if (!access.accessible) return 'missing_repo';
+    // For local projects the canonical path is still used for git checks;
+    // for SSH the git check is deferred until the SSH adapter is implemented.
+    if (project.location.type === 'local') {
+      const isRepo = await gitCommand.isGitRepo(project.repoPathCanonical);
+      return isRepo ? 'ok' : 'invalid_repo';
+    }
+    // SSH: access check passed, git validation is not yet implemented.
+    return 'ok';
+  }
+
+  // Backward-compatible path: no location field → assume local.
   if (!existsSync(project.repoPathCanonical)) {
     return 'missing_repo';
   }
