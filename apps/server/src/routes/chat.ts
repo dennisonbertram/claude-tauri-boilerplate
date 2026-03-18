@@ -453,6 +453,23 @@ export function createChatRouter(db: Database) {
       }
     }
 
+    // Read workspace notes if available
+    let workspaceNotesContent: string | undefined;
+    if (workspaceCwd) {
+      try {
+        const notesPath = join(workspaceCwd, '.context', 'notes.md');
+        const notesFile = Bun.file(notesPath);
+        if (await notesFile.exists()) {
+          const notesText = await notesFile.text();
+          if (notesText.trim()) {
+            workspaceNotesContent = notesText.trim();
+          }
+        }
+      } catch {
+        // Best-effort — don't fail chat if notes can't be read
+      }
+    }
+
     const startupPrompt = await buildStartupPrompt(workspaceCwd, systemPrompt);
 
     const resolvedLinearIssue = requestLinearIssue ?? workspaceLinearIssue;
@@ -467,7 +484,11 @@ export function createChatRouter(db: Database) {
           .filter(Boolean)
           .join('\n')
       : undefined;
-    const promptWithContext = [startupPrompt, linearIssuePrompt, workspaceGithubIssuePrompt, prompt]
+    const notesContext = workspaceNotesContent
+      ? `<notes>\n${workspaceNotesContent}\n</notes>`
+      : undefined;
+
+    const promptWithContext = [startupPrompt, notesContext, linearIssuePrompt, workspaceGithubIssuePrompt, prompt]
       .filter((value): value is string => Boolean(value))
       .join('\n\n');
 

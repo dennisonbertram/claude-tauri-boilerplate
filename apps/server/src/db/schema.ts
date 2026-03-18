@@ -88,6 +88,18 @@ export const SCHEMA = `
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS diff_comments (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    line_number INTEGER,
+    content TEXT NOT NULL,
+    author TEXT NOT NULL DEFAULT 'user' CHECK(author IN ('user', 'ai')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_diff_comments_workspace_id ON diff_comments(workspace_id);
 `;
 
 /**
