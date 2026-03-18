@@ -92,37 +92,75 @@ describe('workflowPrompts', () => {
   });
 
   describe('repository prompt persistence', () => {
+    it('loads repository workflow prompt overrides from the memory index without probing missing files', async () => {
+      const fetchMock = vi.fn(async (input: string | URL) => {
+        const url = String(input);
+
+        if (url === 'http://localhost:3131/api/memory') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              files: [
+                {
+                  name: 'workflow-review.md',
+                  content: 'Repo-specific review prompt',
+                },
+                {
+                  name: 'workflow-review-memory.md',
+                  content: 'Repo-specific review memory prompt',
+                },
+                {
+                  name: 'notes.md',
+                  content: 'Irrelevant note',
+                },
+              ],
+            }),
+          } as Response;
+        }
+
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+
+      globalThis.fetch = fetchMock as typeof fetch;
+
+      const prompts = await loadRepoWorkflowPrompts();
+
+      expect(prompts).toEqual({
+        review: 'Repo-specific review prompt',
+        reviewMemory: 'Repo-specific review memory prompt',
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:3131/api/memory');
+    });
+
     it('loads repository workflow prompt overrides from memory files', async () => {
       globalThis.fetch = vi.fn(async (input: string | URL) => {
         const url = String(input);
-        if (url.endsWith('/workflow-review.md')) {
+        if (url === 'http://localhost:3131/api/memory') {
           return {
             ok: true,
             status: 200,
-            json: async () => ({ content: 'Repo-specific review prompt' }),
-          } as Response;
-        }
-        if (url.endsWith('/workflow-review-memory.md')) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ content: 'Repo-specific review memory prompt' }),
+            json: async () => ({
+              files: [
+                {
+                  name: 'workflow-review.md',
+                  content: 'Repo-specific review prompt',
+                },
+                {
+                  name: 'workflow-review-memory.md',
+                  content: 'Repo-specific review memory prompt',
+                },
+                {
+                  name: 'workflow-browser.md',
+                  content: 'Repo-specific browser prompt',
+                },
+              ],
+            }),
           } as Response;
         }
 
-        if (url.endsWith('/workflow-browser.md')) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ content: 'Repo-specific browser prompt' }),
-          } as Response;
-        }
-
-        return {
-          ok: false,
-          status: 404,
-          json: async () => ({ error: 'Not found' }),
-        } as Response;
+        throw new Error(`Unexpected fetch: ${url}`);
       }) as typeof fetch;
 
       const prompts = await loadRepoWorkflowPrompts();

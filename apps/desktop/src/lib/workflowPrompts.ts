@@ -148,26 +148,32 @@ async function getErrorMessage(
 }
 
 export async function loadRepoWorkflowPrompts(): Promise<Partial<WorkflowPrompts>> {
+  const response = await fetch(`${API_BASE}/api/memory`);
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        'Failed to load repository workflow prompts'
+      )
+    );
+  }
+
+  const body = (await response.json()) as {
+    files?: Array<{ name?: string; content?: string }>;
+  };
+  const files = Array.isArray(body.files) ? body.files : [];
   const loaded: Partial<WorkflowPrompts> = {};
 
   for (const key of WORKFLOW_PROMPT_KEYS) {
-    const response = await fetch(
-      `${API_BASE}/api/memory/${REPO_WORKFLOW_PROMPT_FILES[key]}`
-    );
-
-    if (response.status === 404) continue;
-    if (!response.ok) {
-      throw new Error(
-        await getErrorMessage(
-          response,
-          `Failed to load repository workflow prompt: ${key}`
-        )
-      );
-    }
-
-    const body = (await response.json()) as { content?: string };
-    if (typeof body.content === 'string' && body.content.trim().length > 0) {
-      loaded[key] = body.content;
+    const filename = REPO_WORKFLOW_PROMPT_FILES[key];
+    const matchingFile = files.find((file) => file?.name === filename);
+    if (
+      matchingFile &&
+      typeof matchingFile.content === 'string' &&
+      matchingFile.content.trim().length > 0
+    ) {
+      loaded[key] = matchingFile.content;
     }
   }
 

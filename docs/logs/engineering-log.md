@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed GitHub issue `#158` by removing the normal-startup workflow prompt `404` path from the desktop settings bootstrap. Instead of probing each `workflow-*.md` file individually through `/api/memory/:filename`, the desktop now loads `/api/memory` once and derives any repository workflow prompt overrides from the returned file list. That preserves the clean empty-state fallback when no overrides exist while eliminating the browser-visible missing-file request noise. Targeted regression coverage passed for both the workflow prompt loader and settings hydration path. Live browser verification was attempted but blocked in this sandbox because local dev-server port binding returned `EPERM`.
+**Regression Test**: `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/desktop/src/hooks/useSettings.test.ts`
+**Related Issue**: GitHub issue `#158`
+
 ### 2026-03-18: Issue 100 Bash display controls completed
 
 **Type**: Bug Fix

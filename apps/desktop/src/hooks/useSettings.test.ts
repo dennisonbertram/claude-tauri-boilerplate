@@ -363,19 +363,22 @@ describe('useSettings', () => {
     it('hydrates repository workflow prompt overrides on mount', async () => {
       globalThis.fetch = vi.fn(async (input: string | URL) => {
         const url = String(input);
-        if (url.endsWith('/workflow-review.md')) {
+        if (url === 'http://localhost:3131/api/memory') {
           return {
             ok: true,
             status: 200,
-            json: async () => ({ content: 'Repo review override' }),
+            json: async () => ({
+              files: [
+                {
+                  name: 'workflow-review.md',
+                  content: 'Repo review override',
+                },
+              ],
+            }),
           } as Response;
         }
 
-        return {
-          ok: false,
-          status: 404,
-          json: async () => ({ error: 'Not found' }),
-        } as Response;
+        throw new Error(`Unexpected fetch: ${url}`);
       }) as typeof fetch;
 
       const { result } = renderHook(() => useSettings(), { wrapper });
