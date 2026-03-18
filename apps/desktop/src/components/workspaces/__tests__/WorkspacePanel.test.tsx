@@ -36,8 +36,25 @@ vi.mock('@/hooks/useSettings', () => ({
         reviewMemory: 'Review memory prompt',
         mergeMemory: 'Merge memory prompt',
       },
+      preferredIde: 'vscode',
+      customIdeUrl: '',
     },
   }),
+}));
+
+vi.mock('@/lib/ide-opener', () => ({
+  openInIde: vi.fn(),
+  IDE_CONFIGS: {
+    vscode: { label: 'VS Code' },
+    cursor: { label: 'Cursor' },
+    zed: { label: 'Zed' },
+    intellij: { label: 'IntelliJ IDEA' },
+    xcode: { label: 'Xcode' },
+    fork: { label: 'Fork' },
+    sourcetree: { label: 'Sourcetree' },
+    androidstudio: { label: 'Android Studio' },
+    custom: { label: 'Custom' },
+  },
 }));
 
 vi.mock('@/components/chat/ChatPage', () => ({
