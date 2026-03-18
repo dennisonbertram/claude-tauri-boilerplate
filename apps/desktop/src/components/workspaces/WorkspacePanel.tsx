@@ -85,8 +85,8 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
     [workspace.id, onWorkspaceUpdate]
   );
 
-  const handleAddDirectory = useCallback(async () => {
-    const trimmed = newDirectory.trim();
+  const addDirectoryValue = useCallback(async (value: string) => {
+    const trimmed = value.trim();
     if (!trimmed) return;
 
     const nextDirectories = [...new Set([...additionalDirectories, trimmed])];
@@ -96,7 +96,22 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
     } catch (err) {
       setDirectoryError(err instanceof Error ? err.message : 'Failed to add directory');
     }
-  }, [additionalDirectories, newDirectory, persistDirectories]);
+  }, [additionalDirectories, persistDirectories]);
+
+  const handleAddDirectory = useCallback(async () => {
+    await addDirectoryValue(newDirectory);
+  }, [addDirectoryValue, newDirectory]);
+
+  const handleOpenWorkspacePaths = useCallback((path?: string) => {
+    setActiveTab('paths');
+    setDirectoryError(null);
+
+    const trimmed = path?.trim();
+    if (!trimmed) return;
+
+    setNewDirectory(trimmed);
+    void addDirectoryValue(trimmed);
+  }, [addDirectoryValue]);
 
   const handleRemoveDirectory = useCallback(async (directory: string) => {
     try {
@@ -183,7 +198,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
               onStatusChange={onStatusChange}
               workspaceId={workspace.id}
               additionalDirectories={additionalDirectories}
-              onOpenWorkspacePaths={() => setActiveTab('paths')}
+              onOpenWorkspacePaths={handleOpenWorkspacePaths}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
@@ -196,9 +211,18 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
           <div className="flex flex-1 min-h-0 flex-col overflow-y-auto p-4">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Additional writable directories</h3>
+                <h3 className="text-sm font-semibold text-foreground">Workspace settings</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Claude can write to these directories in addition to the workspace worktree.
+                  Manage which additional repositories and directories Claude can use alongside this workspace.
+                </p>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Additional writable directories
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Repo names are derived from the attached directory path so you can search and review multi-repo attachments quickly.
                 </p>
               </div>
 
@@ -217,7 +241,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
               <Input
                 value={directoryFilter}
                 onChange={(e) => setDirectoryFilter(e.target.value)}
-                placeholder="Filter directories"
+                placeholder="Filter repos or paths"
                 aria-label="Filter directories"
               />
 
@@ -235,6 +259,9 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-foreground">
                           {getDirectoryLabel(directory)}
+                        </div>
+                        <div className="text-[11px] font-medium text-muted-foreground">
+                          Repo: {getDirectoryLabel(directory)}
                         </div>
                         <div className="break-all text-xs text-muted-foreground">
                           {directory}

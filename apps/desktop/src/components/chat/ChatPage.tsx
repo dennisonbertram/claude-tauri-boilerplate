@@ -79,7 +79,7 @@ interface ChatPageProps {
   onOpenSettings?: (tab?: string) => void;
   onOpenSessions?: () => void;
   onOpenPullRequests?: () => void;
-  onOpenWorkspacePaths?: () => void;
+  onOpenWorkspacePaths?: (path?: string) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -981,7 +981,12 @@ export function ChatPage({
           (cmd) => cmd.name.toLowerCase() === commandToken
         );
         if (matchedCommand) {
+          const commandArgs = text.slice(commandToken.length + 1).trim();
           setInput('');
+          if (commandToken === 'add-dir' && onOpenWorkspacePaths) {
+            onOpenWorkspacePaths(commandArgs || undefined);
+            return;
+          }
           handleCommandSelect(matchedCommand);
           return;
         }

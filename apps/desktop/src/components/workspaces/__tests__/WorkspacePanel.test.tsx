@@ -98,4 +98,26 @@ describe('WorkspacePanel', () => {
     });
     expect(onWorkspaceUpdate).toHaveBeenCalled();
   });
+
+  it('shows repo-aware labels and filters paths by repo name', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <WorkspacePanel
+        workspace={makeWorkspace({
+          additionalDirectories: ['/Users/me/services/repo-a', '/Users/me/services/repo-b'],
+        })}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /paths/i }));
+
+    expect(screen.getByText('Repo: repo-a')).toBeInTheDocument();
+    expect(screen.getByText('Repo: repo-b')).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText(/filter repos or paths/i), 'repo-b');
+
+    expect(screen.queryByText('Repo: repo-a')).not.toBeInTheDocument();
+    expect(screen.getByText('Repo: repo-b')).toBeInTheDocument();
+  });
 });
