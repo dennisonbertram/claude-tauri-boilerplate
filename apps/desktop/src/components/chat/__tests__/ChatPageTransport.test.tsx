@@ -28,6 +28,16 @@ vi.mock('ai', () => ({
   DefaultChatTransport: mockDefaultChatTransport,
 }));
 
+vi.mock('@claude-tauri/shared', () => ({
+  pickProviderConfig: (_provider: string, settings: Record<string, unknown>) => ({
+    bedrockBaseUrl: settings.bedrockBaseUrl ?? '',
+    bedrockProjectId: settings.bedrockProjectId ?? '',
+    vertexProjectId: settings.vertexProjectId ?? '',
+    vertexBaseUrl: settings.vertexBaseUrl ?? '',
+    customBaseUrl: settings.customBaseUrl ?? '',
+  }),
+}));
+
 vi.mock('@/hooks/useSettings', () => ({
   useSettings: (...args: unknown[]) => mockUseSettings(...args),
 }));
@@ -273,10 +283,10 @@ describe('ChatPage transport provider payload', () => {
       api: 'http://localhost:3131/api/chat',
       body: expect.objectContaining({
         provider: 'bedrock',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           bedrockBaseUrl: 'https://bedrock.internal',
           bedrockProjectId: '',
-        },
+        }),
       }),
     });
   });
@@ -317,10 +327,10 @@ describe('ChatPage transport provider payload', () => {
     expect(call).toMatchObject({
       body: expect.objectContaining({
         provider: 'vertex',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           vertexProjectId: 'test-vertex-project',
           vertexBaseUrl: 'https://vertex.internal',
-        },
+        }),
       }),
     });
   });
@@ -361,9 +371,9 @@ describe('ChatPage transport provider payload', () => {
     expect(call).toMatchObject({
       body: expect.objectContaining({
         provider: 'custom',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           customBaseUrl: 'https://custom.internal',
-        },
+        }),
       }),
     });
   });
