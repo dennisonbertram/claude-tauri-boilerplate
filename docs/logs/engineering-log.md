@@ -27,6 +27,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 90 workspace notes/scratchpad with .context directory
+
+**Type**: Feature
+**Impact**: Medium
+**Description**: Implemented GitHub issue #90. Created GET/PUT `/api/workspaces/:id/notes` endpoints that read/write `.context/notes.md` in the workspace worktree. On workspace creation, the orchestrator now creates `.context/notes.md` and adds `.context` to the repo's `.git/info/exclude` so the directory is invisible to git (no changes in status/diffs/changed-files). Added a Notes tab to WorkspacePanel with a textarea editor, markdown preview toggle (uses existing MarkdownRenderer), debounced auto-save, and a brief "Saved" confirmation. Notes are injected as `<notes>...</notes>` context block in the chat system prompt when a workspaceId is provided.
+**Regression Test**: `apps/server/src/routes/workspace-notes.test.ts` (9 tests)
+**Related Issue**: GitHub issue `#90`
+
 ### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
 
 **Type**: Bug Fix
