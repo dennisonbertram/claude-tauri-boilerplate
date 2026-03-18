@@ -59,7 +59,7 @@ describe('SettingsPanel', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     expect(screen.getByText('Runtime Environment Variables')).toBeTruthy();
-    expect(screen.getByText('No environment variables configured.')).toBeTruthy();
+    expect(screen.getByText('No runtime variables configured.')).toBeTruthy();
   });
 
   test('does not render panel content when isOpen is false', () => {
@@ -95,6 +95,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Temperature')).toBeTruthy();
     expect(screen.getByText('System Prompt')).toBeTruthy();
     expect(screen.getByText('Thinking Effort')).toBeTruthy();
+    expect(screen.getByText('Thinking Budget')).toBeTruthy();
   });
 
   test('switches to Appearance tab on click', async () => {
@@ -174,6 +175,13 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
     const slider = screen.getByTestId('max-tokens-slider') as HTMLInputElement;
     expect(slider.value).toBe('4096');
+  });
+
+  test('renders default thinking budget tokens value in Model tab', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
+    const input = screen.getByTestId('thinking-budget-input') as HTMLInputElement;
+    expect(input.value).toBe('16000');
   });
 
   // ─── API key masking ───
@@ -327,7 +335,7 @@ describe('SettingsPanel', () => {
     const valueInput = screen.getByTestId('runtime-env-value-input');
     await user.type(keyInput, 'RUNTIME_TOKEN');
     await user.type(valueInput, 'abc123');
-    await user.click(screen.getByTestId('runtime-env-add'));
+    await user.click(screen.getByTestId('runtime-env-add-button'));
 
     const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.runtimeEnv).toEqual({ RUNTIME_TOKEN: 'abc123' });
@@ -341,16 +349,16 @@ describe('SettingsPanel', () => {
     const valueInput = screen.getByTestId('runtime-env-value-input');
     await user.type(keyInput, 'REMOVE_ME');
     await user.type(valueInput, 'to-remove');
-    await user.click(screen.getByTestId('runtime-env-add'));
+    await user.click(screen.getByTestId('runtime-env-add-button'));
 
-    const envValueInput = screen.getByTestId('runtime-env-value-0');
+    const envValueInput = screen.getByTestId('runtime-env-value-REMOVE_ME');
     await user.clear(envValueInput);
     await user.type(envValueInput, 'updated');
 
     let stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.runtimeEnv).toEqual({ REMOVE_ME: 'updated' });
 
-    await user.click(screen.getByTestId('runtime-env-remove-0'));
+    await user.click(screen.getByTestId('runtime-env-remove-REMOVE_ME'));
     stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.runtimeEnv).toEqual({});
   });

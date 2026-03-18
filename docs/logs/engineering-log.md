@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 87 thinking controls completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed GitHub issue `#87` by wiring the missing chat-level thinking controls. Added `Option+T` visibility toggling, `Cmd+Shift+.` expand-all behavior for thinking blocks, a persisted `thinkingBudgetTokens` setting in the Model tab, and backend Claude SDK wiring that converts the stored budget into `thinkingConfig.budgetTokens` for each chat request. Browser verification confirmed the budget control renders and persists in Settings, and chat-page keyboard verification confirmed `Option+T` flips the stored thinking visibility preference on a live session.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/ChatPageShortcuts.test.tsx`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/hooks/useSettings.test.ts`, `apps/server/src/services/claude.test.ts`
+**Related Issue**: GitHub issue `#87`
+
 ### 2026-03-18: Issue 113 appearance controls completed
 
 **Type**: Bug Fix

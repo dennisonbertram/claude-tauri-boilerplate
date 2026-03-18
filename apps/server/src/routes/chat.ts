@@ -55,6 +55,7 @@ const chatRequestSchema = z.object({
   runtimeEnv: z.record(z.string(), z.string()).optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
+  thinkingBudgetTokens: z.number().int().min(1024).max(32000).optional(),
   permissionMode: z
     .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
     .optional(),
@@ -308,6 +309,7 @@ export function createChatRouter(db: Database) {
     let sessionId = body.sessionId;
     const model = body.model;
     const effort = body.effort;
+    const thinkingBudgetTokens = body.thinkingBudgetTokens;
     const permissionMode = body.permissionMode;
     const provider = body.provider;
     const providerConfig = body.providerConfig;
@@ -519,6 +521,7 @@ export function createChatRouter(db: Database) {
             sessionId: currentResumeId,
             model,
             effort,
+            thinkingBudgetTokens,
             permissionMode,
             provider,
             providerConfig,

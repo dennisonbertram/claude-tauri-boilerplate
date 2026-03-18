@@ -11,6 +11,8 @@ export interface ShortcutDefinition {
   meta?: boolean;
   /** Require shift key */
   shift?: boolean;
+  /** Require alt/option key */
+  alt?: boolean;
   /** Human-readable label shown in help modal */
   label: string;
   /** Category for grouping in the help modal */
@@ -66,6 +68,10 @@ export function formatShortcut(shortcut: ShortcutDefinition, isMac: boolean): st
 
   if (shortcut.shift) {
     parts.push(isMac ? '\u21E7' : 'Shift');
+  }
+
+  if (shortcut.alt) {
+    parts.push(isMac ? '\u2325' : 'Alt');
   }
 
   const keyDisplay = KEY_DISPLAY[shortcut.key] ?? shortcut.key;
@@ -140,6 +146,10 @@ export function useKeyboardShortcuts(
         // Check shift modifier
         const needsShift = shortcut.shift ?? false;
         if (needsShift !== e.shiftKey) continue;
+
+        // Check alt/option modifier
+        const needsAlt = shortcut.alt ?? false;
+        if (needsAlt !== e.altKey) continue;
 
         // Match found
         e.preventDefault();

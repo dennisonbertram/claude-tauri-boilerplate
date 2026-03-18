@@ -126,13 +126,15 @@ export function ChatPage({
   onOpenPullRequests,
   onOpenWorkspacePaths,
 }: ChatPageProps) {
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<AttachedImage[]>([]);
   const [linearIssue, setLinearIssue] = useState<LinearIssueContext | null>(null);
   const [linearPickerOpen, setLinearPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
+  const [thinkingExpanded, setThinkingExpanded] = useState(false);
+  const [thinkingToggleVersion, setThinkingToggleVersion] = useState(0);
   const {
     toolCalls,
     thinkingBlocks,
@@ -258,6 +260,7 @@ export function ChatPage({
           sessionId,
           model: settings.model,
           effort: settings.fastMode ? 'low' : settings.effort,
+          thinkingBudgetTokens: settings.thinkingBudgetTokens,
           permissionMode: settings.permissionMode,
           provider: settings.provider,
           runtimeEnv: settings.runtimeEnv,
@@ -281,6 +284,7 @@ export function ChatPage({
       settings.model,
       settings.effort,
       settings.fastMode,
+      settings.thinkingBudgetTokens,
       settings.permissionMode,
       settings.provider,
       settings.runtimeEnv,
@@ -526,6 +530,15 @@ export function ChatPage({
     closePalette();
   }, [closePalette]);
 
+  const toggleThinkingVisibility = useCallback(() => {
+    updateSettings({ showThinking: !settings.showThinking });
+  }, [settings.showThinking, updateSettings]);
+
+  const toggleThinkingExpanded = useCallback(() => {
+    setThinkingExpanded((prev) => !prev);
+    setThinkingToggleVersion((prev) => prev + 1);
+  }, []);
+
   // Keyboard shortcuts
   const shortcutDefs: ShortcutDefinition[] = useMemo(
     () => [
@@ -571,6 +584,23 @@ export function ChatPage({
         handler: () => setHelpOpen((prev) => !prev),
       },
       {
+        id: 'thinking-visibility',
+        key: 't',
+        alt: true,
+        label: 'Toggle thinking visibility',
+        category: 'chat' as const,
+        handler: toggleThinkingVisibility,
+      },
+      {
+        id: 'thinking-expand',
+        key: '.',
+        meta: true,
+        shift: true,
+        label: 'Expand thinking blocks',
+        category: 'chat' as const,
+        handler: toggleThinkingExpanded,
+      },
+      {
         id: 'escape',
         key: 'Escape',
         label: 'Cancel / Close',
@@ -586,7 +616,18 @@ export function ChatPage({
         },
       },
     ],
-    [onCreateSession, clearChat, costOpen, helpOpen, paletteOpen, handlePaletteClose, onToggleSidebar, onOpenSettings]
+    [
+      onCreateSession,
+      clearChat,
+      costOpen,
+      helpOpen,
+      paletteOpen,
+      handlePaletteClose,
+      onToggleSidebar,
+      onOpenSettings,
+      toggleThinkingVisibility,
+      toggleThinkingExpanded,
+    ]
   );
 
   const { shortcuts } = useKeyboardShortcuts(shortcutDefs);
@@ -1093,6 +1134,9 @@ export function ChatPage({
         isLoading={isLoading}
         toolCalls={toolCalls}
         thinkingBlocks={thinkingBlocks}
+        showThinking={settings.showThinking}
+        thinkingExpanded={thinkingExpanded}
+        thinkingToggleVersion={thinkingToggleVersion}
         onToolFixErrors={handleFixErrors}
       />
       {/* Subagent visualization panel */}

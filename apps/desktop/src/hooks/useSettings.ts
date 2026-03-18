@@ -19,6 +19,7 @@ export interface AppSettings {
   temperature: number;
   systemPrompt: string;
   effort: 'low' | 'medium' | 'high' | 'max';
+  thinkingBudgetTokens: number;
   fastMode: boolean;
   prReviewModel: string;
 
@@ -65,6 +66,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   temperature: 1.0,
   systemPrompt: '',
   effort: 'high',
+  thinkingBudgetTokens: 16000,
   fastMode: false,
   prReviewModel: 'claude-haiku-4-5-20251001',
 

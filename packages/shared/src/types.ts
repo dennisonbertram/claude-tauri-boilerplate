@@ -46,6 +46,7 @@ export interface ChatRequest {
   runtimeEnv?: Record<string, string>;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
+  thinkingBudgetTokens?: number;
   permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   workspaceId?: string;
   systemPrompt?: string;

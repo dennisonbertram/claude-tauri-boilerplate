@@ -26,6 +26,9 @@ interface MessageListProps {
   isLoading: boolean;
   toolCalls?: Map<string, ToolCallState>;
   thinkingBlocks?: Map<string, string>;
+  showThinking?: boolean;
+  thinkingExpanded?: boolean;
+  thinkingToggleVersion?: number;
   onToolFixErrors?: ToolCallBlockProps['onFixErrors'];
   onExportSummaryToNewChat?: (summary: string) => void;
   isPrivacyMode?: boolean;
@@ -143,6 +146,9 @@ export function MessageList({
   isLoading,
   toolCalls,
   thinkingBlocks,
+  showThinking,
+  thinkingExpanded = false,
+  thinkingToggleVersion = 0,
   onToolFixErrors,
   onExportSummaryToNewChat,
   isPrivacyMode = false,
@@ -375,7 +381,8 @@ export function MessageList({
     );
   }
 
-  const thinkingEntries = thinkingBlocks
+  const shouldShowThinking = showThinking ?? settings.showThinking ?? true;
+  const thinkingEntries = shouldShowThinking && thinkingBlocks
     ? Array.from(thinkingBlocks.entries())
     : [];
   const toolCallEntries = toolCalls
@@ -611,7 +618,11 @@ export function MessageList({
             return (
               <div key={`stream-events-${message.id}`} className="mt-2 space-y-1">
                 {thinkingEntries.map(([key, text]) => (
-                  <ThinkingBlock key={key} text={text} />
+                  <ThinkingBlock
+                    key={`${key}-${thinkingToggleVersion}`}
+                    text={text}
+                    defaultExpanded={thinkingExpanded}
+                  />
                 ))}
 
                 {toolCallEntries.map((tc) => (
