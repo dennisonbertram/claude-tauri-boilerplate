@@ -22,6 +22,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-76-provider-support.md](issue-76-provider-support.md) | Issue #76 provider support for Anthropic/Bedrock/Vertex/custom configuration with persistence and env propagation tests. |
 | [issue-77-command-palette.md](issue-77-command-palette.md) | Command palette (Cmd+K) plan for session/PR/settings navigation and fuzzy relevance-based action search. |
 | [issue-87-thinking-controls.md](issue-87-thinking-controls.md) | Completed issue #87 note covering thinking visibility shortcuts, persisted reasoning settings, and Claude SDK thinking budget wiring. |
+| [issue-92-response-metadata.md](issue-92-response-metadata.md) | Issue #92 plan for assistant response metadata, copy-as-markdown actions, changed-file summaries, and validation. |
 | [issue-118-wave152-handoff.md](issue-118-wave152-handoff.md) | Handoff and validation notes for GitHub issue #118 covering settings tabs overflow regression checks and manual browser verification steps. |
 | [issue-114-multi-repo-editing.md](issue-114-multi-repo-editing.md) | Issue #114 plan for multi-repo editing with `/add-dir`, covering workspace directory persistence, Claude passthrough, and workspace UI management. |
 | [issue-119-wave152-handoff.md](issue-119-wave152-handoff.md) | Handoff checklist for issue #119 covering model selector regression checks and manual browser verification notes. |
