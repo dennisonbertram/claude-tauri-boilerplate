@@ -161,3 +161,9 @@ Each entry follows this format:
 **Type**: Technical Decision
 **Impact**: High
 **Description**: Established project documentation structure, TDD policy, worktree workflow, and agent conventions. Set up comprehensive docs/ folder with indexes, logging system, and runbooks.
+
+## 2026-03-18
+### Chat route malformed JSON handling regression fix
+- **What:** Added a regression test for `POST /api/chat` malformed JSON input and updated the chat route to catch `c.req.json()` parse errors, returning HTTP 400 with `{ "error": "Malformed JSON request body" }` instead of surfacing a 500.
+- **Why:** Manual API investigation documented that invalid JSON was returning 500, which treats client input errors as server faults and makes error handling noisy.
+- **Result:** Targeted server tests pass, and manual curl verification now returns 400 for malformed JSON bodies.

@@ -279,7 +279,12 @@ export function createChatRouter(db: Database) {
 
   router.post('/', async (c) => {
     console.log('[chat] === NEW CHAT REQUEST ===');
-    const bodyRaw = await c.req.json();
+    let bodyRaw: unknown;
+    try {
+      bodyRaw = await c.req.json();
+    } catch {
+      return c.json({ error: 'Malformed JSON request body' }, 400);
+    }
     const parsed = chatRequestSchema.safeParse(bodyRaw);
     if (!parsed.success) {
       return c.json(
