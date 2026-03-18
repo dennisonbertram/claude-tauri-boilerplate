@@ -104,6 +104,14 @@ export class GitCommandRunner {
       if (branch) return branch;
     }
 
+    // Fallback: current HEAD symbolic ref (works for unborn repos too)
+    const headRefResult = await this.run(['symbolic-ref', '--short', 'HEAD'], {
+      cwd: repoPath,
+    });
+    if (headRefResult.exitCode === 0 && headRefResult.stdout.trim()) {
+      return headRefResult.stdout.trim();
+    }
+
     // Fallback: check if 'main' branch exists
     const mainResult = await this.run(['rev-parse', '--verify', 'refs/heads/main'], {
       cwd: repoPath,

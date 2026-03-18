@@ -14,6 +14,7 @@ let repoPath: string;
 let db: Database;
 let app: Hono;
 let projectId: string;
+let defaultBranch: string;
 
 beforeAll(async () => {
   // Create a real temp git repo
@@ -33,6 +34,11 @@ beforeAll(async () => {
   await Bun.write(initFile, '# Test');
   Bun.spawnSync(['git', 'add', '.'], { cwd: repoPath });
   Bun.spawnSync(['git', 'commit', '-m', 'initial'], { cwd: repoPath });
+
+  const branchResult = Bun.spawnSync(['git', 'symbolic-ref', '--short', 'HEAD'], {
+    cwd: repoPath,
+  });
+  defaultBranch = branchResult.stdout.toString().trim() || 'main';
 });
 
 afterAll(() => {
@@ -54,7 +60,7 @@ beforeEach(() => {
     'test-project',
     repoPath,
     realpath || repoPath,
-    'main'
+    defaultBranch
   );
   projectId = project.id;
 
