@@ -67,14 +67,16 @@ export async function createWorkspace(
   name: string,
   baseBranch?: string,
   sourceBranch?: string,
-  linearIssue?: CreateWorkspaceRequest['linearIssue'] | CreateWorkspaceRequest['githubIssue'],
-  branchPrefix?: string
+  linearIssue?: CreateWorkspaceRequest['linearIssue'],
+  branchPrefix?: string,
+  githubIssue?: CreateWorkspaceRequest['githubIssue']
 ): Promise<Workspace> {
   const body: CreateWorkspaceRequest = { name };
   if (baseBranch) body.baseBranch = baseBranch;
   if (sourceBranch) body.sourceBranch = sourceBranch;
   if (branchPrefix) body.branchPrefix = branchPrefix;
   if (linearIssue) body.linearIssue = linearIssue;
+  if (githubIssue) body.githubIssue = githubIssue;
 
   const res = await fetch(`${API_BASE}/api/projects/${projectId}/workspaces`, {
     method: 'POST',
@@ -264,6 +266,40 @@ export async function fetchCodeReview(
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Code review failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+// --- GitHub Issues ---
+
+export interface GithubIssue {
+  number: number;
+  title: string;
+  url: string;
+  state: string;
+  body?: string;
+}
+
+export interface GithubBranch {
+  name: string;
+  isCurrent: boolean;
+}
+
+export async function fetchGithubIssues(projectId: string, query?: string): Promise<GithubIssue[]> {
+  const params = query ? `?q=${encodeURIComponent(query)}` : '';
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/github-issues${params}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Failed to fetch GitHub issues: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchProjectBranches(projectId: string): Promise<GithubBranch[]> {
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/branches`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Failed to fetch branches: ${res.status}`);
   }
   return res.json();
 }

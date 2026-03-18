@@ -51,6 +51,15 @@ Each entry follows this format:
 **Regression Test**: `apps/desktop/src/lib/__tests__/notifications.test.ts`, `apps/desktop/src/hooks/__tests__/useUnread.test.ts`
 **Related Issue**: GitHub issue `#103`
 
+---
+
+### 2026-03-18: Issue #111 Tracker-first workspace creation
+
+**Type**: Feature
+**Impact**: High
+**Description**: Implemented issue #111 — tracker-first workspace creation. Added `github_issue_*` columns to the workspaces DB table with a migration function. Changed `githubIssue` schema to use `number` (integer) instead of `id` (string) to match how GitHub identifies issues. Created two new backend endpoints: `GET /api/projects/:id/github-issues` (proxies to `gh` CLI) and `GET /api/projects/:id/branches` (git branch listing). Updated `CreateWorkspaceDialog` to have three modes: Manual (existing), Branch (select existing branch), GitHub Issue (search + select from GitHub). Added `<github-issue>` context block injection in the chat route when a workspace has linked GitHub issue data. Added a linked issue badge in WorkspacePanel header.
+**Regression Test**: `apps/server/src/routes/github-issues.test.ts` (16 tests)
+**Related Issue**: GitHub issue `#111`
 ### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
 
 **Type**: Bug Fix

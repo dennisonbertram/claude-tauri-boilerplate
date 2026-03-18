@@ -379,6 +379,7 @@ export function createChatRouter(db: Database) {
         .join('') ??
       '';
     let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
+    let workspaceGithubIssuePrompt: string | undefined;
     console.log('[chat] Extracted prompt:', prompt);
     console.log('[chat] sessionId:', sessionId);
 
@@ -423,6 +424,18 @@ export function createChatRouter(db: Database) {
           summary: workspace.linearIssueSummary ?? undefined,
           url: workspace.linearIssueUrl ?? undefined,
         };
+      }
+      if (workspace.githubIssueNumber && workspace.githubIssueTitle) {
+        workspaceGithubIssuePrompt = [
+          '[GitHub Issue Context]',
+          `<github-issue>`,
+          `#${workspace.githubIssueNumber}: ${workspace.githubIssueTitle}`,
+          workspace.githubIssueUrl ? workspace.githubIssueUrl : undefined,
+          workspace.githubIssueRepo ? `repo: ${workspace.githubIssueRepo}` : undefined,
+          `</github-issue>`,
+        ]
+          .filter((line): line is string => line !== undefined)
+          .join('\n');
       }
       console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
       if (attachmentRefs.length > 0) {
@@ -475,7 +488,7 @@ export function createChatRouter(db: Database) {
       ? `<notes>\n${workspaceNotesContent}\n</notes>`
       : undefined;
 
-    const promptWithContext = [startupPrompt, notesContext, linearIssuePrompt, prompt]
+    const promptWithContext = [startupPrompt, notesContext, linearIssuePrompt, workspaceGithubIssuePrompt, prompt]
       .filter((value): value is string => Boolean(value))
       .join('\n\n');
 

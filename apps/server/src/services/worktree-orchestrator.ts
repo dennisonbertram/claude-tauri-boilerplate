@@ -56,7 +56,13 @@ export class WorktreeOrchestrator {
       summary?: string;
       url?: string;
     },
-    additionalDirectories: string[] = []
+    additionalDirectories: string[] = [],
+    githubIssue?: {
+      number: number;
+      title: string;
+      url?: string;
+      repo?: string;
+    }
   ): Promise<Workspace> {
     // 1. Validate workspace name
     const sanitized = sanitizeWorkspaceName(name);
@@ -170,7 +176,8 @@ export class WorktreeOrchestrator {
         worktreePathCanonical,
         effectiveBaseBranch,
         linearIssue,
-        additionalDirectories
+        additionalDirectories,
+        githubIssue
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

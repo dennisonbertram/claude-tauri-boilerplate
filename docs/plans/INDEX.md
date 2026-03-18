@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [issue-111-tracker-first-workspace-creation.md](issue-111-tracker-first-workspace-creation.md) | Issue #111 plan for tracker-first workspace creation: mode tabs (Manual/Branch/GitHub Issue), github_issue_* DB fields, proxy endpoint, context injection. COMPLETE. |
 | [issue-102-latex-mermaid.md](issue-102-latex-mermaid.md) | Issue #102 implementation of LaTeX rendering (via remark-math + rehype-katex) and Mermaid diagram rendering (MermaidDiagram component with fullscreen pan/zoom). Completed. |
 | [issue-85-ai-code-review.md](issue-85-ai-code-review.md) | Issue #85 plan for AI code review with customizable prompts: backend endpoint, CodeReviewDialog, inline AI comments, CodeReviewSummary, and settings for model/effort. |
 | [issue-100-bash-display-controls.md](issue-100-bash-display-controls.md) | Issue #100 plan for the remaining BashDisplay scope: terminal search shortcuts, clear behavior, full-height expansion, and validation. |

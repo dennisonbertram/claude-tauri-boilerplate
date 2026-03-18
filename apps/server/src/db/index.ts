@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -68,6 +68,10 @@ interface WorkspaceRow {
   linear_issue_title: string | null;
   linear_issue_summary: string | null;
   linear_issue_url: string | null;
+  github_issue_number: number | null;
+  github_issue_title: string | null;
+  github_issue_url: string | null;
+  github_issue_repo: string | null;
   setup_pid: number | null;
   error_message: string | null;
   created_at: string;
@@ -153,6 +157,10 @@ function mapWorkspace(row: WorkspaceRow) {
     linearIssueTitle: row.linear_issue_title,
     linearIssueSummary: row.linear_issue_summary,
     linearIssueUrl: row.linear_issue_url,
+    githubIssueNumber: row.github_issue_number,
+    githubIssueTitle: row.github_issue_title,
+    githubIssueUrl: row.github_issue_url,
+    githubIssueRepo: row.github_issue_repo,
     setupPid: row.setup_pid,
     errorMessage: row.error_message,
     createdAt: row.created_at,
@@ -172,6 +180,7 @@ export function createDb(path?: string): Database {
   migrateLinearIssueColumns(db);
   migrateSessionModelColumn(db);
   migrateWorkspaceAdditionalDirectories(db);
+  migrateGithubIssueColumns(db);
   return db;
 }
 
@@ -478,6 +487,13 @@ export function deleteProject(db: Database, id: string) {
 
 // --- Workspace Helpers ---
 
+type GithubIssueMetadata = {
+  number: number;
+  title: string;
+  url?: string;
+  repo?: string;
+};
+
 export function createWorkspace(
   db: Database,
   id: string,
@@ -488,12 +504,17 @@ export function createWorkspace(
   worktreePathCanonical: string,
   baseBranch: string,
   linearIssue?: LinearIssueMetadata,
-  additionalDirectories: string[] = []
+  additionalDirectories: string[] = [],
+  githubIssue?: GithubIssueMetadata
 ) {
   const linearIssueId = linearIssue?.id ?? null;
   const linearIssueTitle = linearIssue?.title ?? null;
   const linearIssueSummary = linearIssue?.summary ?? null;
   const linearIssueUrl = linearIssue?.url ?? null;
+  const githubIssueNumber = githubIssue?.number ?? null;
+  const githubIssueTitle = githubIssue?.title ?? null;
+  const githubIssueUrl = githubIssue?.url ?? null;
+  const githubIssueRepo = githubIssue?.repo ?? null;
   const stmt = db.prepare(
     `INSERT INTO workspaces (
       id,
@@ -507,8 +528,12 @@ export function createWorkspace(
       linear_issue_id,
       linear_issue_title,
       linear_issue_summary,
-      linear_issue_url
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+      linear_issue_url,
+      github_issue_number,
+      github_issue_title,
+      github_issue_url,
+      github_issue_repo
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   );
   const row = stmt.get(
     id,
@@ -522,7 +547,11 @@ export function createWorkspace(
     linearIssueId,
     linearIssueTitle,
     linearIssueSummary,
-    linearIssueUrl
+    linearIssueUrl,
+    githubIssueNumber,
+    githubIssueTitle,
+    githubIssueUrl,
+    githubIssueRepo
   ) as WorkspaceRow;
   return mapWorkspace(row);
 }

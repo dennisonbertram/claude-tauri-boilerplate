@@ -222,6 +222,30 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
             Copy
           </button>
           <WorkspaceStatusBadge status={workspace.status} />
+          {workspace.githubIssueNumber && workspace.githubIssueTitle && (
+            workspace.githubIssueUrl ? (
+              <a
+                href={workspace.githubIssueUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-accent text-foreground hover:bg-accent/80 transition-colors shrink-0"
+                title={workspace.githubIssueTitle}
+              >
+                <span className="text-muted-foreground">#</span>
+                <span>{workspace.githubIssueNumber}</span>
+                <span className="max-w-24 truncate hidden sm:inline">{workspace.githubIssueTitle}</span>
+              </a>
+            ) : (
+              <span
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-accent text-foreground shrink-0"
+                title={workspace.githubIssueTitle}
+              >
+                <span className="text-muted-foreground">#</span>
+                <span>{workspace.githubIssueNumber}</span>
+                <span className="max-w-24 truncate hidden sm:inline">{workspace.githubIssueTitle}</span>
+              </span>
+            )
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button

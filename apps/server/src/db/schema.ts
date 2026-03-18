@@ -63,6 +63,10 @@ export const SCHEMA = `
     linear_issue_title TEXT,
     linear_issue_summary TEXT,
     linear_issue_url TEXT,
+    github_issue_number INTEGER,
+    github_issue_title TEXT,
+    github_issue_url TEXT,
+    github_issue_repo TEXT,
     setup_pid INTEGER,
     error_message TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -155,6 +159,27 @@ export function migrateWorkspaceAdditionalDirectories(db: import('bun:sqlite').D
   const hasAdditionalDirectories = columns.some((col) => col.name === 'additional_directories');
   if (!hasAdditionalDirectories) {
     db.exec("ALTER TABLE workspaces ADD COLUMN additional_directories TEXT NOT NULL DEFAULT '[]'");
+  }
+}
+
+export function migrateGithubIssueColumns(db: import('bun:sqlite').Database): void {
+  const workspaceColumns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+  const wsHasNumber = workspaceColumns.some((col) => col.name === 'github_issue_number');
+  const wsHasTitle = workspaceColumns.some((col) => col.name === 'github_issue_title');
+  const wsHasUrl = workspaceColumns.some((col) => col.name === 'github_issue_url');
+  const wsHasRepo = workspaceColumns.some((col) => col.name === 'github_issue_repo');
+
+  if (!wsHasNumber) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_number INTEGER');
+  }
+  if (!wsHasTitle) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_title TEXT');
+  }
+  if (!wsHasUrl) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_url TEXT');
+  }
+  if (!wsHasRepo) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_repo TEXT');
   }
 }
 

@@ -286,10 +286,10 @@ describe('Workspace Routes', () => {
           body: JSON.stringify({
             name: 'github-issue-workspace',
             githubIssue: {
-              id: 'GH-1234',
+              number: 1234,
               title: 'Fix GitHub issue',
-              summary: 'Update workspace title handling',
               url: 'https://github.com/org/repo/issues/1234',
+              repo: 'org/repo',
             },
           }),
         }
@@ -297,10 +297,10 @@ describe('Workspace Routes', () => {
 
       expect(res.status).toBe(201);
       const body = await res.json();
-      expect(body.linearIssueId).toBe('GH-1234');
-      expect(body.linearIssueTitle).toBe('Fix GitHub issue');
-      expect(body.linearIssueSummary).toBe('Update workspace title handling');
-      expect(body.linearIssueUrl).toBe('https://github.com/org/repo/issues/1234');
+      expect(body.githubIssueNumber).toBe(1234);
+      expect(body.githubIssueTitle).toBe('Fix GitHub issue');
+      expect(body.githubIssueUrl).toBe('https://github.com/org/repo/issues/1234');
+      expect(body.githubIssueRepo).toBe('org/repo');
     });
 
     test('accepts additional directories on create', async () => {
