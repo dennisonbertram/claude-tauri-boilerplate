@@ -16,6 +16,7 @@ import type { WorkspaceStatus } from '@claude-tauri/shared';
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
   baseBranch: z.string().min(1).max(255).optional(),
+  branchPrefix: z.string().min(1).max(80).optional(),
   linearIssue: z
     .object({
       id: z.string().min(1, 'issue id is required'),
@@ -25,6 +26,14 @@ const createWorkspaceSchema = z.object({
     })
     .optional(),
 });
+
+const workspaceUpdateSchema = z.object({
+  name: z.string().min(1, 'name is required').max(100).optional(),
+  branch: z.string().min(1, 'branch is required').max(255).optional(),
+}).refine(
+  (data) => data.name !== undefined || data.branch !== undefined,
+  { message: 'Either name or branch must be provided', path: ['name'] }
+);
 
 const workspaceOperationLocks = new Map<string, Promise<unknown>>();
 
@@ -66,6 +75,7 @@ export function createWorkspaceRouter(db: Database) {
       projectId,
       parsed.data.name,
       parsed.data.baseBranch,
+      parsed.data.branchPrefix,
       parsed.data.linearIssue
     );
     return c.json(workspace, 201);
@@ -115,6 +125,37 @@ export function createFlatWorkspaceRouter(db: Database) {
         deleteBranch: true,
       });
       return c.json({ ok: true });
+    });
+  });
+
+  // PATCH /api/workspaces/:id — Rename/update workspace metadata
+  router.patch('/:id', async (c) => {
+    const id = c.req.param('id');
+    const workspace = getWorkspace(db, id);
+    if (!workspace) {
+      return c.json(
+        { error: 'Workspace not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = workspaceUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      const err = new Error('Invalid workspace update payload');
+      (err as any).status = 400;
+      (err as any).code = 'VALIDATION_ERROR';
+      (err as any).details = parsed.error.flatten();
+      throw err;
+    }
+
+    return withWorkspaceOperationLock(id, async () => {
+      const updatedWorkspace = await worktreeOrchestrator.renameWorkspace(
+        db,
+        id,
+        parsed.data
+      );
+      return c.json(updatedWorkspace);
     });
   });
 

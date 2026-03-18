@@ -129,6 +129,27 @@ export class WorktreeService {
   }
 
   /**
+   * Rename a branch.
+   * Runs: git branch -m <oldName> <newName>
+   */
+  async renameBranch(
+    repoPath: string,
+    oldBranchName: string,
+    newBranchName: string
+  ): Promise<void> {
+    const result = await this.git.run(
+      ['branch', '-m', oldBranchName, newBranchName],
+      { cwd: repoPath }
+    );
+    if (result.exitCode !== 0) {
+      throw Object.assign(
+        new Error(`Failed to rename branch: ${result.stderr.trim()}`),
+        { status: 500, code: 'GIT_ERROR' }
+      );
+    }
+  }
+
+  /**
    * Get the full diff for a worktree relative to its base branch.
    * Uses `git diff <baseBranch>...HEAD` to show all commits the workspace
    * branch introduces over the base, plus any uncommitted working tree changes.

@@ -14,6 +14,7 @@ import { LinearPanel } from '@/components/settings/LinearPanel';
 
 type TabId =
   | 'general'
+  | 'git'
   | 'model'
   | 'workflows'
   | 'appearance'
@@ -27,6 +28,7 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
+  { id: 'git', label: 'Git' },
   { id: 'model', label: 'Model' },
   { id: 'workflows', label: 'Workflows' },
   { id: 'appearance', label: 'Appearance' },
@@ -130,6 +132,9 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
               showApiKey={showApiKey}
               onToggleApiKey={() => setShowApiKey(!showApiKey)}
             />
+          )}
+          {activeTab === 'git' && (
+            <GitTab settings={settings} updateSettings={updateSettings} />
           )}
           {activeTab === 'model' && (
             <ModelTab settings={settings} updateSettings={updateSettings} />
@@ -409,8 +414,27 @@ function GeneralTab({
           </div>
         </div>
       </SettingField>
-
     </>
+  );
+}
+
+function GitTab({ settings, updateSettings }: TabProps) {
+  return (
+    <SettingField
+      label="Workspace Branch Prefix"
+      description="Prefix used when creating new workspace branches"
+    >
+      <input
+        data-testid="workspace-branch-prefix-input"
+        type="text"
+        value={settings.workspaceBranchPrefix}
+        onChange={(e) =>
+          updateSettings({ workspaceBranchPrefix: e.target.value.trim() })
+        }
+        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        placeholder="workspace"
+      />
+    </SettingField>
   );
 }
 

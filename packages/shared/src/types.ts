@@ -478,6 +478,7 @@ export interface GitStatus {
   isClean: boolean;
   modifiedFiles: GitFileStatus[];
   stagedFiles: GitFileStatus[];
+  pullRebase?: boolean | null;
   error?: string;
 }
 
@@ -607,12 +608,18 @@ export interface CreateProjectRequest {
 export interface CreateWorkspaceRequest {
   name: string;
   baseBranch?: string;
+  branchPrefix?: string;
   linearIssue?: {
     id: string;
     title: string;
     summary?: string;
     url?: string;
   };
+}
+
+export interface WorkspaceRenameRequest {
+  name?: string;
+  branch?: string;
 }
 
 /** Valid workspace status transitions */

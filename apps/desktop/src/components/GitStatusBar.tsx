@@ -69,6 +69,14 @@ export function GitStatusBar() {
         }`}
       />
       <span className="font-medium">{status.branch}</span>
+      {typeof status.pullRebase === 'boolean' && (
+        <span
+          data-testid="git-pull-preference"
+          className="inline-flex items-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-4"
+        >
+          {status.pullRebase ? 'Rebase' : 'Merge'}
+        </span>
+      )}
       {totalChanges > 0 && (
         <span
           data-testid="git-file-count"

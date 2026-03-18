@@ -511,6 +511,38 @@ export function createWorkspace(
   return mapWorkspace(row);
 }
 
+export function updateWorkspace(
+  db: Database,
+  id: string,
+  updates: {
+    name?: string;
+    branch?: string;
+  }
+) {
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+
+  if (updates.name !== undefined) {
+    setClauses.push('name = ?');
+    values.push(updates.name);
+  }
+
+  if (updates.branch !== undefined) {
+    setClauses.push('branch = ?');
+    values.push(updates.branch);
+  }
+
+  if (setClauses.length === 0) return;
+
+  setClauses.push("updated_at = datetime('now')");
+  values.push(id);
+
+  const stmt = db.prepare(
+    `UPDATE workspaces SET ${setClauses.join(', ')} WHERE id = ?`
+  );
+  return stmt.run(...values);
+}
+
 export function listWorkspaces(db: Database, projectId: string) {
   const stmt = db.prepare(`SELECT * FROM workspaces WHERE project_id = ? ORDER BY created_at DESC`);
   const rows = stmt.all(projectId) as WorkspaceRow[];

@@ -37,10 +37,14 @@ describe('Git Routes', () => {
       expect(body).toHaveProperty('isClean');
       expect(body).toHaveProperty('modifiedFiles');
       expect(body).toHaveProperty('stagedFiles');
+      expect(body).toHaveProperty('pullRebase');
       expect(typeof body.branch).toBe('string');
       expect(typeof body.isClean).toBe('boolean');
       expect(Array.isArray(body.modifiedFiles)).toBe(true);
       expect(Array.isArray(body.stagedFiles)).toBe(true);
+      expect(
+        body.pullRebase === null || typeof body.pullRebase === 'boolean'
+      ).toBe(true);
     });
 
     test('returns a valid branch name (not empty)', async () => {

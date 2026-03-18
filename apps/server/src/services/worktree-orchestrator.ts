@@ -8,6 +8,7 @@ import {
   transitionWorkspaceStatus,
   setWorkspaceError,
   deleteWorkspace as dbDeleteWorkspace,
+  updateWorkspace,
   listWorkspaces,
 } from '../db';
 import {
@@ -45,6 +46,7 @@ export class WorktreeOrchestrator {
     projectId: string,
     name: string,
     baseBranch?: string,
+    branchPrefix?: string,
     linearIssue?: {
       id: string;
       title: string;
@@ -86,7 +88,15 @@ export class WorktreeOrchestrator {
     }
 
     // 2. Determine branch name
-    const branchName = `workspace/${sanitized}`;
+    const rawPrefix = (branchPrefix || 'workspace').trim() || 'workspace';
+    const safePrefix = rawPrefix
+      .toLowerCase()
+      .replace(/[^a-z0-9_\/\-.]/g, '-')
+      .replace(/\/+/, '/')
+      .replace(/-+/g, '-')
+      .replace(/(^[\/-]|[\/-]$)/g, '');
+
+    const branchName = `${safePrefix}/${sanitized}`;
     const effectiveBaseBranch = baseBranch || project.defaultBranch;
 
     // 3. Check for duplicate workspace name in project first (friendly error)
@@ -189,6 +199,91 @@ export class WorktreeOrchestrator {
 
     // 8. Update status to 'ready'
     transitionWorkspaceStatus(db, workspaceId, 'ready');
+    return getWorkspace(db, workspaceId)!;
+  }
+
+  async renameWorkspace(
+    db: Database,
+    workspaceId: string,
+    updates: {
+      name?: string;
+      branch?: string;
+    }
+  ): Promise<Workspace> {
+    const workspace = getWorkspace(db, workspaceId);
+    if (!workspace) {
+      throw Object.assign(new Error('Workspace not found'), {
+        status: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+
+    const project = getProject(db, workspace.projectId);
+    if (!project) {
+      throw Object.assign(new Error('Project not found'), {
+        status: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+
+    if (updates.name !== undefined) {
+      const sanitized = sanitizeWorkspaceName(updates.name);
+      if (!sanitized) {
+        throw Object.assign(new Error('Invalid workspace name'), {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+        });
+      }
+    }
+
+    if (updates.branch !== undefined) {
+      const branch = updates.branch.trim();
+      if (!branch) {
+        throw Object.assign(new Error('Workspace branch is required'), {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+        });
+      }
+
+      if (branch.includes(' ')) {
+        throw Object.assign(new Error('Workspace branch cannot contain spaces'), {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+        });
+      }
+
+      const exists = await this.wt.branchExists(project.repoPathCanonical, branch);
+      if (exists && branch !== workspace.branch) {
+        throw Object.assign(new Error('Workspace branch already exists'), {
+          status: 409,
+          code: 'CONFLICT',
+        });
+      }
+
+      if (branch !== workspace.branch) {
+        try {
+          await this.wt.renameBranch(
+            project.repoPathCanonical,
+            workspace.branch,
+            branch
+          );
+        } catch (err) {
+          // Best-effort fallback: if git fails because branch is current and checked out,
+          // we can still keep DB unchanged only by bubbling error.
+          throw err;
+        }
+      }
+
+      // keep only when changed
+    }
+
+    if (updates.name !== undefined || updates.branch !== undefined) {
+      updateWorkspace(db, workspaceId, {
+        name: updates.name,
+        branch: updates.branch,
+      });
+    }
+
     return getWorkspace(db, workspaceId)!;
   }
 

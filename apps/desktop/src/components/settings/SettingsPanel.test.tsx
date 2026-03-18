@@ -315,6 +315,19 @@ describe('SettingsPanel', () => {
     expect(stored.maxTurns).toBe(50);
   });
 
+  test('workspace branch prefix input saves to localStorage', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /git/i }));
+    const prefixInput = screen.getByTestId('workspace-branch-prefix-input');
+    await user.clear(prefixInput);
+    await user.type(prefixInput, 'feature');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.workspaceBranchPrefix).toBe('feature');
+  });
+
   // ─── Overlay click closes panel ───
 
   test('clicking overlay calls onClose', async () => {
