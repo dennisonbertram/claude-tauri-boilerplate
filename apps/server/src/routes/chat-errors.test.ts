@@ -76,6 +76,18 @@ describe('Chat Route - Error Handling', () => {
     db.close();
   });
 
+  test('returns 400 when request body is malformed JSON', async () => {
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{"messages":[{"role":"user","content":"hello"}', // missing closing braces
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe('Malformed JSON request body');
+  });
+
   test('sends error StreamEvent when Claude API throws rate limit error', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
