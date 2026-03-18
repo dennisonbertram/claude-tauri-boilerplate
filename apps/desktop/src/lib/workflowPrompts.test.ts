@@ -239,6 +239,7 @@ describe('workflowPrompts', () => {
         browser: 'Browser testing prompt',
         reviewMemory: DEFAULT_WORKFLOW_PROMPTS.reviewMemory,
         mergeMemory: 'Repo merge memory prompt',
+        codeReview: DEFAULT_WORKFLOW_PROMPTS.codeReview,
       });
 
       expect(fetchMock).toHaveBeenCalledWith(
