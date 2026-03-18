@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue #102 LaTeX and Mermaid rendering in MarkdownRenderer
+
+**Type**: Feature
+**Impact**: Medium
+**Description**: Implemented GitHub issue `#102` - LaTeX math rendering and Mermaid diagram support in chat messages. Added `remark-math` + `rehype-katex` plugins to the existing `react-markdown` pipeline for inline (`$...$`) and block (`$$...$$`) LaTeX. Created `MermaidDiagram.tsx` component with async rendering, loading state, error state, fullscreen modal with pan/zoom, and dark/light theme support via mermaid's built-in theme config. Modified the `pre` renderer in `MarkdownRenderer` to pass-through without wrapping when a mermaid child is detected (preventing a spurious `<pre>` around the diagram). `KaTeX CSS` is imported directly in the component. 13 new TDD tests cover LaTeX inline/block rendering, mermaid diagram detection, error handling, unicode support, and the expand button.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/MarkdownRendererLatexMermaid.test.tsx`
+**Related Issue**: GitHub issue `#102`
+
 ### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
 
 **Type**: Bug Fix

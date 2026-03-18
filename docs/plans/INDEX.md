@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [issue-102-latex-mermaid.md](issue-102-latex-mermaid.md) | Issue #102 implementation of LaTeX rendering (via remark-math + rehype-katex) and Mermaid diagram rendering (MermaidDiagram component with fullscreen pan/zoom). Completed. |
 | [issue-100-bash-display-controls.md](issue-100-bash-display-controls.md) | Issue #100 plan for the remaining BashDisplay scope: terminal search shortcuts, clear behavior, full-height expansion, and validation. |
 | [issue-112-browser-automation.md](issue-112-browser-automation.md) | Implementation plan and completed checklist for GitHub issue #112 covering Chrome automation, screenshots, recordings, MCP presets, and workflow integration. |
 | [issue-5-sdk-event-handling.md](issue-5-sdk-event-handling.md) | Complete implementation plan for GitHub issue #5: handling all 17+ SDKMessage event types. Covers shared types, event mapper, backend streaming, frontend reducer, and UI components across 6 implementation waves. |
