@@ -17,6 +17,17 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 112 browser automation workflow landed
+
+**Type**: Feature + Bug Fix
+**Impact**: High
+**Description**: Completed GitHub issue `#112` on the issue worktree by adding a repo-root Playwright MCP default for headed Chrome automation, Settings > MCP preset installation cards, a dedicated browser tool renderer for screenshots, recordings, page text, and console output, and updated `/browser` workflow guidance. Manual verification exposed a monorepo integration bug where the MCP router read and wrote `.mcp.json` relative to `apps/server` instead of the repo root, so the browser server config was invisible to the UI/API when the backend launched from its package directory. The route now resolves the repo-root config and prefers it over stale nested copies.
+
+**Regression Test**: `apps/desktop/src/components/__tests__/McpPanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/BrowserAutomationDisplay.test.tsx`, `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/server/src/routes/mcp.test.ts`
+**Related Issue**: GitHub issue `#112`
+
+---
+
 ### 2026-03-17: Issues 141-151 Wave 3 Integration
 
 **Type**: Bug Fix

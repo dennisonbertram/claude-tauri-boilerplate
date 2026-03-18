@@ -6,6 +6,7 @@ Implementation notes and code change documentation.
 
 | File | Description |
 |------|-------------|
+| [issue-112-browser-automation.md](issue-112-browser-automation.md) | Issue #112 implementation notes for Playwright MCP defaults, Settings presets, browser tool rendering, workflow prompt updates, and repo-root MCP config resolution. |
 | [phase1-scaffolding.md](phase1-scaffolding.md) | Phase 1 monorepo scaffolding - pnpm workspace, shared types, Hono server, Tauri+React desktop app |
 | [phase2-auth-endpoint.md](phase2-auth-endpoint.md) | Phase 2 auth status endpoint - subscription detection via Claude Agent SDK with 10s timeout |
 | [phase3-chat-streaming.md](phase3-chat-streaming.md) | Phase 3 chat streaming route - SSE streaming of Claude responses via AI SDK v6 UI message stream protocol |

@@ -32,6 +32,12 @@ describe('workflowPrompts', () => {
       const prompt = getWorkflowPrompt({ review: custom }, 'review');
       expect(prompt).toBe(custom);
     });
+
+    it('includes browser MCP setup guidance in the default browser prompt', () => {
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('@playwright/mcp@latest');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('.claude/browser-artifacts');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('gif');
+    });
   });
 
   describe('message builders', () => {
