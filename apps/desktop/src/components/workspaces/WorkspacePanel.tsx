@@ -8,6 +8,8 @@ import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
+import { useSettings } from '@/hooks/useSettings';
+import { getWorkflowPrompt, buildMergeMemoryDraft } from '@/lib/workflowPrompts';
 import * as api from '@/lib/workspace-api';
 
 type Tab = 'chat' | 'diff';
@@ -20,6 +22,7 @@ interface WorkspacePanelProps {
 }
 
 export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings }: WorkspacePanelProps) {
+  const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -43,11 +46,29 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
   const handleMerge = useCallback(async () => {
     await api.mergeWorkspace(workspace.id);
     onWorkspaceUpdate?.();
+    const prompt = getWorkflowPrompt(settings.workflowPrompts, 'mergeMemory');
     promptMemoryUpdate({
       trigger: 'workspace-merge',
+      draft: {
+        fileName: 'MEMORY.md',
+        content: buildMergeMemoryDraft({
+          prompt,
+          workspaceName: workspace.name,
+          branch: workspace.branch,
+          baseBranch: workspace.baseBranch,
+        }),
+      },
       onOpenMemory: () => onOpenSettings?.('memory'),
     });
-  }, [workspace.id, onWorkspaceUpdate, onOpenSettings]);
+  }, [
+    workspace.id,
+    workspace.name,
+    workspace.branch,
+    workspace.baseBranch,
+    onWorkspaceUpdate,
+    onOpenSettings,
+    settings.workflowPrompts,
+  ]);
 
   const handleDiscard = useCallback(async () => {
     await api.discardWorkspace(workspace.id);

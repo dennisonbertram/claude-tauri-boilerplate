@@ -42,6 +42,7 @@ import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
 import './gen-ui/defaultRenderers';
 import {
   getWorkflowPrompt,
+  buildReviewMemoryDraft,
   buildReviewWorkflowMessage,
   buildPrWorkflowMessage,
   buildBranchNameWorkflowMessage,
@@ -748,16 +749,27 @@ export function ChatPage({
         await fetch(`${API_BASE}/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            planId: plan.planId,
-            decision: 'reject',
-            feedback,
-          } satisfies PlanDecisionRequest),
-        });
+        body: JSON.stringify({
+          sessionId,
+          planId: plan.planId,
+          decision: 'reject',
+          feedback,
+        } satisfies PlanDecisionRequest),
+      });
         if (feedback?.trim()) {
+          const prompt = getWorkflowPrompt(
+            settings.workflowPrompts,
+            'reviewMemory'
+          );
           promptMemoryUpdate({
             trigger: 'review-feedback',
+            draft: {
+              fileName: 'MEMORY.md',
+              content: buildReviewMemoryDraft({
+                prompt,
+                feedback,
+              }),
+            },
             onOpenMemory: () => onOpenSettings?.('memory'),
           });
         }
@@ -765,7 +777,7 @@ export function ChatPage({
         console.error('[plan] Failed to send rejection:', err);
       }
     },
-    [sessionId, plan, rejectPlan, onOpenSettings]
+    [sessionId, plan, rejectPlan, onOpenSettings, settings.workflowPrompts]
   );
 
   const handlePlanApproveWithFeedback = useCallback(
@@ -778,16 +790,27 @@ export function ChatPage({
         await fetch(`${API_BASE}/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            planId: plan.planId,
-            decision: 'approve',
-            feedback,
-          } satisfies PlanDecisionRequest),
-        });
+        body: JSON.stringify({
+          sessionId,
+          planId: plan.planId,
+          decision: 'approve',
+          feedback,
+        } satisfies PlanDecisionRequest),
+      });
         if (feedback?.trim()) {
+          const prompt = getWorkflowPrompt(
+            settings.workflowPrompts,
+            'reviewMemory'
+          );
           promptMemoryUpdate({
             trigger: 'review-feedback',
+            draft: {
+              fileName: 'MEMORY.md',
+              content: buildReviewMemoryDraft({
+                prompt,
+                feedback,
+              }),
+            },
             onOpenMemory: () => onOpenSettings?.('memory'),
           });
         }
@@ -795,7 +818,7 @@ export function ChatPage({
         console.error('[plan] Failed to send approval feedback:', err);
       }
     },
-    [sessionId, plan, approvePlan, onOpenSettings]
+    [sessionId, plan, approvePlan, onOpenSettings, settings.workflowPrompts]
   );
 
   const handlePlanInput = useCallback(

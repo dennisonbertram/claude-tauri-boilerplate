@@ -76,6 +76,29 @@ afterEach(() => {
 });
 
 describe('MemoryPanel', () => {
+  it('opens MEMORY.md in the editor with a pending draft appended', async () => {
+    window.sessionStorage.setItem(
+      'claude-tauri-memory-draft',
+      JSON.stringify({
+        fileName: 'MEMORY.md',
+        content: '## Durable guidance\n- Preserve review feedback learnings.',
+      })
+    );
+
+    render(<MemoryPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('memory-editor')).toBeInTheDocument();
+    });
+
+    const textarea = screen.getByTestId(
+      'memory-editor-textarea'
+    ) as HTMLTextAreaElement;
+    expect(textarea.value).toContain('# Project Memory');
+    expect(textarea.value).toContain('## Durable guidance');
+    expect(window.sessionStorage.getItem('claude-tauri-memory-draft')).toBeNull();
+  });
+
   it('shows loading state initially', () => {
     mockFetch.mockImplementation(() => new Promise(() => {}));
     render(<MemoryPanel />);

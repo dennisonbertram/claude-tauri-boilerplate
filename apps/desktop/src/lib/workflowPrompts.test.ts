@@ -83,6 +83,13 @@ describe('workflowPrompts', () => {
             json: async () => ({ content: 'Repo-specific review prompt' }),
           } as Response;
         }
+        if (url.endsWith('/workflow-review-memory.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Repo-specific review memory prompt' }),
+          } as Response;
+        }
 
         return {
           ok: false,
@@ -93,7 +100,10 @@ describe('workflowPrompts', () => {
 
       const prompts = await loadRepoWorkflowPrompts();
 
-      expect(prompts).toEqual({ review: 'Repo-specific review prompt' });
+      expect(prompts).toEqual({
+        review: 'Repo-specific review prompt',
+        reviewMemory: 'Repo-specific review memory prompt',
+      });
     });
 
     it('creates or clears repository workflow prompt files as needed', async () => {
@@ -124,6 +134,20 @@ describe('workflowPrompts', () => {
             json: async () => ({ error: 'Not found' }),
           } as Response;
         }
+        if (method === 'GET' && url.endsWith('/workflow-review-memory.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Old review memory prompt' }),
+          } as Response;
+        }
+        if (method === 'GET' && url.endsWith('/workflow-merge-memory.md')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Not found' }),
+          } as Response;
+        }
 
         return {
           ok: true,
@@ -138,6 +162,8 @@ describe('workflowPrompts', () => {
         review: 'Repo review prompt',
         pr: DEFAULT_WORKFLOW_PROMPTS.pr,
         branch: DEFAULT_WORKFLOW_PROMPTS.branch,
+        reviewMemory: DEFAULT_WORKFLOW_PROMPTS.reviewMemory,
+        mergeMemory: 'Repo merge memory prompt',
       });
 
       expect(fetchMock).toHaveBeenCalledWith(
@@ -153,6 +179,20 @@ describe('workflowPrompts', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         'http://localhost:3131/api/memory/workflow-pr.md',
         expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory/workflow-review-memory.md',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'workflow-merge-memory.md',
+            content: 'Repo merge memory prompt',
+          }),
+        })
       );
     });
   });

@@ -15,6 +15,20 @@ vi.mock('@/lib/memoryUpdatePrompt', () => ({
   promptMemoryUpdate: vi.fn(),
 }));
 
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: () => ({
+    settings: {
+      workflowPrompts: {
+        review: 'Review prompt',
+        pr: 'PR prompt',
+        branch: 'Branch prompt',
+        reviewMemory: 'Review memory prompt',
+        mergeMemory: 'Merge memory prompt',
+      },
+    },
+  }),
+}));
+
 vi.mock('@/components/chat/ChatPage', () => ({
   ChatPage: () => <div data-testid="chat-page-placeholder" />,
 }));

@@ -21,8 +21,18 @@ Add a bounded MVP that nudges the user to capture durable guidance in repo memor
 
 ## Checklist
 
-- [ ] Add regression tests for the review-feedback memory prompt.
-- [ ] Add regression tests for the post-merge memory prompt.
-- [ ] Implement the prompt helper and wire it into review/merge flows.
-- [ ] Verify memory persistence and repo-scoped reuse with targeted tests.
-- [ ] Record implementation notes and validation results.
+- [x] Add regression tests for the review-feedback memory prompt.
+- [x] Add regression tests for the post-merge memory prompt.
+- [x] Implement the prompt helper and wire it into review/merge flows.
+- [x] Verify memory persistence and repo-scoped reuse with targeted tests.
+- [x] Record implementation notes and validation results.
+
+## Validation Notes
+
+- Desktop regression tests now cover:
+  - repo-scoped `reviewMemory` / `mergeMemory` prompt persistence
+  - workflow settings UI for editing those prompts
+  - review-feedback prompt flow into a queued memory draft
+  - post-merge prompt flow into a queued memory draft
+  - Memory tab consuming the queued draft into `MEMORY.md`
+- Manual browser verification in this worktree was blocked because the fixed app ports `1420` and `3131` were already occupied by another running dev instance outside this task worktree.
