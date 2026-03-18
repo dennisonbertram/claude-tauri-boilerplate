@@ -139,13 +139,21 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setSelectedProjectId(project.id);
   }, [addProject]);
 
-  const handleCreateWorkspace = useCallback(async (name: string, baseBranch?: string, sourceBranch?: string) => {
+  const handleCreateWorkspace = useCallback(async (
+    name: string,
+    baseBranch?: string,
+    sourceBranch?: string,
+    githubIssue?: import('@/lib/workspace-api').GithubIssue
+  ) => {
     const ws = await addWorkspace(
       name,
       baseBranch,
       sourceBranch,
       undefined,
-      settings.workspaceBranchPrefix
+      settings.workspaceBranchPrefix,
+      githubIssue
+        ? { number: githubIssue.number, title: githubIssue.title, url: githubIssue.url }
+        : undefined
     );
     if (ws) {
       setSelectedWorkspace(ws);
@@ -329,6 +337,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       {createWorkspaceProject && (
         <CreateWorkspaceDialog
           isOpen={true}
+          projectId={createWorkspaceProject.id}
           projectName={createWorkspaceProject.name}
           defaultBranch={createWorkspaceProject.defaultBranch}
           onClose={() => setCreateWorkspaceProject(null)}
