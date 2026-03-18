@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownRenderer } from '../chat/MarkdownRenderer';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import * as api from '@/lib/workspace-api';
+import type { DiffComment } from '@claude-tauri/shared';
 
 interface WorkspaceDiffViewProps {
   workspaceId: string;
@@ -40,6 +41,7 @@ export interface ParsedDiffFile {
   lines: ParsedDiffLine[];
 }
 
+/** @deprecated Use DiffComment from shared types instead */
 export interface InlineComment {
   id: string;
   markdown: string;
@@ -151,14 +153,41 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
   const [reviewedFiles, setReviewedFiles] = useState<Record<string, boolean>>({});
   const [activeCommentTarget, setActiveCommentTarget] = useState<string | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
-  const [comments, setComments] = useState<Record<string, InlineComment[]>>({});
-  const [commentIdCounter, setCommentIdCounter] = useState(0);
+  // persisted diff comments, loaded from backend
+  const [diffComments, setDiffComments] = useState<DiffComment[]>([]);
 
   const { diff, changedFiles, loading, error, fetchDiff } = useWorkspaceDiff(
     workspaceId,
     reviewRange
   );
   const parsedFiles = useMemo(() => parseWorkspaceDiff(diff), [diff]);
+
+  // Build a lookup map: commentKey -> DiffComment[] for fast rendering
+  // commentKey is `${filePath}:${lineIndex}` — we match by filePath + lineNumber
+  // Note: lineNumber in the backend is the actual git line number, not the display index.
+  // We store it under the commentKey using lineNumber directly.
+  const commentsByKey = useMemo(() => {
+    const map: Record<string, DiffComment[]> = {};
+    for (const comment of diffComments) {
+      const key = comment.lineNumber != null
+        ? `${comment.filePath}:line:${comment.lineNumber}`
+        : `${comment.filePath}:file`;
+      map[key] = [...(map[key] ?? []), comment];
+    }
+    return map;
+  }, [diffComments]);
+
+  const loadDiffComments = useCallback(() => {
+    api.fetchDiffComments(workspaceId)
+      .then((loaded) => setDiffComments(loaded))
+      .catch(() => {
+        // non-fatal — comments just won't show if fetch fails
+      });
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadDiffComments();
+  }, [loadDiffComments]);
 
   useEffect(() => {
     let cancelled = false;
@@ -249,23 +278,38 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
   const isAllReviewed = filesToDisplay.every((file) => reviewedFiles[file.path]);
   const hasRangeDiff = Boolean(reviewRange);
 
-  const saveComment = () => {
-    if (!activeCommentTarget) return;
-    const markdown = commentDrafts[activeCommentTarget]?.trim();
-    if (!markdown) return;
+  // Maps a commentKey to { filePath, lineNumber } for use when persisting to the backend.
+  // commentKey format: `${filePath}:${lineIndex}` (UI index, used for state)
+  // We store the actual parsed line's git line number separately via activeCommentMeta.
+  const [activeCommentMeta, setActiveCommentMeta] = useState<{
+    filePath: string;
+    lineNumber: number | null;
+  } | null>(null);
 
-    const id = `comment-${commentIdCounter + 1}`;
-    setCommentIdCounter((current) => current + 1);
-    setComments((prev) => ({
-      ...prev,
-      [activeCommentTarget]: [...(prev[activeCommentTarget] ?? []), { id, markdown }],
-    }));
+  const saveComment = async () => {
+    if (!activeCommentTarget || !activeCommentMeta) return;
+    const content = commentDrafts[activeCommentTarget]?.trim();
+    if (!content) return;
+
+    try {
+      const saved = await api.createDiffComment(workspaceId, {
+        filePath: activeCommentMeta.filePath,
+        lineNumber: activeCommentMeta.lineNumber,
+        content,
+        author: 'user',
+      });
+      setDiffComments((prev) => [...prev, saved]);
+    } catch {
+      // silently fail — comment won't persist but we still close the composer
+    }
+
     setCommentDrafts((prev) => {
       const next = { ...prev };
       delete next[activeCommentTarget];
       return next;
     });
     setActiveCommentTarget(null);
+    setActiveCommentMeta(null);
   };
 
   const cancelComment = () => {
@@ -276,10 +320,25 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
       return next;
     });
     setActiveCommentTarget(null);
+    setActiveCommentMeta(null);
   };
 
   const changeComment = (target: string, value: string) => {
     setCommentDrafts((prev) => ({ ...prev, [target]: value }));
+  };
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      await api.deleteDiffComment(workspaceId, commentId);
+      setDiffComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch {
+      // silently fail — UI stays in sync anyway since we re-fetch on error
+    }
+  };
+
+  const openCommentComposer = (key: string, filePath: string, lineNumber: number | null) => {
+    setActiveCommentTarget(activeCommentTarget === key ? null : key);
+    setActiveCommentMeta(activeCommentTarget === key ? null : { filePath, lineNumber });
   };
 
   if (loading) {
@@ -428,7 +487,7 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
             {parsedFiles.length > 0 ? (
               parsedFiles.map((file) => {
                 const status = changedFiles.find((f) => f.path === file.path)?.status ?? 'modified';
-                const fileCommentable = comments[file.path] ?? [];
+                const fileCommentCount = diffComments.filter((c) => c.filePath === file.path).length;
                 return (
                   <div key={file.path} className="border-b border-border/80">
                     <div className="flex items-center justify-between border-b border-border bg-zinc-900/50 px-2 py-1">
@@ -447,7 +506,20 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                         {file.lines.map((line, index) => {
                           const key = commentKey(file.path, index);
                           const isActiveComment = activeCommentTarget === key;
-                          const hasComments = comments[key]?.length ? comments[key]!.length : 0;
+
+                          // Determine the git line number for this line (used for backend storage)
+                          const gitLineNumber: number | null =
+                            line.type === 'added' ? (line.newLine ?? null) :
+                            line.type === 'removed' ? (line.oldLine ?? null) :
+                            line.type === 'context' ? (line.newLine ?? null) :
+                            null;
+
+                          // Build the lookup key for this line's comments
+                          const lookupKey = gitLineNumber != null
+                            ? `${file.path}:line:${gitLineNumber}`
+                            : null;
+                          const lineComments = lookupKey ? (commentsByKey[lookupKey] ?? []) : [];
+                          const hasComments = lineComments.length > 0;
 
                           if (line.type === 'meta' || line.type === 'hunk') {
                             return (
@@ -482,19 +554,27 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                                       variant="ghost"
                                       size="sm"
                                       className="h-6 px-2"
-                                      onClick={() => {
-                                        setActiveCommentTarget(isActiveComment ? null : key);
-                                      }}
+                                      onClick={() => openCommentComposer(key, file.path, gitLineNumber)}
                                     >
                                       Comment
                                     </Button>
                                   </span>
                                 </div>
-                                {hasComments > 0 && (
+                                {hasComments && (
                                   <div className="px-3 py-2 border-t border-border/70 bg-zinc-950/20 text-zinc-200 space-y-2">
-                                    {comments[key]?.map((comment) => (
-                                      <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30">
-                                        <MarkdownRenderer content={comment.markdown} />
+                                    {lineComments.map((comment) => (
+                                      <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30 flex items-start gap-2">
+                                        <div className="flex-1 min-w-0">
+                                          <MarkdownRenderer content={comment.content} />
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive shrink-0"
+                                          onClick={() => deleteComment(comment.id)}
+                                        >
+                                          Delete
+                                        </Button>
                                       </div>
                                     ))}
                                   </div>
@@ -543,19 +623,27 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                                     variant="ghost"
                                     size="sm"
                                     className="h-6 px-2"
-                                    onClick={() => {
-                                      setActiveCommentTarget(isActiveComment ? null : key);
-                                    }}
+                                    onClick={() => openCommentComposer(key, file.path, gitLineNumber)}
                                   >
                                     Comment
                                   </Button>
                                 </span>
                               </div>
-                              {hasComments > 0 && (
+                              {hasComments && (
                                 <div className="px-3 py-2 border-t border-border/70 bg-zinc-950/20 text-zinc-200 space-y-2">
-                                  {comments[key]?.map((comment) => (
-                                    <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30">
-                                      <MarkdownRenderer content={comment.markdown} />
+                                  {lineComments.map((comment) => (
+                                    <div key={comment.id} className="rounded border border-border p-2 bg-zinc-900/30 flex items-start gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <MarkdownRenderer content={comment.content} />
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive shrink-0"
+                                        onClick={() => deleteComment(comment.id)}
+                                      >
+                                        Delete
+                                      </Button>
                                     </div>
                                   ))}
                                 </div>
@@ -589,7 +677,7 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                     )}
                     <div className="px-3 py-2 border-t border-border bg-zinc-950/30">
                       <span className="text-[11px] text-muted-foreground">
-                        File comments: {fileCommentable.length}
+                        File comments: {fileCommentCount}
                       </span>
                     </div>
                   </div>
