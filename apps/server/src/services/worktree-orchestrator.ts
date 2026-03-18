@@ -1,5 +1,6 @@
 import { Database } from 'bun:sqlite';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import type { Workspace, WorkspaceStatus } from '@claude-tauri/shared';
 import {
   createWorkspace as dbCreateWorkspace,
@@ -17,6 +18,7 @@ import {
   canonicalizePath,
 } from '../utils/paths';
 import { WorktreeService, worktreeService } from './worktree';
+import { loadWorkspaceConfig } from './workspace-config';
 
 const SETUP_TIMEOUT_MS = 30_000;
 
@@ -199,12 +201,39 @@ export class WorktreeOrchestrator {
       );
     }
 
-    // 7. If setup_command exists, run it
-    if (project.setupCommand) {
+    // 7. Load repo config and apply it
+    const repoConfig = await loadWorkspaceConfig(project.repoPathCanonical).catch(() => null);
+
+    // 7a. Copy preserve_files into new worktree
+    if (repoConfig?.preserve?.files?.length) {
+      for (const relPath of repoConfig.preserve.files) {
+        const srcFile = join(project.repoPathCanonical, relPath);
+        const destFile = join(worktreePath, relPath);
+        if (existsSync(srcFile)) {
+          try {
+            mkdirSync(dirname(destFile), { recursive: true });
+            copyFileSync(srcFile, destFile);
+          } catch {
+            // Best-effort — don't fail workspace creation for a missing preserve file
+          }
+        }
+      }
+    }
+
+    // 7b. Determine effective setup command:
+    //   - project.setupCommand takes priority (explicit override in DB)
+    //   - repoConfig.lifecycle.setup is used if no project.setupCommand
+    const effectiveSetupCommand =
+      project.setupCommand ?? repoConfig?.lifecycle?.setup ?? null;
+
+    if (effectiveSetupCommand) {
       transitionWorkspaceStatus(db, workspaceId, 'setup_running');
 
+      // Merge repo env overlay into process environment for the setup command
+      const envOverlay = repoConfig?.env ?? {};
+
       try {
-        await this.runSetupCommand(project.setupCommand, worktreePath);
+        await this.runSetupCommand(effectiveSetupCommand, worktreePath, envOverlay);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         setWorkspaceError(db, workspaceId, `Setup command failed: ${msg}`);
@@ -407,10 +436,12 @@ export class WorktreeOrchestrator {
 
   /**
    * Run a setup command in the worktree directory with timeout.
+   * Optional envOverlay merges additional env vars into the process environment.
    */
   private async runSetupCommand(
     command: string,
-    cwd: string
+    cwd: string,
+    envOverlay: Record<string, string> = {}
   ): Promise<void> {
     const parts = command.split(/\s+/);
     const [cmd, ...args] = parts;
@@ -419,6 +450,7 @@ export class WorktreeOrchestrator {
       cwd,
       stdout: 'pipe',
       stderr: 'pipe',
+      env: { ...process.env, ...envOverlay },
     });
 
     const timer = setTimeout(() => {
