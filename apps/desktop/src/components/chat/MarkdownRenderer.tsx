@@ -1,9 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, isValidElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import type { Components } from 'react-markdown';
 import { ImageViewer } from './ImageViewer';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface MarkdownRendererProps {
   content: string;
@@ -33,9 +37,35 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+/**
+ * Checks whether a React node tree contains a mermaid code element.
+ * Used by the `pre` renderer to pass through mermaid blocks without wrapping
+ * them in a `<pre>` tag (the MermaidDiagram component handles its own container).
+ */
+function hasMermaidChild(children: ReactNode): boolean {
+  if (!isValidElement(children)) return false;
+
+  // The immediate child of `pre` is the `code` element rendered by our custom
+  // `code` renderer. That renderer returns a `MermaidDiagram` element for
+  // mermaid blocks. Check both cases:
+  // 1. Direct MermaidDiagram child (our custom code renderer)
+  // 2. A code element with language-mermaid class (rehype default)
+  const el = children as React.ReactElement<{ className?: string }>;
+  if (el.type === MermaidDiagram) return true;
+  if (typeof el.props.className === 'string' && el.props.className.includes('language-mermaid')) {
+    return true;
+  }
+  return false;
+}
+
 const components: Components = {
   // Code blocks and inline code
   pre({ children, ...props }) {
+    // Mermaid diagrams handle their own container; don't wrap in <pre>
+    if (hasMermaidChild(children as ReactNode)) {
+      return <>{children}</>;
+    }
+
     return (
       <pre
         className="overflow-x-auto rounded-lg bg-zinc-900 text-sm my-3"
@@ -56,6 +86,11 @@ const components: Components = {
         typeof children === 'string'
           ? children
           : String(children).replace(/\n$/, '');
+
+      // Mermaid diagrams get their own component with pan/zoom/fullscreen
+      if (language === 'mermaid') {
+        return <MermaidDiagram code={codeText.trim()} />;
+      }
 
       const lines = codeText.split('\n');
       const showLineNumbers = lines.length > 5;
@@ -280,8 +315,8 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <div className="markdown-content text-sm break-words">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeHighlight, rehypeKatex]}
         components={components}
       >
         {content}
