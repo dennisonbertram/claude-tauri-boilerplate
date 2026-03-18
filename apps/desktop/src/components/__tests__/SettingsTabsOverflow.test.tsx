@@ -84,6 +84,23 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
     expect(tablist.className).not.toContain('scrollbar-hide');
   });
 
+  it('applies compact tab density from saved settings', () => {
+    localStorageMock.setItem(
+      'claude-tauri-settings',
+      JSON.stringify({ tabDensity: 'compact' })
+    );
+
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    const tablist = screen.getByRole('tablist');
+    const generalTab = screen.getByRole('tab', { name: 'General' });
+
+    expect(tablist.className).toContain('gap-1');
+    expect(generalTab.className).toContain('px-2.5');
+    expect(generalTab.className).toContain('py-1.5');
+    expect(generalTab.className).toContain('text-xs');
+  });
+
   it('each tab button has role="tab"', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     const tabs = screen.getAllByRole('tab');

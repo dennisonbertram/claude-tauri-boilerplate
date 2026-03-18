@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 113 appearance controls completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Closed the remaining acceptance gaps for GitHub issue `#113` on `codex/issue-113-wave13`. Added persisted settings for `monoFontFamily` and `tabDensity`, exposed both controls in `Settings > Appearance`, applied the selected monospace stack through the `--chat-mono-font` CSS variable, and tightened the settings tab chrome for compact density. The browser verification pass confirmed the new controls render and the selected Courier stack and wide chat width are applied to the live UI.
+**Regression Test**: `apps/desktop/src/hooks/useSettings.test.ts`, `apps/desktop/src/hooks/useTheme.test.ts`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/__tests__/SettingsTabsOverflow.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatInput.test.tsx`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`
+**Related Issue**: GitHub issue `#113`
+
 ### 2026-03-17: Issues 141-151 Wave 3 Integration
 
 **Type**: Bug Fix

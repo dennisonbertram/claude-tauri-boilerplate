@@ -41,6 +41,28 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'status', label: 'Status' },
 ];
 
+function getTablistClass(tabDensity: AppSettings['tabDensity']): string {
+  return tabDensity === 'compact'
+    ? 'flex flex-wrap gap-1 border-b border-border px-2 py-1'
+    : 'flex flex-wrap border-b border-border';
+}
+
+function getTabButtonClass(
+  active: boolean,
+  tabDensity: AppSettings['tabDensity']
+): string {
+  const densityClass =
+    tabDensity === 'compact'
+      ? 'px-2.5 py-1.5 text-xs'
+      : 'px-3 py-2 text-sm';
+
+  return `shrink-0 ${densityClass} font-medium transition-colors whitespace-nowrap ${
+    active
+      ? 'border-b-2 border-primary text-foreground'
+      : 'text-muted-foreground hover:text-foreground'
+  }`;
+}
+
 export interface SessionRuntimeInfo {
   sessionId: string;
   model: string;
@@ -105,18 +127,17 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
         </div>
 
         {/* Tabs */}
-        <div className="flex flex-wrap border-b border-border" role="tablist">
+        <div className={getTablistClass(settings.tabDensity)} role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`shrink-0 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={getTabButtonClass(
+                activeTab === tab.id,
+                settings.tabDensity
+              )}
             >
               {tab.label}
             </button>
@@ -687,6 +708,29 @@ function AppearanceTab({ settings, updateSettings }: TabProps) {
         </select>
       </SettingField>
 
+      {/* Accent Color */}
+      <SettingField
+        label="Accent Color"
+        description="Custom accent for buttons, rings, and highlights"
+      >
+        <select
+          data-testid="accent-color-select"
+          value={settings.accentColor}
+          onChange={(e) =>
+            updateSettings({
+              accentColor: e.target.value as AppSettings['accentColor'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="slate">Slate</option>
+          <option value="blue">Blue</option>
+          <option value="emerald">Emerald</option>
+          <option value="amber">Amber</option>
+          <option value="rose">Rose</option>
+        </select>
+      </SettingField>
+
       {/* Font Size */}
       <SettingField
         label="Font Size"
@@ -704,6 +748,106 @@ function AppearanceTab({ settings, updateSettings }: TabProps) {
           }
           className="w-full accent-primary"
         />
+      </SettingField>
+
+      {/* Chat Font */}
+      <SettingField
+        label="Chat Font"
+        description="Choose proportional or monospace chat text"
+      >
+        <select
+          data-testid="chat-font-select"
+          value={settings.chatFont}
+          onChange={(e) =>
+            updateSettings({
+              chatFont: e.target.value as AppSettings['chatFont'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="proportional">Proportional</option>
+          <option value="mono">Monospace</option>
+        </select>
+      </SettingField>
+
+      <SettingField
+        label="Monospace Family"
+        description="Pick which monospace family powers chat when mono mode is enabled"
+      >
+        <select
+          data-testid="mono-font-family-select"
+          value={settings.monoFontFamily}
+          onChange={(e) =>
+            updateSettings({
+              monoFontFamily: e.target.value as AppSettings['monoFontFamily'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="system">System Mono</option>
+          <option value="menlo">Menlo</option>
+          <option value="courier">Courier New</option>
+        </select>
+      </SettingField>
+
+      {/* Chat Density */}
+      <SettingField
+        label="Chat Density"
+        description="Adjust spacing between messages and controls"
+      >
+        <select
+          data-testid="chat-density-select"
+          value={settings.chatDensity}
+          onChange={(e) =>
+            updateSettings({
+              chatDensity: e.target.value as AppSettings['chatDensity'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+      </SettingField>
+
+      <SettingField
+        label="Tab Density"
+        description="Control how compact the settings tabs appear"
+      >
+        <select
+          data-testid="tab-density-select"
+          value={settings.tabDensity}
+          onChange={(e) =>
+            updateSettings({
+              tabDensity: e.target.value as AppSettings['tabDensity'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+      </SettingField>
+
+      {/* Chat Width */}
+      <SettingField
+        label="Chat Width"
+        description="Set how wide chat messages and the composer may grow"
+      >
+        <select
+          data-testid="chat-width-select"
+          value={settings.chatWidth}
+          onChange={(e) =>
+            updateSettings({
+              chatWidth: e.target.value as AppSettings['chatWidth'],
+            })
+          }
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="standard">Standard</option>
+          <option value="wide">Wide</option>
+          <option value="full">Full Width</option>
+        </select>
       </SettingField>
 
       {/* Show Thinking */}

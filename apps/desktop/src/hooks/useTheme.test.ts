@@ -6,10 +6,16 @@ import { renderHook, act } from '@testing-library/react';
 // We need to mock useSettings so we can control the theme value
 const mockUpdateSettings = vi.fn();
 let mockTheme: 'dark' | 'light' | 'system' = 'dark';
+let mockAccent: 'slate' | 'blue' | 'emerald' | 'amber' | 'rose' = 'slate';
+let mockMonoFontFamily: 'system' | 'menlo' | 'courier' = 'system';
 
 vi.mock('./useSettings', () => ({
   useSettings: () => ({
-    settings: { theme: mockTheme },
+    settings: {
+      theme: mockTheme,
+      accentColor: mockAccent,
+      monoFontFamily: mockMonoFontFamily,
+    },
     updateSettings: mockUpdateSettings,
   }),
 }));
@@ -43,11 +49,14 @@ describe('useTheme', () => {
   beforeEach(() => {
     // Reset theme setting
     mockTheme = 'dark';
+    mockAccent = 'slate';
+    mockMonoFontFamily = 'system';
     mockUpdateSettings.mockClear();
 
     // Clean up html classes
     document.documentElement.classList.remove('dark', 'light');
     document.documentElement.classList.remove('theme-transition');
+    document.documentElement.removeAttribute('style');
 
     // Setup matchMedia mock
     matchMediaMock = createMatchMediaMock(false); // system prefers light by default
@@ -88,6 +97,39 @@ describe('useTheme', () => {
       renderHook(() => useTheme());
 
       expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+
+  describe('accent color application', () => {
+    it('applies the selected accent palette to CSS variables', async () => {
+      mockTheme = 'light';
+      mockAccent = 'rose';
+      const { useTheme } = await import('./useTheme');
+
+      renderHook(() => useTheme());
+
+      expect(
+        document.documentElement.style.getPropertyValue('--primary')
+      ).toBe('#e11d48');
+      expect(
+        document.documentElement.style.getPropertyValue('--primary-foreground')
+      ).toBe('#ffffff');
+      expect(
+        document.documentElement.style.getPropertyValue('--ring')
+      ).toBe('#fb7185');
+    });
+  });
+
+  describe('chat mono font application', () => {
+    it('applies the selected mono font stack to CSS variables', async () => {
+      mockMonoFontFamily = 'courier';
+      const { useTheme } = await import('./useTheme');
+
+      renderHook(() => useTheme());
+
+      expect(
+        document.documentElement.style.getPropertyValue('--chat-mono-font')
+      ).toContain('"Courier New"');
     });
   });
 

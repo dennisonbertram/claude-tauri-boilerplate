@@ -1,12 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type UIEvent,
+} from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ToolCallBlock } from './ToolCallBlock';
 import { ThinkingBlock } from './ThinkingBlock';
 import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
+import { useSettings } from '@/hooks/useSettings';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { ArrowDown, Search, BookOpen, FileText, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
@@ -32,6 +42,8 @@ interface TocItem {
   label: string;
   summary: string;
 }
+
+const MONO_FONT_STYLE: CSSProperties = { fontFamily: 'var(--chat-mono-font)' };
 
 function getMessageText(message: UIMessage): string {
   return (
@@ -72,6 +84,38 @@ function truncateText(text: string, maxLen = 60): string {
   return `${trimmed.slice(0, maxLen)}…`;
 }
 
+function getChatWidthClass(width: 'standard' | 'wide' | 'full'): string {
+  switch (width) {
+    case 'wide':
+      return 'max-w-5xl';
+    case 'full':
+      return 'max-w-none';
+    case 'standard':
+    default:
+      return 'max-w-3xl';
+  }
+}
+
+function getChatDensityClasses(density: 'comfortable' | 'compact'): {
+  content: string;
+  toc: string;
+  bubble: string;
+} {
+  if (density === 'compact') {
+    return {
+      content: 'space-y-2 p-3',
+      toc: 'max-h-20',
+      bubble: 'px-3 py-2.5',
+    };
+  }
+
+  return {
+    content: 'space-y-4 p-4',
+    toc: 'max-h-24',
+    bubble: 'px-4 py-3',
+  };
+}
+
 function renderHighlightedText(text: string, query: string) {
   const escaped = escapeRegExp(query);
   const regex = new RegExp(`(${escaped})`, 'gi');
@@ -103,6 +147,7 @@ export function MessageList({
   onExportSummaryToNewChat,
   isPrivacyMode = false,
 }: MessageListProps) {
+  const { settings } = useSettings();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -338,6 +383,10 @@ export function MessageList({
     : [];
 
   const selectedMatch = searchMatches[activeMatchIndex] ?? null;
+  const chatWidthClass = getChatWidthClass(settings.chatWidth);
+  const densityClasses = getChatDensityClasses(settings.chatDensity);
+  const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
+  const chatFontStyle = settings.chatFont === 'mono' ? MONO_FONT_STYLE : undefined;
 
   return (
     <div
@@ -439,7 +488,7 @@ export function MessageList({
             </div>
           </div>
 
-          <div className="flex max-h-24 flex-col gap-1 overflow-auto pr-1">
+          <div className={cn('flex flex-col gap-1 overflow-auto pr-1', densityClasses.toc)}>
             {tocItems.map((item, tocIndex) => {
               const isMatch = searchMatches.some((match) => match.messageIndex === item.messageIndex);
               const isActive = selectedMatch?.messageIndex === item.messageIndex;
@@ -485,7 +534,10 @@ export function MessageList({
         viewportRef={handleViewportMount}
         viewportProps={{ onScroll: handleViewportScroll }}
       >
-        <div className="mx-auto max-w-3xl space-y-4 p-4">
+        <div
+          className={cn('mx-auto', chatWidthClass, densityClasses.content)}
+          data-testid="message-list-content"
+        >
           {visibleMessages.map((message, index) => {
             const matchIndex = searchMatches.findIndex(
               (item) => item.messageIndex === index
@@ -514,6 +566,9 @@ export function MessageList({
                   message={message}
                   highlightQuery={normalizedSearchQuery}
                   isMatch={isMatch}
+                  densityClass={densityClasses.bubble}
+                  chatFontClass={chatFontClass}
+                  chatFontStyle={chatFontStyle}
                 />
               </div>
             );
@@ -598,10 +653,16 @@ function MessageBubble({
   message,
   highlightQuery,
   isMatch,
+  densityClass,
+  chatFontClass,
+  chatFontStyle,
 }: {
   message: UIMessage;
   highlightQuery: string;
   isMatch: boolean;
+  densityClass: string;
+  chatFontClass: string;
+  chatFontStyle?: CSSProperties;
 }) {
   const isUser = message.role === 'user';
   const text = getMessageText(message);
@@ -609,9 +670,14 @@ function MessageBubble({
   if (isUser) {
     return (
       <div
-        className={`rounded-lg px-4 py-3 bg-primary text-primary-foreground ${
+        data-testid="message-bubble"
+        className={cn(
+          'rounded-lg bg-primary text-primary-foreground',
+          densityClass,
+          chatFontClass,
           isMatch ? 'ring-2 ring-primary-foreground/50' : ''
-        }`}
+        )}
+        style={chatFontStyle}
       >
         <div className="text-sm whitespace-pre-wrap break-words">
           {highlightQuery
@@ -624,12 +690,19 @@ function MessageBubble({
 
   return (
     <div
-      className={`max-w-[80%] min-w-0 rounded-lg bg-muted px-4 py-3 text-foreground ${
+      data-testid="message-bubble"
+      className={cn(
+        'max-w-[80%] min-w-0 rounded-lg bg-muted text-foreground',
+        densityClass,
+        chatFontClass,
         isMatch ? 'ring-2 ring-foreground/40' : ''
-      }`}
+      )}
+      style={chatFontStyle}
     >
       <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
-      <MarkdownRenderer content={text} />
+      <div className={chatFontClass} style={chatFontStyle}>
+        <MarkdownRenderer content={text} />
+      </div>
     </div>
   );
 }

@@ -76,6 +76,11 @@ describe('useSettings', () => {
       expect(result.current.settings.theme).toBe('dark');
     });
 
+    it('has correct default accentColor', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.accentColor).toBe('slate');
+    });
+
     it('has correct default maxTokens', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.maxTokens).toBe(4096);
@@ -89,6 +94,31 @@ describe('useSettings', () => {
     it('has correct default fontSize', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.fontSize).toBe(14);
+    });
+
+    it('has correct default chatFont', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.chatFont).toBe('proportional');
+    });
+
+    it('has correct default monoFontFamily', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.monoFontFamily).toBe('system');
+    });
+
+    it('has correct default chatDensity', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.chatDensity).toBe('comfortable');
+    });
+
+    it('has correct default tabDensity', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.tabDensity).toBe('comfortable');
+    });
+
+    it('has correct default chatWidth', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.chatWidth).toBe('standard');
     });
 
     it('has correct default showThinking', () => {
@@ -236,6 +266,12 @@ describe('useSettings', () => {
         model: 'claude-opus-4-6',
         bedrockBaseUrl: 'https://bedrock.example.com',
         theme: 'light',
+        accentColor: 'rose',
+        chatFont: 'mono',
+        monoFontFamily: 'courier',
+        chatDensity: 'compact',
+        tabDensity: 'compact',
+        chatWidth: 'wide',
         maxTokens: 8192,
       };
       localStorageMock.setItem(
@@ -249,6 +285,12 @@ describe('useSettings', () => {
       expect(result.current.settings.provider).toBe('bedrock');
       expect(result.current.settings.bedrockBaseUrl).toBe('https://bedrock.example.com');
       expect(result.current.settings.theme).toBe('light');
+      expect(result.current.settings.accentColor).toBe('rose');
+      expect(result.current.settings.chatFont).toBe('mono');
+      expect(result.current.settings.monoFontFamily).toBe('courier');
+      expect(result.current.settings.chatDensity).toBe('compact');
+      expect(result.current.settings.tabDensity).toBe('compact');
+      expect(result.current.settings.chatWidth).toBe('wide');
       expect(result.current.settings.maxTokens).toBe(8192);
     });
 
@@ -264,7 +306,11 @@ describe('useSettings', () => {
       expect(result.current.settings.model).toBe('claude-haiku-4-5-20251001');
       // Other fields should have defaults
       expect(result.current.settings.theme).toBe('dark');
+      expect(result.current.settings.accentColor).toBe('slate');
       expect(result.current.settings.fontSize).toBe(14);
+      expect(result.current.settings.chatFont).toBe('proportional');
+      expect(result.current.settings.chatDensity).toBe('comfortable');
+      expect(result.current.settings.chatWidth).toBe('standard');
     });
 
     it('handles invalid JSON in localStorage gracefully', () => {
@@ -385,12 +431,20 @@ describe('useSettings', () => {
         result.current.updateSettings({
           model: 'claude-haiku-4-5-20251001',
           theme: 'light',
+          accentColor: 'emerald',
+          chatFont: 'mono',
+          chatDensity: 'compact',
+          chatWidth: 'wide',
           fontSize: 16,
         });
       });
 
       expect(result.current.settings.model).toBe('claude-haiku-4-5-20251001');
       expect(result.current.settings.theme).toBe('light');
+      expect(result.current.settings.accentColor).toBe('emerald');
+      expect(result.current.settings.chatFont).toBe('mono');
+      expect(result.current.settings.chatDensity).toBe('compact');
+      expect(result.current.settings.chatWidth).toBe('wide');
       expect(result.current.settings.fontSize).toBe(16);
     });
 
