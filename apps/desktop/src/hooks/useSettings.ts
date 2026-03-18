@@ -41,6 +41,11 @@ export interface AppSettings {
   showToolCalls: boolean;
   showResourceUsage: boolean;
 
+  // Notifications
+  notificationsEnabled: boolean;
+  notificationSound: 'none' | 'chime' | 'beep';
+  notificationsWorkspaceUnread: boolean;
+
   // Advanced
   permissionMode: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   autoCompact: boolean;
@@ -83,6 +88,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showThinking: true,
   showToolCalls: true,
   showResourceUsage: false,
+
+  // Notifications
+  notificationsEnabled: true,
+  notificationSound: 'chime',
+  notificationsWorkspaceUnread: true,
 
   // Advanced
   permissionMode: 'default',
