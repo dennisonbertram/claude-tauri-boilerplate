@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BashDisplay } from '../BashDisplay';
 import type { BashDisplayProps } from '../BashDisplay';
@@ -166,6 +166,71 @@ describe('BashDisplay', () => {
       expect(
         screen.queryByRole('button', { name: /show.*more lines/i })
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Terminal search and output controls', () => {
+    it('opens search with Cmd+F and focuses the search input', async () => {
+      const user = userEvent.setup();
+      const longOutput = Array.from({ length: 30 }, (_, i) => `line ${i + 1}`).join('\n');
+
+      renderBash({ command: 'seq 30', output: longOutput });
+      const terminalCard = screen.getByTestId('terminal-card');
+
+      await user.click(terminalCard);
+      fireEvent.keyDown(terminalCard, { key: 'f', metaKey: true });
+
+      const searchInput = screen.getByTestId('terminal-search-input');
+      expect(searchInput).toHaveValue('');
+      expect(searchInput).toHaveFocus();
+
+      fireEvent.keyDown(terminalCard, { key: 'k', metaKey: true });
+      expect(searchInput).toHaveValue('');
+    });
+
+    it('filters output lines by query and removes truncation while searching', async () => {
+      const user = userEvent.setup();
+      const longOutput = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`).join('\n');
+
+      renderBash({ command: 'seq 50', output: longOutput });
+      const searchInput = screen.getByTestId('terminal-search-input');
+
+      await user.type(searchInput, 'line 50');
+
+      const outputArea = screen.getByTestId('bash-output');
+      expect(outputArea).toHaveTextContent('line 50');
+      expect(
+        screen.queryByRole('button', { name: /show.*more lines/i })
+      ).not.toBeInTheDocument();
+    });
+
+    it('clears terminal search with Cmd+K', async () => {
+      const user = userEvent.setup();
+      renderBash({ command: 'seq 3', output: 'line 1\nline 2\nline 3' });
+      const searchInput = screen.getByTestId('terminal-search-input');
+
+      await user.type(searchInput, 'line 1');
+      expect(searchInput).toHaveValue('line 1');
+
+      const card = screen.getByTestId('terminal-card');
+      fireEvent.keyDown(card, { key: 'k', metaKey: true });
+
+      expect(searchInput).toHaveValue('');
+    });
+
+    it('expands output area to full height and collapses back', async () => {
+      const user = userEvent.setup();
+      renderBash({ command: 'seq 3', output: 'line 1\nline 2\nline 3' });
+
+      const fullHeightBtn = screen.getByTestId('toggle-full-height');
+      const outputArea = screen.getByTestId('bash-output');
+
+      expect(outputArea.className).toContain('max-h-96');
+      await user.click(fullHeightBtn);
+      expect(outputArea.className).toContain('max-h-none');
+
+      await user.click(fullHeightBtn);
+      expect(outputArea.className).toContain('max-h-96');
     });
   });
 

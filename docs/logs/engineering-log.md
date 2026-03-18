@@ -17,6 +17,14 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 100 Bash display controls completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed the remaining `BashDisplay` scope for GitHub issue `#100`, matching the earlier partially-done handoff comment on the issue. Added a focusable terminal wrapper with `Cmd/Ctrl+F` search focus, `Cmd/Ctrl+K` clear behavior, output-line filtering that disables truncation while searching, and a full-height toggle for long command output. Manual browser verification against the live Vite component confirmed search focus, filtered output, truncation restoration after clear, and the height toggle class change. Browser console output still included unrelated pre-existing workflow-memory `404`s and a dev-font `403`, but no new Bash display errors were introduced.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/BashDisplay.test.tsx`
+**Related Issue**: GitHub issue `#100`
+
 ### 2026-03-18: Issue 87 thinking controls completed
 
 **Type**: Bug Fix

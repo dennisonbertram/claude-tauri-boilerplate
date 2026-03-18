@@ -1,4 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import {
   Terminal,
   ChevronDown,
@@ -63,7 +71,7 @@ function CopyButton({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async (e: React.MouseEvent) => {
+  const handleCopy = async (e: MouseEvent) => {
     e.stopPropagation();
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -92,7 +100,7 @@ function AnsiRenderer({ text }: { text: string }): ReactNode {
   return (
     <>
       {segments.map((seg: AnsiSegment, i: number) => {
-        const style: React.CSSProperties = {};
+        const style: CSSProperties = {};
         const dataAttrs: Record<string, string> = {};
 
         if (seg.color) {
@@ -137,20 +145,79 @@ export function BashDisplay({
   isBackground,
   duration,
 }: BashDisplayProps) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFullHeight, setIsFullHeight] = useState(false);
 
   const isDangerous = detectDangerousCommand(command);
   const lines = output?.split('\n') ?? [];
-  const truncated = lines.length > TRUNCATE_THRESHOLD;
-  const displayLines = showAll ? lines : lines.slice(0, TRUNCATE_THRESHOLD);
-  const hiddenCount = lines.length - TRUNCATE_THRESHOLD;
+  const activeSearchQuery = searchQuery.trim();
+  const hasActiveSearch = activeSearchQuery.length > 0;
+  const filteredLines = hasActiveSearch
+    ? lines.filter((line) =>
+        line.toLowerCase().includes(activeSearchQuery.toLowerCase())
+      )
+    : lines;
+  const truncated = !hasActiveSearch && lines.length > TRUNCATE_THRESHOLD;
+  const shouldDisplayAllLines = showAll || hasActiveSearch;
+  const displayLines = shouldDisplayAllLines
+    ? filteredLines
+    : filteredLines.slice(0, TRUNCATE_THRESHOLD);
+  const hiddenCount = filteredLines.length - TRUNCATE_THRESHOLD;
 
   const hasOutput = output && output.length > 0;
   const hasStderr = stderr && stderr.length > 0;
+  const noMatches = hasActiveSearch && filteredLines.length === 0;
+  const outputHeightClass = isFullHeight ? 'max-h-none' : 'max-h-96';
+
+  useEffect(() => {
+    if (!hasOutput) {
+      setSearchQuery('');
+      return;
+    }
+  }, [hasOutput]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setShowAll(false);
+      return;
+    }
+
+    if (!hasOutput) return;
+    setShowAll(true);
+  }, [hasOutput, searchQuery]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const key = event.key.toLowerCase();
+    const modifierPressed = event.metaKey || event.ctrlKey;
+    if (!modifierPressed) return;
+
+    if (key === 'f') {
+      event.preventDefault();
+      if (!expanded) {
+        setExpanded(true);
+      }
+      setSearchQuery('');
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    if (key === 'k') {
+      event.preventDefault();
+      setSearchQuery('');
+    }
+  };
 
   return (
-    <div className="my-2 rounded-lg border border-zinc-700 overflow-hidden bg-zinc-900 text-zinc-100 text-sm">
+    <div
+      data-testid="terminal-card"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      className="my-2 rounded-lg border border-zinc-700 overflow-hidden bg-zinc-900 text-zinc-100 text-sm"
+      aria-label="Terminal output"
+    >
       {/* ── Header ───────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border-b border-zinc-700">
         <Terminal className="h-4 w-4 text-green-400 shrink-0" />
@@ -214,6 +281,20 @@ export function BashDisplay({
             }`}
           />
         </button>
+
+        <button
+          data-testid="toggle-full-height"
+          onClick={() => setIsFullHeight((value) => !value)}
+          className="p-1 rounded hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-200"
+          aria-label={isFullHeight ? 'Collapse output height' : 'Expand output height'}
+          title={isFullHeight ? 'Collapse output height' : 'Expand output height'}
+        >
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${
+              isFullHeight ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
       </div>
 
       {/* ── Description ──────────────────────────────────────── */}
@@ -229,6 +310,40 @@ export function BashDisplay({
       {/* ── Output Area ──────────────────────────────────────── */}
       {expanded && (
         <div className="relative">
+          {hasOutput ? (
+            <div className="flex items-center gap-2 border-b border-zinc-700/50 px-3 py-2">
+              <input
+                ref={searchInputRef}
+                data-testid="terminal-search-input"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setSearchQuery('');
+                    return;
+                  }
+
+                  if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    setSearchQuery('');
+                  }
+                }}
+                placeholder="Search output (Cmd+F)"
+                className="h-7 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-200 placeholder:text-zinc-500"
+                aria-label="Search terminal output"
+              />
+              <button
+                data-testid="clear-terminal-search"
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="rounded px-2 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-800"
+                aria-label="Clear terminal search"
+              >
+                clear
+              </button>
+            </div>
+          ) : null}
+
           {/* Background command indicator */}
           {isBackground && isRunning && (
             <div className="flex items-center gap-2 px-3 py-2 text-zinc-400">
@@ -254,18 +369,27 @@ export function BashDisplay({
           {hasOutput && (
             <pre
               data-testid="bash-output"
-              className="px-3 py-2 text-sm font-mono whitespace-pre-wrap break-all text-zinc-300 overflow-auto max-h-96"
+              className={`px-3 py-2 text-sm font-mono whitespace-pre-wrap break-all text-zinc-300 overflow-auto ${outputHeightClass}`}
             >
               <AnsiRenderer text={displayLines.join('\n')} />
             </pre>
           )}
 
           {/* No output indicator */}
-          {!hasOutput && !isRunning && (
+          {!hasOutput && !isRunning && !noMatches && (
             <div className="px-3 py-2 text-sm text-zinc-500 italic">
               No output
             </div>
           )}
+
+          {noMatches ? (
+            <div
+              data-testid="terminal-search-empty"
+              className="px-3 py-2 text-xs text-zinc-500 italic"
+            >
+              No matches for {activeSearchQuery}
+            </div>
+          ) : null}
 
           {/* Truncation expander */}
           {truncated && !showAll && (
