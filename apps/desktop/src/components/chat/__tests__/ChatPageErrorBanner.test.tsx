@@ -20,6 +20,16 @@ vi.mock('ai', () => ({
   DefaultChatTransport: vi.fn(),
 }));
 
+vi.mock('@claude-tauri/shared', () => ({
+  pickProviderConfig: (_provider: string, settings: Record<string, unknown>) => ({
+    bedrockBaseUrl: settings.bedrockBaseUrl ?? '',
+    bedrockProjectId: settings.bedrockProjectId ?? '',
+    vertexProjectId: settings.vertexProjectId ?? '',
+    vertexBaseUrl: settings.vertexBaseUrl ?? '',
+    customBaseUrl: settings.customBaseUrl ?? '',
+  }),
+}));
+
 // Mock useStreamEvents
 vi.mock('@/hooks/useStreamEvents', () => ({
   useStreamEvents: () => ({
