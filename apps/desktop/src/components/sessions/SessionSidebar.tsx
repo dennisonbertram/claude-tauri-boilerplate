@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Session } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
@@ -12,6 +13,8 @@ interface SessionSidebarProps {
   activeSessionId: string | null;
   email?: string;
   plan?: string;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
   onDeleteSession: (id: string) => void;
@@ -37,6 +40,8 @@ export function SessionSidebar({
   onOpenSettings,
   activeView,
   onSwitchView,
+  searchQuery = '',
+  onSearchQueryChange,
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
@@ -108,6 +113,13 @@ export function SessionSidebar({
         <Button onClick={onNewChat} className="w-full" variant="secondary">
           New Chat
         </Button>
+        <Input
+          data-testid="session-search-input"
+          value={searchQuery}
+          onChange={(event) => onSearchQueryChange?.(event.target.value)}
+          placeholder="Search sessions"
+          className="mt-2"
+        />
       </div>
       <Separator />
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">

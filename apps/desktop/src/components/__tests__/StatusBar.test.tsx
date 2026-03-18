@@ -23,16 +23,39 @@ beforeEach(() => {
   localStorage.clear();
   vi.stubGlobal('fetch', mockFetch);
   vi.useFakeTimers();
-  // Default: git status returns a branch
-  mockFetch.mockResolvedValue({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        branch: 'main',
-        isClean: true,
-        modifiedFiles: [],
-        stagedFiles: [],
-      }),
+  mockFetch.mockImplementation(async (input: string | URL) => {
+    const url = String(input);
+
+    if (url.includes('/api/system/diagnostics')) {
+      return {
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            cpuUsagePercent: 12.5,
+            memoryUsageMb: 350,
+            memoryUsagePercent: 1.5,
+          }),
+      };
+    }
+
+    if (url.includes('/api/git/status')) {
+      return {
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            branch: 'main',
+            isClean: true,
+            modifiedFiles: [],
+            stagedFiles: [],
+          }),
+      };
+    }
+
+    if (url.includes('/api/health')) {
+      return { ok: true, json: () => Promise.resolve({ status: 'ok' }) };
+    }
+
+    return { ok: false, json: () => Promise.resolve({ error: 'Unknown endpoint' }) };
   });
 });
 
@@ -170,6 +193,74 @@ describe('StatusBar', () => {
 
       const dot = screen.getByTestId('connection-dot');
       expect(dot).toHaveClass('bg-red-500');
+    });
+  });
+
+  describe('ResourceUsageSegment', () => {
+    it('is hidden when showResourceUsage is disabled', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
+      expect(screen.queryByTestId('resource-usage-segment')).not.toBeInTheDocument();
+    });
+
+    it('shows resource usage after enabling it in status settings', async () => {
+      renderWithSettings(
+        <>
+          <StatusBar {...makeProps()} />
+          <SettingsPanel isOpen={true} onClose={() => {}} initialTab="status" />
+        </>,
+      );
+
+      const toggle = screen.getByTestId('show-resource-usage-toggle');
+      await fireEvent.click(toggle);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(screen.getByTestId('resource-usage-segment')).toBeInTheDocument();
+      expect(screen.getByTestId('resource-usage-cpu')).toHaveTextContent('12.5%');
+      expect(screen.getByTestId('resource-usage-memory')).toHaveTextContent('350 MB');
+    });
+
+    it('hides when diagnostics endpoint fails', async () => {
+      mockFetch.mockImplementation(async (input: string | URL) => {
+        const url = String(input);
+
+        if (url.includes('/api/system/diagnostics')) {
+          throw new Error('Diagnostic fetch failed');
+        }
+
+        if (url.includes('/api/health')) {
+          return { ok: true, json: () => Promise.resolve({ status: 'ok' }) };
+        }
+
+        return {
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              branch: 'main',
+              isClean: true,
+              modifiedFiles: [],
+              stagedFiles: [],
+            }),
+        };
+      });
+
+      renderWithSettings(
+        <>
+          <StatusBar {...makeProps()} />
+          <SettingsPanel isOpen={true} onClose={() => {}} initialTab="status" />
+        </>,
+      );
+
+      const toggle = screen.getByTestId('show-resource-usage-toggle');
+      await fireEvent.click(toggle);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(screen.queryByTestId('resource-usage-segment')).not.toBeInTheDocument();
     });
   });
 

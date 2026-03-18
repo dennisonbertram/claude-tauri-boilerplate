@@ -42,6 +42,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   // Initialize theme inside SettingsProvider so useSettings() works correctly
   useTheme();
 
+  const [sessionSearchQuery, setSessionSearchQuery] = useState('');
+
   const {
     sessions,
     activeSessionId,
@@ -52,7 +54,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     forkSession,
     exportSession,
     autoNameSession,
-  } = useSessions();
+  } = useSessions(sessionSearchQuery);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>();
@@ -175,6 +177,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             activeSessionId={activeSessionId}
             email={email}
             plan={plan}
+            searchQuery={sessionSearchQuery}
+            onSearchQueryChange={setSessionSearchQuery}
             onSelectSession={(id) => {
               setActiveView('chat');
               setActiveSessionId(id);

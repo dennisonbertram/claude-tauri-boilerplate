@@ -212,13 +212,30 @@ export function getSession(db: Database, id: string) {
   return row ? mapSession(row) : null;
 }
 
-export function listSessions(db: Database) {
+export function listSessions(db: Database, searchQuery?: string) {
+  const normalized = (searchQuery ?? '').trim();
+
+  if (!normalized) {
+    const stmt = db.prepare(`
+      SELECT s.*, (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+      FROM sessions s
+      ORDER BY s.created_at DESC
+    `);
+    const rows = stmt.all() as (SessionRow & { message_count: number })[];
+    return rows.map((row) => ({ ...mapSession(row), messageCount: row.message_count }));
+  }
+
+  const pattern = `%${normalized}%`;
   const stmt = db.prepare(`
-    SELECT s.*, (SELECT COUNT(*) FROM messages m WHERE m.session_id = s.id) AS message_count
+    SELECT s.*, (SELECT COUNT(*) FROM messages m2 WHERE m2.session_id = s.id) AS message_count
     FROM sessions s
+    LEFT JOIN messages m ON m.session_id = s.id
+    WHERE s.title LIKE ? OR m.content LIKE ?
+    GROUP BY s.id
     ORDER BY s.created_at DESC
   `);
-  const rows = stmt.all() as (SessionRow & { message_count: number })[];
+  const rows = stmt.all(pattern, pattern) as (SessionRow & { message_count: number })[];
+
   return rows.map((row) => ({ ...mapSession(row), messageCount: row.message_count }));
 }
 

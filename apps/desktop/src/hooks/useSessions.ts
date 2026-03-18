@@ -5,14 +5,20 @@ import { useSettings } from './useSettings';
 
 const API_BASE = 'http://localhost:3131';
 
-export function useSessions() {
+export function useSessions(initialSearchQuery: string = '') {
   const { settings } = useSettings();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
-  const fetchSessions = useCallback(async () => {
+  const fetchSessions = useCallback(async (searchQuery = '') => {
+    const trimmedQuery = searchQuery.trim();
+    const query = trimmedQuery
+      ? `?q=${encodeURIComponent(trimmedQuery)}`
+      : '';
+    const url = `${API_BASE}/api/sessions${query}`;
+
     try {
-      const res = await fetch(`${API_BASE}/api/sessions`);
+      const res = await fetch(url);
       const data = await res.json();
       setSessions(data);
     } catch {
@@ -120,7 +126,9 @@ export function useSessions() {
     }
   }, [settings.prReviewModel]);
 
-  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+  useEffect(() => {
+    void fetchSessions(initialSearchQuery);
+  }, [fetchSessions, initialSearchQuery]);
 
   return {
     sessions,

@@ -52,9 +52,71 @@ export function StatusBar({
 
       {/* Right section */}
       <div data-testid="status-bar-right" className="flex items-center gap-0.5 px-2 min-w-0">
+        <ResourceUsageSegment />
         <ContextUsageSegment cumulativeUsage={cumulativeUsage} />
         {sessionTotalCost > 0 && <CostSegment cost={sessionTotalCost} />}
       </div>
+    </div>
+  );
+}
+
+// --- Resource Usage ---
+
+interface ResourceUsage {
+  cpuUsagePercent: number;
+  memoryUsageMb: number;
+  memoryUsagePercent: number;
+}
+
+function ResourceUsageSegment() {
+  const { settings } = useSettings();
+  const [usage, setUsage] = useState<ResourceUsage | null>(null);
+
+  useEffect(() => {
+    if (!settings.showResourceUsage) {
+      setUsage(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchResourceUsage() {
+      try {
+        const res = await fetch(`${API_BASE}/api/system/diagnostics`);
+        if (!res.ok) return;
+        const data = (await res.json()) as ResourceUsage;
+        if (!cancelled) {
+          setUsage(data);
+        }
+      } catch {
+        if (!cancelled) setUsage(null);
+      }
+    }
+
+    void fetchResourceUsage();
+    const interval = setInterval(fetchResourceUsage, 10_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [settings.showResourceUsage]);
+
+  if (!settings.showResourceUsage || !usage) return null;
+
+  return (
+    <div
+      data-testid="resource-usage-segment"
+      className="flex items-center gap-2 px-1.5 py-0.5"
+    >
+      <span className="text-xs text-muted-foreground">CPU</span>
+      <span className="tabular-nums" data-testid="resource-usage-cpu">
+        {Math.round(usage.cpuUsagePercent * 10) / 10}%
+      </span>
+      <span className="text-xs text-muted-foreground">MEM</span>
+      <span className="tabular-nums" data-testid="resource-usage-memory">
+        {Math.round(usage.memoryUsageMb)} MB
+      </span>
     </div>
   );
 }
