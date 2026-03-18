@@ -606,6 +606,10 @@ export interface Workspace {
   linearIssueTitle?: string;
   linearIssueSummary?: string;
   linearIssueUrl?: string;
+  githubIssueNumber?: number | null;
+  githubIssueTitle?: string | null;
+  githubIssueUrl?: string | null;
+  githubIssueRepo?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -627,10 +631,10 @@ export interface CreateWorkspaceRequest {
     url?: string;
   };
   githubIssue?: {
-    id: string;
+    number: number;
     title: string;
-    summary?: string;
     url?: string;
+    repo?: string;
   };
 }
 
