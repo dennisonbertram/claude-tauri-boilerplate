@@ -174,6 +174,7 @@ function getDefaultSettings(overrides = {}) {
       review: 'Review prompt',
       pr: 'PR prompt',
       branch: 'Branch prompt',
+      browser: 'Browser prompt',
     },
     runtimeEnv: {},
     ...overrides,

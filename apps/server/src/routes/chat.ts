@@ -80,6 +80,7 @@ const CLIENT_SLASH_COMMANDS = new Set([
   'prs',
   'review',
   'branch',
+  'browser',
   'help',
   'settings',
   'model',

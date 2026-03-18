@@ -4,6 +4,7 @@ import {
   loadRepoWorkflowPrompts,
   saveRepoWorkflowPrompts,
   getWorkflowPrompt,
+  buildBrowserWorkflowMessage,
   buildBranchNameWorkflowMessage,
   buildPrWorkflowMessage,
   buildReviewWorkflowMessage,
@@ -70,6 +71,18 @@ describe('workflowPrompts', () => {
       expect(msg).toContain('- apps/desktop/src/App.tsx');
       expect(msg).not.toContain('```diff');
     });
+
+    it('buildBrowserWorkflowMessage includes prompt + target + task', () => {
+      const msg = buildBrowserWorkflowMessage({
+        prompt: 'BROWSER PROMPT',
+        targetUrl: 'http://localhost:1420',
+        task: 'Check the settings page',
+      });
+
+      expect(msg).toContain('BROWSER PROMPT');
+      expect(msg).toContain('Target URL: http://localhost:1420');
+      expect(msg).toContain('Task: Check the settings page');
+    });
   });
 
   describe('repository prompt persistence', () => {
@@ -84,6 +97,14 @@ describe('workflowPrompts', () => {
           } as Response;
         }
 
+        if (url.endsWith('/workflow-browser.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Repo-specific browser prompt' }),
+          } as Response;
+        }
+
         return {
           ok: false,
           status: 404,
@@ -93,7 +114,10 @@ describe('workflowPrompts', () => {
 
       const prompts = await loadRepoWorkflowPrompts();
 
-      expect(prompts).toEqual({ review: 'Repo-specific review prompt' });
+      expect(prompts).toEqual({
+        review: 'Repo-specific review prompt',
+        browser: 'Repo-specific browser prompt',
+      });
     });
 
     it('creates or clears repository workflow prompt files as needed', async () => {
@@ -125,6 +149,14 @@ describe('workflowPrompts', () => {
           } as Response;
         }
 
+        if (method === 'GET' && url.endsWith('/workflow-browser.md')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Not found' }),
+          } as Response;
+        }
+
         return {
           ok: true,
           status: 200,
@@ -138,6 +170,7 @@ describe('workflowPrompts', () => {
         review: 'Repo review prompt',
         pr: DEFAULT_WORKFLOW_PROMPTS.pr,
         branch: DEFAULT_WORKFLOW_PROMPTS.branch,
+        browser: 'Browser testing prompt',
       });
 
       expect(fetchMock).toHaveBeenCalledWith(
@@ -153,6 +186,16 @@ describe('workflowPrompts', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         'http://localhost:3131/api/memory/workflow-pr.md',
         expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'workflow-browser.md',
+            content: 'Browser testing prompt',
+          }),
+        })
       );
     });
   });

@@ -37,6 +37,9 @@ function getToolIcon(name: string) {
     WebFetch: Globe,
     WebSearch: Globe,
   };
+  if (name.toLowerCase().includes('browser') || name.toLowerCase().includes('chrome')) {
+    return Globe;
+  }
   return iconMap[name] || Wrench;
 }
 

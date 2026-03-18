@@ -118,6 +118,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Review Prompt')).toBeInTheDocument();
     expect(screen.getByText('PR Prompt')).toBeInTheDocument();
     expect(screen.getByText('Branch Naming Prompt')).toBeInTheDocument();
+    expect(screen.getByText('Browser Testing Prompt')).toBeInTheDocument();
     expect(screen.getByTestId('workflow-prompts-save')).toBeInTheDocument();
   });
 

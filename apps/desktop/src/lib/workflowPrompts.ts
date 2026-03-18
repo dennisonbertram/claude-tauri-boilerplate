@@ -1,9 +1,10 @@
-export type WorkflowPromptKey = 'review' | 'pr' | 'branch';
+export type WorkflowPromptKey = 'review' | 'pr' | 'branch' | 'browser';
 
 export interface WorkflowPrompts {
   review: string;
   pr: string;
   branch: string;
+  browser: string;
 }
 
 const API_BASE = 'http://localhost:3131';
@@ -12,12 +13,14 @@ export const WORKFLOW_PROMPT_KEYS: WorkflowPromptKey[] = [
   'review',
   'pr',
   'branch',
+  'browser',
 ];
 
 export const REPO_WORKFLOW_PROMPT_FILES: Record<WorkflowPromptKey, string> = {
   review: 'workflow-review.md',
   pr: 'workflow-pr.md',
   branch: 'workflow-branch.md',
+  browser: 'workflow-browser.md',
 };
 
 export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
@@ -51,6 +54,30 @@ export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
     '- Prefer prefix like feature/, fix/, chore/',
     '- Keep it short but specific',
     '- Output ONLY the branch name',
+  ].join('\n'),
+  browser: [
+    'Use the browser tooling to test the app from the desktop workflow.',
+    '',
+    'Goals:',
+    '- Launch or navigate to the target app or URL',
+    '- Capture screenshots when visual confirmation matters',
+    '- Read page content and console output',
+    '- Interact with the page like a user: click, type, scroll, and submit forms',
+    '- Report failures with concrete repro steps, screenshots, and console details',
+    '',
+    'Suggested tools:',
+    '- mcp__claude-in-chrome__navigate',
+    '- mcp__claude-in-chrome__get_screenshot',
+    '- mcp__claude-in-chrome__get_page_text',
+    '- mcp__claude-in-chrome__read_console_messages',
+    '- mcp__claude-in-chrome__computer',
+    '',
+    'Testing workflow:',
+    '1) Navigate to the app or URL',
+    '2) Verify the page loads without console errors',
+    '3) Exercise the key interaction flow',
+    '4) Capture before/after screenshots',
+    '5) Summarize results, failures, and next steps',
   ].join('\n'),
 };
 
@@ -207,5 +234,22 @@ export function buildBranchNameWorkflowMessage(input: {
   const sections: string[] = [input.prompt.trim()];
   const filesBlock = formatChangedFiles(input.changedFiles);
   if (filesBlock) sections.push(filesBlock);
+  return sections.filter(Boolean).join('\n\n');
+}
+
+export function buildBrowserWorkflowMessage(input: {
+  prompt: string;
+  targetUrl?: string;
+  task?: string;
+}): string {
+  const sections: string[] = [input.prompt.trim()];
+  const targetUrl = (input.targetUrl ?? '').trim();
+  if (targetUrl) {
+    sections.push(`Target URL: ${targetUrl}`);
+  }
+  const task = (input.task ?? '').trim();
+  if (task) {
+    sections.push(`Task: ${task}`);
+  }
   return sections.filter(Boolean).join('\n\n');
 }
