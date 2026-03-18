@@ -52,6 +52,14 @@ Each entry follows this format:
 **Regression Test**: `apps/desktop/src/components/ui/scroll-area.test.tsx`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`
 **Related Issue**: GitHub issue `#128`
 
+### 2026-03-17: Issue 116 resource usage toggle wiring
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed the missing desktop wiring for GitHub issue `#116` by adding `showResourceUsage` to persisted settings, exposing a Status-tab toggle in Settings, and keeping the existing status-bar diagnostics segment dormant until the toggle is enabled. Also repaired the stale Settings tab-count regression so the desktop suite matches the current 12-tab panel layout.
+**Regression Test**: `apps/desktop/src/hooks/useSettings.test.ts`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/__tests__/StatusBar.test.tsx`, `apps/desktop/src/components/__tests__/SettingsTabsOverflow.test.tsx`
+**Related Issue**: GitHub issue `#116`
+
 ---
 
 ### 2026-03-17: Generative UI registry foundation landed

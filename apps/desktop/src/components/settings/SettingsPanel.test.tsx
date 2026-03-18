@@ -132,6 +132,16 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Max Turns')).toBeTruthy();
   });
 
+  test('switches to Status tab on click and shows resource usage toggle', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /status/i }));
+
+    expect(screen.getByText('Account')).toBeTruthy();
+    expect(screen.getByTestId('show-resource-usage-toggle')).toBeTruthy();
+  });
+
   test('switches to Linear tab on click and shows connect controls', async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
@@ -223,6 +233,17 @@ describe('SettingsPanel', () => {
 
     const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.provider).toBe('vertex');
+  });
+
+  test('toggling resource usage display persists to localStorage', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /status/i }));
+    await user.click(screen.getByTestId('show-resource-usage-toggle'));
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.showResourceUsage).toBe(true);
   });
 
   test('shows and saves Bedrock fields when Bedrock is selected', async () => {

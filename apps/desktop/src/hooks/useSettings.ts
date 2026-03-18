@@ -30,6 +30,7 @@ export interface AppSettings {
   fontSize: number;
   showThinking: boolean;
   showToolCalls: boolean;
+  showResourceUsage: boolean;
 
   // Advanced
   permissionMode: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
@@ -69,6 +70,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 14,
   showThinking: true,
   showToolCalls: true,
+  showResourceUsage: false,
 
   // Advanced
   permissionMode: 'default',

@@ -19,4 +19,5 @@ Implementation notes and code change documentation.
 | [issue-78-wave-1-subagent.md](issue-78-wave-1-subagent.md) | Issue #78 Wave 1: Linear issue metadata linked to sessions/workspaces and chat prompt context injection. |
 | [issue-79-wave-1-subagent.md](issue-79-wave-1-subagent.md) | Wave 1 for Issue #79: file picker, @-mentions, drag-and-drop file attachments, and inline preview rendering. |
 | [issue-80-wave-1-subagent.md](issue-80-wave-1-subagent.md) | Issue #80 wave 1 subagent implementation notes for diff viewer enhancements. |
+| [issue-116-wave13.md](issue-116-wave13.md) | Issue #116 follow-up wiring for the persisted resource-usage toggle, Status-tab controls, and targeted desktop regression coverage. |
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |

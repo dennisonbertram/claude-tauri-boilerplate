@@ -42,6 +42,7 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
 
     const expectedTabs = [
       'General',
+      'Git',
       'Model',
       'Workflows',
       'Appearance',
@@ -59,10 +60,10 @@ describe('SettingsPanel tabs overflow fix (#118)', () => {
     }
   });
 
-  it('renders exactly 11 tabs', () => {
+  it('renders exactly 12 tabs', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(11);
+    expect(tabs).toHaveLength(12);
   });
 
   it('tab container has flex-wrap class', () => {
