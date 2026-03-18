@@ -17,16 +17,16 @@ Add an AI-powered code review feature to the WorkspaceDiffView. A "Review" butto
 
 ## Implementation Checklist
 
-- [ ] Add `CodeReviewComment` and `CodeReviewResult` types to `packages/shared/src/types.ts`
-- [ ] Write regression tests in `apps/server/src/routes/code-review.test.ts` (TDD - red phase)
-- [ ] Implement backend endpoint `apps/server/src/routes/code-review.ts`
-- [ ] Register route in `apps/server/src/app.ts`
-- [ ] Add `codeReviewModel` and `codeReviewEffort` to `AppSettings`
-- [ ] Add model/effort selectors to Workflows settings tab
-- [ ] Create `CodeReviewDialog` component
-- [ ] Add Review button to `WorkspaceDiffView` toolbar
-- [ ] Add `codeReview` to `workflowPrompts` and `WorkflowPrompts` type
-- [ ] Render AI review comments inline in diff view
-- [ ] Create `CodeReviewSummary` component
-- [ ] Add `fetchCodeReview` to `workspace-api.ts`
-- [ ] Update docs indexes
+- [x] Add `CodeReviewComment` and `CodeReviewResult` types to `packages/shared/src/types.ts`
+- [x] Write regression tests in `apps/server/src/routes/code-review.test.ts` (TDD - red phase)
+- [x] Implement backend endpoint `apps/server/src/routes/code-review.ts`
+- [x] Register route in `apps/server/src/app.ts`
+- [x] Add `codeReviewModel` and `codeReviewEffort` to `AppSettings`
+- [x] Add model/effort selectors to Workflows settings tab
+- [x] Create `CodeReviewDialog` component
+- [x] Add Review button to `WorkspaceDiffView` toolbar
+- [x] Add `codeReview` to `workflowPrompts` and `WorkflowPrompts` type
+- [x] Render AI review comments inline in diff view
+- [x] Create `CodeReviewSummary` component
+- [x] Add `fetchCodeReview` to `workspace-api.ts`
+- [x] Update docs indexes

@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-18: Issue 85 AI code review feature implementation
+
+**Type**: New Feature
+**Impact**: High
+**Description**: Implemented AI-powered code review for workspace diffs (issue #85). Added `POST /api/workspaces/:id/code-review` backend endpoint that fetches the workspace diff, calls Claude via `streamClaude`, and parses the JSON response into a structured `CodeReviewResult`. Frontend additions: `CodeReviewDialog` for editing the prompt before review, `CodeReviewSummary` for displaying the review result with severity badges and a comment index, and inline AI comment rendering in `WorkspaceDiffView` with an AI badge. Settings: added `codeReviewModel`, `codeReviewEffort`, and `codeReview` workflow prompt to `AppSettings`. Left-click Review button starts with defaults; right-click opens the dialog to customize prompt/model/effort.
+**Regression Test**: `apps/server/src/routes/code-review.test.ts` (5 tests)
+**Related Issue**: #85
+
+---
+
 ### 2026-03-18: Issue 158 workflow memory 404 bootstrap fix
 
 **Type**: Bug Fix
