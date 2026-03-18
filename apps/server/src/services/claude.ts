@@ -19,6 +19,7 @@ export interface ClaudeStreamOptions {
   effort?: 'low' | 'medium' | 'high' | 'max';
   permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   cwd?: string;
+  additionalDirectories?: string[];
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
@@ -130,6 +131,10 @@ export async function* streamClaude(
 
   if (options.cwd) {
     queryOptions.cwd = options.cwd;
+  }
+
+  if (options.additionalDirectories && options.additionalDirectories.length > 0) {
+    queryOptions.additionalDirectories = options.additionalDirectories;
   }
 
   const originalEnv = applyProviderEnv(

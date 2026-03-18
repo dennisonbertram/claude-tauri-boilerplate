@@ -27,6 +27,7 @@ describe('useCommands', () => {
     runReviewWorkflow: vi.fn(),
     runPrWorkflow: vi.fn(),
     runBranchWorkflow: vi.fn(),
+    runBrowserWorkflow: vi.fn(),
   };
 
   beforeEach(() => {
@@ -128,6 +129,13 @@ describe('useCommands', () => {
   it('includes /branch command', () => {
     const { result } = renderHook(() => useCommands(mockContext));
     const cmd = result.current.commands.find((c) => c.name === 'branch');
+    expect(cmd).toBeDefined();
+    expect(cmd!.category).toBe('tools');
+  });
+
+  it('includes /browser command', () => {
+    const { result } = renderHook(() => useCommands(mockContext));
+    const cmd = result.current.commands.find((c) => c.name === 'browser');
     expect(cmd).toBeDefined();
     expect(cmd!.category).toBe('tools');
   });
@@ -257,6 +265,15 @@ describe('useCommands', () => {
         await cmd.execute();
       });
       expect(mockContext.runBranchWorkflow).toHaveBeenCalledOnce();
+    });
+
+    it('/browser calls runBrowserWorkflow', async () => {
+      const { result } = renderHook(() => useCommands(mockContext));
+      const cmd = result.current.commands.find((c) => c.name === 'browser')!;
+      await act(async () => {
+        await cmd.execute();
+      });
+      expect(mockContext.runBrowserWorkflow).toHaveBeenCalledOnce();
     });
 
     it('/add-dir calls addDir when available', async () => {

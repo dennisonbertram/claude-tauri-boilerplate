@@ -20,6 +20,7 @@ import {
   formatToolResultForDisplay,
   sanitizeDisplayText,
 } from './gen-ui/toolData';
+import { BrowserAutomationDisplay, isBrowserAutomationTool } from './BrowserAutomationDisplay';
 
 export interface ToolCallBlockProps {
   toolCall: ToolCallState;
@@ -37,6 +38,9 @@ function getToolIcon(name: string) {
     WebFetch: Globe,
     WebSearch: Globe,
   };
+  if (name.toLowerCase().includes('browser') || name.toLowerCase().includes('chrome')) {
+    return Globe;
+  }
   return iconMap[name] || Wrench;
 }
 
@@ -140,6 +144,10 @@ function GenericToolFallback({ toolCall }: ToolCallBlockProps) {
 }
 
 export function ToolCallBlock(props: ToolCallBlockProps) {
+  if (isBrowserAutomationTool(props.toolCall.name)) {
+    return <BrowserAutomationDisplay toolCall={props.toolCall} />;
+  }
+
   const renderer = getToolRenderer(props.toolCall.name);
 
   if (renderer) {

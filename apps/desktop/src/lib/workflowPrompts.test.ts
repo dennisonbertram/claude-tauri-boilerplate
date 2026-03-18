@@ -4,6 +4,7 @@ import {
   loadRepoWorkflowPrompts,
   saveRepoWorkflowPrompts,
   getWorkflowPrompt,
+  buildBrowserWorkflowMessage,
   buildBranchNameWorkflowMessage,
   buildPrWorkflowMessage,
   buildReviewWorkflowMessage,
@@ -30,6 +31,12 @@ describe('workflowPrompts', () => {
       const custom = 'CUSTOM REVIEW PROMPT';
       const prompt = getWorkflowPrompt({ review: custom }, 'review');
       expect(prompt).toBe(custom);
+    });
+
+    it('includes browser MCP setup guidance in the default browser prompt', () => {
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('@playwright/mcp@latest');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('.claude/browser-artifacts');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('gif');
     });
   });
 
@@ -70,6 +77,18 @@ describe('workflowPrompts', () => {
       expect(msg).toContain('- apps/desktop/src/App.tsx');
       expect(msg).not.toContain('```diff');
     });
+
+    it('buildBrowserWorkflowMessage includes prompt + target + task', () => {
+      const msg = buildBrowserWorkflowMessage({
+        prompt: 'BROWSER PROMPT',
+        targetUrl: 'http://localhost:1420',
+        task: 'Check the settings page',
+      });
+
+      expect(msg).toContain('BROWSER PROMPT');
+      expect(msg).toContain('Target URL: http://localhost:1420');
+      expect(msg).toContain('Task: Check the settings page');
+    });
   });
 
   describe('repository prompt persistence', () => {
@@ -83,6 +102,21 @@ describe('workflowPrompts', () => {
             json: async () => ({ content: 'Repo-specific review prompt' }),
           } as Response;
         }
+        if (url.endsWith('/workflow-review-memory.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Repo-specific review memory prompt' }),
+          } as Response;
+        }
+
+        if (url.endsWith('/workflow-browser.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Repo-specific browser prompt' }),
+          } as Response;
+        }
 
         return {
           ok: false,
@@ -93,7 +127,11 @@ describe('workflowPrompts', () => {
 
       const prompts = await loadRepoWorkflowPrompts();
 
-      expect(prompts).toEqual({ review: 'Repo-specific review prompt' });
+      expect(prompts).toEqual({
+        review: 'Repo-specific review prompt',
+        reviewMemory: 'Repo-specific review memory prompt',
+        browser: 'Repo-specific browser prompt',
+      });
     });
 
     it('creates or clears repository workflow prompt files as needed', async () => {
@@ -124,6 +162,28 @@ describe('workflowPrompts', () => {
             json: async () => ({ error: 'Not found' }),
           } as Response;
         }
+        if (method === 'GET' && url.endsWith('/workflow-review-memory.md')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: 'Old review memory prompt' }),
+          } as Response;
+        }
+        if (method === 'GET' && url.endsWith('/workflow-merge-memory.md')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Not found' }),
+          } as Response;
+        }
+
+        if (method === 'GET' && url.endsWith('/workflow-browser.md')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Not found' }),
+          } as Response;
+        }
 
         return {
           ok: true,
@@ -138,6 +198,9 @@ describe('workflowPrompts', () => {
         review: 'Repo review prompt',
         pr: DEFAULT_WORKFLOW_PROMPTS.pr,
         branch: DEFAULT_WORKFLOW_PROMPTS.branch,
+        browser: 'Browser testing prompt',
+        reviewMemory: DEFAULT_WORKFLOW_PROMPTS.reviewMemory,
+        mergeMemory: 'Repo merge memory prompt',
       });
 
       expect(fetchMock).toHaveBeenCalledWith(
@@ -153,6 +216,30 @@ describe('workflowPrompts', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         'http://localhost:3131/api/memory/workflow-pr.md',
         expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory/workflow-review-memory.md',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'workflow-browser.md',
+            content: 'Browser testing prompt',
+          }),
+        })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:3131/api/memory',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'workflow-merge-memory.md',
+            content: 'Repo merge memory prompt',
+          }),
+        })
       );
     });
   });

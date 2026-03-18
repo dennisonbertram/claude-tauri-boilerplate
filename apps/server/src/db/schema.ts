@@ -55,6 +55,7 @@ export const SCHEMA = `
     worktree_path TEXT NOT NULL UNIQUE,
     worktree_path_canonical TEXT NOT NULL UNIQUE,
     base_branch TEXT NOT NULL,
+    additional_directories TEXT NOT NULL DEFAULT '[]',
     status TEXT NOT NULL DEFAULT 'creating'
       CHECK(status IN ('creating', 'setup_running', 'ready', 'active', 'merging', 'discarding', 'merged', 'archived', 'error')),
     claude_session_id TEXT,
@@ -134,6 +135,14 @@ export function migrateLinearIssueColumns(db: import('bun:sqlite').Database): vo
   }
   if (!sHasIssueUrl) {
     db.exec('ALTER TABLE sessions ADD COLUMN linear_issue_url TEXT');
+  }
+}
+
+export function migrateWorkspaceAdditionalDirectories(db: import('bun:sqlite').Database): void {
+  const columns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+  const hasAdditionalDirectories = columns.some((col) => col.name === 'additional_directories');
+  if (!hasAdditionalDirectories) {
+    db.exec("ALTER TABLE workspaces ADD COLUMN additional_directories TEXT NOT NULL DEFAULT '[]'");
   }
 }
 

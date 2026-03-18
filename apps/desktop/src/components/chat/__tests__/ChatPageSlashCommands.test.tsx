@@ -9,6 +9,7 @@ Element.prototype.scrollIntoView = vi.fn();
 const mockSendMessage = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
+const mockHandleCommandSelect = vi.fn();
 
 let useChatReturn: Record<string, unknown> = {};
 
@@ -93,6 +94,7 @@ vi.mock('@/hooks/useCommands', () => ({
       { name: 'compact', description: 'Compact conversation context', category: 'chat', execute: vi.fn() },
       { name: 'restart', description: 'Restart the session', category: 'chat', execute: vi.fn() },
       { name: 'add-dir', description: 'Attach a directory', category: 'tools', execute: vi.fn() },
+      { name: 'browser', description: 'Test the app with browser tooling', category: 'tools', execute: vi.fn() },
     ],
     filterCommands: vi.fn(() => []),
   }),
@@ -105,7 +107,7 @@ vi.mock('@/hooks/useCommandPalette', () => ({
     filteredCommands: [],
     close: vi.fn(),
     handleInputChange: vi.fn(),
-    handleCommandSelect: vi.fn(),
+    handleCommandSelect: mockHandleCommandSelect,
   }),
 }));
 
@@ -200,5 +202,49 @@ describe('ChatPage - slash command validation', () => {
     await user.keyboard('{Enter}');
 
     expect(mockSendMessage).toHaveBeenCalled();
+  });
+
+  it('routes /add-dir with a path argument to workspace paths', async () => {
+    const user = userEvent.setup();
+    const onOpenWorkspacePaths = vi.fn();
+
+    render(
+      <ChatPage
+        sessionId={null}
+        workspaceId="ws-1"
+        onOpenWorkspacePaths={onOpenWorkspacePaths}
+      />
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, '/add-dir ../repo-b');
+    await user.keyboard('{Enter}');
+
+    expect(onOpenWorkspacePaths).toHaveBeenCalledWith('../repo-b');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+
+  it('routes /browser to the local workflow command instead of the backend', async () => {
+    const user = userEvent.setup();
+    render(<ChatPage sessionId={null} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, '/browser check the settings page');
+    await user.keyboard('{Enter}');
+
+    expect(mockSendMessage).toHaveBeenCalledOnce();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining('Target URL: http://localhost:1420'),
+      })
+    );
+    expect(mockSetMessages).not.toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'assistant',
+        }),
+      ])
+    );
+    expect(mockHandleCommandSelect).not.toHaveBeenCalled();
   });
 });

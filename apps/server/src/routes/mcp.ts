@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { existsSync, readFileSync } from 'fs';
 import type { McpServerConfig } from '@claude-tauri/shared';
 
 /**
@@ -32,7 +33,46 @@ interface McpJsonFile {
 }
 
 function getMcpJsonPath(): string {
-  return join(process.cwd(), '.mcp.json');
+  return join(getMcpConfigRoot(), '.mcp.json');
+}
+
+function isWorkspaceRoot(dir: string): boolean {
+  const packageJsonPath = join(dir, 'package.json');
+  if (!existsSync(packageJsonPath)) return false;
+
+  try {
+    const content = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      workspaces?: unknown;
+    };
+    return Array.isArray(content.workspaces);
+  } catch {
+    return false;
+  }
+}
+
+function getMcpConfigRoot(): string {
+  let currentDir = process.cwd();
+  let workspaceRoot: string | null = null;
+  let discoveredConfigRoot: string | null = null;
+
+  while (true) {
+    if (existsSync(join(currentDir, '.mcp.json'))) {
+      discoveredConfigRoot = currentDir;
+    }
+
+    if (workspaceRoot === null && isWorkspaceRoot(currentDir)) {
+      workspaceRoot = currentDir;
+    }
+
+    const parentDir = dirname(currentDir);
+    if (parentDir === currentDir) {
+      if (workspaceRoot && existsSync(join(workspaceRoot, '.mcp.json'))) {
+        return workspaceRoot;
+      }
+      return workspaceRoot ?? discoveredConfigRoot ?? process.cwd();
+    }
+    currentDir = parentDir;
+  }
 }
 
 async function readMcpJson(): Promise<McpJsonFile> {

@@ -1,21 +1,27 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { tmpdir } from 'os';
 import type { McpServerConfig } from '@claude-tauri/shared';
 
 const { createMcpRouter } = await import('./mcp');
 const { Hono } = await import('hono');
 
-// Use a temp directory for .mcp.json
-const tmpDir = join(process.cwd(), '.test-tmp-mcp');
-
 describe('MCP Routes', () => {
   let testApp: InstanceType<typeof Hono>;
   let originalCwd: () => string;
+  let tmpDir: string;
+  let nestedServerDir: string;
 
   beforeEach(() => {
     // Create temp directory and point CWD at it
-    mkdirSync(tmpDir, { recursive: true });
+    tmpDir = mkdtempSync(join(tmpdir(), 'claude-tauri-mcp-'));
+    nestedServerDir = join(tmpDir, 'apps', 'server');
+    mkdirSync(nestedServerDir, { recursive: true });
+    writeFileSync(
+      join(tmpDir, 'package.json'),
+      JSON.stringify({ private: true, workspaces: ['apps/*', 'packages/*'] }, null, 2)
+    );
     originalCwd = process.cwd;
     process.cwd = () => tmpDir;
 
@@ -95,6 +101,60 @@ describe('MCP Routes', () => {
       const body = (await res.json()) as { servers: McpServerConfig[] };
       expect(body.servers[0].type).toBe('stdio');
     });
+
+    test('resolves the repo root .mcp.json when launched from apps/server', async () => {
+      process.cwd = () => nestedServerDir;
+      writeMcpJson({
+        mcpServers: {
+          playwright: {
+            type: 'stdio',
+            command: 'npx',
+            args: ['-y', '@playwright/mcp@latest'],
+          },
+        },
+      });
+
+      const res = await testApp.request('/api/mcp/servers');
+      expect(res.status).toBe(200);
+
+      const body = (await res.json()) as { servers: McpServerConfig[] };
+      expect(body.servers).toHaveLength(1);
+      expect(body.servers[0].name).toBe('playwright');
+      expect(body.servers[0].command).toBe('npx');
+    });
+
+    test('prefers the workspace root .mcp.json over a nested apps/server copy', async () => {
+      process.cwd = () => nestedServerDir;
+      writeMcpJson({
+        mcpServers: {
+          playwright: {
+            type: 'stdio',
+            command: 'npx',
+            args: ['-y', '@playwright/mcp@latest', '--browser', 'chrome'],
+          },
+        },
+      });
+      writeFileSync(
+        join(nestedServerDir, '.mcp.json'),
+        JSON.stringify({
+          mcpServers: {
+            stale: {
+              type: 'stdio',
+              command: 'node',
+              args: ['stale-server.js'],
+            },
+          },
+        })
+      );
+
+      const res = await testApp.request('/api/mcp/servers');
+      expect(res.status).toBe(200);
+
+      const body = (await res.json()) as { servers: McpServerConfig[] };
+      expect(body.servers).toHaveLength(1);
+      expect(body.servers[0].name).toBe('playwright');
+      expect(body.servers[0].args).toContain('chrome');
+    });
   });
 
   describe('POST /api/mcp/servers', () => {
@@ -141,6 +201,25 @@ describe('MCP Routes', () => {
       const body = (await res.json()) as { success: boolean; server: McpServerConfig };
       expect(body.server.type).toBe('http');
       expect(body.server.url).toBe('https://example.com/mcp');
+    });
+
+    test('writes new servers to the repo root .mcp.json when launched from apps/server', async () => {
+      process.cwd = () => nestedServerDir;
+
+      const res = await testApp.request('/api/mcp/servers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'playwright',
+          type: 'stdio',
+          command: 'npx',
+          args: ['-y', '@playwright/mcp@latest'],
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(existsSync(join(tmpDir, '.mcp.json'))).toBe(true);
+      expect(existsSync(join(nestedServerDir, '.mcp.json'))).toBe(false);
     });
 
     test('rejects duplicate server name', async () => {

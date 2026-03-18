@@ -11,7 +11,7 @@ import {
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './workspaces';
 import { createProjectRouter } from './projects';
 import { errorHandler } from '../middleware/error-handler';
-import { mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -303,6 +303,30 @@ describe('Workspace Routes', () => {
       expect(body.linearIssueUrl).toBe('https://github.com/org/repo/issues/1234');
     });
 
+    test('accepts additional directories on create', async () => {
+      const extraDirA = join(tempDir, 'repo-a');
+      const extraDirB = join(tempDir, 'repo-b');
+      mkdirSync(extraDirA, { recursive: true });
+      mkdirSync(extraDirB, { recursive: true });
+      const expectedDirs = [realpathSync(extraDirA), realpathSync(extraDirB)];
+
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'multi-repo',
+            additionalDirectories: [extraDirA, extraDirB],
+          }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.additionalDirectories).toEqual(expectedDirs);
+    });
+
     test('returns 400 for incomplete linear issue payload', async () => {
       const res = await app.request(
         `/api/projects/${projectId}/workspaces`,
@@ -547,6 +571,34 @@ describe('Workspace Routes', () => {
       const updated = await updateRes.json();
       expect(updated.branch).toBe('workspace/issue101-renamed-br');
       expect(updated.name).toBe('issue101-rename-me');
+    });
+
+    test('updates additional directories', async () => {
+      const extraDirA = join(tempDir, 'patch-repo-a');
+      const extraDirB = join(tempDir, 'patch-repo-b');
+      mkdirSync(extraDirA, { recursive: true });
+      mkdirSync(extraDirB, { recursive: true });
+      const expectedDirs = [realpathSync(extraDirA), realpathSync(extraDirB)];
+
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-dirs' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const updateRes = await app.request(`/api/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ additionalDirectories: [extraDirA, extraDirB] }),
+      });
+      expect(updateRes.status).toBe(200);
+
+      const updated = await updateRes.json();
+      expect(updated.additionalDirectories).toEqual(expectedDirs);
     });
 
     test('rejects empty patch payload', async () => {

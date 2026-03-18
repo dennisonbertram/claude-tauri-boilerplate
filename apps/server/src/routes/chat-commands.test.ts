@@ -99,4 +99,22 @@ describe('Chat Route - Slash command handling', () => {
     expect((payload as any).command).toBe('review');
     expect(mockQuery).not.toHaveBeenCalled();
   });
+
+  test('treats /browser as a client-side workflow command', async () => {
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: '/browser verify the app' }],
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const payload = await res.json();
+    expect((payload as any).code).toBe('CLIENT_COMMAND');
+    expect((payload as any).command).toBe('browser');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
 });

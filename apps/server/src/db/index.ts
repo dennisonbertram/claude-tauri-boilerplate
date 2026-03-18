@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -61,6 +61,7 @@ interface WorkspaceRow {
   worktree_path: string;
   worktree_path_canonical: string;
   base_branch: string;
+  additional_directories: string;
   status: string;
   claude_session_id: string | null;
   linear_issue_id: string | null;
@@ -127,6 +128,16 @@ function mapProject(row: ProjectRow) {
 }
 
 function mapWorkspace(row: WorkspaceRow) {
+  let additionalDirectories: string[] = [];
+  try {
+    const parsed = JSON.parse(row.additional_directories || '[]');
+    if (Array.isArray(parsed)) {
+      additionalDirectories = parsed.filter((item): item is string => typeof item === 'string');
+    }
+  } catch {
+    additionalDirectories = [];
+  }
+
   return {
     id: row.id,
     projectId: row.project_id,
@@ -136,6 +147,7 @@ function mapWorkspace(row: WorkspaceRow) {
     worktreePathCanonical: row.worktree_path_canonical,
     baseBranch: row.base_branch,
     status: row.status as WorkspaceStatus,
+    additionalDirectories,
     claudeSessionId: row.claude_session_id,
     linearIssueId: row.linear_issue_id,
     linearIssueTitle: row.linear_issue_title,
@@ -159,6 +171,7 @@ export function createDb(path?: string): Database {
   migrateSessionsWorkspaceId(db);
   migrateLinearIssueColumns(db);
   migrateSessionModelColumn(db);
+  migrateWorkspaceAdditionalDirectories(db);
   return db;
 }
 
@@ -474,7 +487,8 @@ export function createWorkspace(
   worktreePath: string,
   worktreePathCanonical: string,
   baseBranch: string,
-  linearIssue?: LinearIssueMetadata
+  linearIssue?: LinearIssueMetadata,
+  additionalDirectories: string[] = []
 ) {
   const linearIssueId = linearIssue?.id ?? null;
   const linearIssueTitle = linearIssue?.title ?? null;
@@ -489,11 +503,12 @@ export function createWorkspace(
       worktree_path,
       worktree_path_canonical,
       base_branch,
+      additional_directories,
       linear_issue_id,
       linear_issue_title,
       linear_issue_summary,
       linear_issue_url
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   );
   const row = stmt.get(
     id,
@@ -503,6 +518,7 @@ export function createWorkspace(
     worktreePath,
     worktreePathCanonical,
     baseBranch,
+    JSON.stringify(additionalDirectories),
     linearIssueId,
     linearIssueTitle,
     linearIssueSummary,
@@ -517,6 +533,7 @@ export function updateWorkspace(
   updates: {
     name?: string;
     branch?: string;
+    additionalDirectories?: string[];
   }
 ) {
   const setClauses: string[] = [];
@@ -530,6 +547,11 @@ export function updateWorkspace(
   if (updates.branch !== undefined) {
     setClauses.push('branch = ?');
     values.push(updates.branch);
+  }
+
+  if (updates.additionalDirectories !== undefined) {
+    setClauses.push('additional_directories = ?');
+    values.push(JSON.stringify(updates.additionalDirectories));
   }
 
   if (setClauses.length === 0) return;

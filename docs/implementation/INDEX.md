@@ -6,6 +6,7 @@ Implementation notes and code change documentation.
 
 | File | Description |
 |------|-------------|
+| [issue-112-browser-automation.md](issue-112-browser-automation.md) | Issue #112 implementation notes for Playwright MCP defaults, Settings presets, browser tool rendering, workflow prompt updates, and repo-root MCP config resolution. |
 | [phase1-scaffolding.md](phase1-scaffolding.md) | Phase 1 monorepo scaffolding - pnpm workspace, shared types, Hono server, Tauri+React desktop app |
 | [phase2-auth-endpoint.md](phase2-auth-endpoint.md) | Phase 2 auth status endpoint - subscription detection via Claude Agent SDK with 10s timeout |
 | [phase3-chat-streaming.md](phase3-chat-streaming.md) | Phase 3 chat streaming route - SSE streaming of Claude responses via AI SDK v6 UI message stream protocol |
@@ -22,3 +23,5 @@ Implementation notes and code change documentation.
 | [issue-113-wave13.md](issue-113-wave13.md) | Wave 13 closeout for Issue #113: monospace font-family selection, compact tab density, and appearance validation notes. |
 | [issue-116-wave13.md](issue-116-wave13.md) | Issue #116 follow-up wiring for the persisted resource-usage toggle, Status-tab controls, and targeted desktop regression coverage. |
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |
+| [issue-114-wave13.md](issue-114-wave13.md) | Issue #114 implementation notes for multi-repo workspace attachments, `/add-dir` routing, and manual validation. |
+| [issue-115-ai-memory-update.md](issue-115-ai-memory-update.md) | Issue #115 implementation note covering repo-scoped memory-update prompts, queued `MEMORY.md` drafts, regression coverage, and live browser validation. |

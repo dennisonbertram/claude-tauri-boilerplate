@@ -590,6 +590,7 @@ export interface Workspace {
   worktreePathCanonical: string;
   baseBranch: string;
   status: WorkspaceStatus;
+  additionalDirectories: string[];
   claudeSessionId?: string;
   setupPid?: number;
   errorMessage?: string;
@@ -610,6 +611,7 @@ export interface CreateWorkspaceRequest {
   baseBranch?: string;
   branchPrefix?: string;
   sourceBranch?: string;
+  additionalDirectories?: string[];
   linearIssue?: {
     id: string;
     title: string;
@@ -627,6 +629,7 @@ export interface CreateWorkspaceRequest {
 export interface WorkspaceRenameRequest {
   name?: string;
   branch?: string;
+  additionalDirectories?: string[];
 }
 
 /** Valid workspace status transitions */

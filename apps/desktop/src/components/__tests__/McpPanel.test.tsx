@@ -34,6 +34,7 @@ const mockServers: McpServerConfig[] = [
 const mockFetch = vi.fn();
 
 beforeEach(() => {
+  mockFetch.mockReset();
   vi.stubGlobal('fetch', mockFetch);
 
   // Default: return server list
@@ -454,5 +455,73 @@ describe('McpPanel', () => {
     });
 
     expect(screen.getByText('No MCP servers configured.')).toBeInTheDocument();
+  });
+
+  it('shows browser testing presets for common automation workflows', async () => {
+    render(<McpPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mcp-panel')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('mcp-preset-playwright')).toHaveTextContent(
+      'Playwright Browser'
+    );
+    expect(screen.getByTestId('mcp-preset-agentation')).toHaveTextContent(
+      'Agentation Visual Feedback'
+    );
+  });
+
+  it('installs the Playwright browser preset with chrome launch and video capture', async () => {
+    render(<McpPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mcp-panel')).toBeInTheDocument();
+    });
+
+    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+      if (options?.method === 'POST') {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              server: { name: 'playwright', type: 'stdio', enabled: true },
+            }),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/mcp/servers')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ servers: mockServers }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    fireEvent.click(screen.getByTestId('mcp-install-preset-playwright'));
+
+    await waitFor(() => {
+      const postCall = mockFetch.mock.calls.find(
+        (call: unknown[]) => (call[1] as RequestInit)?.method === 'POST'
+      );
+      expect(postCall).toBeDefined();
+      const body = JSON.parse((postCall![1] as RequestInit).body as string);
+      expect(body).toMatchObject({
+        name: 'playwright',
+        type: 'stdio',
+        command: 'npx',
+      });
+      expect(body.args).toEqual([
+        '-y',
+        '@playwright/mcp@latest',
+        '--browser',
+        'chrome',
+        '--output-dir',
+        '.claude/browser-artifacts',
+        '--save-session',
+        '--save-video=1280x720',
+      ]);
+    });
   });
 });

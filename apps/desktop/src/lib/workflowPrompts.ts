@@ -1,9 +1,18 @@
-export type WorkflowPromptKey = 'review' | 'pr' | 'branch';
+export type WorkflowPromptKey =
+  | 'review'
+  | 'pr'
+  | 'branch'
+  | 'browser'
+  | 'reviewMemory'
+  | 'mergeMemory';
 
 export interface WorkflowPrompts {
   review: string;
   pr: string;
   branch: string;
+  reviewMemory: string;
+  mergeMemory: string;
+  browser: string;
 }
 
 const API_BASE = 'http://localhost:3131';
@@ -12,12 +21,18 @@ export const WORKFLOW_PROMPT_KEYS: WorkflowPromptKey[] = [
   'review',
   'pr',
   'branch',
+  'browser',
+  'reviewMemory',
+  'mergeMemory',
 ];
 
 export const REPO_WORKFLOW_PROMPT_FILES: Record<WorkflowPromptKey, string> = {
   review: 'workflow-review.md',
   pr: 'workflow-pr.md',
   branch: 'workflow-branch.md',
+  browser: 'workflow-browser.md',
+  reviewMemory: 'workflow-review-memory.md',
+  mergeMemory: 'workflow-merge-memory.md',
 };
 
 export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
@@ -51,6 +66,61 @@ export const DEFAULT_WORKFLOW_PROMPTS: WorkflowPrompts = {
     '- Prefer prefix like feature/, fix/, chore/',
     '- Keep it short but specific',
     '- Output ONLY the branch name',
+  ].join('\n'),
+  reviewMemory: [
+    'Summarize the durable lessons from review feedback as repository memory notes.',
+    '',
+    'Requirements:',
+    '- Keep only guidance that should persist across future sessions',
+    '- Prefer concise markdown bullets',
+    '- Avoid one-off task details',
+  ].join('\n'),
+  mergeMemory: [
+    'Summarize the durable lessons from this merged workspace as repository memory notes.',
+    '',
+    'Requirements:',
+    '- Capture lasting workflow, architecture, or testing guidance',
+    '- Prefer concise markdown bullets',
+    '- Avoid branch-specific trivia unless it changes future work',
+  ].join('\n'),
+  browser: [
+    'Use the browser tooling to test the app from the desktop workflow.',
+    '',
+    'Prerequisites:',
+    '- If no browser MCP server is connected yet, open Settings > MCP and install the Playwright Browser preset.',
+    '- The preset runs npx -y @playwright/mcp@latest with Chrome automation enabled.',
+    '- The preset launches headed Chrome and stores screenshots/videos under .claude/browser-artifacts.',
+    '- If a GIF is explicitly required, capture a browser recording first and then convert the saved video artifact with Bash.',
+    '',
+    'Goals:',
+    '- Launch or navigate to the target app or URL',
+    '- Capture screenshots when visual confirmation matters',
+    '- Read page content and console output',
+    '- Interact with the page like a user: click, type, scroll, and submit forms',
+    '- Save a recording for multi-step flows when the browser server supports it',
+    '- Report failures with concrete repro steps, screenshots, and console details',
+    '',
+    'Suggested tools:',
+    '- mcp__playwright__browser_navigate',
+    '- mcp__playwright__browser_take_screenshot',
+    '- mcp__playwright__browser_console_messages',
+    '- mcp__playwright__browser_snapshot',
+    '- mcp__playwright__browser_click',
+    '- mcp__playwright__browser_type',
+    '- mcp__claude-in-chrome__navigate',
+    '- mcp__claude-in-chrome__get_screenshot',
+    '- mcp__claude-in-chrome__get_page_text',
+    '- mcp__claude-in-chrome__read_console_messages',
+    '- mcp__claude-in-chrome__computer',
+    '- mcp__claude-in-chrome__gif_creator',
+    '',
+    'Testing workflow:',
+    '1) Navigate to the app or URL',
+    '2) Verify the page loads without console errors',
+    '3) Exercise the key interaction flow',
+    '4) Capture before/after screenshots',
+    '5) Save a recording for multi-step flows when needed',
+    '6) Summarize results, failures, artifact paths, and next steps',
   ].join('\n'),
 };
 
@@ -207,5 +277,57 @@ export function buildBranchNameWorkflowMessage(input: {
   const sections: string[] = [input.prompt.trim()];
   const filesBlock = formatChangedFiles(input.changedFiles);
   if (filesBlock) sections.push(filesBlock);
+  return sections.filter(Boolean).join('\n\n');
+}
+
+export function buildReviewMemoryDraft(input: {
+  prompt: string;
+  feedback: string;
+}): string {
+  return [
+    '## Memory Update',
+    '',
+    input.prompt.trim(),
+    '',
+    'Review feedback:',
+    input.feedback.trim(),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function buildMergeMemoryDraft(input: {
+  prompt: string;
+  workspaceName: string;
+  branch: string;
+  baseBranch: string;
+}): string {
+  return [
+    '## Memory Update',
+    '',
+    input.prompt.trim(),
+    '',
+    `Merged workspace: ${input.workspaceName}`,
+    `Branch: ${input.branch}`,
+    `Base branch: ${input.baseBranch}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function buildBrowserWorkflowMessage(input: {
+  prompt: string;
+  targetUrl?: string;
+  task?: string;
+}): string {
+  const sections: string[] = [input.prompt.trim()];
+  const targetUrl = (input.targetUrl ?? '').trim();
+  if (targetUrl) {
+    sections.push(`Target URL: ${targetUrl}`);
+  }
+  const task = (input.task ?? '').trim();
+  if (task) {
+    sections.push(`Task: ${task}`);
+  }
   return sections.filter(Boolean).join('\n\n');
 }

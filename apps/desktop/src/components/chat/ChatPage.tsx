@@ -38,12 +38,15 @@ import type { AttachedImage } from './ChatInput';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import * as linearApi from '@/lib/linear-api';
+import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
 import './gen-ui/defaultRenderers';
 import {
   getWorkflowPrompt,
+  buildReviewMemoryDraft,
   buildReviewWorkflowMessage,
   buildPrWorkflowMessage,
   buildBranchNameWorkflowMessage,
+  buildBrowserWorkflowMessage,
 } from '@/lib/workflowPrompts';
 
 const API_BASE = 'http://localhost:3131';
@@ -74,10 +77,12 @@ interface ChatPageProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
+  additionalDirectories?: string[];
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
   onOpenSessions?: () => void;
   onOpenPullRequests?: () => void;
+  onOpenWorkspacePaths?: (path?: string) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -114,10 +119,12 @@ export function ChatPage({
   onStatusChange,
   onAutoName,
   workspaceId,
+  additionalDirectories,
   onToggleSidebar,
   onOpenSettings,
   onOpenSessions,
   onOpenPullRequests,
+  onOpenWorkspacePaths,
 }: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
@@ -263,6 +270,9 @@ export function ChatPage({
             customBaseUrl: settings.customBaseUrl,
           },
           ...(workspaceId ? { workspaceId } : {}),
+          ...(additionalDirectories && additionalDirectories.length > 0
+            ? { additionalDirectories }
+            : {}),
           ...(linearIssue ? { linearIssue } : {}),
         },
       }),
@@ -282,6 +292,7 @@ export function ChatPage({
       settings.customBaseUrl,
       settings.runtimeEnv,
       workspaceId,
+      additionalDirectories,
       linearIssue,
     ]
   );
@@ -437,6 +448,19 @@ export function ChatPage({
     await sendMessage({ text } as any);
   }, [fetchWorkspaceDiff, changedFiles, settings.workflowPrompts, sendMessage]);
 
+  const runBrowserWorkflow = useCallback(
+    async (task?: string) => {
+      const prompt = getWorkflowPrompt(settings.workflowPrompts, 'browser');
+      const text = buildBrowserWorkflowMessage({
+        prompt,
+        targetUrl: 'http://localhost:1420',
+        task,
+      });
+      await sendMessage({ text } as any);
+    },
+    [settings.workflowPrompts, sendMessage]
+  );
+
   const commandContext = useMemo(
     () => ({
       clearChat,
@@ -449,9 +473,11 @@ export function ChatPage({
       showSessionList: onOpenSessions,
       openPullRequests: onOpenPullRequests,
       showLinearIssues: () => setLinearPickerOpen(true),
+      addDir: onOpenWorkspacePaths,
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
+      runBrowserWorkflow,
     }),
     [
       clearChat,
@@ -460,9 +486,11 @@ export function ChatPage({
       onOpenSettings,
       onOpenSessions,
       onOpenPullRequests,
+      onOpenWorkspacePaths,
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
+      runBrowserWorkflow,
     ]
   );
 
@@ -748,18 +776,35 @@ export function ChatPage({
         await fetch(`${API_BASE}/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            planId: plan.planId,
-            decision: 'reject',
-            feedback,
-          } satisfies PlanDecisionRequest),
-        });
+        body: JSON.stringify({
+          sessionId,
+          planId: plan.planId,
+          decision: 'reject',
+          feedback,
+        } satisfies PlanDecisionRequest),
+      });
+        if (feedback?.trim()) {
+          const prompt = getWorkflowPrompt(
+            settings.workflowPrompts,
+            'reviewMemory'
+          );
+          promptMemoryUpdate({
+            trigger: 'review-feedback',
+            draft: {
+              fileName: 'MEMORY.md',
+              content: buildReviewMemoryDraft({
+                prompt,
+                feedback,
+              }),
+            },
+            onOpenMemory: () => onOpenSettings?.('memory'),
+          });
+        }
       } catch (err) {
         console.error('[plan] Failed to send rejection:', err);
       }
     },
-    [sessionId, plan, rejectPlan]
+    [sessionId, plan, rejectPlan, onOpenSettings, settings.workflowPrompts]
   );
 
   const handlePlanApproveWithFeedback = useCallback(
@@ -772,18 +817,35 @@ export function ChatPage({
         await fetch(`${API_BASE}/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            planId: plan.planId,
-            decision: 'approve',
-            feedback,
-          } satisfies PlanDecisionRequest),
-        });
+        body: JSON.stringify({
+          sessionId,
+          planId: plan.planId,
+          decision: 'approve',
+          feedback,
+        } satisfies PlanDecisionRequest),
+      });
+        if (feedback?.trim()) {
+          const prompt = getWorkflowPrompt(
+            settings.workflowPrompts,
+            'reviewMemory'
+          );
+          promptMemoryUpdate({
+            trigger: 'review-feedback',
+            draft: {
+              fileName: 'MEMORY.md',
+              content: buildReviewMemoryDraft({
+                prompt,
+                feedback,
+              }),
+            },
+            onOpenMemory: () => onOpenSettings?.('memory'),
+          });
+        }
       } catch (err) {
         console.error('[plan] Failed to send approval feedback:', err);
       }
     },
-    [sessionId, plan, approvePlan]
+    [sessionId, plan, approvePlan, onOpenSettings, settings.workflowPrompts]
   );
 
   const handlePlanInput = useCallback(
@@ -972,7 +1034,17 @@ export function ChatPage({
           (cmd) => cmd.name.toLowerCase() === commandToken
         );
         if (matchedCommand) {
+          const commandArgs = text.slice(commandToken.length + 1).trim();
           setInput('');
+          if (commandToken === 'add-dir' && onOpenWorkspacePaths) {
+            onOpenWorkspacePaths(commandArgs || undefined);
+            return;
+          }
+          if (commandToken === 'browser') {
+            resetStreamEvents();
+            await runBrowserWorkflow(commandArgs);
+            return;
+          }
           handleCommandSelect(matchedCommand);
           return;
         }

@@ -25,6 +25,35 @@ Each entry follows this format:
 **Regression Test**: `apps/desktop/src/hooks/useSettings.test.ts`, `apps/desktop/src/hooks/useTheme.test.ts`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/__tests__/SettingsTabsOverflow.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatInput.test.tsx`, `apps/desktop/src/components/chat/__tests__/MessageList.test.tsx`
 **Related Issue**: GitHub issue `#113`
 
+### 2026-03-18: Issue 114 multi-repo workspace attachments
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Added persistent workspace `additionalDirectories`, routed `/add-dir <path>` from chat into the workspace Paths flow, forwarded multi-repo attachments into Claude query options, and updated the Paths UI to show repo-derived labels plus repo/path filtering. Verified the backend with successful and invalid `PATCH /api/workspaces/:id` curl checks plus a streamed `/api/chat` request, and verified the frontend in the browser by reloading the app and confirming the attached `shared` directory persisted in the Paths tab.
+
+**Regression Test**: `apps/server/src/db/db-workspaces.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/server/src/routes/chat-workspace.test.ts`, `apps/server/src/services/claude.test.ts`, `apps/desktop/src/components/workspaces/__tests__/WorkspacePanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageSlashCommands.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/hooks/useCommands.test.ts`
+**Related Issue**: GitHub issue `#114`
+
+### 2026-03-18: Issue 115 memory-update prompt flow completed
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Completed GitHub issue `#115` in the issue worktree by replacing the earlier toast-only memory nudges with a real repo-memory update flow. Added repo-scoped `reviewMemory` and `mergeMemory` workflow prompts stored through the existing `/api/memory` files, wired review-feedback and post-merge actions to queue a pending `MEMORY.md` draft, and updated the Memory tab to consume that draft directly into the editor so saving persists through the normal memory routes and future sessions keep using the same repository memory files. Follow-up manual verification found and fixed a first-run bug where the queued draft was dropped when the repo had no memory files yet.
+
+**Regression Test**: `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/desktop/src/lib/__tests__/memoryUpdatePrompt.test.ts`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/__tests__/MemoryPanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/components/workspaces/__tests__/WorkspacePanel.test.tsx`, `apps/desktop/src/hooks/useSettings.test.ts`
+**Related Issue**: GitHub issue `#115`
+
+### 2026-03-18: Issue 112 browser automation workflow landed
+
+**Type**: Feature + Bug Fix
+**Impact**: High
+**Description**: Completed GitHub issue `#112` on the issue worktree by adding a repo-root Playwright MCP default for headed Chrome automation, Settings > MCP preset installation cards, a dedicated browser tool renderer for screenshots, recordings, page text, and console output, and updated `/browser` workflow guidance. Manual verification exposed a monorepo integration bug where the MCP router read and wrote `.mcp.json` relative to `apps/server` instead of the repo root, so the browser server config was invisible to the UI/API when the backend launched from its package directory. The route now resolves the repo-root config and prefers it over stale nested copies.
+
+**Regression Test**: `apps/desktop/src/components/__tests__/McpPanel.test.tsx`, `apps/desktop/src/components/chat/__tests__/BrowserAutomationDisplay.test.tsx`, `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/server/src/routes/mcp.test.ts`
+**Related Issue**: GitHub issue `#112`
+
+---
+
 ### 2026-03-17: Issues 141-151 Wave 3 Integration
 
 **Type**: Bug Fix

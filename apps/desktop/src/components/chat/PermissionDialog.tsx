@@ -6,6 +6,7 @@ import {
   Terminal,
   Pencil,
   FileText,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { StreamPermissionRequest, RiskLevel } from '@claude-tauri/shared';
@@ -57,6 +58,9 @@ function ToolIcon({ name }: { name: string }) {
     case 'NotebookEdit':
       return <Pencil className="h-4 w-4" />;
     default:
+      if (name.toLowerCase().includes('browser') || name.toLowerCase().includes('chrome')) {
+        return <Globe className="h-4 w-4" />;
+      }
       return <FileText className="h-4 w-4" />;
   }
 }

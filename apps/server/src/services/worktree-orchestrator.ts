@@ -53,7 +53,8 @@ export class WorktreeOrchestrator {
       title: string;
       summary?: string;
       url?: string;
-    }
+    },
+    additionalDirectories: string[] = []
   ): Promise<Workspace> {
     // 1. Validate workspace name
     const sanitized = sanitizeWorkspaceName(name);
@@ -166,7 +167,8 @@ export class WorktreeOrchestrator {
         worktreePath,
         worktreePathCanonical,
         effectiveBaseBranch,
-        linearIssue
+        linearIssue,
+        additionalDirectories
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -222,6 +224,7 @@ export class WorktreeOrchestrator {
     updates: {
       name?: string;
       branch?: string;
+      additionalDirectories?: string[];
     }
   ): Promise<Workspace> {
     const workspace = getWorkspace(db, workspaceId);
@@ -291,10 +294,11 @@ export class WorktreeOrchestrator {
       // keep only when changed
     }
 
-    if (updates.name !== undefined || updates.branch !== undefined) {
+    if (updates.name !== undefined || updates.branch !== undefined || updates.additionalDirectories !== undefined) {
       updateWorkspace(db, workspaceId, {
         name: updates.name,
         branch: updates.branch,
+        additionalDirectories: updates.additionalDirectories,
       });
     }
 

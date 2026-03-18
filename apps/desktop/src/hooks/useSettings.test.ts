@@ -334,6 +334,7 @@ describe('useSettings', () => {
           review: 'Repo review prompt',
           pr: 'Repo PR prompt',
           branch: 'Repo branch prompt',
+          browser: 'Repo browser prompt',
         },
       });
 
@@ -370,6 +371,9 @@ describe('useSettings', () => {
       });
       expect(result.current.settings.workflowPrompts.pr).toBe(
         DEFAULT_SETTINGS.workflowPrompts.pr
+      );
+      expect(result.current.settings.workflowPrompts.browser).toBe(
+        DEFAULT_SETTINGS.workflowPrompts.browser
       );
     });
   });

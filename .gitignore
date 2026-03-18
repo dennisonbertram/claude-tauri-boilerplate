@@ -21,3 +21,4 @@ apps/desktop/src-tauri/binaries/
 # pnpm
 .pnpm-debug.log
 .claude/worktrees/
+.claude/browser-artifacts/

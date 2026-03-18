@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { z } from 'zod';
+import { isAbsolute, resolve } from 'node:path';
 import {
   getProject,
   listWorkspaces,
@@ -12,12 +13,14 @@ import {
 import { worktreeOrchestrator } from '../services/worktree-orchestrator';
 import { worktreeService } from '../services/worktree';
 import type { WorkspaceStatus } from '@claude-tauri/shared';
+import { canonicalizePath } from '../utils/paths';
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
   baseBranch: z.string().min(1).max(255).optional(),
   branchPrefix: z.string().min(1).max(80).optional(),
   sourceBranch: z.string().min(1).max(255).optional(),
+  additionalDirectories: z.array(z.string().min(1)).optional(),
   linearIssue: z
     .object({
       id: z.string().min(1, 'issue id is required'),
@@ -39,10 +42,30 @@ const createWorkspaceSchema = z.object({
 const workspaceUpdateSchema = z.object({
   name: z.string().min(1, 'name is required').max(100).optional(),
   branch: z.string().min(1, 'branch is required').max(255).optional(),
+  additionalDirectories: z.array(z.string().min(1)).optional(),
 }).refine(
-  (data) => data.name !== undefined || data.branch !== undefined,
-  { message: 'Either name or branch must be provided', path: ['name'] }
+  (data) => data.name !== undefined || data.branch !== undefined || data.additionalDirectories !== undefined,
+  { message: 'Either name, branch, or additionalDirectories must be provided', path: ['name'] }
 );
+
+async function normalizeAdditionalDirectories(
+  input: string[] | undefined,
+  workspaceRoot: string
+): Promise<string[] | undefined> {
+  if (input === undefined) return undefined;
+
+  const normalized = new Set<string>();
+  for (const rawEntry of input) {
+    const trimmed = rawEntry.trim();
+    if (!trimmed) continue;
+
+    const resolved = isAbsolute(trimmed) ? trimmed : resolve(workspaceRoot, trimmed);
+    const canonical = await canonicalizePath(resolved);
+    normalized.add(canonical);
+  }
+
+  return [...normalized];
+}
 
 const workspaceOperationLocks = new Map<string, Promise<unknown>>();
 
@@ -68,6 +91,13 @@ export function createWorkspaceRouter(db: Database) {
   // POST /api/projects/:projectId/workspaces — Create a workspace
   router.post('/:projectId/workspaces', async (c) => {
     const projectId = c.req.param('projectId');
+    const project = getProject(db, projectId);
+    if (!project) {
+      return c.json(
+        { error: 'Project not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
 
     const body = await c.req.json().catch(() => ({}));
     const parsed = createWorkspaceSchema.safeParse(body);
@@ -79,6 +109,17 @@ export function createWorkspaceRouter(db: Database) {
       throw err;
     }
 
+    let additionalDirectories: string[] = [];
+    try {
+      additionalDirectories =
+        (await normalizeAdditionalDirectories(parsed.data.additionalDirectories, project.repoPathCanonical)) ?? [];
+    } catch {
+      return c.json(
+        { error: 'Invalid additionalDirectories payload', code: 'VALIDATION_ERROR' },
+        400
+      );
+    }
+
     const workspace = await worktreeOrchestrator.createWorkspace(
       db,
       projectId,
@@ -86,7 +127,8 @@ export function createWorkspaceRouter(db: Database) {
       parsed.data.baseBranch,
       parsed.data.sourceBranch,
       parsed.data.branchPrefix,
-      parsed.data.linearIssue ?? parsed.data.githubIssue
+      parsed.data.linearIssue ?? parsed.data.githubIssue,
+      additionalDirectories
     );
     return c.json(workspace, 201);
   });
@@ -160,10 +202,26 @@ export function createFlatWorkspaceRouter(db: Database) {
     }
 
     return withWorkspaceOperationLock(id, async () => {
+      let additionalDirectories: string[] | undefined;
+      try {
+        additionalDirectories = await normalizeAdditionalDirectories(
+          parsed.data.additionalDirectories,
+          workspace.worktreePath
+        );
+      } catch {
+        return c.json(
+          { error: 'Invalid additionalDirectories payload', code: 'VALIDATION_ERROR' },
+          400
+        );
+      }
+
       const updatedWorkspace = await worktreeOrchestrator.renameWorkspace(
         db,
         id,
-        parsed.data
+        {
+          ...parsed.data,
+          additionalDirectories,
+        }
       );
       return c.json(updatedWorkspace);
     });
