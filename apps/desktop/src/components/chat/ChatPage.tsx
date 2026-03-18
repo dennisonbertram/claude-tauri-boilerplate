@@ -84,6 +84,11 @@ interface ChatPageProps {
   onOpenSessions?: () => void;
   onOpenPullRequests?: () => void;
   onOpenWorkspacePaths?: (path?: string) => void;
+  /** Called when a root-level agent task reaches a terminal status */
+  onTaskComplete?: (params: {
+    status: 'completed' | 'failed' | 'stopped';
+    summary: string;
+  }) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -126,6 +131,7 @@ export function ChatPage({
   onOpenSessions,
   onOpenPullRequests,
   onOpenWorkspacePaths,
+  onTaskComplete,
 }: ChatPageProps) {
   const { settings, updateSettings } = useSettings();
   const [input, setInput] = useState('');
@@ -158,7 +164,9 @@ export function ChatPage({
     isVisible: subagentPanelVisible,
     toggleVisibility: toggleSubagentPanel,
     reset: resetSubagents,
-  } = useSubagents();
+  } = useSubagents({
+    onRootTaskComplete: onTaskComplete,
+  });
 
   const {
     messageCosts,
