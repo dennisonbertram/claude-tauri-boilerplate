@@ -149,6 +149,21 @@ describe('useSettings', () => {
       expect(result.current.settings.vertexBaseUrl).toBe('');
       expect(result.current.settings.customBaseUrl).toBe('');
     });
+
+    it('has empty default runtime environment', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.runtimeEnv).toEqual({});
+    });
+
+    it('does not auto-load runtime env from process env', () => {
+      const previous = process.env.RUNTIME_RUNTIME_ENV;
+      process.env.RUNTIME_RUNTIME_ENV = 'should-not-load';
+
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect(result.current.settings.runtimeEnv.RUNTIME_RUNTIME_ENV).toBeUndefined();
+
+      process.env.RUNTIME_RUNTIME_ENV = previous;
+    });
   });
 
   describe('localStorage persistence', () => {
@@ -168,6 +183,45 @@ describe('useSettings', () => {
         localStorageMock.setItem.mock.calls.at(-1)![1]
       );
       expect(savedValue.model).toBe('claude-opus-4-6');
+    });
+
+    it('adds and updates runtime env variables', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      act(() => {
+        result.current.updateSettings({
+          runtimeEnv: { API_KEY: 'sk-test', REGION: 'us-east-1' },
+        });
+      });
+
+      const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+      expect(stored.runtimeEnv).toEqual({ API_KEY: 'sk-test', REGION: 'us-east-1' });
+
+      act(() => {
+        result.current.updateSettings({
+          runtimeEnv: { API_KEY: 'rotated', REGION: 'us-east-1' },
+        });
+      });
+
+      const updated = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+      expect(updated.runtimeEnv).toEqual({ API_KEY: 'rotated', REGION: 'us-east-1' });
+    });
+
+    it('removes runtime env variables when cleared', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+
+      act(() => {
+        result.current.updateSettings({
+          runtimeEnv: { API_KEY: 'sk-test', REGION: 'us-east-1' },
+        });
+      });
+
+      act(() => {
+        result.current.updateSettings({ runtimeEnv: {} });
+      });
+
+      const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+      expect(stored.runtimeEnv).toEqual({});
     });
 
     it('loads saved settings from localStorage on mount', () => {

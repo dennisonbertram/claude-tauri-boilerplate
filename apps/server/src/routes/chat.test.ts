@@ -14,6 +14,7 @@ const providerEnvKeys = [
   'ANTHROPIC_VERTEX_BASE_URL',
   'ANTHROPIC_VERTEX_PROJECT_ID',
   'ANTHROPIC_BASE_URL',
+  'RUNTIME_TOKEN',
 ];
 
 function captureProviderEnv(): EnvSnapshot {
@@ -31,6 +32,7 @@ function resetProviderEnv() {
   delete process.env.ANTHROPIC_VERTEX_BASE_URL;
   delete process.env.ANTHROPIC_VERTEX_PROJECT_ID;
   delete process.env.ANTHROPIC_BASE_URL;
+  delete process.env.RUNTIME_TOKEN;
 }
 
 let envAtQueryCall: EnvSnapshot | undefined;
@@ -1183,6 +1185,92 @@ describe('Chat Route - POST /chat', () => {
     expect(res.status).toBe(200);
     expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
     expect(envAtQueryCall?.ANTHROPIC_BASE_URL).toBe('https://custom.local/v1');
+  });
+
+  test('passes runtime env map to the SDK environment', async () => {
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        envAtQueryCall = captureProviderEnv();
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'runtime-env-session',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'provider-runtime-session', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider test' }],
+      sessionId: session.id,
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'abc123',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('abc123');
+  });
+
+  test('restores custom runtime env after each request', async () => {
+    process.env.RUNTIME_TOKEN = 'initial';
+    mockQuery.mockImplementation(() =>
+      (async function* () {
+        envAtQueryCall = captureProviderEnv();
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'runtime-env-session-2',
+          model: 'claude-opus-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '2.1.39',
+          cwd: '/project',
+          permissionMode: 'bypassPermissions',
+          apiKeySource: 'env',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })()
+    );
+
+    const session = createSession(db, 'provider-runtime-session-2', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider test' }],
+      sessionId: session.id,
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'request-value',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(200);
+    await collectSSEEvents(res);
+    expect(process.env.RUNTIME_TOKEN).toBe('initial');
   });
 
   test('handles stream errors gracefully', async () => {

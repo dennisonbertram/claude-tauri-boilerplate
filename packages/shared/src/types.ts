@@ -43,6 +43,7 @@ export interface ChatRequest {
     vertexBaseUrl?: string;
     customBaseUrl?: string;
   };
+  runtimeEnv?: Record<string, string>;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
