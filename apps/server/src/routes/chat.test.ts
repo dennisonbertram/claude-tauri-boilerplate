@@ -1230,6 +1230,32 @@ describe('Chat Route - POST /chat', () => {
     expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
   });
 
+  test('rejects providerConfig keys that are unsupported for the selected provider', async () => {
+    const session = createSession(db, 'provider-validation-session', 'Test');
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'route provider validation test' }],
+      sessionId: session.id,
+      provider: 'vertex',
+      providerConfig: {
+        vertexProjectId: 'vertex-project',
+        customBaseUrl: 'https://should-not-be-allowed.example',
+      },
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+
+    const payload = await res.json();
+    expect(payload).toMatchObject({
+      error: expect.stringContaining('providerConfig'),
+    });
+  });
+
   test('restores custom runtime env after each request', async () => {
     process.env.RUNTIME_TOKEN = 'initial';
     mockQuery.mockImplementation(() =>

@@ -6,6 +6,14 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from 'ai';
+import {
+  PERMISSION_MODES,
+  PROVIDER_CONFIG_FIELD_KEYS,
+  PROVIDER_TYPES,
+  findMissingRequiredProviderConfigKeys,
+  findUnsupportedProviderConfigKeys,
+} from '@claude-tauri/shared';
+import type { ProviderConfigFieldKey } from '@claude-tauri/shared';
 import { streamClaude } from '../services/claude';
 import { generateRandomName } from '../services/name-generator';
 import { z } from 'zod';
@@ -24,6 +32,10 @@ import {
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
 
+const providerConfigShape = Object.fromEntries(
+  PROVIDER_CONFIG_FIELD_KEYS.map((key) => [key, z.string().optional()])
+) as Record<ProviderConfigFieldKey, z.ZodOptional<z.ZodString>>;
+
 const chatMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
   content: z.string(),
@@ -40,25 +52,13 @@ const chatMessageSchema = z.object({
 const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1),
   sessionId: z.string().optional(),
-  provider: z
-    .enum(['anthropic', 'bedrock', 'vertex', 'custom'])
-    .optional(),
-  providerConfig: z
-    .object({
-      bedrockBaseUrl: z.string().optional(),
-      bedrockProjectId: z.string().optional(),
-      vertexProjectId: z.string().optional(),
-      vertexBaseUrl: z.string().optional(),
-      customBaseUrl: z.string().optional(),
-    })
-    .optional(),
+  provider: z.enum(PROVIDER_TYPES).optional(),
+  providerConfig: z.object(providerConfigShape).optional(),
   runtimeEnv: z.record(z.string(), z.string()).optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
   thinkingBudgetTokens: z.number().int().min(1024).max(32000).optional(),
-  permissionMode: z
-    .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
-    .optional(),
+  permissionMode: z.enum(PERMISSION_MODES).optional(),
   workspaceId: z.string().optional(),
   additionalDirectories: z.array(z.string().min(1)).optional(),
   systemPrompt: z.string().optional(),
@@ -313,6 +313,41 @@ export function createChatRouter(db: Database) {
     const permissionMode = body.permissionMode;
     const provider = body.provider;
     const providerConfig = body.providerConfig;
+    const unsupportedProviderConfigKeys = findUnsupportedProviderConfigKeys(
+      provider,
+      providerConfig
+    );
+    if (unsupportedProviderConfigKeys.length > 0) {
+      return c.json(
+        {
+          error: `providerConfig contains unsupported keys for provider "${provider ?? 'anthropic'}": ${unsupportedProviderConfigKeys.join(', ')}`,
+          code: 'VALIDATION_ERROR',
+          details: {
+            provider,
+            unsupportedKeys: unsupportedProviderConfigKeys,
+          },
+        },
+        400
+      );
+    }
+
+    const missingRequiredProviderConfigKeys = findMissingRequiredProviderConfigKeys(
+      provider,
+      providerConfig
+    );
+    if (missingRequiredProviderConfigKeys.length > 0) {
+      return c.json(
+        {
+          error: `providerConfig is missing required keys for provider "${provider ?? 'anthropic'}": ${missingRequiredProviderConfigKeys.join(', ')}`,
+          code: 'VALIDATION_ERROR',
+          details: {
+            provider,
+            missingKeys: missingRequiredProviderConfigKeys,
+          },
+        },
+        400
+      );
+    }
     const runtimeEnv = body.runtimeEnv;
     const workspaceId = body.workspaceId;
     let additionalDirectories = body.additionalDirectories ?? [];

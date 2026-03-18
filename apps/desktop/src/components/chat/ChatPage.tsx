@@ -3,6 +3,7 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import type { UIMessage } from '@ai-sdk/react';
 import type { Message, PermissionResponse } from '@claude-tauri/shared';
+import { pickProviderConfig } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ErrorBanner, type ChatError } from './ErrorBanner';
@@ -265,13 +266,7 @@ export function ChatPage({
           provider: settings.provider,
           runtimeEnv: settings.runtimeEnv,
           systemPrompt: settings.systemPrompt || undefined,
-          providerConfig: {
-            bedrockBaseUrl: settings.bedrockBaseUrl,
-            bedrockProjectId: settings.bedrockProjectId,
-            vertexProjectId: settings.vertexProjectId,
-            vertexBaseUrl: settings.vertexBaseUrl,
-            customBaseUrl: settings.customBaseUrl,
-          },
+          providerConfig: pickProviderConfig(settings.provider, settings),
           ...(workspaceId ? { workspaceId } : {}),
           ...(additionalDirectories && additionalDirectories.length > 0
             ? { additionalDirectories }

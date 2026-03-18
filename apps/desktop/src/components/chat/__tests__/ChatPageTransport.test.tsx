@@ -260,9 +260,6 @@ describe('ChatPage transport provider payload', () => {
         providerConfig: {
           bedrockBaseUrl: 'https://bedrock.internal',
           bedrockProjectId: '',
-          vertexProjectId: '',
-          vertexBaseUrl: '',
-          customBaseUrl: '',
         },
       }),
     });
@@ -305,11 +302,8 @@ describe('ChatPage transport provider payload', () => {
       body: expect.objectContaining({
         provider: 'vertex',
         providerConfig: {
-          bedrockBaseUrl: '',
-          bedrockProjectId: '',
           vertexProjectId: 'test-vertex-project',
           vertexBaseUrl: 'https://vertex.internal',
-          customBaseUrl: '',
         },
       }),
     });
@@ -352,10 +346,6 @@ describe('ChatPage transport provider payload', () => {
       body: expect.objectContaining({
         provider: 'custom',
         providerConfig: {
-          bedrockBaseUrl: '',
-          bedrockProjectId: '',
-          vertexProjectId: '',
-          vertexBaseUrl: '',
           customBaseUrl: 'https://custom.internal',
         },
       }),

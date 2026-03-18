@@ -1,9 +1,11 @@
 import { useSettingsContext } from '@/contexts/SettingsContext';
 import { DEFAULT_WORKFLOW_PROMPTS, type WorkflowPrompts } from '@/lib/workflowPrompts';
+import type { ProviderType } from '@claude-tauri/shared';
+import { DEFAULT_PROVIDER_CONFIG } from '@claude-tauri/shared';
 
 export interface AppSettings {
   // Provider
-  provider: 'anthropic' | 'bedrock' | 'vertex' | 'custom';
+  provider: ProviderType;
   bedrockBaseUrl: string;
   bedrockProjectId: string;
   vertexProjectId: string;
@@ -51,11 +53,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   // Provider
   provider: 'anthropic',
-  bedrockBaseUrl: '',
-  bedrockProjectId: '',
-  vertexProjectId: '',
-  vertexBaseUrl: '',
-  customBaseUrl: '',
+  ...DEFAULT_PROVIDER_CONFIG,
 
   // General
   apiKey: '',

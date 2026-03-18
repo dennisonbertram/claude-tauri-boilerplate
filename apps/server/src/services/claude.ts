@@ -1,16 +1,12 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { mapSdkEvent } from './event-mapper';
-import type { StreamEvent } from '@claude-tauri/shared';
-
-type ProviderType = 'anthropic' | 'bedrock' | 'vertex' | 'custom';
-
-type ProviderConfig = {
-  bedrockBaseUrl?: string;
-  bedrockProjectId?: string;
-  vertexProjectId?: string;
-  vertexBaseUrl?: string;
-  customBaseUrl?: string;
-};
+import {
+  getProviderCapability,
+  type PermissionMode,
+  type ProviderConfig,
+  type ProviderType,
+  type StreamEvent,
+} from '@claude-tauri/shared';
 
 export interface ClaudeStreamOptions {
   prompt: string;
@@ -18,7 +14,7 @@ export interface ClaudeStreamOptions {
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
   thinkingBudgetTokens?: number;
-  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
+  permissionMode?: PermissionMode;
   cwd?: string;
   additionalDirectories?: string[];
   provider?: ProviderType;
@@ -49,44 +45,22 @@ function applyProviderEnv(
   runtimeEnv: Record<string, string> = {},
 ): EnvSnapshot {
   const original: EnvSnapshot = {};
-  const providerType = provider ?? 'anthropic';
+  const capability = getProviderCapability(provider);
 
-  // Always clear API key to force subscription auth unless a provider explicitly
-  // sets up auth via its own env variables.
-  setProviderEnv(original, 'ANTHROPIC_API_KEY', '');
+  for (const [envKey, binding] of Object.entries(capability.env)) {
+    if (binding.type === 'literal') {
+      setProviderEnv(original, envKey, binding.value);
+      continue;
+    }
 
-  switch (providerType) {
-    case 'bedrock':
-      setProviderEnv(original, 'CLAUDE_CODE_USE_BEDROCK', '1');
-      setProviderEnv(original, 'CLAUDE_CODE_USE_VERTEX', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BEDROCK_BASE_URL', config.bedrockBaseUrl);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_BASE_URL', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_PROJECT_ID', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BASE_URL', undefined);
-      break;
-    case 'vertex':
-      setProviderEnv(original, 'CLAUDE_CODE_USE_VERTEX', '1');
-      setProviderEnv(original, 'CLAUDE_CODE_USE_BEDROCK', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_BASE_URL', config.vertexBaseUrl);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_PROJECT_ID', config.vertexProjectId);
-      setProviderEnv(original, 'ANTHROPIC_BASE_URL', undefined);
-      break;
-    case 'custom':
-      setProviderEnv(original, 'CLAUDE_CODE_USE_BEDROCK', undefined);
-      setProviderEnv(original, 'CLAUDE_CODE_USE_VERTEX', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BEDROCK_BASE_URL', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_BASE_URL', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_PROJECT_ID', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BASE_URL', config.customBaseUrl);
-      break;
-    default:
-      setProviderEnv(original, 'CLAUDE_CODE_USE_BEDROCK', undefined);
-      setProviderEnv(original, 'CLAUDE_CODE_USE_VERTEX', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BEDROCK_BASE_URL', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_BASE_URL', undefined);
-      setProviderEnv(original, 'ANTHROPIC_VERTEX_PROJECT_ID', undefined);
-      setProviderEnv(original, 'ANTHROPIC_BASE_URL', undefined);
-      break;
+    if (binding.type === 'config') {
+      setProviderEnv(original, envKey, config[binding.key]);
+      continue;
+    }
+
+    if (binding.type === 'clear') {
+      setProviderEnv(original, envKey, undefined);
+    }
   }
 
   for (const [key, value] of Object.entries(runtimeEnv)) {
