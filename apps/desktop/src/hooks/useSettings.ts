@@ -2,6 +2,7 @@ import { useSettingsContext } from '@/contexts/SettingsContext';
 import { DEFAULT_WORKFLOW_PROMPTS, type WorkflowPrompts } from '@/lib/workflowPrompts';
 import type { ProviderType } from '@claude-tauri/shared';
 import { DEFAULT_PROVIDER_CONFIG } from '@claude-tauri/shared';
+import type { IdeId } from '@/lib/ide-opener';
 
 export interface AppSettings {
   // Provider
@@ -55,6 +56,13 @@ export interface AppSettings {
   // Runtime environment variables
   runtimeEnv: Record<string, string>;
   workspaceBranchPrefix: string;
+
+  // Privacy
+  privacyMode: boolean;
+
+  // IDE
+  preferredIde: IdeId;
+  customIdeUrl: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -105,6 +113,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Runtime environment variables
   runtimeEnv: {},
   workspaceBranchPrefix: 'workspace',
+
+  // Privacy
+  privacyMode: false,
+
+  // IDE
+  preferredIde: 'vscode',
+  customIdeUrl: '',
 };
 
 const STORAGE_KEY = 'claude-tauri-settings';

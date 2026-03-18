@@ -112,7 +112,7 @@ export function useSessions(initialSearchQuery: string = '') {
       const res = await fetch(`${API_BASE}/api/sessions/${id}/auto-name`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: settings.prReviewModel }),
+        body: JSON.stringify({ model: settings.prReviewModel, privacyMode: settings.privacyMode }),
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -124,7 +124,7 @@ export function useSessions(initialSearchQuery: string = '') {
     } catch {
       // Auto-naming is best-effort; don't throw on failure
     }
-  }, [settings.prReviewModel]);
+  }, [settings.prReviewModel, settings.privacyMode]);
 
   useEffect(() => {
     void fetchSessions(initialSearchQuery);
