@@ -86,4 +86,18 @@ describe('GitCommandRunner.getDefaultBranch', () => {
     // git init creates main or master depending on config
     expect(['main', 'master']).toContain(branch);
   });
+
+  test('returns HEAD branch for an unborn repository', async () => {
+    const unbornRepoDir = join(tempDir, 'unborn-repo');
+    await Bun.spawn(['mkdir', '-p', unbornRepoDir]).exited;
+    await Bun.spawn(['git', 'init'], { cwd: unbornRepoDir }).exited;
+
+    const head = await git.run(['symbolic-ref', '--short', 'HEAD'], {
+      cwd: unbornRepoDir,
+    });
+    expect(head.exitCode).toBe(0);
+
+    const branch = await git.getDefaultBranch(unbornRepoDir);
+    expect(branch).toBe(head.stdout.trim());
+  });
 });
