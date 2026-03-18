@@ -1074,6 +1074,18 @@ function AdvancedTab({ settings, updateSettings }: TabProps) {
           className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </SettingField>
+
+      {/* Enterprise Privacy Mode */}
+      <SettingField
+        label="Enterprise Privacy Mode"
+        description="Disables AI-generated session titles and chat summaries. All processing stays within your configured provider."
+      >
+        <ToggleSwitch
+          data-testid="privacy-mode-toggle"
+          checked={settings.privacyMode}
+          onChange={(checked) => updateSettings({ privacyMode: checked })}
+        />
+      </SettingField>
     </>
   );
 }

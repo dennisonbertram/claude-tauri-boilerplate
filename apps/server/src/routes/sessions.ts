@@ -244,6 +244,14 @@ export function createSessionsRouter(db: Database) {
 
     const body = await c.req.json().catch(() => ({}));
     const model = typeof body.model === 'string' ? body.model : undefined;
+    const privacyMode = body.privacyMode === true;
+
+    // In privacy mode, skip external AI calls and use a local deterministic title.
+    if (privacyMode) {
+      const fallback = `Session ${new Date().toLocaleDateString()}`;
+      updateSessionTitle(db, id, fallback);
+      return c.json({ title: fallback });
+    }
 
     try {
       const title = await generateSessionTitle(messages, model);

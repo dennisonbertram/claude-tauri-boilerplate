@@ -52,6 +52,9 @@ export interface AppSettings {
   runtimeEnv: Record<string, string>;
   workspaceBranchPrefix: string;
 
+  // Privacy
+  privacyMode: boolean;
+
   // IDE
   preferredIde: IdeId;
   customIdeUrl: string;
@@ -100,6 +103,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Runtime environment variables
   runtimeEnv: {},
   workspaceBranchPrefix: 'workspace',
+
+  // Privacy
+  privacyMode: false,
 
   // IDE
   preferredIde: 'vscode',
