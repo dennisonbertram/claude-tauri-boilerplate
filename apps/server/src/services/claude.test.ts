@@ -254,6 +254,7 @@ describe('streamClaude - subscription auth regression', () => {
 
   test('restores runtimeEnv variables when stream fails', async () => {
     process.env.RUNTIME_TOKEN = 'original-runtime-token';
+    process.env.CUSTOM_RUNTIME_TOKEN = 'original-custom-runtime';
     mockQuery.mockImplementation(() => {
       envAtQueryCall = captureProviderEnv();
       return (async function* () {
@@ -279,7 +280,10 @@ describe('streamClaude - subscription auth regression', () => {
 
     const gen = streamClaude({
       prompt: 'hello',
-      runtimeEnv: { RUNTIME_TOKEN: 'runtime-abc' },
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'runtime-abc',
+        CUSTOM_RUNTIME_TOKEN: 'custom-runtime',
+      },
     });
     try {
       for await (const _ of gen) {
