@@ -562,6 +562,26 @@ export interface RewindPreview {
   messagesRemoved: number;
 }
 
+// --- Project Location Types ---
+
+export type ProjectLocationType = 'local' | 'ssh';
+
+export interface LocalProjectLocation {
+  type: 'local';
+  path: string; // absolute local path
+}
+
+export interface SshProjectLocation {
+  type: 'ssh';
+  host: string;
+  port?: number;
+  user: string;
+  path: string; // path on remote
+  trustFingerprint?: string; // stored host key fingerprint
+}
+
+export type ProjectLocation = LocalProjectLocation | SshProjectLocation;
+
 // --- Project & Workspace Types ---
 
 export type WorkspaceStatus =
@@ -587,6 +607,8 @@ export interface Project {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Where the project lives. If absent, assume local using repoPathCanonical (backward compat). */
+  location?: ProjectLocation;
 }
 
 export interface Workspace {
