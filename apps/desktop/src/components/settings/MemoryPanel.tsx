@@ -49,7 +49,7 @@ export function MemoryPanel() {
   }, [fetchMemoryFiles]);
 
   useEffect(() => {
-    if (!files.length) return;
+    if (loading) return;
 
     const draft = consumeMemoryUpdateDraft();
     if (!draft) return;
@@ -69,7 +69,7 @@ export function MemoryPanel() {
     setCreating(true);
     setCreateName(draft.fileName);
     setCreateContent(draft.content);
-  }, [files]);
+  }, [files, loading]);
 
   const handleSave = async (filename: string, content: string) => {
     setSaving(true);

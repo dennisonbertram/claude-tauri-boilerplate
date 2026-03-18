@@ -99,6 +99,46 @@ describe('MemoryPanel', () => {
     expect(window.sessionStorage.getItem('claude-tauri-memory-draft')).toBeNull();
   });
 
+  it('creates a new MEMORY.md draft when no memory files exist yet', async () => {
+    window.sessionStorage.setItem(
+      'claude-tauri-memory-draft',
+      JSON.stringify({
+        fileName: 'MEMORY.md',
+        content: '## Durable guidance\n- First memory draft.',
+      })
+    );
+
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === 'string' && url.includes('/api/memory/search')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ results: [] }),
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/memory')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              files: [],
+              memoryDir: '/home/user/.claude/projects/test/memory',
+            }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    render(<MemoryPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('memory-create-form')).toBeInTheDocument();
+    });
+
+    expect(screen.getByDisplayValue('MEMORY.md')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/First memory draft/)).toBeInTheDocument();
+    expect(window.sessionStorage.getItem('claude-tauri-memory-draft')).toBeNull();
+  });
+
   it('shows loading state initially', () => {
     mockFetch.mockImplementation(() => new Promise(() => {}));
     render(<MemoryPanel />);

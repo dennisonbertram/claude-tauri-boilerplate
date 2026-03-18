@@ -8,6 +8,7 @@ Completed the issue-115 MVP beyond the prior toast-only prompt.
 - Persist those templates in the existing repo memory files via `/api/memory`.
 - Queue a pending memory draft when the user addresses review feedback or completes a workspace merge.
 - Open the existing Memory tab with that queued draft preloaded into `MEMORY.md`, so saving uses the normal memory file routes and future sessions reuse the same repo memory files.
+- Fixed the first-run edge case where a queued `MEMORY.md` draft was previously dropped if the repo had no memory files yet.
 
 ## Files Changed
 
@@ -62,9 +63,11 @@ After a successful workspace merge, the app now:
 - `pnpm --filter @claude-tauri/desktop exec vitest run --configLoader runner src/lib/workflowPrompts.test.ts src/components/settings/SettingsPanel.test.tsx src/components/__tests__/MemoryPanel.test.tsx src/components/chat/__tests__/ChatPageTransport.test.tsx src/components/workspaces/__tests__/WorkspacePanel.test.tsx`
   - Result: `5` files passed, `65` tests passed
 - `pnpm --filter @claude-tauri/desktop exec vitest run --configLoader runner src/hooks/useSettings.test.ts src/lib/__tests__/memoryUpdatePrompt.test.ts src/components/settings/SettingsPanel.test.tsx src/components/__tests__/MemoryPanel.test.tsx src/components/chat/__tests__/ChatPageTransport.test.tsx src/components/workspaces/__tests__/WorkspacePanel.test.tsx src/lib/workflowPrompts.test.ts`
-  - Result: `7` files passed, `104` tests passed
+  - Result: `7` files passed, `105` tests passed
 
 ### Manual
 
-- Checked `lsof -i :1420 -i :3131` in this worktree before starting live verification.
-- Manual browser verification was blocked because both required fixed ports were already occupied by another running dev instance, so starting an isolated frontend/backend pair for this worktree would have conflicted with an unrelated session.
+- Started isolated frontend/backend dev sessions for this worktree on the fixed app ports after clearing the earlier port conflict.
+- In the browser, verified Settings → Workflows exposes the new `Review Memory Prompt` and `Merge Memory Prompt` editors.
+- Seeded a queued `MEMORY.md` draft, opened Settings → Memory, and verified the draft appears in the create form even when no memory files exist yet.
+- Saved the draft through the UI, then confirmed `GET /api/memory/MEMORY.md` returned the persisted content from the repo memory directory.

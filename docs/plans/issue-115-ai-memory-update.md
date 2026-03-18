@@ -34,5 +34,8 @@ Add a bounded MVP that nudges the user to capture durable guidance in repo memor
   - workflow settings UI for editing those prompts
   - review-feedback prompt flow into a queued memory draft
   - post-merge prompt flow into a queued memory draft
-  - Memory tab consuming the queued draft into `MEMORY.md`
-- Manual browser verification in this worktree was blocked because the fixed app ports `1420` and `3131` were already occupied by another running dev instance outside this task worktree.
+  - Memory tab consuming the queued draft into `MEMORY.md`, including the first-run case where no memory files exist yet
+- Manual browser verification passed in this worktree:
+  - Settings → Workflows shows the new `Review Memory Prompt` and `Merge Memory Prompt` editors.
+  - Settings → Memory consumes a queued `MEMORY.md` draft even when the repo has no memory files yet.
+  - Saving that draft creates `MEMORY.md` through the existing `/api/memory` route, and a follow-up `GET /api/memory/MEMORY.md` returns the persisted content.
