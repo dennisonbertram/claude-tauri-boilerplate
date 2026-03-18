@@ -46,6 +46,7 @@ import {
   buildReviewWorkflowMessage,
   buildPrWorkflowMessage,
   buildBranchNameWorkflowMessage,
+  buildBrowserWorkflowMessage,
 } from '@/lib/workflowPrompts';
 
 const API_BASE = 'http://localhost:3131';
@@ -446,6 +447,19 @@ export function ChatPage({
     await sendMessage({ text } as any);
   }, [fetchWorkspaceDiff, changedFiles, settings.workflowPrompts, sendMessage]);
 
+  const runBrowserWorkflow = useCallback(
+    async (task?: string) => {
+      const prompt = getWorkflowPrompt(settings.workflowPrompts, 'browser');
+      const text = buildBrowserWorkflowMessage({
+        prompt,
+        targetUrl: 'http://localhost:1420',
+        task,
+      });
+      await sendMessage({ text } as any);
+    },
+    [settings.workflowPrompts, sendMessage]
+  );
+
   const commandContext = useMemo(
     () => ({
       clearChat,
@@ -462,6 +476,7 @@ export function ChatPage({
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
+      runBrowserWorkflow,
     }),
     [
       clearChat,
@@ -474,6 +489,7 @@ export function ChatPage({
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
+      runBrowserWorkflow,
     ]
   );
 
@@ -1021,6 +1037,11 @@ export function ChatPage({
           setInput('');
           if (commandToken === 'add-dir' && onOpenWorkspacePaths) {
             onOpenWorkspacePaths(commandArgs || undefined);
+            return;
+          }
+          if (commandToken === 'browser') {
+            resetStreamEvents();
+            await runBrowserWorkflow(commandArgs);
             return;
           }
           handleCommandSelect(matchedCommand);

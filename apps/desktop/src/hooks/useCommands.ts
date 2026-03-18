@@ -27,6 +27,7 @@ export interface CommandContext {
   runReviewWorkflow?: () => void | Promise<void>;
   runPrWorkflow?: () => void | Promise<void>;
   runBranchWorkflow?: () => void | Promise<void>;
+  runBrowserWorkflow?: () => void | Promise<void>;
 }
 
 export function useCommands(context: CommandContext) {
@@ -106,6 +107,12 @@ export function useCommands(context: CommandContext) {
         description: 'Suggest a branch name for current changes',
         category: 'tools' as CommandCategory,
         execute: () => context.runBranchWorkflow?.(),
+      },
+      {
+        name: 'browser',
+        description: 'Test the app with browser tooling',
+        category: 'tools' as CommandCategory,
+        execute: () => context.runBrowserWorkflow?.(),
       },
       {
         name: 'cost',

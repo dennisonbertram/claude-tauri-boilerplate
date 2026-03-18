@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  cacheDir: '/tmp/claude-tauri-desktop-vitest-cache',
   plugins: [react()],
   resolve: {
     alias: {

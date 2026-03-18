@@ -31,6 +31,49 @@ const EMPTY_FORM: AddServerForm = {
   headers: '',
 };
 
+interface McpPreset {
+  id: string;
+  title: string;
+  description: string;
+  config: Omit<McpServerConfig, 'enabled'> & { enabled?: boolean };
+}
+
+const MCP_PRESETS: McpPreset[] = [
+  {
+    id: 'playwright',
+    title: 'Playwright Browser',
+    description:
+      'Launch headed Chrome for testing, screenshots, console inspection, and saved recordings.',
+    config: {
+      name: 'playwright',
+      type: 'stdio',
+      command: 'npx',
+      args: [
+        '-y',
+        '@playwright/mcp@latest',
+        '--browser',
+        'chrome',
+        '--output-dir',
+        '.claude/browser-artifacts',
+        '--save-session',
+        '--save-video=1280x720',
+      ],
+    },
+  },
+  {
+    id: 'agentation',
+    title: 'Agentation Visual Feedback',
+    description:
+      'Supplement browser runs with visual annotations and interaction feedback tooling.',
+    config: {
+      name: 'agentation',
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', 'agentation-mcp', 'server'],
+    },
+  },
+];
+
 export function McpPanel() {
   const [servers, setServers] = useState<McpServerConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +84,7 @@ export function McpPanel() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editingServer, setEditingServer] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<AddServerForm>({ ...EMPTY_FORM });
+  const [installingPresetId, setInstallingPresetId] = useState<string | null>(null);
 
   const fetchServers = useCallback(async () => {
     setLoading(true);
@@ -119,6 +163,33 @@ export function McpPanel() {
       setError(err instanceof Error ? err.message : 'Failed to add server');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleInstallPreset = async (preset: McpPreset) => {
+    setError(null);
+    setInstallingPresetId(preset.id);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/mcp/servers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...preset.config,
+          enabled: preset.config.enabled !== false,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || 'Failed to install preset');
+      }
+
+      await fetchServers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to install preset');
+    } finally {
+      setInstallingPresetId(null);
     }
   };
 
@@ -251,6 +322,52 @@ export function McpPanel() {
             + Add Server
           </button>
         )}
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <h4 className="text-sm font-medium text-foreground">Recommended presets</h4>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Install browser automation servers with the tested defaults used by the app workflow prompts.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {MCP_PRESETS.map((preset) => {
+            const alreadyInstalled = servers.some((server) => server.name === preset.config.name);
+            const isInstalling = installingPresetId === preset.id;
+
+            return (
+              <div
+                key={preset.id}
+                data-testid={`mcp-preset-${preset.id}`}
+                className="rounded-lg border border-border bg-muted/20 p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{preset.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{preset.description}</div>
+                  </div>
+
+                  <button
+                    data-testid={`mcp-install-preset-${preset.id}`}
+                    onClick={() => handleInstallPreset(preset)}
+                    disabled={alreadyInstalled || isInstalling}
+                    className="shrink-0 rounded-lg border border-input px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {alreadyInstalled ? 'Installed' : isInstalling ? 'Installing...' : 'Install'}
+                  </button>
+                </div>
+
+                <div className="mt-3 rounded-md border border-border/60 bg-background/60 px-2 py-2 font-mono text-[11px] text-muted-foreground">
+                  {preset.config.type === 'stdio'
+                    ? `${preset.config.command} ${preset.config.args?.join(' ') || ''}`
+                    : preset.config.url}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Server List */}

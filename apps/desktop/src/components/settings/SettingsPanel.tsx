@@ -580,7 +580,7 @@ function WorkflowsTab({ settings, updateSettings }: TabProps) {
         <div className="text-sm font-medium text-foreground">Repository-scoped workflow prompts</div>
         <div className="mt-1 text-xs text-muted-foreground">
           These prompts override the defaults for this repository only and power
-          the `/review`, `/pr`, and `/branch` workflows.
+          the `/review`, `/pr`, `/branch`, and `/browser` workflows.
         </div>
       </div>
 
@@ -640,6 +640,26 @@ function WorkflowsTab({ settings, updateSettings }: TabProps) {
             })
           }
           rows={6}
+          className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none resize-y focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      </SettingField>
+
+      <SettingField
+        label="Browser Testing Prompt"
+        description="Prompt template used by /browser"
+      >
+        <textarea
+          data-testid="workflow-browser-prompt"
+          value={settings.workflowPrompts.browser}
+          onChange={(e) =>
+            updateSettings({
+              workflowPrompts: {
+                ...settings.workflowPrompts,
+                browser: e.target.value,
+              },
+            })
+          }
+          rows={10}
           className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none resize-y focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </SettingField>
