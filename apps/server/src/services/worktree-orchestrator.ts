@@ -1,5 +1,6 @@
 import { Database } from 'bun:sqlite';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Workspace, WorkspaceStatus } from '@claude-tauri/shared';
 import {
   createWorkspace as dbCreateWorkspace,
@@ -197,6 +198,31 @@ export class WorktreeOrchestrator {
         new Error(`Failed to create worktree: ${msg}`),
         { status: 500, code: 'GIT_ERROR' }
       );
+    }
+
+    // 6b. Create .context directory and empty notes file,
+    //     and exclude .context from git tracking via repo's .git/info/exclude
+    try {
+      const contextDir = join(worktreePath, '.context');
+      mkdirSync(contextDir, { recursive: true });
+      const notesPath = join(contextDir, 'notes.md');
+      writeFileSync(notesPath, '');
+
+      // Add .context to the repo's git info/exclude so it never appears
+      // in diffs/status across all worktrees
+      const gitInfoDir = join(project.repoPathCanonical, '.git', 'info');
+      const excludePath = join(gitInfoDir, 'exclude');
+      try {
+        mkdirSync(gitInfoDir, { recursive: true });
+        const existing = await Bun.file(excludePath).text().catch(() => '');
+        if (!existing.includes('.context')) {
+          writeFileSync(excludePath, `${existing.trimEnd()}\n.context\n`.trimStart());
+        }
+      } catch {
+        // Best-effort exclude setup
+      }
+    } catch {
+      // Best-effort — don't fail workspace creation if .context setup fails
     }
 
     // 7. If setup_command exists, run it

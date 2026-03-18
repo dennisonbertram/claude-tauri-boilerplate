@@ -15,6 +15,8 @@ import { createCheckpointsRouter } from './routes/checkpoints';
 import { createProjectRouter } from './routes/projects';
 import { createWorkspaceRouter, createFlatWorkspaceRouter } from './routes/workspaces';
 import { createDiffCommentsRouter } from './routes/diff-comments';
+import { createWorkspaceNotesRouter } from './routes/workspace-notes';
+import { createCodeReviewRouter } from './routes/code-review';
 import { createLinearRouter } from './routes/linear';
 import { createSystemRouter } from './routes/system';
 import { createRuntimeCapabilitiesRouter } from './routes/runtime-capabilities';
@@ -55,6 +57,8 @@ app.route('/api/projects', createProjectRouter(db));
 app.route('/api/projects', createWorkspaceRouter(db));
 app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 app.route('/api/workspaces', createDiffCommentsRouter(db));
+app.route('/api/workspaces', createWorkspaceNotesRouter(db));
+app.route('/api/workspaces', createCodeReviewRouter(db));
 app.route('/api/system', createSystemRouter());
 app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
 

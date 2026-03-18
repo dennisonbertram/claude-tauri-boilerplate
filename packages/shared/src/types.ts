@@ -495,6 +495,23 @@ export interface GitDiff {
   error?: string;
 }
 
+// --- Code Review Types ---
+
+export interface CodeReviewComment {
+  id: string;
+  file: string;
+  line?: number;
+  severity: 'critical' | 'warning' | 'suggestion' | 'info';
+  body: string;
+  isAI: true;
+}
+
+export interface CodeReviewResult {
+  summary: string;
+  comments: CodeReviewComment[];
+  reviewedAt: string;
+}
+
 // --- Agent Teams Types ---
 
 export interface AgentDefinition {
