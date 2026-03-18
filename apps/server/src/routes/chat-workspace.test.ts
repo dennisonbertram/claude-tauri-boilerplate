@@ -335,6 +335,33 @@ describe('Chat Route - Workspace Integration', () => {
     expect(callArgs.options.cwd).toBe('/tmp/worktrees/test');
   });
 
+  test('passes additional directories to streamClaude when workspace stores them', async () => {
+    setupStandardMock('ws-claude-session-dirs', 'Workspace reply');
+    const { workspaceId } = createTestWorkspace(db);
+    const { updateWorkspace } = await import('../db');
+    updateWorkspace(db, workspaceId, {
+      additionalDirectories: ['/repo-a', '/repo-b'],
+    });
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Work across repos' }],
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    await res.text();
+
+    expect(res.status).toBe(200);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    const callArgs = mockQuery.mock.calls[0][0] as any;
+    expect(callArgs.options.additionalDirectories).toEqual(['/repo-a', '/repo-b']);
+  });
+
   test('does not pass cwd when no workspaceId is provided', async () => {
     setupStandardMock('no-ws-session', 'Normal reply');
 

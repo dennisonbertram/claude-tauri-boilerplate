@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { Workspace } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { WorkspaceDiffView } from './WorkspaceDiffView';
 import { WorkspaceMergeDialog } from './WorkspaceMergeDialog';
@@ -9,7 +10,7 @@ import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 
-type Tab = 'chat' | 'diff';
+type Tab = 'chat' | 'diff' | 'paths';
 
 interface WorkspacePanelProps {
   workspace: Workspace;
@@ -17,11 +18,25 @@ interface WorkspacePanelProps {
   onWorkspaceUpdate?: () => void;
 }
 
+function getDirectoryLabel(path: string): string {
+  const normalized = path.replace(/\/+$/, '');
+  const parts = normalized.split('/');
+  return parts[parts.length - 1] || normalized;
+}
+
 export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [additionalDirectories, setAdditionalDirectories] = useState<string[]>(workspace.additionalDirectories ?? []);
+  const [newDirectory, setNewDirectory] = useState('');
+  const [directoryFilter, setDirectoryFilter] = useState('');
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAdditionalDirectories(workspace.additionalDirectories ?? []);
+  }, [workspace.additionalDirectories, workspace.id]);
 
   // Load the existing session for this workspace on mount.
   useEffect(() => {
@@ -47,6 +62,49 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
     await api.discardWorkspace(workspace.id);
     onWorkspaceUpdate?.();
   }, [workspace.id, onWorkspaceUpdate]);
+
+  const filteredDirectories = useMemo(() => {
+    const filter = directoryFilter.trim().toLowerCase();
+    if (!filter) return additionalDirectories;
+    return additionalDirectories.filter((dir) => {
+      const label = getDirectoryLabel(dir).toLowerCase();
+      return label.includes(filter) || dir.toLowerCase().includes(filter);
+    });
+  }, [additionalDirectories, directoryFilter]);
+
+  const persistDirectories = useCallback(
+    async (nextDirectories: string[]) => {
+      const updated = await api.renameWorkspace(workspace.id, {
+        additionalDirectories: nextDirectories,
+      });
+      setAdditionalDirectories(updated.additionalDirectories ?? nextDirectories);
+      setDirectoryError(null);
+      onWorkspaceUpdate?.();
+      return updated;
+    },
+    [workspace.id, onWorkspaceUpdate]
+  );
+
+  const handleAddDirectory = useCallback(async () => {
+    const trimmed = newDirectory.trim();
+    if (!trimmed) return;
+
+    const nextDirectories = [...new Set([...additionalDirectories, trimmed])];
+    try {
+      await persistDirectories(nextDirectories);
+      setNewDirectory('');
+    } catch (err) {
+      setDirectoryError(err instanceof Error ? err.message : 'Failed to add directory');
+    }
+  }, [additionalDirectories, newDirectory, persistDirectories]);
+
+  const handleRemoveDirectory = useCallback(async (directory: string) => {
+    try {
+      await persistDirectories(additionalDirectories.filter((item) => item !== directory));
+    } catch (err) {
+      setDirectoryError(err instanceof Error ? err.message : 'Failed to update directories');
+    }
+  }, [additionalDirectories, persistDirectories]);
 
   return (
     <div className="flex flex-1 flex-col min-w-0 min-h-0">
@@ -103,6 +161,16 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
         >
           Diff
         </button>
+        <button
+          onClick={() => setActiveTab('paths')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'paths'
+              ? 'border-b-2 border-primary text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Paths
+        </button>
       </div>
 
       {/* Content */}
@@ -114,14 +182,77 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
               sessionId={sessionId}
               onStatusChange={onStatusChange}
               workspaceId={workspace.id}
+              additionalDirectories={additionalDirectories}
+              onOpenWorkspacePaths={() => setActiveTab('paths')}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           )
-        ) : (
+        ) : activeTab === 'diff' ? (
           <WorkspaceDiffView workspaceId={workspace.id} />
+        ) : (
+          <div className="flex flex-1 min-h-0 flex-col overflow-y-auto p-4">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Additional writable directories</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Claude can write to these directories in addition to the workspace worktree.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  value={newDirectory}
+                  onChange={(e) => setNewDirectory(e.target.value)}
+                  placeholder="/path/to/another-repo"
+                  aria-label="Additional writable directory"
+                />
+                <Button type="button" onClick={() => void handleAddDirectory()} disabled={!newDirectory.trim()}>
+                  Add directory
+                </Button>
+              </div>
+
+              <Input
+                value={directoryFilter}
+                onChange={(e) => setDirectoryFilter(e.target.value)}
+                placeholder="Filter directories"
+                aria-label="Filter directories"
+              />
+
+              <div className="space-y-2">
+                {filteredDirectories.length === 0 ? (
+                  <p className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                    No additional directories configured.
+                  </p>
+                ) : (
+                  filteredDirectories.map((directory) => (
+                    <div
+                      key={directory}
+                      className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/20 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-foreground">
+                          {getDirectoryLabel(directory)}
+                        </div>
+                        <div className="break-all text-xs text-muted-foreground">
+                          {directory}
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => void handleRemoveDirectory(directory)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {directoryError && (
+                <p className="text-sm text-destructive">{directoryError}</p>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

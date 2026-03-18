@@ -59,6 +59,7 @@ const chatRequestSchema = z.object({
     .enum(['default', 'acceptEdits', 'plan', 'bypassPermissions'])
     .optional(),
   workspaceId: z.string().optional(),
+  additionalDirectories: z.array(z.string().min(1)).optional(),
   systemPrompt: z.string().optional(),
   linearIssue: z
     .object({
@@ -311,6 +312,7 @@ export function createChatRouter(db: Database) {
     const providerConfig = body.providerConfig;
     const runtimeEnv = body.runtimeEnv;
     const workspaceId = body.workspaceId;
+    let additionalDirectories = body.additionalDirectories ?? [];
     const systemPrompt = body.systemPrompt;
     const requestLinearIssue = body.linearIssue;
     const attachmentRefs = body.attachments ?? [];
@@ -368,6 +370,9 @@ export function createChatRouter(db: Database) {
       }
       workspaceCwd = workspace.worktreePath;
       workspaceClaudeSessionId = workspace.claudeSessionId ?? undefined;
+      if (additionalDirectories.length === 0 && workspace.additionalDirectories.length > 0) {
+        additionalDirectories = workspace.additionalDirectories;
+      }
       if (workspace.linearIssueId && workspace.linearIssueTitle) {
         workspaceLinearIssue = {
           id: workspace.linearIssueId,
@@ -518,6 +523,7 @@ export function createChatRouter(db: Database) {
             providerConfig,
             runtimeEnv,
             cwd: workspaceCwd,
+            additionalDirectories,
           })) {
             // Lazily create the session on first successful event
             ensureSession();
