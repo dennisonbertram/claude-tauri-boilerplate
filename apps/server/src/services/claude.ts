@@ -21,12 +21,14 @@ export interface ClaudeStreamOptions {
   cwd?: string;
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
+  runtimeEnv?: Record<string, string>;
 }
 
-type EnvKey = 'ANTHROPIC_API_KEY' | 'CLAUDE_CODE_USE_BEDROCK' | 'CLAUDE_CODE_USE_VERTEX' | 'ANTHROPIC_BEDROCK_BASE_URL' | 'ANTHROPIC_VERTEX_BASE_URL' | 'ANTHROPIC_VERTEX_PROJECT_ID' | 'ANTHROPIC_BASE_URL';
+type EnvKey = string;
+type EnvSnapshot = Record<string, string | undefined>;
 
 function setProviderEnv(
-  env: Partial<Record<EnvKey, string | undefined>>,
+  env: EnvSnapshot,
   key: EnvKey,
   value: string | undefined,
 ) {
@@ -41,8 +43,9 @@ function setProviderEnv(
 function applyProviderEnv(
   provider: ProviderType | undefined,
   config: ProviderConfig = {},
-): Partial<Record<EnvKey, string | undefined>> {
-  const original: Partial<Record<EnvKey, string | undefined>> = {};
+  runtimeEnv: Record<string, string> = {},
+): EnvSnapshot {
+  const original: EnvSnapshot = {};
   const providerType = provider ?? 'anthropic';
 
   // Always clear API key to force subscription auth unless a provider explicitly
@@ -84,17 +87,20 @@ function applyProviderEnv(
       break;
   }
 
+  for (const [key, value] of Object.entries(runtimeEnv)) {
+    setProviderEnv(original, key, value);
+  }
+
   return original;
 }
 
-function restoreProviderEnv(original: Partial<Record<EnvKey, string | undefined>>) {
+function restoreProviderEnv(original: EnvSnapshot) {
   for (const key in original) {
-    const typedKey = key as EnvKey;
-    const value = original[typedKey];
+    const value = original[key];
     if (value === undefined) {
-      delete process.env[typedKey];
+      delete process.env[key];
     } else {
-      process.env[typedKey] = value;
+      process.env[key] = value;
     }
   }
 }
@@ -126,7 +132,7 @@ export async function* streamClaude(
     queryOptions.cwd = options.cwd;
   }
 
-  const originalEnv = applyProviderEnv(options.provider, options.providerConfig);
+  const originalEnv = applyProviderEnv(options.provider, options.providerConfig, options.runtimeEnv);
 
   const stream = query({
     prompt: options.prompt,

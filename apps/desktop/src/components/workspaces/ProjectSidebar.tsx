@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Project, Workspace } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
+import { copyTextToClipboard } from '@/lib/clipboard';
+import * as api from '@/lib/workspace-api';
+import type { GitStatus } from '@claude-tauri/shared';
 
 type ViewType = 'chat' | 'teams' | 'workspaces';
 
@@ -14,6 +17,7 @@ interface ProjectSidebarProps {
   onSelectWorkspace: (workspace: Workspace) => void;
   onAddProject: () => void;
   onCreateWorkspace: (project: Project) => void;
+  onRenameWorkspace: (id: string, branch: string) => void;
   onDeleteProject?: (id: string) => void;
   activeView?: ViewType;
   onSwitchView?: (view: ViewType) => void;
@@ -26,6 +30,7 @@ export function ProjectSidebar({
   onSelectWorkspace,
   onAddProject,
   onCreateWorkspace,
+  onRenameWorkspace,
   onDeleteProject,
   activeView,
   onSwitchView,
@@ -34,6 +39,9 @@ export function ProjectSidebar({
     () => new Set(projects.map(p => p.id))
   );
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null);
+  const [editingBranch, setEditingBranch] = useState('');
+  const [workspaceStatus, setWorkspaceStatus] = useState<Record<string, GitStatus | null>>({});
 
   // Close confirmation if the project disappears (e.g. already deleted)
   useEffect(() => {
@@ -41,6 +49,83 @@ export function ProjectSidebar({
       setConfirmDeleteId(null);
     }
   }, [projects, confirmDeleteId]);
+
+  const allWorkspaces = useMemo(() => Object.values(workspacesByProject).flat(), [workspacesByProject]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadStatuses = async () => {
+      const nextStatus: Record<string, GitStatus | null> = {};
+      for (const workspace of allWorkspaces) {
+        try {
+          nextStatus[workspace.id] = await api.fetchWorkspaceStatus(workspace.worktreePath);
+        } catch {
+          if (controller.signal.aborted) return;
+          nextStatus[workspace.id] = null;
+        }
+      }
+
+      if (!cancelled && !controller.signal.aborted) {
+        setWorkspaceStatus((current) => ({
+          ...current,
+          ...nextStatus,
+        }));
+      }
+    };
+
+    loadStatuses();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [allWorkspaces]);
+
+  const beginRename = (workspace: Workspace) => {
+    setEditingWorkspaceId(workspace.id);
+    setEditingBranch(workspace.branch);
+  };
+
+  const cancelRename = () => {
+    setEditingWorkspaceId(null);
+    setEditingBranch('');
+  };
+
+  const copyBranchName = async (branch: string) => {
+    try {
+      await copyTextToClipboard(branch);
+    } catch {
+      // Clipboard access is best-effort; the branch is still visible on screen.
+    }
+  };
+
+  const commitRename = async (workspaceId: string, workspaceBranch: string) => {
+    const trimmedBranch = workspaceBranch.trim();
+    if (!trimmedBranch) {
+      cancelRename();
+      return;
+    }
+
+    const originalWorkspace = allWorkspaces.find(ws => ws.id === workspaceId);
+    if (!originalWorkspace) {
+      cancelRename();
+      return;
+    }
+
+    if (trimmedBranch !== originalWorkspace.branch) {
+      try {
+        await onRenameWorkspace(workspaceId, trimmedBranch);
+      } catch {
+        // no-op; leave the row in edit mode so user can retry
+        return;
+      }
+    }
+
+    setEditingWorkspaceId(null);
+    setEditingBranch('');
+  };
 
   const toggleProject = (id: string) => {
     setExpandedProjects(prev => {
@@ -189,18 +274,108 @@ export function ProjectSidebar({
                       </p>
                     )}
                     {workspaces.map(ws => (
-                      <button
+                      <div
                         key={ws.id}
-                        onClick={() => onSelectWorkspace(ws)}
-                        className={`w-full rounded-md px-2 py-1.5 text-left transition-colors flex items-center justify-between gap-2 ${
+                        className={`rounded-md px-2 py-1.5 text-left transition-colors space-y-1 ${
                           ws.id === selectedWorkspaceId
                             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                             : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
                         }`}
                       >
-                        <span className="text-sm truncate">{ws.name}</span>
-                        <WorkspaceStatusBadge status={ws.status} />
-                      </button>
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onSelectWorkspace(ws)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <span className="text-sm truncate">{ws.name}</span>
+                          </button>
+                          <WorkspaceStatusBadge status={ws.status} />
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {editingWorkspaceId === ws.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                className="h-6 min-w-0 rounded border border-border bg-background px-2 text-xs text-foreground"
+                                value={editingBranch}
+                                onChange={(e) => setEditingBranch(e.target.value)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    commitRename(ws.id, editingBranch);
+                                  } else if (event.key === 'Escape') {
+                                    cancelRename();
+                                  }
+                                }}
+                                onBlur={() => commitRename(ws.id, editingBranch)}
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                className="rounded px-1.5 py-0.5 text-xs text-foreground border border-border hover:bg-accent transition-colors"
+                                onClick={() => commitRename(ws.id, editingBranch)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded px-1.5 py-0.5 text-xs text-muted-foreground border border-border hover:bg-accent transition-colors"
+                                onClick={cancelRename}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1">
+                                <p className="truncate font-mono text-[11px] text-foreground">
+                                  {ws.branch}
+                                </p>
+                                <button
+                                  type="button"
+                                  className="rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                  aria-label={`Copy branch name for ${ws.name}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void copyBranchName(ws.branch);
+                                  }}
+                                >
+                                  Copy
+                                </button>
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-muted-foreground underline hover:text-foreground"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    beginRename(ws);
+                                  }}
+                                >
+                                  Rename
+                                </button>
+                              </div>
+                              {workspaceStatus[ws.id] ? (
+                                workspaceStatus[ws.id]!.isClean ? (
+                                  <p className="truncate text-[11px] text-emerald-400">Clean</p>
+                                ) : (
+                                  <div className="flex flex-wrap items-center gap-1 text-[10px]">
+                                    {workspaceStatus[ws.id]!.stagedFiles.length > 0 && (
+                                      <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-blue-300">
+                                        Committed {workspaceStatus[ws.id]!.stagedFiles.length}
+                                      </span>
+                                    )}
+                                    {workspaceStatus[ws.id]!.modifiedFiles.length > 0 && (
+                                      <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-300">
+                                        Uncommitted {workspaceStatus[ws.id]!.modifiedFiles.length}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
+                              ) : (
+                                <p className="truncate text-[11px]">Loading status...</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}

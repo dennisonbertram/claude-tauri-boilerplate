@@ -3,6 +3,8 @@ import type {
   Workspace,
   CreateProjectRequest,
   CreateWorkspaceRequest,
+  WorkspaceRenameRequest,
+  GitStatus,
 } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
@@ -61,10 +63,12 @@ export async function createWorkspace(
   projectId: string,
   name: string,
   baseBranch?: string,
-  linearIssue?: CreateWorkspaceRequest['linearIssue']
+  linearIssue?: CreateWorkspaceRequest['linearIssue'],
+  branchPrefix?: string
 ): Promise<Workspace> {
   const body: CreateWorkspaceRequest = { name };
   if (baseBranch) body.baseBranch = baseBranch;
+  if (branchPrefix) body.branchPrefix = branchPrefix;
   if (linearIssue) body.linearIssue = linearIssue;
 
   const res = await fetch(`${API_BASE}/api/projects/${projectId}/workspaces`, {
@@ -75,6 +79,26 @@ export async function createWorkspace(
   if (!res.ok) {
     const data = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(data.error || `Failed to create workspace: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchWorkspaceStatus(worktreePath: string): Promise<GitStatus> {
+  const encodedPath = encodeURIComponent(worktreePath);
+  const res = await fetch(`${API_BASE}/api/git/status?cwd=${encodedPath}`);
+  if (!res.ok) throw new Error(`Failed to fetch workspace status: ${res.status}`);
+  return res.json();
+}
+
+export async function renameWorkspace(id: string, updates: WorkspaceRenameRequest): Promise<Workspace> {
+  const res = await fetch(`${API_BASE}/api/workspaces/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Failed to rename workspace: ${res.status}`);
   }
   return res.json();
 }

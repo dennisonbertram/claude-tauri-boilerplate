@@ -138,6 +138,40 @@ describe('useSessions', () => {
     expect(mockToastSuccess).not.toHaveBeenCalled();
   });
 
+  it('passes search query text when fetching sessions', async () => {
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url === 'http://localhost:3131/api/sessions?q=weekly%20standup') {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    const { result } = renderHook(() => useSessions());
+
+    await act(async () => {
+      await result.current.fetchSessions('weekly standup');
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3131/api/sessions?q=weekly%20standup'
+    );
+  });
+
+  it('loads sessions using initial search query', () => {
+    renderHook(() => useSessions('alpha thread'));
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3131/api/sessions?q=alpha%20thread'
+    );
+  });
+
   it('passes prReviewModel when auto-naming a session', async () => {
     mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
       if (url.includes('/api/sessions') && url.includes('/auto-name')) {

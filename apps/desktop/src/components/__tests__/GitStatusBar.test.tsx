@@ -28,6 +28,7 @@ describe('GitStatusBar', () => {
       isClean: true,
       modifiedFiles: [],
       stagedFiles: [],
+      pullRebase: false,
     });
 
     render(<GitStatusBar />);
@@ -43,6 +44,7 @@ describe('GitStatusBar', () => {
       isClean: true,
       modifiedFiles: [],
       stagedFiles: [],
+      pullRebase: true,
     });
 
     render(<GitStatusBar />);
@@ -50,6 +52,22 @@ describe('GitStatusBar', () => {
     await waitFor(() => {
       const indicator = screen.getByTestId('git-status-indicator');
       expect(indicator).toHaveClass('bg-green-500');
+    });
+  });
+
+  it('shows the configured pull preference when available', async () => {
+    mockGitStatus({
+      branch: 'feature/test',
+      isClean: true,
+      modifiedFiles: [],
+      stagedFiles: [],
+      pullRebase: true,
+    });
+
+    render(<GitStatusBar />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('git-pull-preference')).toHaveTextContent('Rebase');
     });
   });
 

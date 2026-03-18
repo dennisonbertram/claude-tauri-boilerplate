@@ -14,6 +14,7 @@ import { LinearPanel } from '@/components/settings/LinearPanel';
 
 type TabId =
   | 'general'
+  | 'git'
   | 'model'
   | 'workflows'
   | 'appearance'
@@ -27,6 +28,7 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
+  { id: 'git', label: 'Git' },
   { id: 'model', label: 'Model' },
   { id: 'workflows', label: 'Workflows' },
   { id: 'appearance', label: 'Appearance' },
@@ -131,6 +133,9 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
               onToggleApiKey={() => setShowApiKey(!showApiKey)}
             />
           )}
+          {activeTab === 'git' && (
+            <GitTab settings={settings} updateSettings={updateSettings} />
+          )}
           {activeTab === 'model' && (
             <ModelTab settings={settings} updateSettings={updateSettings} />
           )}
@@ -152,7 +157,11 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
             <AdvancedTab settings={settings} updateSettings={updateSettings} />
           )}
           {activeTab === 'status' && (
-            <StatusTab sessionInfo={sessionInfo} email={email} plan={plan} />
+            <StatusTab
+              sessionInfo={sessionInfo}
+              email={email}
+              plan={plan}
+            />
           )}
         </div>
       </div>
@@ -173,6 +182,43 @@ function GeneralTab({
   showApiKey,
   onToggleApiKey,
 }: TabProps & { showApiKey: boolean; onToggleApiKey: () => void }) {
+  const [newEnvKey, setNewEnvKey] = useState('');
+  const [newEnvValue, setNewEnvValue] = useState('');
+
+  const runtimeEnvEntries = Object.entries(settings.runtimeEnv);
+
+  const handleAddRuntimeEnv = () => {
+    const key = newEnvKey.trim();
+    if (!key) return;
+    if (settings.runtimeEnv[key] !== undefined) return;
+
+    updateSettings({
+      runtimeEnv: {
+        ...settings.runtimeEnv,
+        [key]: newEnvValue,
+      },
+    });
+    setNewEnvKey('');
+    setNewEnvValue('');
+  };
+
+  const handleRuntimeEnvValueChange = (key: string, value: string) => {
+    updateSettings({
+      runtimeEnv: {
+        ...settings.runtimeEnv,
+        [key]: value,
+      },
+    });
+  };
+
+  const handleRemoveRuntimeEnv = (key: string) => {
+    const next = { ...settings.runtimeEnv };
+    delete next[key];
+    updateSettings({
+      runtimeEnv: next,
+    });
+  };
+
   return (
     <>
       {/* API Key */}
@@ -301,7 +347,94 @@ function GeneralTab({
         </SettingField>
       )}
 
+      <SettingField
+        label="Runtime Environment Variables"
+        description="Add custom environment variables passed to Claude at runtime."
+      >
+        <div className="space-y-3">
+          {runtimeEnvEntries.length === 0 && (
+            <p className="text-xs text-muted-foreground">No environment variables configured.</p>
+          )}
+
+          {runtimeEnvEntries.map(([key, value], index) => (
+            <div
+              key={`${key}-${index}`}
+              className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center"
+            >
+              <input
+                data-testid={`runtime-env-key-${index}`}
+                type="text"
+                value={key}
+                readOnly
+                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+              <input
+                data-testid={`runtime-env-value-${index}`}
+                type="text"
+                value={value}
+                onChange={(e) => handleRuntimeEnvValueChange(key, e.target.value)}
+                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+              <button
+                type="button"
+                data-testid={`runtime-env-remove-${index}`}
+                onClick={() => handleRemoveRuntimeEnv(key)}
+                className="h-8 rounded-lg border border-input px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <input
+              data-testid="runtime-env-key-input"
+              type="text"
+              value={newEnvKey}
+              placeholder="Variable name"
+              onChange={(e) => setNewEnvKey(e.target.value)}
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+            <input
+              data-testid="runtime-env-value-input"
+              type="text"
+              value={newEnvValue}
+              placeholder="Value"
+              onChange={(e) => setNewEnvValue(e.target.value)}
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+            <button
+              type="button"
+              data-testid="runtime-env-add"
+              onClick={handleAddRuntimeEnv}
+              className="h-8 rounded-lg bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      </SettingField>
     </>
+  );
+}
+
+function GitTab({ settings, updateSettings }: TabProps) {
+  return (
+    <SettingField
+      label="Workspace Branch Prefix"
+      description="Prefix used when creating new workspace branches"
+    >
+      <input
+        data-testid="workspace-branch-prefix-input"
+        type="text"
+        value={settings.workspaceBranchPrefix}
+        onChange={(e) =>
+          updateSettings({ workspaceBranchPrefix: e.target.value.trim() })
+        }
+        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        placeholder="workspace"
+      />
+    </SettingField>
   );
 }
 

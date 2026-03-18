@@ -127,12 +127,19 @@ export function createGitRouter() {
     }
 
     const isClean = modifiedFiles.length === 0 && stagedFiles.length === 0;
+    const pullRebaseResult = await runGit(['config', '--get', 'pull.rebase'], cwd);
+    const pullRebaseValue = pullRebaseResult.stdout.trim().toLowerCase();
+    const pullRebase =
+      pullRebaseResult.exitCode === 0
+        ? pullRebaseValue === 'true' || pullRebaseValue === 'interactive'
+        : null;
 
     const status: GitStatus = {
       branch: branchResult.stdout,
       isClean,
       modifiedFiles,
       stagedFiles,
+      pullRebase,
     };
 
     return c.json(status);

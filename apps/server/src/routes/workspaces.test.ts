@@ -184,6 +184,21 @@ describe('Workspace Routes', () => {
       expect(body.baseBranch).toBe('main');
     });
 
+    test('accepts custom branchPrefix', async () => {
+      const res = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'branch-pref', branchPrefix: 'feature' }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.branch).toBe('feature/branch-pref');
+    });
+
     test('accepts linear issue metadata on create', async () => {
       const res = await app.request(
         `/api/projects/${projectId}/workspaces`,
@@ -429,6 +444,105 @@ describe('Workspace Routes', () => {
 
       const body = await res.json();
       expect(body.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('PATCH /api/workspaces/:id', () => {
+    test('renames workspace branch', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-rename-me' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const updateRes = await app.request(`/api/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: 'workspace/issue101-renamed-br' }),
+      });
+      expect(updateRes.status).toBe(200);
+
+      const updated = await updateRes.json();
+      expect(updated.branch).toBe('workspace/issue101-renamed-br');
+      expect(updated.name).toBe('issue101-rename-me');
+    });
+
+    test('rejects empty patch payload', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-rename-empty' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const updateRes = await app.request(`/api/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(updateRes.status).toBe(400);
+      const body = await updateRes.json();
+      expect(body.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('rejects branch update with spaces', async () => {
+      const createRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-rename-spaced' }),
+        }
+      );
+      const workspace = await createRes.json();
+
+      const updateRes = await app.request(`/api/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: 'bad branch' }),
+      });
+
+      expect(updateRes.status).toBe(400);
+    });
+
+    test('returns 409 if branch already exists', async () => {
+      const firstRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-base-left' }),
+        }
+      );
+      const first = await firstRes.json();
+
+      const secondRes = await app.request(
+        `/api/projects/${projectId}/workspaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'issue101-base-right' }),
+        }
+      );
+      const second = await secondRes.json();
+
+      const updateRes = await app.request(`/api/workspaces/${first.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: second.branch }),
+      });
+
+      expect(updateRes.status).toBe(409);
+      const body = await updateRes.json();
+      expect(body.code).toBe('CONFLICT');
     });
   });
 

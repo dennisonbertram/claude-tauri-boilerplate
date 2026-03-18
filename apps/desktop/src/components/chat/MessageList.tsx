@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type UIEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ToolCallBlock } from './ToolCallBlock';
 import { ThinkingBlock } from './ThinkingBlock';
+import { useKeyboardShortcuts, type ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
-import { ArrowDown, Loader2 } from 'lucide-react';
+import { ArrowDown, Search, BookOpen, FileText, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
 
 interface MessageListProps {
@@ -14,6 +17,81 @@ interface MessageListProps {
   toolCalls?: Map<string, ToolCallState>;
   thinkingBlocks?: Map<string, string>;
   onToolFixErrors?: ToolCallBlockProps['onFixErrors'];
+  onExportSummaryToNewChat?: (summary: string) => void;
+  isPrivacyMode?: boolean;
+}
+
+interface SearchMatch {
+  messageIndex: number;
+  messageId: string;
+}
+
+interface TocItem {
+  messageIndex: number;
+  messageId: string;
+  label: string;
+  summary: string;
+}
+
+function getMessageText(message: UIMessage): string {
+  return (
+    message.parts
+      ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
+      .map((p) => p.text)
+      .join('') || ''
+  );
+}
+
+function escapeRegExp(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function summarizeMessageText(
+  text: string,
+  role: UIMessage['role'],
+  isPrivacyMode: boolean
+): string {
+  const trimmed = text.trim().replace(/\s+/g, ' ');
+  if (!trimmed) {
+    return role === 'user' ? 'User message with no text' : 'Assistant message with no text';
+  }
+
+  if (isPrivacyMode) {
+    const wordCount = trimmed.split(/\s+/).length;
+    return `${role === 'user' ? 'User' : 'Assistant'} message (${wordCount} words)`;
+  }
+
+  const maxLen = 80;
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen)}…`;
+}
+
+function truncateText(text: string, maxLen = 60): string {
+  const trimmed = text.trim().replace(/\s+/g, ' ');
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen)}…`;
+}
+
+function renderHighlightedText(text: string, query: string) {
+  const escaped = escapeRegExp(query);
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    if (!part) return <span key={`${part}-${index}`} />;
+
+    const isMatch = part.toLowerCase() === query.toLowerCase();
+    return isMatch ? (
+      <mark
+        key={`${part}-${index}`}
+        className="rounded-[2px] bg-yellow-300/60 px-0.5"
+      >
+        {part}
+      </mark>
+    ) : (
+      <span key={`${part}-${index}`}>{part}</span>
+    );
+  });
 }
 
 export function MessageList({
@@ -22,11 +100,18 @@ export function MessageList({
   toolCalls,
   thinkingBlocks,
   onToolFixErrors,
+  onExportSummaryToNewChat,
+  isPrivacyMode = false,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeMatchIndex, setActiveMatchIndex] = useState(0);
 
   const updateScrollButtonVisibility = useCallback((element?: Element | null) => {
     const viewport = element as HTMLElement | null;
@@ -77,10 +162,160 @@ export function MessageList({
     setShowScrollToBottom(false);
   }, []);
 
+  const visibleMessages = useMemo(
+    () =>
+      messages.filter((msg) => {
+        if (msg.role !== 'assistant') return true;
+        const text = getMessageText(msg);
+        return text.trim().length > 0;
+      }),
+    [messages]
+  );
+
+  const normalizedSearchQuery = searchQuery.trim();
+
+  const searchMatches = useMemo<SearchMatch[]>(() => {
+    if (!normalizedSearchQuery) return [];
+
+    const normalized = normalizedSearchQuery.toLowerCase();
+    return visibleMessages
+      .map((message, messageIndex) => {
+        const text = getMessageText(message);
+        const found = text.toLowerCase().includes(normalized);
+        if (!found) return null;
+        return {
+          messageIndex,
+          messageId: message.id,
+        };
+      })
+      .filter((item): item is SearchMatch => item !== null);
+  }, [normalizedSearchQuery, visibleMessages]);
+
+  useEffect(() => {
+    if (!normalizedSearchQuery || !searchMatches.length) {
+      setActiveMatchIndex(0);
+      return;
+    }
+
+    setActiveMatchIndex((current) => {
+      if (current >= searchMatches.length) return 0;
+      return current;
+    });
+  }, [normalizedSearchQuery, searchMatches]);
+
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+      return;
+    }
+    setSearchQuery('');
+  }, [searchOpen]);
+
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+  }, []);
+
+  const showNextMatch = useCallback(() => {
+    if (!searchMatches.length) return;
+    setActiveMatchIndex((prev) => (prev + 1) % searchMatches.length);
+  }, [searchMatches.length]);
+
+  const showPrevMatch = useCallback(() => {
+    if (!searchMatches.length) return;
+    setActiveMatchIndex((prev) => (prev - 1 + searchMatches.length) % searchMatches.length);
+  }, [searchMatches.length]);
+
+  const jumpToMessageIndex = useCallback((messageIndex: number) => {
+    const target = visibleMessages[messageIndex];
+    if (!target) return;
+
+    const node = messageRefs.current[target.id];
+    node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const matchIndex = searchMatches.findIndex((match) => match.messageIndex === messageIndex);
+    if (matchIndex !== -1) {
+      setActiveMatchIndex(matchIndex);
+    }
+  }, [searchMatches, visibleMessages]);
+
+  const handleSearchNavShortcuts: ShortcutDefinition[] = useMemo(
+    () => [
+      {
+        id: 'chat-search-open',
+        key: 'f',
+        meta: true,
+        label: 'Find in chat',
+        category: 'chat',
+        handler: openSearch,
+      },
+      {
+        id: 'chat-search-next',
+        key: 'g',
+        meta: true,
+        label: 'Find next match',
+        category: 'chat',
+        handler: showNextMatch,
+      },
+      {
+        id: 'chat-search-prev',
+        key: 'g',
+        meta: true,
+        shift: true,
+        label: 'Find previous match',
+        category: 'chat',
+        handler: showPrevMatch,
+      },
+    ],
+    [openSearch, showNextMatch, showPrevMatch]
+  );
+  useKeyboardShortcuts(handleSearchNavShortcuts);
+
+  useEffect(() => {
+    if (!searchMatches.length) return;
+    const activeMatch = searchMatches[activeMatchIndex];
+    if (!activeMatch) return;
+
+    jumpToMessageIndex(activeMatch.messageIndex);
+  }, [activeMatchIndex, jumpToMessageIndex, searchMatches]);
+
+  const tocItems = useMemo<TocItem[]>(() => {
+    return visibleMessages.map((message, messageIndex) => {
+      const text = getMessageText(message);
+      return {
+        messageIndex,
+        messageId: message.id,
+        label: `${message.role === 'user' ? 'You' : 'Claude'} #${messageIndex + 1}`,
+        summary: summarizeMessageText(text, message.role, isPrivacyMode),
+      };
+    });
+  }, [visibleMessages, isPrivacyMode]);
+
+  const sessionSummary = useMemo(() => {
+    if (visibleMessages.length === 0) {
+      return 'No messages in this conversation.';
+    }
+
+    const firstSummaries = visibleMessages
+      .slice(0, 3)
+      .map((message) => summarizeMessageText(getMessageText(message), message.role, isPrivacyMode));
+    const roleCounts = visibleMessages.reduce(
+      (acc, message) => {
+        if (message.role === 'user') acc.user += 1;
+        else acc.assistant += 1;
+        return acc;
+      },
+      { user: 0, assistant: 0 }
+    );
+
+    return `${visibleMessages.length} messages (user: ${roleCounts.user}, assistant: ${roleCounts.assistant}). ${firstSummaries.join(' | ')}`;
+  }, [isPrivacyMode, visibleMessages]);
+
+  const showToc = visibleMessages.length >= 6;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     updateScrollButtonVisibility(viewportRef.current);
-  }, [messages, toolCalls, thinkingBlocks]);
+  }, [messages, toolCalls, thinkingBlocks, searchMatches, activeMatchIndex]);
 
   if (messages.length === 0) {
     return (
@@ -95,7 +330,6 @@ export function MessageList({
     );
   }
 
-  // Collect thinking blocks and tool calls to show after the latest assistant message
   const thinkingEntries = thinkingBlocks
     ? Array.from(thinkingBlocks.entries())
     : [];
@@ -103,22 +337,150 @@ export function MessageList({
     ? Array.from(toolCalls.values())
     : [];
 
-  // Filter out empty assistant messages (the AI SDK may create placeholder
-  // entries from start/text-start events before any text arrives)
-  const visibleMessages = messages.filter((msg) => {
-    if (msg.role !== 'assistant') return true;
-    const text = msg.parts
-      ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
-      .map((p) => p.text)
-      .join('') || '';
-    return text.trim().length > 0;
-  });
+  const selectedMatch = searchMatches[activeMatchIndex] ?? null;
 
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 min-h-0 overflow-hidden"
+      className="relative flex flex-1 min-h-0 overflow-hidden"
     >
+      {searchOpen || normalizedSearchQuery ? (
+        <div className="border-b border-border bg-background px-3 py-2 space-y-2">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              data-testid="message-list-search-input"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search conversation"
+              className="h-8"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={showNextMatch}
+              disabled={!searchMatches.length}
+            >
+              Next
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={showPrevMatch}
+              disabled={!searchMatches.length}
+            >
+              Prev
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (selectedMatch) {
+                  jumpToMessageIndex(selectedMatch.messageIndex);
+                }
+              }}
+              disabled={!searchMatches.length}
+            >
+              Go
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchOpen(false)}
+              aria-label="Close search"
+            >
+              ×
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div data-testid="message-list-search-summary">
+              {searchMatches.length === 0
+                ? 'No matches'
+                : `Match ${activeMatchIndex + 1} of ${searchMatches.length}`}
+            </div>
+            {onExportSummaryToNewChat && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onExportSummaryToNewChat(sessionSummary)}
+                className="h-7"
+              >
+                <Send className="h-3.5 w-3.5" />
+                Export summary to new chat
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {showToc ? (
+        <div
+          className="border-b border-border bg-background/85 px-3 py-2"
+          data-testid="message-list-toc"
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span>Table of Contents</span>
+            </div>
+            <div
+              className="flex items-center gap-1 text-xs text-muted-foreground"
+              data-testid="message-list-session-summary"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>{visibleMessages.length} messages</span>
+            </div>
+          </div>
+
+          <div className="flex max-h-24 flex-col gap-1 overflow-auto pr-1">
+            {tocItems.map((item, tocIndex) => {
+              const isMatch = searchMatches.some((match) => match.messageIndex === item.messageIndex);
+              const isActive = selectedMatch?.messageIndex === item.messageIndex;
+              const isMatchActive = selectedMatch?.messageIndex === item.messageIndex;
+              const summaryText =
+                item.summary.length > 120 ? `${item.summary.slice(0, 120)}…` : item.summary;
+
+              return (
+                <button
+                  key={item.messageId}
+                  type="button"
+                  data-testid="message-list-toc-entry"
+                  data-toc-entry-index={tocIndex}
+                  onClick={() => jumpToMessageIndex(item.messageIndex)}
+                  className={`rounded-md border border-transparent px-2 py-1 text-left text-xs transition-colors ${
+                    isActive
+                      ? 'border-primary/40 bg-primary/8'
+                      : 'hover:bg-muted/80'
+                  } ${isMatch ? 'font-medium' : ''}`}
+                  title={summaryText}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span>{item.label}</span>
+                    <span className="text-muted-foreground">{item.summary}</span>
+                  </div>
+                  <span className="sr-only">{summaryText}</span>
+                  {isMatchActive ? (
+                    <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary">
+                      <ChevronUp className="h-3 w-3" />
+                      Search hit
+                    </span>
+                  ) : null}
+                >
+                  {truncateText(summaryText, 50)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <ScrollArea
         className="h-full"
         data-testid="message-list-scroll-area"
@@ -126,38 +488,45 @@ export function MessageList({
         viewportProps={{ onScroll: handleViewportScroll }}
       >
         <div className="mx-auto max-w-3xl space-y-4 p-4">
-          {visibleMessages.map((message, index) => (
-            <div key={message.id}>
-              <MessageBubble message={message} />
+          {visibleMessages.map((message, index) => {
+            const matchIndex = searchMatches.findIndex(
+              (item) => item.messageIndex === index
+            );
+            const isMatch = matchIndex !== -1;
+            const isActiveMatch = selectedMatch?.messageIndex === index;
 
-              {/* Render stream event blocks after the last assistant message, only while streaming */}
-              {isLoading && message.role === 'assistant' &&
-                index === visibleMessages.length - 1 && (
-                  <div className="mt-2 space-y-1">
-                    {/* Thinking blocks */}
-                    {thinkingEntries.map(([key, text]) => (
-                      <ThinkingBlock key={key} text={text} />
-                    ))}
-
-                    {/* Tool call blocks */}
-                    {toolCallEntries.map(tc => (
-                      <ToolCallBlock
-                        key={tc.toolUseId}
-                        toolCall={tc}
-                        onFixErrors={onToolFixErrors}
-                      />
-                    ))}
-                  </div>
+            return (
+              <div
+                key={message.id}
+                ref={(node) => {
+                  messageRefs.current[message.id] = node;
+                }}
+                data-testid={`chat-message-${message.id}`}
+                data-match-index={matchIndex}
+                title={summarizeMessageText(
+                  getMessageText(message),
+                  message.role,
+                  isPrivacyMode
                 )}
-            </div>
-          ))}
+                className={`rounded-lg transition ${
+                  isActiveMatch ? 'outline outline-2 outline-primary/70' : ''
+                }`}
+              >
+                <MessageBubble
+                  message={message}
+                  highlightQuery={normalizedSearchQuery}
+                  isMatch={isMatch}
+                />
+              </div>
+            );
+          })}
 
           {/* Streaming indicator when waiting for first response */}
           {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
             <div className="flex justify-start">
               <div className="rounded-lg bg-muted px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <ArrowDown className="h-4 w-4 animate-spin text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
                     Claude is thinking...
                   </span>
@@ -180,9 +549,36 @@ export function MessageList({
               </div>
             )}
 
+          {/* Render stream event blocks after the last assistant message, only while streaming */}
+          {visibleMessages.map((message, index) => {
+            if (!isLoading || message.role !== 'assistant' || index !== visibleMessages.length - 1) {
+              return null;
+            }
+
+            return (
+              <div key={`stream-events-${message.id}`} className="mt-2 space-y-1">
+                {thinkingEntries.map(([key, text]) => (
+                  <ThinkingBlock key={key} text={text} />
+                ))}
+
+                {toolCallEntries.map((tc) => (
+                  <ToolCallBlock
+                    key={tc.toolUseId}
+                    toolCall={tc}
+                    onFixErrors={onToolFixErrors}
+                  />
+                ))}
+              </div>
+            );
+          })}
+
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      <div className="px-3 py-2 text-xs text-muted-foreground">
+        {sessionSummary}
+      </div>
 
       {showScrollToBottom && (
         <button
@@ -200,44 +596,42 @@ export function MessageList({
   );
 }
 
-function MessageBubble({ message }: { message: UIMessage }) {
+function MessageBubble({
+  message,
+  highlightQuery,
+  isMatch,
+}: {
+  message: UIMessage;
+  highlightQuery: string;
+  isMatch: boolean;
+}) {
   const isUser = message.role === 'user';
-
-  // Extract text from message parts
-  const text =
-    message.parts
-      ?.filter(
-        (part): part is Extract<typeof part, { type: 'text' }> =>
-          part.type === 'text'
-      )
-      .map(part => part.text)
-      .join('') || '';
+  const text = getMessageText(message);
 
   if (isUser) {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-lg px-4 py-3 bg-primary text-primary-foreground">
-          <div className="text-sm whitespace-pre-wrap break-words">{text}</div>
+      <div
+        className={`rounded-lg px-4 py-3 bg-primary text-primary-foreground ${
+          isMatch ? 'ring-2 ring-primary-foreground/50' : ''
+        }`}
+      >
+        <div className="text-sm whitespace-pre-wrap break-words">
+          {highlightQuery
+            ? renderHighlightedText(text, highlightQuery)
+            : text}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex justify-start gap-3">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-600 text-white mt-0.5">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
-          <path d="M8.5 16.5a6.5 6.5 0 0 0 7 0" />
-          <path d="M12 16v6" />
-        </svg>
-      </div>
-      <div className="max-w-[80%] min-w-0">
-        <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
-        <div className="rounded-lg bg-muted px-4 py-3 text-foreground">
-          <MarkdownRenderer content={text} />
-        </div>
-      </div>
+    <div
+      className={`max-w-[80%] min-w-0 rounded-lg bg-muted px-4 py-3 text-foreground ${
+        isMatch ? 'ring-2 ring-foreground/40' : ''
+      }`}
+    >
+      <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
+      <MarkdownRenderer content={text} />
     </div>
   );
 }

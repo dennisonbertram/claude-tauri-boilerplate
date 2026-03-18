@@ -52,6 +52,7 @@ const chatRequestSchema = z.object({
       customBaseUrl: z.string().optional(),
     })
     .optional(),
+  runtimeEnv: z.record(z.string(), z.string()).optional(),
   model: z.string().optional(),
   effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
   permissionMode: z
@@ -308,6 +309,7 @@ export function createChatRouter(db: Database) {
     const permissionMode = body.permissionMode;
     const provider = body.provider;
     const providerConfig = body.providerConfig;
+    const runtimeEnv = body.runtimeEnv;
     const workspaceId = body.workspaceId;
     const systemPrompt = body.systemPrompt;
     const requestLinearIssue = body.linearIssue;
@@ -514,6 +516,7 @@ export function createChatRouter(db: Database) {
             permissionMode,
             provider,
             providerConfig,
+            runtimeEnv,
             cwd: workspaceCwd,
           })) {
             // Lazily create the session on first successful event

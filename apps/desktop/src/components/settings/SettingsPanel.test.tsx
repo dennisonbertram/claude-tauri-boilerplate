@@ -55,6 +55,13 @@ describe('SettingsPanel', () => {
     expect(providerSelect.value).toBe('anthropic');
   });
 
+  test('renders runtime environment controls in General tab', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    expect(screen.getByText('Runtime Environment Variables')).toBeTruthy();
+    expect(screen.getByText('No environment variables configured.')).toBeTruthy();
+  });
+
   test('does not render panel content when isOpen is false', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('Settings')).toBeNull();
@@ -260,6 +267,42 @@ describe('SettingsPanel', () => {
     expect(stored.customBaseUrl).toBe('https://gateway.internal');
   });
 
+  test('adds and persists a runtime env variable', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    const keyInput = screen.getByTestId('runtime-env-key-input');
+    const valueInput = screen.getByTestId('runtime-env-value-input');
+    await user.type(keyInput, 'RUNTIME_TOKEN');
+    await user.type(valueInput, 'abc123');
+    await user.click(screen.getByTestId('runtime-env-add'));
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.runtimeEnv).toEqual({ RUNTIME_TOKEN: 'abc123' });
+  });
+
+  test('edits and removes a runtime env variable', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    const keyInput = screen.getByTestId('runtime-env-key-input');
+    const valueInput = screen.getByTestId('runtime-env-value-input');
+    await user.type(keyInput, 'REMOVE_ME');
+    await user.type(valueInput, 'to-remove');
+    await user.click(screen.getByTestId('runtime-env-add'));
+
+    const envValueInput = screen.getByTestId('runtime-env-value-0');
+    await user.clear(envValueInput);
+    await user.type(envValueInput, 'updated');
+
+    let stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.runtimeEnv).toEqual({ REMOVE_ME: 'updated' });
+
+    await user.click(screen.getByTestId('runtime-env-remove-0'));
+    stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.runtimeEnv).toEqual({});
+  });
+
   test('changing max turns persists to localStorage', async () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
@@ -270,6 +313,19 @@ describe('SettingsPanel', () => {
 
     const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
     expect(stored.maxTurns).toBe(50);
+  });
+
+  test('workspace branch prefix input saves to localStorage', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /git/i }));
+    const prefixInput = screen.getByTestId('workspace-branch-prefix-input');
+    await user.clear(prefixInput);
+    await user.type(prefixInput, 'feature');
+
+    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(stored.workspaceBranchPrefix).toBe('feature');
   });
 
   // ─── Overlay click closes panel ───

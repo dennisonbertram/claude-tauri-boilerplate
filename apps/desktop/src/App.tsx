@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Toaster } from 'sonner';
 import { isTauri } from './lib/platform';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -22,6 +22,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Agentation } from 'agentation';
 import type { Project, Workspace } from '@claude-tauri/shared';
+import { useSettings } from './hooks/useSettings';
 
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
@@ -42,6 +43,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   // Initialize theme inside SettingsProvider so useSettings() works correctly
   useTheme();
 
+  const [sessionSearchQuery, setSessionSearchQuery] = useState('');
+
   const {
     sessions,
     activeSessionId,
@@ -52,7 +55,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     forkSession,
     exportSession,
     autoNameSession,
-  } = useSessions();
+  } = useSessions(sessionSearchQuery);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>();
@@ -88,14 +91,23 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [createWorkspaceProject, setCreateWorkspaceProject] = useState<Project | null>(null);
-  const { workspaces, addWorkspace, refresh: refreshWorkspaces } = useWorkspaces(selectedProjectId);
+  const { settings } = useSettings();
+  const {
+    workspaces,
+    addWorkspace,
+    refresh: refreshWorkspaces,
+    renameWorkspace,
+  } = useWorkspaces(selectedProjectId);
 
   // Build workspaces-by-project map for all projects
   // For simplicity in MVP, we only load workspaces for the selected project
-  const workspacesByProject: Record<string, Workspace[]> = {};
-  if (selectedProjectId) {
-    workspacesByProject[selectedProjectId] = workspaces;
-  }
+  const workspacesByProject: Record<string, Workspace[]> = useMemo(() => {
+    const next: Record<string, Workspace[]> = {};
+    if (selectedProjectId) {
+      next[selectedProjectId] = workspaces;
+    }
+    return next;
+  }, [selectedProjectId, workspaces]);
 
   const handleNewChat = async () => {
     // If there's already a truly empty session active, don't create another.
@@ -128,13 +140,31 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }, [addProject]);
 
   const handleCreateWorkspace = useCallback(async (name: string, baseBranch?: string) => {
-    await addWorkspace(name, baseBranch);
-  }, [addWorkspace]);
+    const ws = await addWorkspace(
+      name,
+      baseBranch,
+      undefined,
+      settings.workspaceBranchPrefix
+    );
+    if (ws) {
+      setSelectedWorkspace(ws);
+    }
+  }, [addWorkspace, settings.workspaceBranchPrefix]);
 
-  const handleWorkspaceUpdate = useCallback(() => {
-    refreshWorkspaces();
-    setSelectedWorkspace(null);
-  }, [refreshWorkspaces]);
+  const handleWorkspaceUpdate = useCallback(async () => {
+    const updated = await refreshWorkspaces();
+    if (!selectedWorkspace) {
+      return;
+    }
+    setSelectedWorkspace(updated?.find((ws) => ws.id === selectedWorkspace.id) ?? null);
+  }, [refreshWorkspaces, selectedWorkspace]);
+
+  const handleRenameWorkspace = useCallback(async (id: string, branch: string) => {
+    const updatedWorkspace = await renameWorkspace(id, { branch });
+    if (selectedWorkspace && selectedWorkspace.id === id) {
+      setSelectedWorkspace(updatedWorkspace ?? selectedWorkspace);
+    }
+  }, [renameWorkspace, selectedWorkspace]);
 
   const handleOpenSessions = useCallback(() => {
     setActiveView('chat');
@@ -175,6 +205,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             activeSessionId={activeSessionId}
             email={email}
             plan={plan}
+            searchQuery={sessionSearchQuery}
+            onSearchQueryChange={setSessionSearchQuery}
             onSelectSession={(id) => {
               setActiveView('chat');
               setActiveSessionId(id);
@@ -202,6 +234,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               handleProjectClick(project.id);
               setCreateWorkspaceProject(project);
             }}
+            onRenameWorkspace={handleRenameWorkspace}
             onDeleteProject={handleDeleteProject}
             activeView={activeView}
             onSwitchView={handleSwitchView}

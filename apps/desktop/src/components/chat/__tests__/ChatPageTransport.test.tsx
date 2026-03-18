@@ -175,6 +175,7 @@ function getDefaultSettings(overrides = {}) {
       pr: 'PR prompt',
       branch: 'Branch prompt',
     },
+    runtimeEnv: {},
     ...overrides,
   };
 }
@@ -323,6 +324,31 @@ describe('ChatPage transport provider payload', () => {
           vertexProjectId: '',
           vertexBaseUrl: '',
           customBaseUrl: 'https://custom.internal',
+        },
+      }),
+    });
+  });
+
+  it('sends runtimeEnv in transport body for runtime environment variables', () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        runtimeEnv: {
+          TOOL_TOKEN: 'token-123',
+          FEATURE_FLAG: 'on',
+        },
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} />);
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        runtimeEnv: {
+          TOOL_TOKEN: 'token-123',
+          FEATURE_FLAG: 'on',
         },
       }),
     });

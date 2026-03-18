@@ -7,7 +7,7 @@ const statusConfig: Record<WorkspaceStatus, { label: string; classes: string }> 
   active: { label: 'Active', classes: 'bg-blue-900/50 text-blue-400 border border-blue-700/50' },
   merging: { label: 'Merging', classes: 'bg-purple-900/50 text-purple-400 border border-purple-700/50 animate-pulse' },
   discarding: { label: 'Discarding', classes: 'bg-orange-900/50 text-orange-400 border border-orange-700/50 animate-pulse' },
-  merged: { label: 'Merged', classes: 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50' },
+  merged: { label: 'Merged', classes: 'bg-purple-900/40 text-purple-300 border border-purple-700/50' },
   archived: { label: 'Archived', classes: 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50' },
   error: { label: 'Error', classes: 'bg-red-900/50 text-red-400 border border-red-700/50' },
 };

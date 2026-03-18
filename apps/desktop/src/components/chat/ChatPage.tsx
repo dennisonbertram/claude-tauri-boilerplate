@@ -261,6 +261,7 @@ export function ChatPage({
             vertexBaseUrl: settings.vertexBaseUrl,
             customBaseUrl: settings.customBaseUrl,
           },
+          runtimeEnv: settings.runtimeEnv,
           ...(workspaceId ? { workspaceId } : {}),
           ...(linearIssue ? { linearIssue } : {}),
         },
@@ -278,6 +279,7 @@ export function ChatPage({
       settings.vertexProjectId,
       settings.vertexBaseUrl,
       settings.customBaseUrl,
+      settings.runtimeEnv,
       workspaceId,
       linearIssue,
     ]

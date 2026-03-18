@@ -35,6 +35,9 @@ export interface AppSettings {
   permissionMode: 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
   autoCompact: boolean;
   maxTurns: number;
+  // Runtime environment variables
+  runtimeEnv: Record<string, string>;
+  workspaceBranchPrefix: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -71,6 +74,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   permissionMode: 'default',
   autoCompact: false,
   maxTurns: 25,
+  // Runtime environment variables
+  runtimeEnv: {},
+  workspaceBranchPrefix: 'workspace',
 };
 
 const STORAGE_KEY = 'claude-tauri-settings';

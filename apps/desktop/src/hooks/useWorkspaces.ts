@@ -17,8 +17,10 @@ export function useWorkspaces(projectId: string | null) {
       setError(null);
       const data = await api.fetchWorkspaces(projectId);
       setWorkspaces(data);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch workspaces');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -32,20 +34,42 @@ export function useWorkspaces(projectId: string | null) {
     async (
       name: string,
       baseBranch?: string,
-      linearIssue?: Parameters<typeof api.createWorkspace>[3]
+      linearIssue?: Parameters<typeof api.createWorkspace>[3],
+      branchPrefix?: Parameters<typeof api.createWorkspace>[4]
     ) => {
-    if (!projectId) return;
-    const ws = await api.createWorkspace(projectId, name, baseBranch, linearIssue);
-    setWorkspaces(prev => [...prev, ws]);
-    return ws;
+      if (!projectId) return;
+      const ws = await api.createWorkspace(
+        projectId,
+        name,
+        baseBranch,
+        linearIssue,
+        branchPrefix
+      );
+      setWorkspaces((prev) => [...prev, ws]);
+      return ws;
     },
     [projectId]
   );
+
+  const renameWorkspace = useCallback(async (id: string, updates: Parameters<typeof api.renameWorkspace>[1]) => {
+    if (!projectId) return;
+    const updatedWorkspace = await api.renameWorkspace(id, updates);
+    setWorkspaces((prev) => prev.map((ws) => (ws.id === id ? updatedWorkspace : ws)));
+    return updatedWorkspace;
+  }, [projectId]);
 
   const removeWorkspace = useCallback(async (id: string, force?: boolean) => {
     await api.deleteWorkspace(id, force);
     setWorkspaces(prev => prev.filter(w => w.id !== id));
   }, []);
 
-  return { workspaces, loading, error, addWorkspace, removeWorkspace, refresh };
+  return {
+    workspaces,
+    loading,
+    error,
+    addWorkspace,
+    renameWorkspace,
+    removeWorkspace,
+    refresh,
+  };
 }

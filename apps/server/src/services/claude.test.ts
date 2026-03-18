@@ -14,6 +14,7 @@ const providerEnvKeys = [
   'ANTHROPIC_VERTEX_BASE_URL',
   'ANTHROPIC_VERTEX_PROJECT_ID',
   'ANTHROPIC_BASE_URL',
+  'RUNTIME_TOKEN',
 ];
 
 function captureProviderEnv(): EnvSnapshot {
@@ -39,6 +40,7 @@ function resetProviderEnv() {
   setKnownProviderEnv('ANTHROPIC_VERTEX_BASE_URL', undefined);
   setKnownProviderEnv('ANTHROPIC_VERTEX_PROJECT_ID', undefined);
   setKnownProviderEnv('ANTHROPIC_BASE_URL', undefined);
+  setKnownProviderEnv('RUNTIME_TOKEN', undefined);
 }
 
 function snapshotMatches(expected: EnvSnapshot) {
@@ -202,5 +204,43 @@ describe('streamClaude - subscription auth regression', () => {
       ANTHROPIC_VERTEX_PROJECT_ID: undefined,
       ANTHROPIC_BASE_URL: 'https://gateway.internal',
     });
+  });
+
+  test('applies runtime environment variables for Claude stream', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'token-123',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('token-123');
+  });
+
+  test('restores custom runtime environment variables after streaming', async () => {
+    process.env.RUNTIME_TOKEN = 'base';
+
+    const gen = streamClaude({
+      prompt: 'hello',
+      runtimeEnv: {
+        RUNTIME_TOKEN: 'token-123',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    expect(process.env.RUNTIME_TOKEN).toBe('base');
+  });
+
+  test('overwrites ANTHROPIC_API_KEY with runtime env value when explicitly provided', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      runtimeEnv: {
+        ANTHROPIC_API_KEY: 'explicit-key',
+      },
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('explicit-key');
   });
 });

@@ -6,6 +6,7 @@ import { WorkspaceDiffView } from './WorkspaceDiffView';
 import { WorkspaceMergeDialog } from './WorkspaceMergeDialog';
 import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
+import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 
 type Tab = 'chat' | 'diff';
@@ -54,6 +55,16 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate }:
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">{workspace.name}</h2>
           <span className="text-xs font-mono text-muted-foreground shrink-0">{workspace.branch}</span>
+          <button
+            type="button"
+            className="rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label={`Copy branch name for ${workspace.name}`}
+            onClick={() => {
+              void copyTextToClipboard(workspace.branch);
+            }}
+          >
+            Copy
+          </button>
           <WorkspaceStatusBadge status={workspace.status} />
         </div>
         <div className="flex items-center gap-2 shrink-0">
