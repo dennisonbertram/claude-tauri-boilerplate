@@ -5,6 +5,7 @@ import type { UIMessage } from '@ai-sdk/react';
 import type { Message, PermissionResponse } from '@claude-tauri/shared';
 import { pickProviderConfig } from '@claude-tauri/shared';
 import { MessageList } from './MessageList';
+import type { AssistantResponseMetadata } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
@@ -118,6 +119,16 @@ function toUIMessage(msg: Message): UIMessage {
   };
 }
 
+function getLatestAssistantMessageId(messages: UIMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === 'assistant') {
+      return messages[index].id;
+    }
+  }
+
+  return null;
+}
+
 export function ChatPage({
   sessionId,
   onCreateSession,
@@ -202,6 +213,9 @@ export function ChatPage({
   const [latestChangesError, setLatestChangesError] = useState<string | null>(null);
   const [archivedPlanId, setArchivedPlanId] = useState<string | null>(null);
   const [archivedPlanPath, setArchivedPlanPath] = useState<string | null>(null);
+  const [assistantMetadata, setAssistantMetadata] = useState<
+    Record<string, AssistantResponseMetadata>
+  >({});
 
   // Auto-naming: track user message count per session
   const userMsgCountRef = useRef(0);
@@ -231,35 +245,6 @@ export function ChatPage({
 
   // Record cost when a session:result event provides usage data
   const lastRecordedUsageRef = useRef<UsageState | null>(null);
-  useEffect(() => {
-    if (usage && usage !== lastRecordedUsageRef.current) {
-      lastRecordedUsageRef.current = usage;
-      const model = sessionInfo?.model ?? 'claude-sonnet-4';
-      const costUsd =
-        usage.costUsd > 0
-          ? usage.costUsd
-          : calculateCost(
-              {
-                inputTokens: usage.inputTokens,
-                outputTokens: usage.outputTokens,
-                cacheReadTokens: usage.cacheReadTokens,
-                cacheCreationTokens: usage.cacheCreationTokens,
-              },
-              getModelFromName(model)
-            );
-
-      addMessageCost({
-        messageId: `turn-${Date.now()}`,
-        model,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        cacheReadTokens: usage.cacheReadTokens,
-        cacheCreationTokens: usage.cacheCreationTokens,
-        costUsd,
-        durationMs: usage.durationMs,
-      });
-    }
-  }, [usage, sessionInfo, addMessageCost]);
 
   const transport = useMemo(
     () =>
@@ -356,6 +341,52 @@ export function ChatPage({
       onData: handleDataPart as any,
     });
 
+  useEffect(() => {
+    if (usage && usage !== lastRecordedUsageRef.current) {
+      lastRecordedUsageRef.current = usage;
+      const model = sessionInfo?.model ?? 'claude-sonnet-4';
+      const latestAssistantId = getLatestAssistantMessageId(messages);
+      const costUsd =
+        usage.costUsd > 0
+          ? usage.costUsd
+          : calculateCost(
+              {
+                inputTokens: usage.inputTokens,
+                outputTokens: usage.outputTokens,
+                cacheReadTokens: usage.cacheReadTokens,
+                cacheCreationTokens: usage.cacheCreationTokens,
+              },
+              getModelFromName(model)
+            );
+
+      addMessageCost({
+        messageId: `turn-${Date.now()}`,
+        model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cacheReadTokens: usage.cacheReadTokens,
+        cacheCreationTokens: usage.cacheCreationTokens,
+        costUsd,
+        durationMs: usage.durationMs,
+      });
+
+      if (latestAssistantId) {
+        setAssistantMetadata((current) => ({
+          ...current,
+          [latestAssistantId]: {
+            changedFiles: current[latestAssistantId]?.changedFiles ?? [],
+            model,
+            durationMs: usage.durationMs,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            cacheReadTokens: usage.cacheReadTokens,
+            cacheCreationTokens: usage.cacheCreationTokens,
+          },
+        }));
+      }
+    }
+  }, [usage, sessionInfo, addMessageCost, messages]);
+
   const isLoading = status === 'submitted' || status === 'streaming';
 
   const {
@@ -421,6 +452,7 @@ export function ChatPage({
   // Command palette integration
   const clearChat = useCallback(() => {
     setMessages([]);
+    setAssistantMetadata({});
     resetStreamEvents();
     resetCostTracking();
     resetSubagents();
@@ -639,10 +671,12 @@ export function ChatPage({
   useEffect(() => {
     if (!sessionId) {
       setMessages([]);
+      setAssistantMetadata({});
       return;
     }
 
     setMessages([]);
+    setAssistantMetadata({});
 
     let cancelled = false;
 
@@ -677,6 +711,26 @@ export function ChatPage({
     } else if (wasStreamingRef.current) {
       // Streaming just ended
       wasStreamingRef.current = false;
+      const completedAssistantId = getLatestAssistantMessageId(messages);
+      if (workspaceId && completedAssistantId) {
+        void fetchWorkspaceDiff().then((latest) => {
+          const changedFilesForTurn =
+            latest?.changedFiles?.map((file) => file.path) ?? [];
+          setAssistantMetadata((current) => {
+            const existing = current[completedAssistantId];
+            if (!existing) return current;
+
+            return {
+              ...current,
+              [completedAssistantId]: {
+                ...existing,
+                changedFiles: changedFilesForTurn,
+              },
+            };
+          });
+        });
+      }
+
       userMsgCountRef.current += 1;
       if (
         userMsgCountRef.current >= 2 &&
@@ -688,7 +742,7 @@ export function ChatPage({
         onAutoName(sessionId);
       }
     }
-  }, [isLoading, sessionId, onAutoName]);
+  }, [isLoading, sessionId, onAutoName, messages, workspaceId, fetchWorkspaceDiff]);
 
   // Report status data to parent for StatusBar
   useEffect(() => {
@@ -1141,6 +1195,7 @@ export function ChatPage({
         thinkingExpanded={thinkingExpanded}
         thinkingToggleVersion={thinkingToggleVersion}
         onToolFixErrors={handleFixErrors}
+        assistantMetadata={assistantMetadata}
       />
       {/* Subagent visualization panel */}
       {(subagents.length > 0 || subagentPanelVisible) && (

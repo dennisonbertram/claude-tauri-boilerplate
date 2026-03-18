@@ -8,6 +8,7 @@ import {
   getProjectHealth,
   removeProject,
 } from '../services/project';
+import { loadWorkspaceConfig } from '../services/workspace-config';
 
 const addProjectSchema = z.object({
   repoPath: z.string().min(1, 'repoPath is required'),
@@ -62,10 +63,13 @@ export function createProjectRouter(db: Database) {
       .prepare(`SELECT COUNT(*) as count FROM workspaces WHERE project_id = ?`)
       .get(id) as { count: number };
 
+    const repoConfig = await loadWorkspaceConfig(project.repoPathCanonical).catch(() => null);
+
     return c.json({
       ...project,
       health,
       workspaceCount: row.count,
+      repoConfig: repoConfig ?? undefined,
     });
   });
 

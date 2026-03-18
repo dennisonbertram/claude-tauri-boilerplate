@@ -24,6 +24,8 @@ export interface AppSettings {
   thinkingBudgetTokens: number;
   fastMode: boolean;
   prReviewModel: string;
+  codeReviewModel: string;
+  codeReviewEffort: 'low' | 'medium' | 'high' | 'max';
 
   // Workflows
   workflowPrompts: WorkflowPrompts;
@@ -72,6 +74,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   thinkingBudgetTokens: 16000,
   fastMode: false,
   prReviewModel: 'claude-haiku-4-5-20251001',
+  codeReviewModel: 'claude-haiku-4-5-20251001',
+  codeReviewEffort: 'low',
 
   // Workflows
   workflowPrompts: { ...DEFAULT_WORKFLOW_PROMPTS },
