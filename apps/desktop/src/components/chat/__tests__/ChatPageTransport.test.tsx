@@ -253,6 +253,24 @@ describe('ChatPage transport provider payload', () => {
     });
   });
 
+  it('sends workspace additional directories to the backend when provided', () => {
+    render(
+      <ChatPage
+        sessionId={null}
+        workspaceId="workspace-1"
+        additionalDirectories={['/repo-a', '/repo-b']}
+      />
+    );
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        workspaceId: 'workspace-1',
+        additionalDirectories: ['/repo-a', '/repo-b'],
+      }),
+    });
+  });
+
   it('sends provider and providerConfig for vertex settings', () => {
     mockUseSettings.mockReturnValue({
       settings: getDefaultSettings({

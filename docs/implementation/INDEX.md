@@ -22,3 +22,4 @@ Implementation notes and code change documentation.
 | [issue-113-wave13.md](issue-113-wave13.md) | Wave 13 closeout for Issue #113: monospace font-family selection, compact tab density, and appearance validation notes. |
 | [issue-116-wave13.md](issue-116-wave13.md) | Issue #116 follow-up wiring for the persisted resource-usage toggle, Status-tab controls, and targeted desktop regression coverage. |
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |
+| [issue-114-wave13.md](issue-114-wave13.md) | Issue #114 implementation notes for multi-repo workspace attachments, `/add-dir` routing, and manual validation. |

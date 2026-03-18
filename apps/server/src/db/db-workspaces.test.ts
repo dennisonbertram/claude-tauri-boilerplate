@@ -14,6 +14,7 @@ import {
   createWorkspace,
   listWorkspaces,
   getWorkspace,
+  updateWorkspace,
   transitionWorkspaceStatus,
   updateWorkspaceStatus,
   updateWorkspaceClaudeSession,
@@ -81,6 +82,12 @@ describe('Projects & Workspaces Database', () => {
       expect(columnNames).toContain('linear_issue_title');
       expect(columnNames).toContain('linear_issue_summary');
       expect(columnNames).toContain('linear_issue_url');
+    });
+
+    test('workspaces table has additional directories column', () => {
+      const columns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+      const columnNames = columns.map((col) => col.name);
+      expect(columnNames).toContain('additional_directories');
     });
 
     test('sessions workspace_id index is created', () => {
@@ -304,6 +311,26 @@ describe('Projects & Workspaces Database', () => {
       expect(ws.linearIssueUrl).toBe('https://linear.app/org/issue/ISS-303');
     });
 
+    test('stores additional directories when provided', () => {
+      createProject(db, 'proj-ws-dirs', 'WSProjectDirs', '/ws-dirs', '/ws-dirs', 'main');
+      const ws = createWorkspace(
+        db,
+        'ws-dirs-1',
+        'proj-ws-dirs',
+        'feat-multi',
+        'workspace/feat-multi',
+        '/wt/multi',
+        '/wt/multi',
+        'main',
+        undefined,
+        ['/repo-a', '/repo-b']
+      );
+
+      expect(ws.additionalDirectories).toEqual(['/repo-a', '/repo-b']);
+      const stored = getWorkspace(db, 'ws-dirs-1');
+      expect(stored?.additionalDirectories).toEqual(['/repo-a', '/repo-b']);
+    });
+
     test('creates a workspace and returns mapped object', () => {
       createProject(db, 'proj-ws', 'WSProject', '/ws', '/ws', 'main');
       const ws = createWorkspace(db, 'ws-1', 'proj-ws', 'feat-auth', 'workspace/feat-auth', '/wt/auth', '/wt/auth', 'main');
@@ -410,6 +437,18 @@ describe('Projects & Workspaces Database', () => {
 
     test('returns null for non-existent id', () => {
       expect(getWorkspace(db, 'nope')).toBeNull();
+    });
+  });
+
+  describe('updateWorkspace', () => {
+    test('updates additional directories', () => {
+      createProject(db, 'proj-updirs', 'UpdateDirs', '/updirs', '/updirs', 'main');
+      createWorkspace(db, 'ws-updirs', 'proj-updirs', 'feat', 'workspace/feat', '/wt/dirs', '/wt/dirs', 'main');
+
+      updateWorkspace(db, 'ws-updirs', { additionalDirectories: ['/repo-a', '/repo-b'] });
+
+      const ws = getWorkspace(db, 'ws-updirs');
+      expect(ws?.additionalDirectories).toEqual(['/repo-a', '/repo-b']);
     });
   });
 

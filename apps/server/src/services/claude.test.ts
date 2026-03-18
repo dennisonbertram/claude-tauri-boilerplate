@@ -218,6 +218,19 @@ describe('streamClaude - subscription auth regression', () => {
     expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('token-123');
   });
 
+  test('passes additional directories to query options when provided', async () => {
+    const gen = streamClaude({
+      prompt: 'hello',
+      additionalDirectories: ['/repo-a', '/repo-b'],
+    });
+    for await (const _ of gen) { /* drain */ }
+
+    expect((mockQuery.mock.calls[0]?.[0] as any).options.additionalDirectories).toEqual([
+      '/repo-a',
+      '/repo-b',
+    ]);
+  });
+
   test('restores custom runtime environment variables after streaming', async () => {
     process.env.RUNTIME_TOKEN = 'base';
 

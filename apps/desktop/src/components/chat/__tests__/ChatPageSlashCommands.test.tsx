@@ -201,4 +201,24 @@ describe('ChatPage - slash command validation', () => {
 
     expect(mockSendMessage).toHaveBeenCalled();
   });
+
+  it('routes /add-dir with a path argument to workspace paths', async () => {
+    const user = userEvent.setup();
+    const onOpenWorkspacePaths = vi.fn();
+
+    render(
+      <ChatPage
+        sessionId={null}
+        workspaceId="ws-1"
+        onOpenWorkspacePaths={onOpenWorkspacePaths}
+      />
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, '/add-dir ../repo-b');
+    await user.keyboard('{Enter}');
+
+    expect(onOpenWorkspacePaths).toHaveBeenCalledWith('../repo-b');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
 });

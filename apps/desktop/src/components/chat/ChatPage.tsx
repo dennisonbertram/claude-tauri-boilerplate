@@ -74,10 +74,12 @@ interface ChatPageProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
+  additionalDirectories?: string[];
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
   onOpenSessions?: () => void;
   onOpenPullRequests?: () => void;
+  onOpenWorkspacePaths?: (path?: string) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -114,10 +116,12 @@ export function ChatPage({
   onStatusChange,
   onAutoName,
   workspaceId,
+  additionalDirectories,
   onToggleSidebar,
   onOpenSettings,
   onOpenSessions,
   onOpenPullRequests,
+  onOpenWorkspacePaths,
 }: ChatPageProps) {
   const { settings } = useSettings();
   const [input, setInput] = useState('');
@@ -263,6 +267,9 @@ export function ChatPage({
           },
           runtimeEnv: settings.runtimeEnv,
           ...(workspaceId ? { workspaceId } : {}),
+          ...(additionalDirectories && additionalDirectories.length > 0
+            ? { additionalDirectories }
+            : {}),
           ...(linearIssue ? { linearIssue } : {}),
         },
       }),
@@ -281,6 +288,7 @@ export function ChatPage({
       settings.customBaseUrl,
       settings.runtimeEnv,
       workspaceId,
+      additionalDirectories,
       linearIssue,
     ]
   );
@@ -448,6 +456,7 @@ export function ChatPage({
       showSessionList: onOpenSessions,
       openPullRequests: onOpenPullRequests,
       showLinearIssues: () => setLinearPickerOpen(true),
+      addDir: onOpenWorkspacePaths,
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
@@ -459,6 +468,7 @@ export function ChatPage({
       onOpenSettings,
       onOpenSessions,
       onOpenPullRequests,
+      onOpenWorkspacePaths,
       runReviewWorkflow,
       runPrWorkflow,
       runBranchWorkflow,
@@ -971,7 +981,12 @@ export function ChatPage({
           (cmd) => cmd.name.toLowerCase() === commandToken
         );
         if (matchedCommand) {
+          const commandArgs = text.slice(commandToken.length + 1).trim();
           setInput('');
+          if (commandToken === 'add-dir' && onOpenWorkspacePaths) {
+            onOpenWorkspacePaths(commandArgs || undefined);
+            return;
+          }
           handleCommandSelect(matchedCommand);
           return;
         }
