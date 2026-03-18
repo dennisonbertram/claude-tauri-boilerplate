@@ -25,6 +25,22 @@ Each entry follows this format:
 **Regression Test**: `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/desktop/src/hooks/useSettings.test.ts`
 **Related Issue**: GitHub issue `#158`
 
+### 2026-03-18: Persistent dashboard artifacts V1 Phase 1 foundation
+
+**Type**: Technical Decision + Refactor
+**Impact**: High
+**Description**: Started Persistent Dashboard Artifacts V1 with a compatibility-first data-layer foundation. Added durable `artifacts`, `artifact_revisions`, and `message_parts` tables with indexes and migration safety, updated DB write paths so new messages always persist `message_parts`, and introduced a thread-read fallback that synthesizes a text part for legacy messages that only have `messages.content`. This preserves existing sessions while enabling durable inline artifact references for upcoming `/dashboard` flows.
+**Regression Test**: `apps/server/src/db/db-artifacts.test.ts`, `apps/server/src/db/db.test.ts`
+**Related Issue**: N/A
+
+### 2026-03-18: Persistent dashboard artifacts baseline verification note
+
+**Type**: Technical Decision
+**Impact**: Low
+**Description**: Re-ran targeted baseline suites called out as historical red tests in prior handoff notes before beginning this feature sweep. On this branch, the targeted suites (`auto-namer`, `ImageFeatures`, and `SettingsPanel`) all passed, so no unrelated baseline-fix scope was required for Phase 1.
+**Regression Test**: `docs/testing/persistent-dashboard-artifacts-v1-baseline-2026-03-18.md`
+**Related Issue**: N/A
+
 ### 2026-03-18: Issue 100 Bash display controls completed
 
 **Type**: Bug Fix
