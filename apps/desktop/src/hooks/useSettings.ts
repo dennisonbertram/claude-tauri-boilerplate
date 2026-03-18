@@ -2,6 +2,7 @@ import { useSettingsContext } from '@/contexts/SettingsContext';
 import { DEFAULT_WORKFLOW_PROMPTS, type WorkflowPrompts } from '@/lib/workflowPrompts';
 import type { ProviderType } from '@claude-tauri/shared';
 import { DEFAULT_PROVIDER_CONFIG } from '@claude-tauri/shared';
+import type { IdeId } from '@/lib/ide-opener';
 
 export interface AppSettings {
   // Provider
@@ -24,6 +25,8 @@ export interface AppSettings {
   thinkingBudgetTokens: number;
   fastMode: boolean;
   prReviewModel: string;
+  codeReviewModel: string;
+  codeReviewEffort: 'low' | 'medium' | 'high' | 'max';
 
   // Workflows
   workflowPrompts: WorkflowPrompts;
@@ -48,6 +51,10 @@ export interface AppSettings {
   // Runtime environment variables
   runtimeEnv: Record<string, string>;
   workspaceBranchPrefix: string;
+
+  // IDE
+  preferredIde: IdeId;
+  customIdeUrl: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -67,6 +74,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   thinkingBudgetTokens: 16000,
   fastMode: false,
   prReviewModel: 'claude-haiku-4-5-20251001',
+  codeReviewModel: 'claude-haiku-4-5-20251001',
+  codeReviewEffort: 'low',
 
   // Workflows
   workflowPrompts: { ...DEFAULT_WORKFLOW_PROMPTS },
@@ -91,6 +100,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Runtime environment variables
   runtimeEnv: {},
   workspaceBranchPrefix: 'workspace',
+
+  // IDE
+  preferredIde: 'vscode',
+  customIdeUrl: '',
 };
 
 const STORAGE_KEY = 'claude-tauri-settings';

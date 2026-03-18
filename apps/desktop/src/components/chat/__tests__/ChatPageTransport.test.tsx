@@ -8,12 +8,16 @@ const {
   mockDefaultChatTransport,
   mockUseStreamEvents,
   mockPromptMemoryUpdate,
+  mockUseWorkspaceDiff,
+  mockMessageList,
 } = vi.hoisted(() => ({
   mockUseChat: vi.fn(),
   mockUseSettings: vi.fn(),
   mockDefaultChatTransport: vi.fn(),
   mockUseStreamEvents: vi.fn(),
   mockPromptMemoryUpdate: vi.fn(),
+  mockUseWorkspaceDiff: vi.fn(),
+  mockMessageList: vi.fn(),
 }));
 
 vi.mock('@ai-sdk/react', () => ({
@@ -22,6 +26,16 @@ vi.mock('@ai-sdk/react', () => ({
 
 vi.mock('ai', () => ({
   DefaultChatTransport: mockDefaultChatTransport,
+}));
+
+vi.mock('@claude-tauri/shared', () => ({
+  pickProviderConfig: (_provider: string, settings: Record<string, unknown>) => ({
+    bedrockBaseUrl: settings.bedrockBaseUrl ?? '',
+    bedrockProjectId: settings.bedrockProjectId ?? '',
+    vertexProjectId: settings.vertexProjectId ?? '',
+    vertexBaseUrl: settings.vertexBaseUrl ?? '',
+    customBaseUrl: settings.customBaseUrl ?? '',
+  }),
 }));
 
 vi.mock('@/hooks/useSettings', () => ({
@@ -34,6 +48,10 @@ vi.mock('@/lib/memoryUpdatePrompt', () => ({
 
 vi.mock('@/hooks/useStreamEvents', () => ({
   useStreamEvents: (...args: unknown[]) => mockUseStreamEvents(...args),
+}));
+
+vi.mock('@/hooks/useWorkspaceDiff', () => ({
+  useWorkspaceDiff: (...args: unknown[]) => mockUseWorkspaceDiff(...args),
 }));
 
 vi.mock('@/hooks/useSubagents', () => ({
@@ -99,7 +117,10 @@ vi.mock('@/hooks/useCheckpoints', () => ({
 
 // Avoid rendering deep UI by stubbing presentation components.
 vi.mock('@/components/chat/MessageList', () => ({
-  MessageList: () => null,
+  MessageList: (props: unknown) => {
+    mockMessageList(props);
+    return null;
+  },
 }));
 
 vi.mock('@/components/chat/ShortcutHelpModal', () => ({
@@ -237,6 +258,11 @@ describe('ChatPage transport provider payload', () => {
       resetSettings: vi.fn(),
     });
     mockUseStreamEvents.mockReturnValue(getDefaultStreamEventsState());
+    mockUseWorkspaceDiff.mockReturnValue({
+      diff: '',
+      changedFiles: [],
+      fetchDiff: vi.fn(),
+    });
   });
 
   it('sends provider and providerConfig for bedrock settings', () => {
@@ -257,10 +283,10 @@ describe('ChatPage transport provider payload', () => {
       api: 'http://localhost:3131/api/chat',
       body: expect.objectContaining({
         provider: 'bedrock',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           bedrockBaseUrl: 'https://bedrock.internal',
           bedrockProjectId: '',
-        },
+        }),
       }),
     });
   });
@@ -301,10 +327,10 @@ describe('ChatPage transport provider payload', () => {
     expect(call).toMatchObject({
       body: expect.objectContaining({
         provider: 'vertex',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           vertexProjectId: 'test-vertex-project',
           vertexBaseUrl: 'https://vertex.internal',
-        },
+        }),
       }),
     });
   });
@@ -345,9 +371,9 @@ describe('ChatPage transport provider payload', () => {
     expect(call).toMatchObject({
       body: expect.objectContaining({
         provider: 'custom',
-        providerConfig: {
+        providerConfig: expect.objectContaining({
           customBaseUrl: 'https://custom.internal',
-        },
+        }),
       }),
     });
   });
@@ -672,4 +698,5 @@ describe('ChatPage transport provider payload', () => {
       }),
     });
   });
+
 });

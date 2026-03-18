@@ -495,6 +495,23 @@ export interface GitDiff {
   error?: string;
 }
 
+// --- Code Review Types ---
+
+export interface CodeReviewComment {
+  id: string;
+  file: string;
+  line?: number;
+  severity: 'critical' | 'warning' | 'suggestion' | 'info';
+  body: string;
+  isAI: true;
+}
+
+export interface CodeReviewResult {
+  summary: string;
+  comments: CodeReviewComment[];
+  reviewedAt: string;
+}
+
 // --- Agent Teams Types ---
 
 export interface AgentDefinition {
@@ -562,6 +579,39 @@ export interface RewindPreview {
   messagesRemoved: number;
 }
 
+// --- Diff Comment Types ---
+
+export interface DiffComment {
+  id: string;
+  workspaceId: string;
+  filePath: string;
+  lineNumber?: number | null;
+  content: string;
+  author: 'user' | 'ai';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDiffCommentRequest {
+  filePath: string;
+  lineNumber?: number | null;
+  content: string;
+  author?: 'user' | 'ai';
+}
+
+// --- Workspace Repo Config Types ---
+
+export interface WorkspaceRepoConfig {
+  lifecycle?: {
+    setup?: string;
+    teardown?: string;
+  };
+  env?: Record<string, string>;
+  preserve?: {
+    files?: string[];
+  };
+}
+
 // --- Project Location Types ---
 
 export type ProjectLocationType = 'local' | 'ssh';
@@ -609,6 +659,7 @@ export interface Project {
   updatedAt: string;
   /** Where the project lives. If absent, assume local using repoPathCanonical (backward compat). */
   location?: ProjectLocation;
+  repoConfig?: WorkspaceRepoConfig;
 }
 
 export interface Workspace {
