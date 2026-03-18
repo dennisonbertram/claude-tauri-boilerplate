@@ -609,7 +609,14 @@ export interface CreateWorkspaceRequest {
   name: string;
   baseBranch?: string;
   branchPrefix?: string;
+  sourceBranch?: string;
   linearIssue?: {
+    id: string;
+    title: string;
+    summary?: string;
+    url?: string;
+  };
+  githubIssue?: {
     id: string;
     title: string;
     summary?: string;

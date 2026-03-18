@@ -34,14 +34,16 @@ export function useWorkspaces(projectId: string | null) {
     async (
       name: string,
       baseBranch?: string,
-      linearIssue?: Parameters<typeof api.createWorkspace>[3],
-      branchPrefix?: Parameters<typeof api.createWorkspace>[4]
+      sourceBranch?: string,
+      linearIssue?: Parameters<typeof api.createWorkspace>[4],
+      branchPrefix?: Parameters<typeof api.createWorkspace>[5]
     ) => {
       if (!projectId) return;
       const ws = await api.createWorkspace(
         projectId,
         name,
         baseBranch,
+        sourceBranch,
         linearIssue,
         branchPrefix
       );

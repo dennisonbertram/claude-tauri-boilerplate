@@ -46,6 +46,7 @@ export class WorktreeOrchestrator {
     projectId: string,
     name: string,
     baseBranch?: string,
+    sourceBranch?: string,
     branchPrefix?: string,
     linearIssue?: {
       id: string;
@@ -97,7 +98,20 @@ export class WorktreeOrchestrator {
       .replace(/(^[\/-]|[\/-]$)/g, '');
 
     const branchName = `${safePrefix}/${sanitized}`;
-    const effectiveBaseBranch = baseBranch || project.defaultBranch;
+    const effectiveBaseBranch = sourceBranch || baseBranch || project.defaultBranch;
+
+    if (sourceBranch) {
+      const sourceExists = await this.wt.branchExists(
+        project.repoPathCanonical,
+        sourceBranch
+      );
+      if (!sourceExists) {
+        throw Object.assign(
+          new Error(`Source branch '${sourceBranch}' does not exist`),
+          { status: 400, code: 'VALIDATION_ERROR' }
+        );
+      }
+    }
 
     // 3. Check for duplicate workspace name in project first (friendly error)
     const existingWorkspaces = listWorkspaces(db, projectId);

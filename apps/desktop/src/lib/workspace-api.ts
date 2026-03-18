@@ -63,11 +63,13 @@ export async function createWorkspace(
   projectId: string,
   name: string,
   baseBranch?: string,
-  linearIssue?: CreateWorkspaceRequest['linearIssue'],
+  sourceBranch?: string,
+  linearIssue?: CreateWorkspaceRequest['linearIssue'] | CreateWorkspaceRequest['githubIssue'],
   branchPrefix?: string
 ): Promise<Workspace> {
   const body: CreateWorkspaceRequest = { name };
   if (baseBranch) body.baseBranch = baseBranch;
+  if (sourceBranch) body.sourceBranch = sourceBranch;
   if (branchPrefix) body.branchPrefix = branchPrefix;
   if (linearIssue) body.linearIssue = linearIssue;
 

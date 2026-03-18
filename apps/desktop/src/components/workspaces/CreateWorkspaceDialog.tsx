@@ -7,12 +7,17 @@ interface CreateWorkspaceDialogProps {
   projectName: string;
   defaultBranch: string;
   onClose: () => void;
-  onSubmit: (name: string, baseBranch?: string) => Promise<void>;
+  onSubmit: (
+    name: string,
+    baseBranch?: string,
+    sourceBranch?: string
+  ) => Promise<void>;
 }
 
 export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onClose, onSubmit }: CreateWorkspaceDialogProps) {
   const [name, setName] = useState('');
   const [baseBranch, setBaseBranch] = useState('');
+  const [sourceBranch, setSourceBranch] = useState('');
   const [nameError, setNameError] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,20 +35,23 @@ export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onCl
       setSubmitting(true);
       setError(null);
       const branch = baseBranch.trim() || undefined;
-      await onSubmit(trimmedName, branch);
+      const source = sourceBranch.trim() || undefined;
+      await onSubmit(trimmedName, branch, source);
       setName('');
       setBaseBranch('');
+      setSourceBranch('');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create workspace');
     } finally {
       setSubmitting(false);
     }
-  }, [name, baseBranch, onSubmit, onClose]);
+  }, [name, baseBranch, sourceBranch, onSubmit, onClose]);
 
   const handleClose = useCallback(() => {
     setName('');
     setBaseBranch('');
+    setSourceBranch('');
     setNameError('');
     setError(null);
     onClose();
@@ -90,6 +98,19 @@ export function CreateWorkspaceDialog({ isOpen, projectName, defaultBranch, onCl
             />
             <p className="mt-1 text-xs text-muted-foreground">
               Defaults to {defaultBranch}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Source Branch (optional)</label>
+            <Input
+              type="text"
+              placeholder="feature/auth"
+              value={sourceBranch}
+              onChange={(e) => setSourceBranch(e.target.value)}
+              className="mt-1"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Optional custom branch to base this workspace on.
             </p>
           </div>
           {error && (

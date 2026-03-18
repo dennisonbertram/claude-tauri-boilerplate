@@ -139,10 +139,11 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setSelectedProjectId(project.id);
   }, [addProject]);
 
-  const handleCreateWorkspace = useCallback(async (name: string, baseBranch?: string) => {
+  const handleCreateWorkspace = useCallback(async (name: string, baseBranch?: string, sourceBranch?: string) => {
     const ws = await addWorkspace(
       name,
       baseBranch,
+      sourceBranch,
       undefined,
       settings.workspaceBranchPrefix
     );
