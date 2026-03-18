@@ -19,12 +19,10 @@ Known unrelated failures in this branch:
 
 Validated:
 
-- Started this worktree frontend in tmux on `http://localhost:41420`
-- Started this worktree server in tmux on `http://localhost:33131`
-- `curl http://localhost:33131/api/mcp/servers` returned the repo-root `playwright` and `agentation` entries with the expected Chrome/video arguments
+- Started this worktree frontend in tmux on `http://localhost:1420`
+- Started this worktree server in tmux on `http://localhost:3131`
+- `curl http://localhost:3131/api/mcp/servers` returned the repo-root `playwright` and `agentation` entries with the expected Chrome/video arguments
 - `POST /api/mcp/servers` duplicate protection returns `409` for `playwright`
-
-Blocked:
-
-- Playwright browser MCP tooling on this machine could not launch a controlled Chrome session because Chrome reported `Opening in existing browser session.` and exited immediately
-- Default dev ports `1420/3131` were already occupied by other work, so verification used alternate ports to avoid touching other sessions
+- In the live desktop app, Settings -> MCP shows the Playwright Browser and Agentation presets as installed with the expected command lines and Chrome/video arguments
+- In the live desktop app, Settings -> Workflows exposes the new Browser Testing Prompt used by `/browser`, including the testing workflow, screenshot/console expectations, and artifact path guidance
+- Browser automation in this environment is functional again after clearing the stale Chrome profile earlier in the wave, so the machine-level browser-launch blocker is no longer present

@@ -12,6 +12,12 @@ Issue `#112` is implemented through a Playwright MCP default plus desktop UX tha
 - Updated the default `/browser` workflow prompt so it points to the Playwright preset, artifact directory, and expected testing steps.
 - Fixed the MCP backend router so it resolves the repo-root `.mcp.json` even when the server process starts from `apps/server`, which matches the monorepo dev layout.
 
+## Validation
+
+- Desktop targeted tests cover the MCP preset cards, browser-specific tool rendering, `/browser` prompt wiring, and Settings integration.
+- Server targeted tests cover repo-root `.mcp.json` resolution and write behavior when the backend launches from `apps/server`.
+- Manual verification confirmed the repo-root MCP config is served from `/api/mcp/servers`, the live Settings -> MCP panel shows the Playwright Browser and Agentation presets as installed, and the Workflows tab exposes the new Browser Testing Prompt guidance for `/browser`.
+
 ## Files
 
 - `.mcp.json`
