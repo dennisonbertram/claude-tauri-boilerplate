@@ -562,6 +562,26 @@ export interface RewindPreview {
   messagesRemoved: number;
 }
 
+// --- Diff Comment Types ---
+
+export interface DiffComment {
+  id: string;
+  workspaceId: string;
+  filePath: string;
+  lineNumber?: number | null;
+  content: string;
+  author: 'user' | 'ai';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDiffCommentRequest {
+  filePath: string;
+  lineNumber?: number | null;
+  content: string;
+  author?: 'user' | 'ai';
+}
+
 // --- Project & Workspace Types ---
 
 export type WorkspaceStatus =
