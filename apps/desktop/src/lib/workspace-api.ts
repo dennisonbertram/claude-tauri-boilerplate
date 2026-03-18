@@ -5,6 +5,7 @@ import type {
   CreateWorkspaceRequest,
   WorkspaceRenameRequest,
   GitStatus,
+  CodeReviewResult,
 } from '@claude-tauri/shared';
 
 const API_BASE = 'http://localhost:3131';
@@ -207,4 +208,26 @@ export async function saveWorkspaceNotes(workspaceId: string, content: string): 
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to save workspace notes: ${res.status}`);
   }
+}
+
+export interface CodeReviewRequest {
+  prompt?: string;
+  model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'max';
+}
+
+export async function fetchCodeReview(
+  workspaceId: string,
+  request: CodeReviewRequest = {}
+): Promise<CodeReviewResult> {
+  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/code-review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Code review failed: ${res.status}`);
+  }
+  return res.json();
 }

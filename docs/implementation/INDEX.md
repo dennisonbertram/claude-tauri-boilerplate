@@ -26,4 +26,5 @@ Implementation notes and code change documentation.
 | [generative-ui-foundation-live-first.md](generative-ui-foundation-live-first.md) | Registry-based generative UI foundation refactor, shared tool parsing/sanitization, and persistence-path design notes. |
 | [issue-114-wave13.md](issue-114-wave13.md) | Issue #114 implementation notes for multi-repo workspace attachments, `/add-dir` routing, and manual validation. |
 | [issue-115-ai-memory-update.md](issue-115-ai-memory-update.md) | Issue #115 implementation note covering repo-scoped memory-update prompts, queued `MEMORY.md` drafts, regression coverage, and live browser validation. |
+| [issue-92-response-metadata.md](issue-92-response-metadata.md) | Issue #92 implementation note for assistant response metadata/footer wiring, changed-file summaries, and validation status. |
 | [issue-158-workflow-memory-404s.md](issue-158-workflow-memory-404s.md) | Issue #158 implementation note for removing normal-startup workflow prompt 404s by loading overrides from the memory index once. |

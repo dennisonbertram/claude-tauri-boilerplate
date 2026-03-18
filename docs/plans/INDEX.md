@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [issue-85-ai-code-review.md](issue-85-ai-code-review.md) | Issue #85 plan for AI code review with customizable prompts: backend endpoint, CodeReviewDialog, inline AI comments, CodeReviewSummary, and settings for model/effort. |
 | [issue-100-bash-display-controls.md](issue-100-bash-display-controls.md) | Issue #100 plan for the remaining BashDisplay scope: terminal search shortcuts, clear behavior, full-height expansion, and validation. |
 | [issue-112-browser-automation.md](issue-112-browser-automation.md) | Implementation plan and completed checklist for GitHub issue #112 covering Chrome automation, screenshots, recordings, MCP presets, and workflow integration. |
 | [issue-5-sdk-event-handling.md](issue-5-sdk-event-handling.md) | Complete implementation plan for GitHub issue #5: handling all 17+ SDKMessage event types. Covers shared types, event mapper, backend streaming, frontend reducer, and UI components across 6 implementation waves. |
@@ -22,6 +23,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-76-provider-support.md](issue-76-provider-support.md) | Issue #76 provider support for Anthropic/Bedrock/Vertex/custom configuration with persistence and env propagation tests. |
 | [issue-77-command-palette.md](issue-77-command-palette.md) | Command palette (Cmd+K) plan for session/PR/settings navigation and fuzzy relevance-based action search. |
 | [issue-87-thinking-controls.md](issue-87-thinking-controls.md) | Completed issue #87 note covering thinking visibility shortcuts, persisted reasoning settings, and Claude SDK thinking budget wiring. |
+| [issue-92-response-metadata.md](issue-92-response-metadata.md) | Issue #92 plan for assistant response metadata, copy-as-markdown actions, changed-file summaries, and validation. |
 | [issue-118-wave152-handoff.md](issue-118-wave152-handoff.md) | Handoff and validation notes for GitHub issue #118 covering settings tabs overflow regression checks and manual browser verification steps. |
 | [issue-114-multi-repo-editing.md](issue-114-multi-repo-editing.md) | Issue #114 plan for multi-repo editing with `/add-dir`, covering workspace directory persistence, Claude passthrough, and workspace UI management. |
 | [issue-119-wave152-handoff.md](issue-119-wave152-handoff.md) | Handoff checklist for issue #119 covering model selector regression checks and manual browser verification notes. |
@@ -56,6 +58,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-154-runtime-capability-registry.md](issue-154-runtime-capability-registry.md) | Plan for issue #154 to centralize provider/runtime capability metadata across shared types, settings UI, chat transport, backend validation, and Claude env mapping. |
 | [issue-158-workflow-memory-404s.md](issue-158-workflow-memory-404s.md) | Issue #158 plan for removing normal-startup workflow memory 404s by treating missing prompt overrides as a clean empty state. |
 | [persistent-dashboard-artifacts-v1.md](persistent-dashboard-artifacts-v1.md) | Multi-phase plan for Persistent Dashboard Artifacts V1, including baseline capture and Phase 1 durable artifact/message-part foundation checklist. |
+| [issue-85-ai-code-review.md](issue-85-ai-code-review.md) | Implementation plan for issue #85: AI code review with customizable prompts, inline comments, model/effort selection, and review summary. |
 | [issues-141-151-wave-3.md](issues-141-151-wave-3.md) | Coordination plan for the new issue wave covering issues #141-#151, including regression-only tickets already fixed on the current integration line, the six-at-a-time worktree batches, and the final integration/cleanup flow. |
 | [issue-120-126-127-wave152-handoff.md](issue-120-126-127-wave152-handoff.md) | Handoff note for issue cluster #120, #126, #127 covering slash-command regressions, shortcut behavior, reviewed tests, and manual verification steps. |
 | [issues-121-139-wave-4.md](issues-121-139-wave-4.md) | Coordination plan for Wave 4 covering issues #121, #123, #124, #125, #128, #131, #132, #137, #138, and #139 plus the status-only handoff for #122, with isolated worktrees, strict TDD, GitHub updates, and merge-branch validation. |
