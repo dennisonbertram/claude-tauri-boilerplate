@@ -13,6 +13,7 @@ import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
 import { useSettings } from '@/hooks/useSettings';
 import { getWorkflowPrompt, buildMergeMemoryDraft } from '@/lib/workflowPrompts';
 import * as api from '@/lib/workspace-api';
+import { openInIde, IDE_CONFIGS } from '@/lib/ide-opener';
 
 type Tab = 'chat' | 'diff' | 'paths' | 'notes';
 
@@ -241,6 +242,37 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            data-testid="open-in-ide-button"
+            title={`Open in ${IDE_CONFIGS[settings.preferredIde].label}`}
+            aria-label={`Open workspace in ${IDE_CONFIGS[settings.preferredIde].label}`}
+            onClick={() =>
+              openInIde(
+                settings.preferredIde,
+                workspace.worktreePath,
+                settings.customIdeUrl || undefined
+              )
+            }
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            Open In
+          </button>
           {canMerge && (
             <Button variant="outline" size="sm" onClick={() => setMergeDialog('merge')}>
               Merge
