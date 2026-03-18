@@ -101,6 +101,11 @@ describe('useSettings', () => {
       expect(result.current.settings.showToolCalls).toBe(true);
     });
 
+    it('has correct default showResourceUsage', () => {
+      const { result } = renderHook(() => useSettings(), { wrapper });
+      expect((result.current.settings as any).showResourceUsage).toBe(false);
+    });
+
     it('has correct default permissionMode', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
       expect(result.current.settings.permissionMode).toBe('default');

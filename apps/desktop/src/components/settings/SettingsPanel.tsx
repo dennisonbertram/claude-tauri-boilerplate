@@ -161,6 +161,8 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
               sessionInfo={sessionInfo}
               email={email}
               plan={plan}
+              settings={settings}
+              updateSettings={updateSettings}
             />
           )}
         </div>
@@ -851,13 +853,37 @@ function StatusTab({
   sessionInfo,
   email,
   plan,
+  settings,
+  updateSettings,
 }: {
   sessionInfo?: SessionRuntimeInfo | null;
   email?: string;
   plan?: string;
+  settings: AppSettings;
+  updateSettings: (updates: Partial<AppSettings>) => void;
 }) {
   return (
     <>
+      {/* Diagnostics */}
+      <SettingField
+        label="Diagnostics"
+        description="Show CPU and memory usage in the status bar."
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="text-sm font-medium text-foreground">Show Resource Usage</div>
+            <div className="text-xs text-muted-foreground">
+              Poll the local diagnostics endpoint while the status bar is visible.
+            </div>
+          </div>
+          <ToggleSwitch
+            data-testid="show-resource-usage-toggle"
+            checked={settings.showResourceUsage}
+            onChange={(checked) => updateSettings({ showResourceUsage: checked })}
+          />
+        </div>
+      </SettingField>
+
       {/* Account */}
       <SettingField label="Account" description="Your Claude subscription info">
         <div className="space-y-1 text-sm">
