@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-19: ISSUE-007 — Slug-like project names displayed in Workspaces sidebar
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Projects added when an older version of the code was running (or inserted directly into the DB) could have names like "reconcile-ws-fG6AeG" stored in the `projects.name` column. The `addProject` service already derives the name correctly via `basename(canonical)` for new projects, but existing rows with slug-style names were displayed raw in the sidebar. Root cause: display layer had no defensive fallback. Fix: added `getProjectDisplayName()` helper in `apps/desktop/src/lib/project-display.ts` that detects slug-like names (suffix of 5-8 mixed-case alphanumeric characters) and falls back to `basename(repoPathCanonical)`. `ProjectSidebar.tsx` now calls this helper instead of using `project.name` directly. No DB migration required — purely a display-layer change.
+**Regression Test**: `apps/desktop/src/lib/__tests__/project-display.test.ts` (17 tests for the utility), plus 2 new tests in `apps/desktop/src/components/workspaces/__tests__/ProjectSidebar.test.tsx`.
+**Related Issue**: ISSUE-007
+
+---
+
 ### 2026-03-19: Session search query parameter not passed to listSessions
 
 **Type**: Bug Fix

@@ -312,4 +312,51 @@ describe('ProjectSidebar', () => {
       expect(onRenameWorkspace).toHaveBeenCalledWith('ws-1', 'workspace/renamed');
     });
   });
+
+  // ─── Regression: ISSUE-007 — slug-like project names show path basename ───
+
+  it('displays the path basename instead of a slug-like project name (ISSUE-007)', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    const slugProject: Project = {
+      ...project,
+      name: 'reconcile-ws-fG6AeG',
+      repoPath: '/Users/foo/projects/my-actual-repo',
+      repoPathCanonical: '/Users/foo/projects/my-actual-repo',
+    };
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[slugProject]}
+        workspacesByProject={{ [slugProject.id]: [] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // The raw slug should NOT appear in the sidebar
+    expect(screen.queryByText('reconcile-ws-fG6AeG')).toBeNull();
+    // The friendly basename SHOULD appear
+    expect(screen.getByText('my-actual-repo')).toBeTruthy();
+  });
+
+  it('displays project.name unchanged when it is already human-readable', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // The clean project name should appear as-is
+    expect(screen.getByText('Test Project')).toBeTruthy();
+  });
 });
