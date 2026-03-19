@@ -68,13 +68,15 @@ export function createSessionsRouter(db: Database) {
       }
     }
 
-    const session = createSession(db, id, title, undefined, parsed.data.model);
+    createSession(db, id, title, undefined, parsed.data.model);
 
     // Link the session to the agent profile if applicable
     if (parsed.data.profileId) {
       linkSessionToProfile(db, id, parsed.data.profileId);
     }
 
+    // Re-fetch so profileId is included in the response
+    const session = getSession(db, id)!;
     return c.json(session, 201);
   });
 
