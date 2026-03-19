@@ -13,7 +13,11 @@ interface ProjectSidebarProps {
   projects: Project[];
   workspacesByProject: Record<string, Workspace[]>;
   selectedWorkspaceId: string | null;
+  /** The currently selected project ID — used to load workspaces for that project */
+  selectedProjectId?: string | null;
   onSelectWorkspace: (workspace: Workspace) => void;
+  /** Called when a project header is clicked so the parent can load that project's workspaces */
+  onProjectClick?: (projectId: string) => void;
   onAddProject: () => void;
   onCreateWorkspace: (project: Project) => void;
   onRenameWorkspace: (id: string, branch: string) => void;
@@ -27,6 +31,7 @@ export function ProjectSidebar({
   workspacesByProject,
   selectedWorkspaceId,
   onSelectWorkspace,
+  onProjectClick,
   onAddProject,
   onCreateWorkspace,
   onRenameWorkspace,
@@ -128,8 +133,13 @@ export function ProjectSidebar({
   const toggleProject = (id: string) => {
     setExpandedProjects(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        // Notify parent to load workspaces for this project
+        onProjectClick?.(id);
+      }
       return next;
     });
   };

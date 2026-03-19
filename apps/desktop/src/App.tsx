@@ -271,6 +271,13 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     }
   }, [removeProject, selectedProjectId]);
 
+  // Auto-select first project when workspaces view is active and projects finish loading
+  useEffect(() => {
+    if (activeView === 'workspaces' && !selectedProjectId && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [activeView, selectedProjectId, projects]);
+
   // When switching to workspaces view, auto-select first project
   const handleSwitchView = useCallback((view: 'chat' | 'teams' | 'workspaces' | 'agents') => {
     setActiveView(view);
@@ -321,7 +328,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             projects={projects}
             workspacesByProject={workspacesByProject}
             selectedWorkspaceId={selectedWorkspace?.id ?? null}
+            selectedProjectId={selectedProjectId}
             onSelectWorkspace={handleSelectWorkspace}
+            onProjectClick={handleProjectClick}
             onAddProject={() => setAddProjectOpen(true)}
             onCreateWorkspace={(project) => {
               handleProjectClick(project.id);

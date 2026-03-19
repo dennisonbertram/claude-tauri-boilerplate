@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-19: ISSUE-001 — Workspace item click loads no workspace detail panel
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Clicking a workspace item in the ProjectSidebar left the main panel on "Select a workspace or create one to get started." Two root causes: (1) `handleSwitchView` only auto-selected the first project when switching views, but if `projects` hadn't loaded yet (async), `projects.length === 0` at that moment and `selectedProjectId` was never set — leaving `workspacesByProject` empty and no workspace items renderable in the sidebar. (2) The `toggleProject` function inside `ProjectSidebar` managed expand/collapse state locally but never notified App.tsx via a callback, so expanding a different project never triggered loading its workspaces. Fixes: added a `useEffect` in `App.tsx` that re-runs the auto-select logic whenever `projects` or `activeView` changes (covering the async load case), added `onProjectClick` prop to `ProjectSidebar` called when a project is expanded, and wired `handleProjectClick` to that prop.
+**Regression Test**: `apps/desktop/src/components/workspaces/__tests__/ProjectSidebar.test.tsx` — three new tests: "clicking a workspace item calls onSelectWorkspace with the correct workspace object", "clicking a workspace item passes the full workspace object including projectId", and "onProjectClick is called when a collapsed project header is expanded".
+**Related Issue**: ISSUE-001
+
+---
+
 ### 2026-03-19: Session search query parameter not passed to listSessions
 
 **Type**: Bug Fix

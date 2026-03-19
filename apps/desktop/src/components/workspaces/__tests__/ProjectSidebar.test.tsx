@@ -312,4 +312,104 @@ describe('ProjectSidebar', () => {
       expect(onRenameWorkspace).toHaveBeenCalledWith('ws-1', 'workspace/renamed');
     });
   });
+
+  // ─── Regression: ISSUE-001 — workspace item click calls onSelectWorkspace ───
+
+  it('clicking a workspace item calls onSelectWorkspace with the correct workspace object', async () => {
+    const onSelectWorkspace = vi.fn();
+    const workspace = makeWorkspace({ id: 'ws-42', name: 'my-feature', projectId: project.id });
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        onSelectWorkspace={onSelectWorkspace}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [workspace] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // The workspace name must be visible before we can click it
+    expect(screen.getByText('my-feature')).toBeTruthy();
+
+    // Click the workspace button (the name label is inside the button)
+    await userEvent.click(screen.getByText('my-feature'));
+
+    expect(onSelectWorkspace).toHaveBeenCalledTimes(1);
+    expect(onSelectWorkspace).toHaveBeenCalledWith(workspace);
+  });
+
+  it('clicking a workspace item passes the full workspace object including projectId', async () => {
+    const onSelectWorkspace = vi.fn();
+    const workspace = makeWorkspace({
+      id: 'ws-99',
+      name: 'auth-refactor',
+      projectId: 'project-1',
+      branch: 'workspace/auth-refactor',
+      status: 'active',
+    });
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: false, modifiedFiles: [{ path: 'src/auth.ts', status: 'modified' }], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        onSelectWorkspace={onSelectWorkspace}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [workspace] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    await userEvent.click(await screen.findByText('auth-refactor'));
+
+    expect(onSelectWorkspace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'ws-99',
+        projectId: 'project-1',
+        name: 'auth-refactor',
+        branch: 'workspace/auth-refactor',
+      })
+    );
+  });
+
+  it('onProjectClick is called when a collapsed project header is expanded', async () => {
+    const onProjectClick = vi.fn();
+    const secondProject: Project = {
+      id: 'project-2',
+      name: 'Second Project',
+      repoPath: '/tmp/repo2',
+      repoPathCanonical: '/tmp/repo2',
+      defaultBranch: 'main',
+      setupCommand: '',
+      isDeleted: false,
+      createdAt: '2026-03-16T10:00:00.000Z',
+      updatedAt: '2026-03-16T10:00:00.000Z',
+    };
+    mockFetchWorkspaceStatus.mockResolvedValue(makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] }));
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        onProjectClick={onProjectClick}
+        // Both projects start expanded, so we collapse project-2 first then re-expand
+        projects={[project, secondProject]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // Collapse second project (it starts expanded, click collapses it)
+    const secondProjectBtn = screen.getByRole('button', { name: /second project/i });
+    await userEvent.click(secondProjectBtn);
+
+    // Re-expand second project (click again — this should call onProjectClick)
+    await userEvent.click(secondProjectBtn);
+
+    expect(onProjectClick).toHaveBeenCalledWith('project-2');
+  });
 });
