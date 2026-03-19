@@ -146,6 +146,7 @@ export function ProjectSidebar({
       {onSwitchView && (
         <div className="flex border-b border-border">
           <button
+            title="Standalone conversations — quick questions and one-off tasks"
             onClick={() => onSwitchView('chat')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'chat'
@@ -156,6 +157,7 @@ export function ProjectSidebar({
             Chat
           </button>
           <button
+            title="Git worktree environments with isolated branches and embedded chat"
             onClick={() => onSwitchView('workspaces')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'workspaces'
@@ -166,6 +168,7 @@ export function ProjectSidebar({
             Workspaces
           </button>
           <button
+            title="Multi-agent PR and team workflows"
             onClick={() => onSwitchView('teams')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'teams'
@@ -176,6 +179,7 @@ export function ProjectSidebar({
             Teams
           </button>
           <button
+            title="Custom agent profiles and configurations"
             onClick={() => onSwitchView('agents')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'agents'

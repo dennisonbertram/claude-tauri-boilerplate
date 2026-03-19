@@ -52,6 +52,7 @@ export function SessionSidebar({
         <div className="flex border-b border-border">
           <button
             data-testid="view-tab-chat"
+            title="Standalone conversations — quick questions and one-off tasks"
             onClick={() => onSwitchView('chat')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'chat'
@@ -63,6 +64,7 @@ export function SessionSidebar({
           </button>
           <button
             data-testid="view-tab-workspaces"
+            title="Git worktree environments with isolated branches and embedded chat"
             onClick={() => onSwitchView('workspaces')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'workspaces'
@@ -74,6 +76,7 @@ export function SessionSidebar({
           </button>
           <button
             data-testid="view-tab-teams"
+            title="Multi-agent PR and team workflows"
             onClick={() => onSwitchView('teams')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'teams'
@@ -85,6 +88,7 @@ export function SessionSidebar({
           </button>
           <button
             data-testid="view-tab-agents"
+            title="Custom agent profiles and configurations"
             onClick={() => onSwitchView('agents')}
             className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeView === 'agents'
