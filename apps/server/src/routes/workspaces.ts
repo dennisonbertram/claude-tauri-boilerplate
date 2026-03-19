@@ -484,7 +484,10 @@ async function autoCommitWorktree(worktreePath: string): Promise<void> {
 
   // Stage all changes
   const addResult = await gitCommand.run(['add', '-A'], { cwd: worktreePath });
-  if (addResult.exitCode !== 0) return; // Nothing to add
+  if (addResult.exitCode !== 0) {
+    // Non-zero from `git add -A` means a real failure (permissions, disk full, etc.)
+    throw new Error(`git add failed in worktree ${worktreePath}: ${addResult.stderr}`);
+  }
 
   // Check if there are staged changes
   const statusResult = await gitCommand.run(
@@ -494,10 +497,13 @@ async function autoCommitWorktree(worktreePath: string): Promise<void> {
 
   // exitCode 0 means no diff (nothing staged), exitCode 1 means there are changes
   if (statusResult.exitCode === 1) {
-    await gitCommand.run(
+    const commitResult = await gitCommand.run(
       ['commit', '-m', 'WIP: auto-commit before merge'],
       { cwd: worktreePath }
     );
+    if (commitResult.exitCode !== 0) {
+      throw new Error(`git commit failed in worktree ${worktreePath}: ${commitResult.stderr}`);
+    }
   }
 }
 

@@ -74,7 +74,7 @@ app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
 // Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
 // We mount a sub-router that receives sessionId as a param.
 const checkpointsApp = new Hono();
-checkpointsApp.route('/:sessionId/checkpoints', createCheckpointsRouter());
+checkpointsApp.route('/:sessionId/checkpoints', createCheckpointsRouter(db));
 app.route('/api/sessions', checkpointsApp);
 
 export { app };
