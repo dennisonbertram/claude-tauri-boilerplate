@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
+import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 
-type ViewType = 'chat' | 'teams' | 'workspaces';
+type ViewType = 'chat' | 'teams' | 'workspaces' | 'agents';
 
 interface SessionSidebarProps {
   sessions: Session[];
@@ -80,6 +81,17 @@ export function SessionSidebar({
             }`}
           >
             Teams
+          </button>
+          <button
+            data-testid="view-tab-agents"
+            onClick={() => onSwitchView('agents')}
+            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+              activeView === 'agents'
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Agents
           </button>
         </div>
       )}
@@ -317,7 +329,10 @@ function SessionItem({
           </div>
         )}
       </div>
-      <span className="text-xs text-muted-foreground">{dateStr}</span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">{dateStr}</span>
+        {session.profile && <ProfileBadge profile={session.profile} />}
+      </div>
 
       {/* Context menu dropdown */}
       {menuOpen && (

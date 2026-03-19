@@ -95,6 +95,12 @@ interface ChatPageProps {
     status: 'completed' | 'failed' | 'stopped';
     summary: string;
   }) => void;
+  /** Agent profile ID to use for this chat */
+  profileId?: string | null;
+  /** Available agent profiles for selection */
+  agentProfiles?: import('@claude-tauri/shared').AgentProfile[];
+  /** Callback when user selects a different profile */
+  onSelectProfile?: (id: string | null) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -149,6 +155,9 @@ export function ChatPage({
   onOpenPullRequests,
   onOpenWorkspacePaths,
   onTaskComplete,
+  profileId,
+  agentProfiles: _agentProfiles,
+  onSelectProfile: _onSelectProfile,
 }: ChatPageProps) {
   const { settings, updateSettings } = useSettings();
   const [input, setInput] = useState('');
@@ -274,6 +283,7 @@ export function ChatPage({
             ? { additionalDirectories }
             : {}),
           ...(linearIssue ? { linearIssue } : {}),
+          ...(profileId ? { profileId } : {}),
         },
       }),
     [
@@ -295,6 +305,7 @@ export function ChatPage({
       workspaceId,
       additionalDirectories,
       linearIssue,
+      profileId,
     ]
   );
 
