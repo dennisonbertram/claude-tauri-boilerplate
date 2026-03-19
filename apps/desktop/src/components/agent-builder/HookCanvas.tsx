@@ -158,12 +158,22 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     [onChange],
   );
 
-  // Cancel pending debounce on unmount
+  // Debounced layout-only save (preserves positions without recompiling hooks)
+  const layoutSave = useCallback(
+    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[], currentHooksJson: string | null) => {
+      const canvasJson = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
+      onChange(currentHooksJson ?? '', canvasJson);
+    }, 2000) as DebouncedFn<(n: CanvasNode[], e: CanvasEdge[], h: string | null) => void>,
+    [onChange],
+  );
+
+  // Cancel pending debounces on unmount
   useEffect(() => {
     return () => {
       notifyChange.cancel();
+      layoutSave.cancel();
     };
-  }, [notifyChange]);
+  }, [notifyChange, layoutSave]);
 
   // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
   const prevStructuralRef = useRef<string>('');
@@ -182,6 +192,23 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     notifyChange(nodes, edges);
   }, [nodes, edges, notifyChange]);
 
+  // Save canvas layout on position-only changes (dragging nodes)
+  const prevCanvasJsonRef = useRef<string>('');
+
+  useEffect(() => {
+    if (isFirstRender.current) return;
+
+    const canvasJson = JSON.stringify({ nodes, edges });
+    if (canvasJson === prevCanvasJsonRef.current) return;
+    prevCanvasJsonRef.current = canvasJson;
+
+    const fingerprint = getHooksFingerprint(nodes, edges);
+    if (fingerprint === prevStructuralRef.current) {
+      // Position-only change — save canvas JSON without recompiling hooks
+      layoutSave(nodes, edges, hooksJson);
+    }
+  }, [nodes, edges, layoutSave, hooksJson]);
+
   // Connection validation
   const onConnect: OnConnect = useCallback(
     (params: Connection) => {
@@ -194,24 +221,13 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
 
       if (!checkConnection(sourceType, targetType)) return;
 
-      // Enforce max edges
-      if (edges.length >= MAX_EDGES) {
-        console.warn('[HookCanvas] Maximum edge count reached');
-        return;
-      }
-
-      // Enforce single inbound edge per action node (prevents duplicate hook execution)
-      if (targetType === 'action') {
-        const existingInbound = edges.some(e => e.target === params.target);
-        if (existingInbound) {
-          console.warn('[HookCanvas] Action node already has a parent connection');
-          return;
-        }
-      }
-
-      setEdges((eds) => addEdge(params, eds));
+      setEdges((eds) => {
+        if (eds.length >= MAX_EDGES) return eds;
+        if (targetType === 'action' && eds.some(e => e.target === params.target)) return eds;
+        return addEdge(params, eds);
+      });
     },
-    [nodes, edges, setEdges],
+    [nodes, setEdges],
   );
 
   // Drag and drop from palette

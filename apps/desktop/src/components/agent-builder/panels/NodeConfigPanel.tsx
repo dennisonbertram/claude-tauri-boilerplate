@@ -1,3 +1,4 @@
+import type { FC } from 'react';
 import type { CanvasNode, TriggerNodeData, ConditionNodeData, ActionNodeData } from '../types/canvas';
 import { HOOK_EVENTS } from '../types/canvas';
 
@@ -222,7 +223,7 @@ function AgentActionConfig({
 
 const ACTION_CONFIG_COMPONENTS: Record<
   string,
-  React.FC<{ node: CanvasNode; onUpdate: (data: Partial<ActionNodeData>) => void }>
+  FC<{ node: CanvasNode; onUpdate: (data: Partial<ActionNodeData>) => void }>
 > = {
   command: CommandActionConfig,
   http: HttpActionConfig,

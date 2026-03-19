@@ -192,7 +192,7 @@ export function AgentProfileEditor({
           <ToolsTab draft={draft} onChange={handleChange} />
         )}
         {activeTab === 'hooks' && (
-          <HooksTab draft={draft} onChange={handleChange} />
+          <HooksTab draft={draft} onChange={handleChange} profileId={profile.id} />
         )}
         {activeTab === 'mcp' && (
           <McpTab draft={draft} onChange={handleChange} />

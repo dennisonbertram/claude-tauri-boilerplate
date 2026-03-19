@@ -9,6 +9,7 @@ import type {
 } from '../components/agent-builder/types/canvas';
 
 const MAX_EDGES = 400;
+const MAX_GENERATED_NODES = 200;
 const MAX_MATCHER_LENGTH = 200;
 
 interface HookEntryInput {
@@ -64,11 +65,14 @@ export function generateCanvasFromHooks(
   const ROW_HEIGHT = 150;
   let triggerY = 50;
 
+  const limitReached = () => nodes.length >= MAX_GENERATED_NODES || edges.length >= MAX_EDGES;
+
   try {
     for (const [event, groups] of Object.entries(
       hooks as Record<string, unknown>,
     )) {
       if (!Array.isArray(groups)) continue;
+      if (limitReached()) break;
 
       const triggerId = genId('trigger');
       const triggerData: TriggerNodeData = { event, label: event };
@@ -78,11 +82,13 @@ export function generateCanvasFromHooks(
         position: { x: TRIGGER_X, y: triggerY },
         data: triggerData,
       });
+      if (limitReached()) break;
 
       let conditionY = triggerY;
 
       for (const group of groups) {
         if (!group || typeof group !== 'object') continue;
+        if (limitReached()) break;
         const hookList = Array.isArray((group as HookGroupInput).hooks) ? (group as HookGroupInput).hooks! : [];
         if (hookList.length === 0) continue;
 
@@ -105,9 +111,11 @@ export function generateCanvasFromHooks(
             source: triggerId,
             target: conditionId,
           });
+          if (limitReached()) break;
 
           let actionY = conditionY;
           for (const hook of hookList) {
+            if (limitReached()) break;
             if (!hook || typeof hook !== 'object') continue;
             const actionData = buildActionData(hook);
             if (!actionData) continue;
@@ -130,6 +138,7 @@ export function generateCanvasFromHooks(
           // No condition — connect actions directly to trigger
           let actionY = conditionY;
           for (const hook of hookList) {
+            if (limitReached()) break;
             if (!hook || typeof hook !== 'object') continue;
             const actionData = buildActionData(hook);
             if (!actionData) continue;
@@ -159,7 +168,6 @@ export function generateCanvasFromHooks(
 
   if (nodes.length === 0) return null;
 
-  const MAX_GENERATED_NODES = 200;
   if (nodes.length > MAX_GENERATED_NODES) {
     console.warn(`Generated ${nodes.length} nodes, truncating to ${MAX_GENERATED_NODES}`);
     const allowedNodeIds = new Set(nodes.slice(0, MAX_GENERATED_NODES).map(n => n.id));
@@ -192,47 +200,52 @@ const VALID_HOOK_TYPES = new Set<string>([
 ]);
 
 function buildActionData(hook: HookEntryInput): ActionNodeData | null {
-  const hookType = hook.type ?? 'command';
-  if (!VALID_HOOK_TYPES.has(hookType)) return null;
+  const type = typeof hook.type === 'string' ? hook.type : 'command';
+  if (!VALID_HOOK_TYPES.has(type)) return null;
 
-  const type = hookType as HookType;
+  const hookType = type as HookType;
+  const base = { hookType, label: type };
 
-  switch (type) {
-    case 'command':
+  switch (hookType) {
+    case 'command': {
+      const command = typeof hook.command === 'string' ? hook.command : '';
       return {
-        hookType: type,
-        label: hook.command
-          ? `cmd: ${hook.command.slice(0, 30)}`
-          : 'command',
-        command: hook.command ?? '',
-        timeout: hook.timeout,
+        ...base,
+        label: command ? `cmd: ${command.slice(0, 30)}` : 'command',
+        command: command.slice(0, 10_000),
+        timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
       };
-    case 'http':
+    }
+    case 'http': {
+      const url = typeof hook.url === 'string' ? hook.url : '';
+      const method = typeof hook.method === 'string' ? hook.method : 'GET';
       return {
-        hookType: type,
-        label: hook.url ? `${hook.method ?? 'POST'}: ${hook.url.slice(0, 25)}` : 'http',
-        url: hook.url ?? '',
-        method: hook.method ?? 'POST',
-        headers: hook.headers,
-        timeout: hook.timeout,
+        ...base,
+        label: url ? `${method}: ${url.slice(0, 25)}` : 'http',
+        url: url.slice(0, 2000),
+        method: method.slice(0, 20),
+        headers: hook.headers && typeof hook.headers === 'object' && !Array.isArray(hook.headers) ? hook.headers : undefined,
+        timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
       };
-    case 'prompt':
+    }
+    case 'prompt': {
+      const prompt = typeof hook.prompt === 'string' ? hook.prompt : '';
+      const model = typeof hook.model === 'string' ? hook.model : undefined;
       return {
-        hookType: type,
-        label: hook.prompt
-          ? `prompt: ${hook.prompt.slice(0, 25)}`
-          : 'prompt',
-        prompt: hook.prompt ?? '',
-        model: hook.model,
+        ...base,
+        label: prompt ? `prompt: ${prompt.slice(0, 25)}` : 'prompt',
+        prompt: prompt.slice(0, 50_000),
+        model: model?.slice(0, 200),
       };
-    case 'agent':
+    }
+    case 'agent': {
+      const description = typeof hook.description === 'string' ? hook.description : '';
       return {
-        hookType: type,
-        label: hook.description
-          ? `agent: ${hook.description.slice(0, 25)}`
-          : 'agent',
-        description: hook.description ?? '',
+        ...base,
+        label: description ? `agent: ${description.slice(0, 25)}` : 'agent',
+        description: description.slice(0, 10_000),
       };
+    }
     default:
       return null;
   }

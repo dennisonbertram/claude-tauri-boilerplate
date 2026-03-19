@@ -6,21 +6,53 @@ import { HookCanvas } from '../HookCanvas';
 interface HooksTabProps {
   draft: UpdateAgentProfileRequest;
   onChange: (updates: Partial<UpdateAgentProfileRequest>) => void;
+  profileId?: string;
 }
 
-export function HooksTab({ draft, onChange }: HooksTabProps) {
+export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
   const [view, setView] = useState<'json' | 'canvas'>('json');
   const hooksJson = draft.hooksJson ?? '';
 
   const hasDangerousHooks = useMemo(() => {
     if (!draft.hooksJson) return false;
     try {
-      const str = draft.hooksJson;
-      return str.includes('"type":"command"') || str.includes('"type":"http"') ||
-             str.includes('"type": "command"') || str.includes('"type": "http"');
+      const parsed = JSON.parse(draft.hooksJson);
+      const hooksObj = parsed?.hooks;
+      if (!hooksObj || typeof hooksObj !== 'object') return false;
+      for (const groups of Object.values(hooksObj)) {
+        if (!Array.isArray(groups)) continue;
+        for (const group of groups as any[]) {
+          if (!group || typeof group !== 'object') continue;
+          const hookList = Array.isArray(group.hooks) ? group.hooks : [];
+          for (const hook of hookList) {
+            if (hook?.type === 'command' || hook?.type === 'http') return true;
+          }
+        }
+      }
+      return false;
     } catch {
       return false;
     }
+  }, [draft.hooksJson]);
+
+  const hasUnsupportedHooks = useMemo(() => {
+    if (!draft.hooksJson) return false;
+    try {
+      const parsed = JSON.parse(draft.hooksJson);
+      const hooksObj = parsed?.hooks;
+      if (!hooksObj || typeof hooksObj !== 'object') return false;
+      const SUPPORTED_TYPES = new Set(['command', 'http', 'prompt', 'agent']);
+      for (const groups of Object.values(hooksObj)) {
+        if (!Array.isArray(groups)) continue;
+        for (const group of groups as any[]) {
+          if (!group?.hooks) continue;
+          for (const hook of group.hooks) {
+            if (hook?.type && !SUPPORTED_TYPES.has(hook.type)) return true;
+          }
+        }
+      }
+      return false;
+    } catch { return false; }
   }, [draft.hooksJson]);
 
   const jsonValid = useMemo(() => {
@@ -96,6 +128,14 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
         <div className="px-4 py-2 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-xs text-yellow-300 flex items-center gap-2">
           <span>Warning:</span>
           <span>This profile contains <strong>command or HTTP hooks</strong> that can execute local commands or make HTTP requests when the agent runs.</span>
+        </div>
+      )}
+
+      {/* Unsupported hooks warning */}
+      {hasUnsupportedHooks && (
+        <div className="px-4 py-2 bg-orange-900/30 border border-orange-700/50 rounded-lg text-xs text-orange-300 flex items-center gap-2">
+          <span>Warning:</span>
+          <span>This profile contains <strong>unsupported hook types</strong>. Editing in Canvas view will drop unsupported hooks. Use JSON view to preserve them.</span>
         </div>
       )}
 
@@ -188,6 +228,7 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
       {view === 'canvas' && (
         <div className="h-[500px] rounded-lg border border-neutral-700 overflow-hidden">
           <HookCanvas
+            key={profileId}
             hooksJson={draft.hooksJson ?? null}
             hooksCanvasJson={draft.hooksCanvasJson ?? null}
             onChange={handleCanvasChange}
