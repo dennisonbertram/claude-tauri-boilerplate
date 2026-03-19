@@ -7,6 +7,10 @@ import {
   type CSSProperties,
   type UIEvent,
 } from 'react';
+import type { ArtifactRefMessagePart, ThreadMessage } from '@claude-tauri/shared';
+import { fetchSessionThread } from '@/lib/workspace-api';
+import { ArtifactBlock } from './ArtifactBlock';
+import { archiveArtifact, fetchProjectArtifacts } from '@/lib/workspace-api';
 import type { UIMessage } from '@ai-sdk/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -52,6 +56,8 @@ interface MessageListProps {
   onExportSummaryToNewChat?: (summary: string) => void;
   isPrivacyMode?: boolean;
   assistantMetadata?: Record<string, AssistantResponseMetadata>;
+  sessionId?: string | null;
+  projectId?: string;
 }
 
 interface SearchMatch {
@@ -177,8 +183,81 @@ export function MessageList({
   onExportSummaryToNewChat,
   isPrivacyMode = false,
   assistantMetadata,
+  sessionId,
+  projectId,
 }: MessageListProps) {
   const { settings } = useSettings();
+
+  // Load thread parts (artifact refs) for the session
+  const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
+  const [artifactMap, setArtifactMap] = useState<Map<string, import('@claude-tauri/shared').Artifact>>(new Map());
+
+  useEffect(() => {
+    if (!sessionId) {
+      setThreadMessages([]);
+      return;
+    }
+
+    let cancelled = false;
+    fetchSessionThread(sessionId)
+      .then((msgs) => {
+        if (!cancelled) setThreadMessages(msgs);
+      })
+      .catch(() => {
+        // Server may not support thread endpoint yet — silently ignore
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    let cancelled = false;
+    fetchProjectArtifacts(projectId)
+      .then((artifacts) => {
+        if (cancelled) return;
+        const map = new Map<string, import('@claude-tauri/shared').Artifact>();
+        for (const artifact of artifacts) {
+          map.set(artifact.id, artifact);
+        }
+        setArtifactMap(map);
+      })
+      .catch(() => {
+        // Silently ignore
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  // Build a map: messageId → ArtifactRefMessagePart[]
+  const artifactRefsByMessageId = useMemo<Map<string, ArtifactRefMessagePart[]>>(() => {
+    const map = new Map<string, ArtifactRefMessagePart[]>();
+    for (const tm of threadMessages) {
+      const refs = (tm.parts as import('@claude-tauri/shared').MessagePart[]).filter((p): p is ArtifactRefMessagePart => p.type === 'artifact_ref');
+      if (refs.length > 0) {
+        map.set(tm.id, refs);
+      }
+    }
+    return map;
+  }, [threadMessages]);
+
+  const handleArchiveArtifact = useCallback(async (artifactId: string) => {
+    try {
+      const updated = await archiveArtifact(artifactId);
+      setArtifactMap((prev) => {
+        const next = new Map(prev);
+        next.set(artifactId, updated);
+        return next;
+      });
+    } catch {
+      // Silently ignore
+    }
+  }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -602,6 +681,9 @@ export function MessageList({
                   chatFontClass={chatFontClass}
                   chatFontStyle={chatFontStyle}
                   metadata={assistantMetadata?.[message.id]}
+                  artifactRefs={artifactRefsByMessageId.get(message.id)}
+                  artifactMap={artifactMap}
+                  onArchiveArtifact={handleArchiveArtifact}
                 />
               </div>
             );
@@ -690,6 +772,9 @@ function MessageBubble({
   chatFontClass,
   chatFontStyle,
   metadata,
+  artifactRefs,
+  artifactMap,
+  onArchiveArtifact,
 }: {
   message: UIMessage;
   highlightQuery: string;
@@ -698,6 +783,9 @@ function MessageBubble({
   chatFontClass: string;
   chatFontStyle?: CSSProperties;
   metadata?: AssistantResponseMetadata;
+  artifactRefs?: ArtifactRefMessagePart[];
+  artifactMap?: Map<string, import('@claude-tauri/shared').Artifact>;
+  onArchiveArtifact?: (id: string) => void;
 }) {
   const isUser = message.role === 'user';
   const text = getMessageText(message);
@@ -738,6 +826,21 @@ function MessageBubble({
       <div className={chatFontClass} style={chatFontStyle}>
         <MarkdownRenderer content={text} />
       </div>
+      {artifactRefs && artifactRefs.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {artifactRefs.map((ref) => {
+            const artifact = artifactMap?.get(ref.artifactId);
+            if (!artifact) return null;
+            return (
+              <ArtifactBlock
+                key={ref.artifactId}
+                artifact={artifact}
+                onArchive={onArchiveArtifact}
+              />
+            );
+          })}
+        </div>
+      )}
       {metadata ? (
         <AssistantResponseFooter messageId={message.id} text={text} metadata={metadata} />
       ) : null}
