@@ -34,6 +34,8 @@ interface ChatInputProps {
   ghostText?: string | null;
   /** Called when the user accepts the ghost text suggestion */
   onAcceptSuggestion?: () => void;
+  /** Haiku-generated one-line summary of what the conversation is about */
+  contextSummary?: string | null;
 }
 
 let imageIdCounter = 0;
@@ -168,6 +170,7 @@ export function ChatInput({
   availableFiles = [],
   ghostText,
   onAcceptSuggestion,
+  contextSummary,
 }: ChatInputProps) {
   const { settings } = useSettings();
   const paletteRef = useRef<HTMLDivElement>(null);
@@ -460,6 +463,7 @@ export function ChatInput({
       : undefined;
 
   return (
+    <>
     <form
       onSubmit={onSubmit}
       data-testid="chat-input-form"
@@ -626,5 +630,15 @@ export function ChatInput({
         </div>
       </div>
     </form>
+    {contextSummary && (
+      <p
+        data-testid="context-summary"
+        className="text-xs italic text-center mt-1 px-2"
+        style={{ opacity: 0.4, color: 'inherit' }}
+      >
+        {contextSummary}
+      </p>
+    )}
+    </>
   );
 }

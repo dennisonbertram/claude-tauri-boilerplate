@@ -234,3 +234,8 @@ Each entry follows this format:
 - **What:** Added a regression test for `POST /api/chat` malformed JSON input and updated the chat route to catch `c.req.json()` parse errors, returning HTTP 400 with `{ "error": "Malformed JSON request body" }` instead of surfacing a 500.
 - **Why:** Manual API investigation documented that invalid JSON was returning 500, which treats client input errors as server faults and makes error handling noisy.
 - **Result:** Targeted server tests pass, and manual curl verification now returns 400 for malformed JSON bodies.
+
+### Context summary feature
+- **What:** Added `GET /api/sessions/:id/summary` endpoint, `generateContextSummary` service, `useContextSummary` hook, and rendered the summary as subtle italic text below the chat input.
+- **Why:** Gives users a quick reminder of what a session is about without needing to scroll through messages. Uses Claude Haiku for low cost and fast response.
+- **Result:** Server endpoint generates a one-phrase summary via Haiku (debounced 2s, skipped during streaming). Summary appears below the input bar at 40% opacity. 7 new tests added, all passing.

@@ -28,6 +28,7 @@ import type { ContextUsage } from './ContextIndicator';
 import { CostDisplay } from './CostDisplay';
 import { useCostTracking } from '@/hooks/useCostTracking';
 import { useSuggestions } from '@/hooks/useSuggestions';
+import { useContextSummary } from '@/hooks/useContextSummary';
 import { useCheckpoints } from '@/hooks/useCheckpoints';
 import { SuggestionChips } from './SuggestionChips';
 import { useSettings } from '@/hooks/useSettings';
@@ -417,6 +418,8 @@ export function ChatPage({
     dismiss: dismissSuggestion,
     dismissAll: dismissAllSuggestions,
   } = useSuggestions(messages, { onAccept: handleSuggestionAccept });
+
+  const { summary: contextSummary } = useContextSummary(sessionId, messages, isLoading);
 
   const handleAcceptGhostText = useCallback(() => {
     if (currentSuggestion) {
@@ -1310,6 +1313,7 @@ export function ChatPage({
         availableFiles={suggestedFiles}
         ghostText={isLoading ? undefined : currentSuggestion}
         onAcceptSuggestion={handleAcceptGhostText}
+        contextSummary={isLoading ? undefined : contextSummary}
       />
       <ShortcutHelpModal
         isOpen={helpOpen}

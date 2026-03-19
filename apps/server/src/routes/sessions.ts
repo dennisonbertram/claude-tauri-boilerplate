@@ -12,6 +12,7 @@ import {
 } from '../db';
 import { generateRandomName } from '../services/name-generator';
 import { generateSessionTitle } from '../services/auto-namer';
+import { generateContextSummary } from '../services/context-summary';
 
 const createSessionSchema = z.object({
   title: z.string().max(500).optional(),
@@ -221,6 +222,34 @@ export function createSessionsRouter(db: Database) {
     }
     deleteSession(db, id);
     return c.json({ ok: true });
+  });
+
+  // ─── Context summary ───
+  router.get('/:id/summary', async (c) => {
+    const id = c.req.param('id');
+    const session = getSession(db, id);
+    if (!session) {
+      return c.json(
+        { error: 'Session not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
+    const messages = getMessages(db, id);
+    if (messages.length < 2) {
+      return c.json({ summary: null });
+    }
+
+    try {
+      const summary = await generateContextSummary(messages);
+      return c.json({ summary });
+    } catch (err) {
+      console.error('[summary] Failed to generate summary:', err);
+      return c.json(
+        { error: 'Failed to generate summary', code: 'GENERATION_ERROR' },
+        500
+      );
+    }
   });
 
   // ─── Auto-name session ───
