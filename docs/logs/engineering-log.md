@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-19: Hardening review converted into top-three implementation tickets
+
+**Type**: Technical Decision
+**Impact**: High
+**Description**: Converted the boilerplate hardening review into a concrete, scoped follow-up pass focused on the three highest-risk items that do not require changing the current Claude runtime choice. Added `docs/plans/runtime-hardening-pass-top-3.md` and opened GitHub issues `#231` (request-scoped env isolation), `#232` (sensitive log redaction), and `#233` (workspace path boundary enforcement). This establishes the initial hardening queue the user can implement directly.
+**Regression Test**: Not applicable yet — implementation work is tracked per issue.
+**Related Issue**: GitHub issues `#231`, `#232`, `#233`
+
+---
+
 ### 2026-03-19: ISSUE-007 — Slug-like project names displayed in Workspaces sidebar
 
 **Type**: Bug Fix
