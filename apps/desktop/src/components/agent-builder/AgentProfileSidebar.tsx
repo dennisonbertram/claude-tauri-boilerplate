@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { AgentProfile } from '@claude-tauri/shared';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
@@ -32,19 +32,20 @@ export function AgentProfileSidebar({
 
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3">
-        <h3 className="text-sm font-semibold text-foreground">Agent Profiles</h3>
+      {/* Section header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Agent Profiles
+        </span>
+        <button
+          onClick={onCreateProfile}
+          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label="New agent profile"
+          title="New agent profile"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
       </div>
-      <Separator />
-
-      {/* New Profile button */}
-      <div className="p-3">
-        <Button onClick={onCreateProfile} className="w-full" variant="secondary">
-          + New Profile
-        </Button>
-      </div>
-      <Separator />
 
       {/* Profile list */}
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
