@@ -145,6 +145,39 @@ export const SCHEMA = `
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_message_parts_message_id ON message_parts(message_id);
+
+  CREATE TABLE IF NOT EXISTS agent_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT,
+    color TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    system_prompt TEXT,
+    use_claude_code_prompt INTEGER NOT NULL DEFAULT 1,
+    model TEXT,
+    effort TEXT,
+    thinking_budget_tokens INTEGER,
+    allowed_tools TEXT,
+    disallowed_tools TEXT,
+    permission_mode TEXT,
+    hooks_json TEXT,
+    hooks_canvas_json TEXT,
+    mcp_servers_json TEXT,
+    sandbox_json TEXT,
+    cwd TEXT,
+    additional_directories TEXT,
+    setting_sources TEXT,
+    max_turns INTEGER,
+    max_budget_usd REAL,
+    agents_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_name ON agent_profiles(name);
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_sort_order ON agent_profiles(sort_order);
 `;
 
 /**
@@ -225,6 +258,14 @@ export function migrateGithubIssueColumns(db: import('bun:sqlite').Database): vo
   }
   if (!wsHasRepo) {
     db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_repo TEXT');
+  }
+}
+
+export function migrateSessionsProfileId(db: import('bun:sqlite').Database): void {
+  const columns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+  if (!columns.some(c => c.name === 'profile_id')) {
+    db.exec("ALTER TABLE sessions ADD COLUMN profile_id TEXT REFERENCES agent_profiles(id) ON DELETE SET NULL");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_sessions_profile_id ON sessions(profile_id)");
   }
 }
 
