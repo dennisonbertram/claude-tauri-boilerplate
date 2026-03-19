@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Session } from '@claude-tauri/shared';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -40,6 +40,20 @@ export function SessionSidebar({
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
+      {/* Section header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Conversations
+        </span>
+        <button
+          onClick={() => onNewChat?.()}
+          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label="New chat"
+          title="New chat"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <div className="p-3">
         <Button onClick={onNewChat} className="w-full" variant="secondary">
           New Chat
