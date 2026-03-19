@@ -345,6 +345,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
               sessionId={sessionId}
               onStatusChange={onStatusChange}
               workspaceId={workspace.id}
+              projectId={workspace.projectId}
               additionalDirectories={additionalDirectories}
               onOpenWorkspacePaths={handleOpenWorkspacePaths}
               onTaskComplete={onTaskComplete ? (params) => onTaskComplete({

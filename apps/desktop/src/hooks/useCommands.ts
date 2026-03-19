@@ -28,6 +28,7 @@ export interface CommandContext {
   runPrWorkflow?: () => void | Promise<void>;
   runBranchWorkflow?: () => void | Promise<void>;
   runBrowserWorkflow?: () => void | Promise<void>;
+  generateDashboard?: (prompt?: string) => void | Promise<void>;
 }
 
 export function useCommands(context: CommandContext) {
@@ -163,6 +164,12 @@ export function useCommands(context: CommandContext) {
             },
           });
         },
+      },
+      {
+        name: 'dashboard',
+        description: 'Generate a persistent dashboard artifact',
+        category: 'tools' as CommandCategory,
+        execute: () => context.generateDashboard?.(),
       },
     ],
     [context]

@@ -36,6 +36,8 @@ import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tau
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import * as workspaceApi from '@/lib/workspace-api';
+import { generateArtifact } from '@/lib/workspace-api';
+import { toast } from 'sonner';
 import type { AttachedImage } from './ChatInput';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
@@ -79,6 +81,7 @@ interface ChatPageProps {
   onStatusChange?: (data: ChatPageStatusData) => void;
   onAutoName?: (sessionId: string) => void;
   workspaceId?: string;
+  projectId?: string;
   additionalDirectories?: string[];
   onToggleSidebar?: () => void;
   onOpenSettings?: (tab?: string) => void;
@@ -136,6 +139,7 @@ export function ChatPage({
   onStatusChange,
   onAutoName,
   workspaceId,
+  projectId,
   additionalDirectories,
   onToggleSidebar,
   onOpenSettings,
@@ -500,6 +504,28 @@ export function ChatPage({
     [settings.workflowPrompts, sendMessage]
   );
 
+  const generateDashboard = useCallback(
+    workspaceId && projectId
+      ? async () => {
+          const prompt = window.prompt('What should this dashboard show?');
+          if (!prompt) return;
+          try {
+            const result = await generateArtifact(projectId, {
+              prompt,
+              workspaceId,
+              sessionId: sessionId ?? undefined,
+            });
+            toast.success(`Dashboard "${result.artifact.title}" created`);
+          } catch {
+            toast.error('Failed to generate dashboard');
+          }
+        }
+      : async () => {
+          toast.info('Open a workspace to generate dashboard artifacts');
+        },
+    [workspaceId, projectId, sessionId]
+  );
+
   const commandContext = useMemo(
     () => ({
       clearChat,
@@ -517,6 +543,7 @@ export function ChatPage({
       runPrWorkflow,
       runBranchWorkflow,
       runBrowserWorkflow,
+      generateDashboard,
     }),
     [
       clearChat,
@@ -530,6 +557,7 @@ export function ChatPage({
       runPrWorkflow,
       runBranchWorkflow,
       runBrowserWorkflow,
+      generateDashboard,
     ]
   );
 
@@ -1196,6 +1224,8 @@ export function ChatPage({
         thinkingToggleVersion={thinkingToggleVersion}
         onToolFixErrors={handleFixErrors}
         assistantMetadata={assistantMetadata}
+        sessionId={sessionId}
+        projectId={projectId}
       />
       {/* Subagent visualization panel */}
       {(subagents.length > 0 || subagentPanelVisible) && (

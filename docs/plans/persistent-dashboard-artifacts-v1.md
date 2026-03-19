@@ -38,9 +38,9 @@ Implement a durable, artifact-backed dashboard flow where workspace chat can cre
 - [x] Add `GET /api/sessions/:id/thread` route.
 
 ### Phase 3 - Frontend chat artifact rendering
-- [ ] Add persisted artifact renderer layer (separate from transient tool renderers).
-- [ ] Load and render persisted thread parts inline under message bubbles.
-- [ ] Add `/dashboard` workspace-only interception and flow.
+- [x] Add persisted artifact renderer layer (separate from transient tool renderers).
+- [x] Load and render persisted thread parts inline under message bubbles.
+- [x] Add `/dashboard` workspace-only interception and flow.
 
 ### Phase 4 - Dashboard surface
 - [ ] Add dashboards listing + full-page canvas surface in workspace/project UI.
