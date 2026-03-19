@@ -175,5 +175,46 @@ export function createGitRouter() {
     return c.json(diff);
   });
 
+  gitRouter.get('/branches', async (c) => {
+    const pathParam = c.req.query('path');
+
+    if (!pathParam) {
+      return c.json({ error: 'path query parameter is required' }, 400);
+    }
+
+    // Validate it is an absolute path
+    if (!pathParam.startsWith('/')) {
+      return c.json({ error: 'path must be an absolute path' }, 400);
+    }
+
+    // Verify the path exists
+    const checkResult = await runGit(['rev-parse', '--git-dir'], pathParam);
+    if (checkResult.exitCode !== 0) {
+      return c.json(
+        { error: 'Not a git repository or path does not exist' },
+        400
+      );
+    }
+
+    const branchResult = await runGit(
+      ['branch', '-a', "--format=%(refname:short)"],
+      pathParam
+    );
+
+    if (branchResult.exitCode !== 0) {
+      return c.json({ error: 'Failed to list branches' }, 400);
+    }
+
+    const branches = branchResult.stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      // Strip "origin/HEAD -> origin/main" style entries
+      .filter((line) => !line.includes(' -> '))
+      .map((name) => ({ name }));
+
+    return c.json(branches);
+  });
+
   return gitRouter;
 }

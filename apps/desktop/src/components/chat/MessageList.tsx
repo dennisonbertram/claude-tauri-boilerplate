@@ -29,6 +29,7 @@ import {
   Copy,
   User,
   Bot,
+  PanelRight,
 } from 'lucide-react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
 
@@ -264,6 +265,7 @@ export function MessageList({
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [minimapOpen, setMinimapOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const updateScrollButtonVisibility = useCallback((element?: Element | null) => {
@@ -718,7 +720,18 @@ export function MessageList({
           </div>
         </ScrollArea>
 
-        {showMinimap && (
+        {conversationTurns.length >= 3 && (
+          <button
+            type="button"
+            onClick={() => setMinimapOpen(prev => !prev)}
+            className="absolute right-0 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-l-sm bg-background/60 border border-r-0 border-border/40 hover:bg-muted/60 transition-colors"
+            title={minimapOpen ? 'Hide outline' : 'Show outline'}
+          >
+            <PanelRight className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+
+        {showMinimap && minimapOpen && (
           <ConversationMinimap
             turns={conversationTurns}
             onJumpTo={jumpToMessageIndex}
@@ -916,7 +929,7 @@ function ConversationMinimap({
 
   return (
     <div
-      className="relative w-7 flex-shrink-0 border-l border-border/20 bg-background/30 select-none flex flex-col items-center pt-3 pb-3 gap-1.5 overflow-y-auto"
+      className="relative w-5 flex-shrink-0 border-l border-border/20 bg-background/30 select-none flex flex-col items-center pt-3 pb-3 gap-1.5 overflow-y-auto"
       aria-label="Conversation outline"
     >
       {turns.map((turn) => {

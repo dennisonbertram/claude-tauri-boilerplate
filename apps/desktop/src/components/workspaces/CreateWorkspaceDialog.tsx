@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Wrench, GitBranch, Github, Loader2 } from 'lucide-react';
+import { Wrench, GitBranch, Github, Loader2, Folder2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { isTauri } from '@/lib/platform';
 import type { GithubIssue, GithubBranch } from '@/lib/workspace-api';
-import { fetchGithubIssues, fetchProjectBranches } from '@/lib/workspace-api';
+import { fetchGithubIssues, fetchProjectBranches, fetchGitBranchesFromPath } from '@/lib/workspace-api';
 
 type Mode = 'manual' | 'branch' | 'github-issue';
 
@@ -12,6 +13,7 @@ interface CreateWorkspaceDialogProps {
   projectId?: string;
   projectName: string;
   defaultBranch: string;
+  repoPath?: string;
   onClose: () => void;
   onSubmit: (
     name: string,
@@ -34,6 +36,7 @@ export function CreateWorkspaceDialog({
   projectId,
   projectName,
   defaultBranch,
+  repoPath,
   onClose,
   onSubmit,
 }: CreateWorkspaceDialogProps) {
@@ -44,6 +47,11 @@ export function CreateWorkspaceDialog({
   const [baseBranch, setBaseBranch] = useState('');
   const [sourceBranch, setSourceBranch] = useState('');
   const [nameError, setNameError] = useState('');
+
+  // Manual mode folder/branch state
+  const [folderPath, setFolderPath] = useState('');
+  const [localBranches, setLocalBranches] = useState<{ name: string }[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
 
   // Branch mode state
   const [branches, setBranches] = useState<GithubBranch[]>([]);
@@ -72,6 +80,9 @@ export function CreateWorkspaceDialog({
     setBaseBranch('');
     setSourceBranch('');
     setNameError('');
+    setFolderPath('');
+    setLocalBranches([]);
+    setBranchesLoading(false);
     setBranches([]);
     setBranchLoading(false);
     setBranchError(null);
@@ -91,6 +102,30 @@ export function CreateWorkspaceDialog({
   useEffect(() => {
     if (isOpen) resetAll();
   }, [isOpen, resetAll]);
+
+  // Pre-load branches from project repoPath when dialog opens
+  useEffect(() => {
+    if (!isOpen || !repoPath) return;
+    let cancelled = false;
+    setBranchesLoading(true);
+    fetchGitBranchesFromPath(repoPath)
+      .then((list) => { if (!cancelled) setLocalBranches(list); })
+      .catch(() => { if (!cancelled) setLocalBranches([]); })
+      .finally(() => { if (!cancelled) setBranchesLoading(false); });
+    return () => { cancelled = true; };
+  }, [isOpen, repoPath]);
+
+  // Load branches when folderPath changes
+  useEffect(() => {
+    if (!folderPath) return;
+    let cancelled = false;
+    setBranchesLoading(true);
+    fetchGitBranchesFromPath(folderPath)
+      .then((list) => { if (!cancelled) setLocalBranches(list); })
+      .catch(() => { if (!cancelled) setLocalBranches([]); })
+      .finally(() => { if (!cancelled) setBranchesLoading(false); });
+    return () => { cancelled = true; };
+  }, [folderPath]);
 
   // Load branches when branch mode is selected
   useEffect(() => {
@@ -153,6 +188,16 @@ export function CreateWorkspaceDialog({
     setBranchWorkspaceName(selectedBranch.replace(/\//g, '-').replace(/[^a-z0-9-_]/gi, '-').slice(0, 60));
   }, [selectedBranch]);
 
+  const handleBrowseFolder = async () => {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({ directory: true, multiple: false, title: 'Select a Git Repository' });
+      if (selected) setFolderPath(selected as string);
+    } catch (err) {
+      console.warn('[CreateWorkspaceDialog] Browse failed:', err);
+    }
+  };
+
   const handleClose = useCallback(() => {
     resetAll();
     onClose();
@@ -196,7 +241,6 @@ export function CreateWorkspaceDialog({
       }
       try {
         setSubmitting(true);
-        // Use selectedBranch as sourceBranch so workspace starts from it
         await onSubmit(branchWorkspaceName.trim(), undefined, selectedBranch);
         handleClose();
       } catch (err) {
@@ -276,6 +320,32 @@ export function CreateWorkspaceDialog({
           {mode === 'manual' && (
             <>
               <div>
+                <label className="text-sm font-medium text-foreground">Repository Path</label>
+                <div className="mt-1 flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="/path/to/repo or leave blank to use project default"
+                    value={folderPath}
+                    onChange={(e) => setFolderPath(e.target.value)}
+                    className="flex-1 text-xs"
+                  />
+                  {isTauri() && (
+                    <Button type="button" variant="outline" size="sm" onClick={handleBrowseFolder}>
+                      <Folder2 className="h-3.5 w-3.5 mr-1" />
+                      Browse
+                    </Button>
+                  )}
+                </div>
+                {branchesLoading && (
+                  <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Detecting branches...
+                  </p>
+                )}
+                {!branchesLoading && localBranches.length > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">{localBranches.length} branches detected</p>
+                )}
+              </div>
+              <div>
                 <label className="text-sm font-medium text-foreground">Name</label>
                 <Input
                   type="text"
@@ -289,24 +359,50 @@ export function CreateWorkspaceDialog({
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Base Branch</label>
-                <Input
-                  type="text"
-                  placeholder={defaultBranch}
-                  value={baseBranch}
-                  onChange={(e) => setBaseBranch(e.target.value)}
-                  className="mt-1"
-                />
+                {localBranches.length > 0 ? (
+                  <select
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                    value={baseBranch}
+                    onChange={(e) => setBaseBranch(e.target.value)}
+                  >
+                    <option value="">{defaultBranch} (default)</option>
+                    {localBranches.map((b) => (
+                      <option key={b.name} value={b.name}>{b.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    type="text"
+                    placeholder={defaultBranch}
+                    value={baseBranch}
+                    onChange={(e) => setBaseBranch(e.target.value)}
+                    className="mt-1"
+                  />
+                )}
                 <p className="mt-1 text-xs text-muted-foreground">Defaults to {defaultBranch}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Source Branch (optional)</label>
-                <Input
-                  type="text"
-                  placeholder="feature/auth"
-                  value={sourceBranch}
-                  onChange={(e) => setSourceBranch(e.target.value)}
-                  className="mt-1"
-                />
+                {localBranches.length > 0 ? (
+                  <select
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                    value={sourceBranch}
+                    onChange={(e) => setSourceBranch(e.target.value)}
+                  >
+                    <option value="">{defaultBranch} (default)</option>
+                    {localBranches.map((b) => (
+                      <option key={b.name} value={b.name}>{b.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    type="text"
+                    placeholder="feature/auth"
+                    value={sourceBranch}
+                    onChange={(e) => setSourceBranch(e.target.value)}
+                    className="mt-1"
+                  />
+                )}
                 <p className="mt-1 text-xs text-muted-foreground">Optional custom branch to base this workspace on.</p>
               </div>
             </>

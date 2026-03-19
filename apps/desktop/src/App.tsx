@@ -427,6 +427,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           projectId={createWorkspaceProject.id}
           projectName={createWorkspaceProject.name}
           defaultBranch={createWorkspaceProject.defaultBranch}
+          repoPath={createWorkspaceProject.repoPathCanonical || createWorkspaceProject.repoPath}
           onClose={() => setCreateWorkspaceProject(null)}
           onSubmit={handleCreateWorkspace}
         />

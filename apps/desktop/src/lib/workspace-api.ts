@@ -304,6 +304,16 @@ export async function fetchProjectBranches(projectId: string): Promise<GithubBra
   return res.json();
 }
 
+export async function fetchGitBranchesFromPath(path: string): Promise<{ name: string }[]> {
+  const encodedPath = encodeURIComponent(path);
+  const res = await fetch(`${API_BASE}/api/git/branches?path=${encodedPath}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Failed to fetch branches: ${res.status}`);
+  }
+  return res.json();
+}
+
 // --- Artifacts ---
 
 export async function fetchSessionThread(sessionId: string): Promise<import('@claude-tauri/shared').ThreadMessage[]> {
