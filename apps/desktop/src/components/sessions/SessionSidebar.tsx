@@ -215,9 +215,11 @@ function SessionItem({
   const handleRenameKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();
       handleRenameSubmit();
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       handleRenameCancel();
     }
   };
