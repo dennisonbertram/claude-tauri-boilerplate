@@ -17,13 +17,13 @@ Each entry follows this format:
 
 ---
 
-### 2026-03-19: ISSUE-001 — Workspace item click loads no workspace detail panel
+### 2026-03-19: ISSUE-006 Workspace action buttons always visible instead of hover-only
 
 **Type**: Bug Fix
-**Impact**: High
-**Description**: Clicking a workspace item in the ProjectSidebar left the main panel on "Select a workspace or create one to get started." Two root causes: (1) `handleSwitchView` only auto-selected the first project when switching views, but if `projects` hadn't loaded yet (async), `projects.length === 0` at that moment and `selectedProjectId` was never set — leaving `workspacesByProject` empty and no workspace items renderable in the sidebar. (2) The `toggleProject` function inside `ProjectSidebar` managed expand/collapse state locally but never notified App.tsx via a callback, so expanding a different project never triggered loading its workspaces. Fixes: added a `useEffect` in `App.tsx` that re-runs the auto-select logic whenever `projects` or `activeView` changes (covering the async load case), added `onProjectClick` prop to `ProjectSidebar` called when a project is expanded, and wired `handleProjectClick` to that prop.
-**Regression Test**: `apps/desktop/src/components/workspaces/__tests__/ProjectSidebar.test.tsx` — three new tests: "clicking a workspace item calls onSelectWorkspace with the correct workspace object", "clicking a workspace item passes the full workspace object including projectId", and "onProjectClick is called when a collapsed project header is expanded".
-**Related Issue**: ISSUE-001
+**Impact**: Low
+**Description**: The Copy and Rename buttons in the workspace item rows of `ProjectSidebar` were always visible. Root cause: (1) the workspace row `div` was missing the Tailwind `group` class, so `group-hover:` selectors on child elements had no group boundary to respond to; (2) the Copy and Rename buttons had no `opacity-0` default — they were rendered inline with no visibility toggling at all. Fix: added `group` to the workspace row `div`, then wrapped both action buttons in a `<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">` container, matching the established pattern used by the project-header action buttons above them.
+**Regression Test**: `apps/desktop/src/components/workspaces/__tests__/ProjectSidebar.test.tsx` — two new tests: "workspace action buttons are not visible before hover" (asserts `opacity-0` and `group-hover:opacity-100` on wrapper), "workspace action buttons become visible on hover" (asserts `group` class present on workspace row ancestor).
+**Related Issue**: ISSUE-006
 
 ---
 
