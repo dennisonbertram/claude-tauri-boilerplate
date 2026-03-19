@@ -153,16 +153,21 @@ interface HookCanvasProps {
   onChange: (hooksJson: string, hooksCanvasJson: string) => void;
 }
 
-type DebouncedFn<T extends (...args: any[]) => void> = T & { cancel: () => void };
+type DebouncedFn<T extends (...args: any[]) => void> = T & { cancel: () => void; flush: () => void };
 
 function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): DebouncedFn<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<T> | null = null;
   const debounced = (...args: Parameters<T>) => {
+    lastArgs = args;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => { timer = null; fn(...args); }, ms);
+    timer = setTimeout(() => { timer = null; lastArgs = null; fn(...args); }, ms);
   };
   debounced.cancel = () => {
-    if (timer) { clearTimeout(timer); timer = null; }
+    if (timer) { clearTimeout(timer); timer = null; lastArgs = null; }
+  };
+  debounced.flush = () => {
+    if (timer) { clearTimeout(timer); timer = null; const args = lastArgs; lastArgs = null; if (args) fn(...args); else (fn as () => void)(); }
   };
   return debounced as DebouncedFn<T>;
 }
@@ -282,9 +287,9 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     [onChange],
   );
 
-  // Cancel on unmount
+  // Flush pending save on unmount (preserves edits made just before view-switch)
   useEffect(() => {
-    return () => { saveCanvas.cancel(); };
+    return () => { saveCanvas.flush(); };
   }, [saveCanvas]);
 
   // Single effect — fires on any nodes/edges change
@@ -416,15 +421,16 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   const onUpdateNode = useCallback(
     (nodeId: string, newData: Record<string, unknown>) => {
       structuralDirtyRef.current = true;
+      const sanitized = sanitizeNodeData(stripDangerousKeys(newData)); // Enforce length limits
       setNodes((nds) => {
         const updated = nds.map((n) =>
-          n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n,
+          n.id === nodeId ? { ...n, data: { ...n.data, ...sanitized } } : n,
         ) as CanvasNode[];
         return updated;
       });
       setSelectedNode((prev) =>
         prev && prev.id === nodeId
-          ? ({ ...prev, data: { ...prev.data, ...newData } } as CanvasNode)
+          ? ({ ...prev, data: { ...prev.data, ...sanitized } } as CanvasNode)
           : prev,
       );
     },
