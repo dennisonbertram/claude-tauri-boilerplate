@@ -77,7 +77,10 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
     }
 
     const groups: HookGroup[] = [];
-    const connectedIds = adjacency.get(trigger.id) ?? [];
+    // Sort connected nodes by Y position for deterministic top-to-bottom ordering
+    const sortByY = (ids: string[]) =>
+      [...ids].sort((a, b) => ((nodeById.get(a)?.position?.y ?? 0) - (nodeById.get(b)?.position?.y ?? 0)));
+    const connectedIds = sortByY(adjacency.get(trigger.id) ?? []);
     const processedActionIds = new Set<string>();
 
     for (const connectedId of connectedIds) {
@@ -87,7 +90,7 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
       if (connectedNode.type === 'condition') {
         // Trigger → Condition → Action(s)
         const condData = connectedNode.data as ConditionNodeData;
-        const actionIds = adjacency.get(connectedNode.id) ?? [];
+        const actionIds = sortByY(adjacency.get(connectedNode.id) ?? []);
         const hooks: HookEntry[] = [];
         for (const id of actionIds) {
           if (processedActionIds.has(id)) continue; // skip duplicates

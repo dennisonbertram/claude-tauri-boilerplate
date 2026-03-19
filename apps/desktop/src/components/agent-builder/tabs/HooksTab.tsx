@@ -74,14 +74,34 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
       const hooksObj = parsed?.hooks;
       if (!hooksObj || typeof hooksObj !== 'object') return false;
       const SUPPORTED_TYPES = new Set(['command', 'http', 'prompt', 'agent']);
+      const SUPPORTED_HOOK_FIELDS: Record<string, Set<string>> = {
+        command: new Set(['type', 'command', 'timeout']),
+        http: new Set(['type', 'url', 'method', 'headers', 'timeout']),
+        prompt: new Set(['type', 'prompt', 'model']),
+        agent: new Set(['type', 'description']),
+      };
+      const SUPPORTED_GROUP_FIELDS = new Set(['matcher', 'hooks']);
       for (const groups of Object.values(hooksObj)) {
         if (!Array.isArray(groups)) continue;
         for (const group of groups as any[]) {
           if (!group?.hooks) continue;
+          // Check for extra group-level fields (e.g., 'name', 'enabled', 'onError')
+          if (typeof group === 'object') {
+            for (const k of Object.keys(group)) {
+              if (!SUPPORTED_GROUP_FIELDS.has(k)) return true;
+            }
+          }
           for (const hook of group.hooks) {
             if (hook?.type && !SUPPORTED_TYPES.has(hook.type)) return true;
-            // Treat missing type as unsupported — canvas cannot represent it and will drop it
+            // Treat missing type as unsupported
             if (!hook?.type) return true;
+            // Check for extra hook-level fields that canvas will drop
+            if (typeof hook === 'object') {
+              const supported = SUPPORTED_HOOK_FIELDS[hook.type];
+              for (const k of Object.keys(hook)) {
+                if (supported && !supported.has(k)) return true;
+              }
+            }
           }
         }
       }
