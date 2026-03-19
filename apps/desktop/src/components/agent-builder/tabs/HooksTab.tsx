@@ -257,7 +257,7 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
           {(!hasUnsupportedHooks || unsupportedConfirmed) && (
             <div className="h-[500px] rounded-lg border border-neutral-700 overflow-hidden">
               <HookCanvas
-                key={profileId}
+                key={profileId ?? 'no-profile-id'}
                 hooksJson={draft.hooksJson ?? null}
                 hooksCanvasJson={draft.hooksCanvasJson ?? null}
                 onChange={handleCanvasChange}

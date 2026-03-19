@@ -28,24 +28,48 @@ import type {
 
 const VALID_NODE_TYPES = new Set(['trigger', 'condition', 'action']);
 const MAX_STRING_LENGTH = 10_000;
+const MAX_PROMPT_LENGTH = 50_000;
+const MAX_COMMAND_LENGTH = 10_000;
+const MAX_URL_LENGTH = 2_000;
 const MAX_NODE_COUNT = 200;
 const MAX_EDGES = 400;
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
 
 function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown> {
+  const CRLF_RE = /[\r\n]/;
   const result: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(data)) {
     if (DANGEROUS_KEYS.has(key)) continue;
+
     if (typeof val === 'string') {
-      result[key] = val.slice(0, MAX_STRING_LENGTH);
+      // Per-field length limits
+      let limit = MAX_STRING_LENGTH;
+      if (key === 'prompt') limit = MAX_PROMPT_LENGTH;
+      else if (key === 'command' || key === 'description') limit = MAX_COMMAND_LENGTH;
+      else if (key === 'url') limit = MAX_URL_LENGTH;
+      result[key] = val.slice(0, limit);
     } else if (typeof val === 'number' && isFinite(val)) {
       result[key] = val;
     } else if (val === null || val === undefined) {
       result[key] = val;
     } else if (typeof val === 'boolean') {
       result[key] = val;
+    } else if (key === 'headers' && val && typeof val === 'object' && !Array.isArray(val)) {
+      // Sanitize headers: allow plain string key-value pairs only
+      const sanitizedHeaders: Record<string, string> = {};
+      for (const [hk, hv] of Object.entries(val as Record<string, unknown>)) {
+        if (DANGEROUS_KEYS.has(hk)) continue;
+        if (typeof hk === 'string' && typeof hv === 'string'
+            && !CRLF_RE.test(hk) && !CRLF_RE.test(hv)
+            && hk.length < 200 && hv.length < 1000) {
+          sanitizedHeaders[hk] = hv;
+        }
+      }
+      if (Object.keys(sanitizedHeaders).length > 0) {
+        result[key] = sanitizedHeaders;
+      }
     }
-    // Skip objects/arrays — keep data flat
+    // Skip other nested objects/arrays
   }
   return result;
 }
@@ -191,10 +215,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
                 source: String(e.source).slice(0, 100),
                 target: String(e.target).slice(0, 100),
               }));
-              lastCompiledHooksJsonRef.current =
-                hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
               setNodes(sanitizedNodes as CanvasNode[]);
               setEdges(sanitizedEdges as CanvasEdge[]);
+              prevStructuralRef.current = getHooksFingerprint(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+              lastCompiledHooksJsonRef.current =
+                hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
               return;
             }
           } else {
@@ -210,10 +235,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
               source: String(e.source).slice(0, 100),
               target: String(e.target).slice(0, 100),
             }));
-            lastCompiledHooksJsonRef.current =
-              hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
             setNodes(sanitizedNodes as CanvasNode[]);
             setEdges(sanitizedEdges as CanvasEdge[]);
+            prevStructuralRef.current = getHooksFingerprint(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+            lastCompiledHooksJsonRef.current =
+              hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
             return;
           }
         }
@@ -227,9 +253,10 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     if (hooksJson) {
       const generated = generateCanvasFromHooks(hooksJson);
       if (generated) {
-        lastCompiledHooksJsonRef.current = hooksJson;
         setNodes(generated.nodes as CanvasNode[]);
         setEdges(generated.edges as CanvasEdge[]);
+        prevStructuralRef.current = getHooksFingerprint(generated.nodes as CanvasNode[], generated.edges as CanvasEdge[]);
+        lastCompiledHooksJsonRef.current = hooksJson;
       }
     }
   }, []);
