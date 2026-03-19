@@ -793,3 +793,83 @@ export interface ThreadMessage {
   parts: MessagePart[];
   createdAt: string;
 }
+
+// --- Agent Profile Types ---
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+
+  // Prompt settings
+  systemPrompt?: string;
+  useClaudeCodePrompt?: boolean;
+  settingSources?: string[];
+
+  // Model settings
+  model?: string;
+  effort?: 'low' | 'medium' | 'high';
+  thinkingBudgetTokens?: number;
+
+  // Tool settings
+  permissionMode?: PermissionMode;
+  allowedTools?: string[];
+  disallowedTools?: string[];
+
+  // JSON config fields
+  hooksJson?: string;
+  mcpServersJson?: string;
+  sandboxJson?: string;
+  agentsJson?: string;
+
+  // Advanced settings
+  cwd?: string;
+  additionalDirectories?: string[];
+  maxTurns?: number;
+  maxBudgetUsd?: number;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAgentProfileRequest {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+  systemPrompt?: string;
+  useClaudeCodePrompt?: boolean;
+  settingSources?: string[];
+  model?: string;
+  effort?: 'low' | 'medium' | 'high';
+  thinkingBudgetTokens?: number;
+  permissionMode?: PermissionMode;
+  allowedTools?: string[];
+  disallowedTools?: string[];
+  hooksJson?: string;
+  mcpServersJson?: string;
+  sandboxJson?: string;
+  agentsJson?: string;
+  cwd?: string;
+  additionalDirectories?: string[];
+  maxTurns?: number;
+  maxBudgetUsd?: number;
+}
+
+export type UpdateAgentProfileRequest = Partial<CreateAgentProfileRequest>;
+
+export interface AgentProfileSummary {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+  updatedAt: string;
+}
