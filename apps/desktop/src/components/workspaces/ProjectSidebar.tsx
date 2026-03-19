@@ -9,8 +9,6 @@ import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
 import { FolderOpen, GitBranch } from 'lucide-react';
 
-type ViewType = 'chat' | 'teams' | 'workspaces' | 'agents';
-
 interface ProjectSidebarProps {
   projects: Project[];
   workspacesByProject: Record<string, Workspace[]>;
@@ -20,8 +18,6 @@ interface ProjectSidebarProps {
   onCreateWorkspace: (project: Project) => void;
   onRenameWorkspace: (id: string, branch: string) => void;
   onDeleteProject?: (id: string) => void;
-  activeView?: ViewType;
-  onSwitchView?: (view: ViewType) => void;
   /** Returns true if the given workspace ID has unread activity */
   isWorkspaceUnread?: (workspaceId: string) => boolean;
 }
@@ -35,8 +31,6 @@ export function ProjectSidebar({
   onCreateWorkspace,
   onRenameWorkspace,
   onDeleteProject,
-  activeView,
-  onSwitchView,
   isWorkspaceUnread,
 }: ProjectSidebarProps) {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
@@ -142,56 +136,6 @@ export function ProjectSidebar({
 
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
-      {/* View toggle tabs */}
-      {onSwitchView && (
-        <div className="flex border-b border-border">
-          <button
-            title="Standalone conversations — quick questions and one-off tasks"
-            onClick={() => onSwitchView('chat')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'chat'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Chat
-          </button>
-          <button
-            title="Git worktree environments with isolated branches and embedded chat"
-            onClick={() => onSwitchView('workspaces')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'workspaces'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Workspaces
-          </button>
-          <button
-            title="Multi-agent PR and team workflows"
-            onClick={() => onSwitchView('teams')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'teams'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Teams
-          </button>
-          <button
-            title="Custom agent profiles and configurations"
-            onClick={() => onSwitchView('agents')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'agents'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Agents
-          </button>
-        </div>
-      )}
-
       <div className="p-3">
         <Button onClick={onAddProject} className="w-full" variant="secondary">
           + Add Project
