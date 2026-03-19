@@ -314,9 +314,10 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     [onChange],
   );
 
-  // Flush pending save on unmount (preserves edits made just before view-switch)
+  // Cancel pending save on unmount to prevent cross-profile writes.
+  // The parent AgentProfileEditor has an explicit Save button for committing changes.
   useEffect(() => {
-    return () => { saveCanvas.flush(); };
+    return () => { saveCanvas.cancel(); };
   }, [saveCanvas]);
 
   // Single effect — fires on any nodes/edges change
