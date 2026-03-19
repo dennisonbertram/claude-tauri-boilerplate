@@ -81,6 +81,16 @@ export function createAgentProfilesRouter(db: Database) {
   // PUT /:id — Update an agent profile
   router.put('/:id', async (c) => {
     const id = c.req.param('id');
+
+    // Verify the profile exists first
+    const existing = getAgentProfile(db, id);
+    if (!existing) {
+      return c.json(
+        { error: 'Agent profile not found', code: 'NOT_FOUND' },
+        404
+      );
+    }
+
     const body = await c.req.json().catch(() => ({}));
 
     const parsed = updateProfileSchema.safeParse(body);
@@ -91,14 +101,10 @@ export function createAgentProfilesRouter(db: Database) {
       );
     }
 
-    const updated = updateAgentProfile(db, id, parsed.data);
-    if (!updated) {
-      return c.json(
-        { error: 'Agent profile not found', code: 'NOT_FOUND' },
-        404
-      );
-    }
+    updateAgentProfile(db, id, parsed.data);
 
+    // Return the updated profile
+    const updated = getAgentProfile(db, id);
     return c.json(updated);
   });
 
