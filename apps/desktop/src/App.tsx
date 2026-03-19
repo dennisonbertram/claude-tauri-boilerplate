@@ -410,9 +410,17 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-muted-foreground">
-                Select a workspace or create one to get started
-              </p>
+              <div className="text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Select a workspace or create one to get started
+                </p>
+                <button
+                  onClick={() => setAddProjectOpen(true)}
+                  className="h-8 rounded-lg bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Add Project
+                </button>
+              </div>
             </div>
           )
         ) : activeView === 'agents' ? (
