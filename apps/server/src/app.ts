@@ -21,6 +21,7 @@ import { createArtifactsRouter, createProjectArtifactsRouter } from './routes/ar
 import { createSessionThreadRouter } from './routes/sessions-thread';
 import { createLinearRouter } from './routes/linear';
 import { createGithubIssuesRouter } from './routes/github-issues';
+import { createAgentProfilesRouter } from './routes/agent-profiles';
 import { createSystemRouter } from './routes/system';
 import { createRuntimeCapabilitiesRouter } from './routes/runtime-capabilities';
 import { createDb } from './db';
@@ -63,6 +64,7 @@ app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 app.route('/api/workspaces', createDiffCommentsRouter(db));
 app.route('/api/workspaces', createWorkspaceNotesRouter(db));
 app.route('/api/workspaces', createCodeReviewRouter(db));
+app.route('/api/agent-profiles', createAgentProfilesRouter(db));
 app.route('/api/artifacts', createArtifactsRouter(db));
 app.route('/api/projects', createProjectArtifactsRouter(db));
 app.route('/api/sessions', createSessionThreadRouter(db));
