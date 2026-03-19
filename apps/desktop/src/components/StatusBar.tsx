@@ -105,18 +105,21 @@ function ResourceUsageSegment() {
 
   if (!settings.showResourceUsage || !usage) return null;
 
+  const cpuText = `${Math.round(usage.cpuUsagePercent * 10) / 10}%`;
+  const memText = `${Math.round(usage.memoryUsageMb)} MB`;
+
   return (
     <div
       data-testid="resource-usage-segment"
-      className="flex items-center gap-2 px-1.5 py-0.5"
+      className="flex items-center gap-1 px-1.5 py-0.5"
+      title={`CPU: ${cpuText}  Memory: ${memText} (${Math.round(usage.memoryUsagePercent * 10) / 10}%)`}
     >
-      <span className="text-xs text-muted-foreground">CPU</span>
       <span className="tabular-nums" data-testid="resource-usage-cpu">
-        {Math.round(usage.cpuUsagePercent * 10) / 10}%
+        {cpuText}
       </span>
-      <span className="text-xs text-muted-foreground">MEM</span>
+      <span className="text-muted-foreground/60">/</span>
       <span className="tabular-nums" data-testid="resource-usage-memory">
-        {Math.round(usage.memoryUsageMb)} MB
+        {memText}
       </span>
     </div>
   );
@@ -271,6 +274,9 @@ const PERMISSION_MODE_LABELS: Record<string, string> = {
 
 function PermissionModeSegment({ onShowSettings }: { onShowSettings?: (tab?: string) => void }) {
   const { settings } = useSettings();
+
+  if (settings.permissionMode === 'default') return null;
+
   const label = PERMISSION_MODE_LABELS[settings.permissionMode] ?? 'Normal';
 
   return (

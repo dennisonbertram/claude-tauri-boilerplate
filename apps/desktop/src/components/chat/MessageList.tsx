@@ -31,6 +31,8 @@ import {
   ChevronUp,
   Send,
   Copy,
+  User,
+  Bot,
 } from 'lucide-react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
 
@@ -808,13 +810,17 @@ function MessageBubble({
       <div
         data-testid="message-bubble"
         className={cn(
-          'rounded-lg bg-primary text-primary-foreground',
+          'rounded-lg bg-primary/10 text-foreground border border-primary/15',
           densityClass,
           chatFontClass,
-          isMatch ? 'ring-2 ring-primary-foreground/50' : ''
+          isMatch ? 'ring-2 ring-primary/40' : ''
         )}
         style={chatFontStyle}
       >
+        <span className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+          <User className="h-3 w-3" />
+          You
+        </span>
         <div className="text-sm whitespace-pre-wrap break-words">
           {highlightQuery
             ? renderHighlightedText(text, highlightQuery)
@@ -835,7 +841,10 @@ function MessageBubble({
       )}
       style={chatFontStyle}
     >
-      <span className="text-xs font-medium text-muted-foreground mb-1 block">Claude</span>
+      <span className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+        <Bot className="h-3 w-3" />
+        Claude
+      </span>
       <div className={chatFontClass} style={chatFontStyle}>
         <MarkdownRenderer content={text} />
       </div>

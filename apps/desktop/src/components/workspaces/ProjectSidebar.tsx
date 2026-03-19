@@ -7,6 +7,7 @@ import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
+import { FolderOpen, GitBranch } from 'lucide-react';
 
 type ViewType = 'chat' | 'teams' | 'workspaces' | 'agents';
 
@@ -197,9 +198,18 @@ export function ProjectSidebar({
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="p-2 space-y-1">
           {projects.length === 0 && (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              No projects yet
-            </p>
+            <div className="flex flex-col items-center px-3 py-8 text-center space-y-3">
+              <FolderOpen className="h-8 w-8 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">No projects yet</p>
+                <p className="text-xs text-muted-foreground">
+                  Add a project to start working with git worktrees
+                </p>
+              </div>
+              <Button onClick={onAddProject} size="sm" variant="secondary">
+                Add Project
+              </Button>
+            </div>
           )}
           {projects.map(project => {
             const expanded = expandedProjects.has(project.id);
@@ -282,9 +292,16 @@ export function ProjectSidebar({
                 {expanded && (
                   <div className="ml-4 space-y-0.5">
                     {workspaces.length === 0 && (
-                      <p className="px-2 py-1 text-xs text-muted-foreground">
-                        No workspaces
-                      </p>
+                      <div className="flex flex-col items-center px-2 py-3 text-center space-y-1.5">
+                        <GitBranch className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">No workspaces</p>
+                        <button
+                          onClick={() => onCreateWorkspace(project)}
+                          className="text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          + New Workspace
+                        </button>
+                      </div>
                     )}
                     {workspaces.map(ws => (
                       <div
