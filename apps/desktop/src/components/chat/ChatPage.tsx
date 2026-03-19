@@ -45,6 +45,7 @@ import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import * as linearApi from '@/lib/linear-api';
 import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
+import { X } from 'lucide-react';
 import './gen-ui/defaultRenderers';
 import {
   getWorkflowPrompt,
@@ -1355,6 +1356,21 @@ export function ChatPage({
           </button>
         </div>
       ) : null}
+      {!settings.hasDismissedCommandTip && messages.some((m) => m.role === 'assistant') && (
+        <div className="border-t border-border bg-muted/50 text-sm px-4 py-2 flex items-center justify-between">
+          <span className="text-muted-foreground">
+            Pro tip: Type <kbd className="mx-0.5 rounded border border-border bg-background px-1 py-0.5 font-mono text-xs">/</kbd> to access commands like /review, /compact, and /pr
+          </span>
+          <button
+            type="button"
+            onClick={() => updateSettings({ hasDismissedCommandTip: true })}
+            className="ml-2 rounded-md p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent"
+            aria-label="Dismiss tip"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <ChatInput
         input={input}
         onInputChange={handleInputChange}

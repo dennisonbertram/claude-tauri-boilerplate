@@ -55,7 +55,7 @@ describe('SettingsPanel', () => {
     expect(providerSelect.value).toBe('anthropic');
   });
 
-  test('renders runtime environment controls in General tab', () => {
+  test('renders runtime environment controls in General group', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     expect(screen.getByText('Runtime Environment Variables')).toBeTruthy();
@@ -77,72 +77,69 @@ describe('SettingsPanel', () => {
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
-  // ─── Tab navigation ───
+  // ─── Group navigation ───
 
-  test('shows General tab by default', () => {
+  test('renders 5 group buttons in sidebar', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
-    expect(screen.getByText('API Key')).toBeTruthy();
-    // Max Tokens and Model are now in the Model tab, not General
-    expect(screen.queryByText('Max Tokens')).toBeNull();
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(5);
+    expect(tabs[0].textContent).toBe('General');
+    expect(tabs[1].textContent).toBe('AI & Model');
+    expect(tabs[2].textContent).toBe('Data & Context');
+    expect(tabs[3].textContent).toBe('Integrations');
+    expect(tabs[4].textContent).toBe('Status');
   });
 
-  test('switches to Model tab on click', async () => {
+  test('shows General group by default with all stacked sections', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+    // General tab content
+    expect(screen.getByText('API Key')).toBeTruthy();
+    // Appearance tab content (stacked in same group)
+    expect(screen.getByText('Theme')).toBeTruthy();
+    expect(screen.getByText('Accent Color')).toBeTruthy();
+    // Notifications tab content (stacked in same group)
+    expect(screen.getByText('Desktop Notifications')).toBeTruthy();
+    // Model tab content should NOT be visible
+    expect(screen.queryByText('Temperature')).toBeNull();
+  });
+
+  test('switches to AI & Model group on click', async () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: /model/i }));
+    await user.click(screen.getByRole('tab', { name: /ai & model/i }));
 
+    // Model section
     expect(screen.getByText('Temperature')).toBeTruthy();
     expect(screen.getByText('System Prompt')).toBeTruthy();
     expect(screen.getByText('Thinking Effort')).toBeTruthy();
     expect(screen.getByText('Thinking Budget')).toBeTruthy();
-  });
-
-  test('switches to Appearance tab on click', async () => {
-    const user = userEvent.setup();
-    renderWithProvider(<SettingsPanel {...defaultProps} />);
-
-    await user.click(screen.getByRole('tab', { name: /appearance/i }));
-
-    expect(screen.getByText('Theme')).toBeTruthy();
-    expect(screen.getByText('Accent Color')).toBeTruthy();
-    expect(screen.getByText('Font Size')).toBeTruthy();
-    expect(screen.getByText('Chat Font')).toBeTruthy();
-    expect(screen.getByText('Monospace Family')).toBeTruthy();
-    expect(screen.getByText('Chat Density')).toBeTruthy();
-    expect(screen.getByText('Tab Density')).toBeTruthy();
-    expect(screen.getByText('Chat Width')).toBeTruthy();
-    expect(screen.getByText('Show Thinking')).toBeTruthy();
-    expect(screen.getByText('Show Tool Calls')).toBeTruthy();
-  });
-
-  test('switches to Workflows tab on click', async () => {
-    const user = userEvent.setup();
-    renderWithProvider(<SettingsPanel {...defaultProps} />);
-
-    await user.click(screen.getByRole('tab', { name: /workflows/i }));
-
-    expect(screen.getByText('Review Prompt')).toBeInTheDocument();
-    expect(screen.getByText('PR Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Branch Naming Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Browser Testing Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Review Memory Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Merge Memory Prompt')).toBeInTheDocument();
-    expect(screen.getByTestId('workflow-prompts-save')).toBeInTheDocument();
-  });
-
-  test('switches to Advanced tab on click', async () => {
-    const user = userEvent.setup();
-    renderWithProvider(<SettingsPanel {...defaultProps} />);
-
-    await user.click(screen.getByRole('tab', { name: /advanced/i }));
-
+    // Advanced section (stacked)
     expect(screen.getByText('Permission Mode')).toBeTruthy();
     expect(screen.getByText('Auto-Compact')).toBeTruthy();
     expect(screen.getByText('Max Turns')).toBeTruthy();
+    // Workflows section (stacked)
+    expect(screen.getByText('Review Prompt')).toBeTruthy();
+    expect(screen.getByText('PR Prompt')).toBeTruthy();
   });
 
-  test('switches to Status tab on click and shows resource usage toggle', async () => {
+  test('switches to Data & Context group on click', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('tab', { name: /data & context/i }));
+
+    // Section headers present (use heading role to avoid matching inner content)
+    const headings = screen.getAllByRole('heading', { level: 3 });
+    const headingTexts = headings.map((h) => h.textContent);
+    expect(headingTexts).toContain('Instructions');
+    expect(headingTexts).toContain('Memory');
+    expect(headingTexts).toContain('MCP');
+    expect(headingTexts).toContain('Hooks');
+  });
+
+  test('switches to Status group on click and shows resource usage toggle', async () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
@@ -152,7 +149,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByTestId('show-resource-usage-toggle')).toBeTruthy();
   });
 
-  test('switches to Linear tab on click and shows connect controls', async () => {
+  test('switches to Integrations group and shows Linear connect controls', async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       'fetch',
@@ -161,25 +158,48 @@ describe('SettingsPanel', () => {
 
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: /linear/i }));
+    await user.click(screen.getByRole('tab', { name: /integrations/i }));
 
     expect(screen.getByText('Linear Integration')).toBeTruthy();
     expect(screen.getByTestId('linear-connect-button')).toBeTruthy();
+  });
+
+  // ─── Deep-link compatibility ───
+
+  test('initialTab="model" opens AI & Model group', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} initialTab="model" />);
+    expect(screen.getByText('Temperature')).toBeTruthy();
+    expect(screen.getByText('System Prompt')).toBeTruthy();
+  });
+
+  test('initialTab="memory" opens Data & Context group', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} initialTab="memory" />);
+    expect(screen.getByText('Memory')).toBeTruthy();
+    expect(screen.getByText('Instructions')).toBeTruthy();
+  });
+
+  test('initialTab="linear" opens Integrations group', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ connected: false }) })) as any
+    );
+    renderWithProvider(<SettingsPanel {...defaultProps} initialTab="linear" />);
+    expect(screen.getByText('Linear Integration')).toBeTruthy();
   });
 
   // ─── Default values render correctly ───
 
   test('renders default max tokens value', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
-    // max-tokens-slider is now in the Model tab
-    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
+    // Navigate to AI & Model group where the model tab lives
+    fireEvent.click(screen.getByRole('tab', { name: /ai & model/i }));
     const slider = screen.getByTestId('max-tokens-slider') as HTMLInputElement;
     expect(slider.value).toBe('4096');
   });
 
-  test('renders default thinking budget tokens value in Model tab', () => {
+  test('renders default thinking budget tokens value in AI & Model group', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Model' }));
+    fireEvent.click(screen.getByRole('tab', { name: /ai & model/i }));
     const input = screen.getByTestId('thinking-budget-input') as HTMLInputElement;
     expect(input.value).toBe('16000');
   });
@@ -228,12 +248,11 @@ describe('SettingsPanel', () => {
     expect(stored.apiKey).toBe('sk-ant-test-key-123');
   });
 
-  test('changing theme persists to localStorage', async () => {
+  test('changing theme persists to localStorage (visible in General group)', async () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: /appearance/i }));
-
+    // Appearance is stacked in the General group, so theme-select is already visible
     const themeSelect = screen.getByTestId('theme-select');
     await user.selectOptions(themeSelect, 'light');
 
@@ -245,8 +264,7 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: /appearance/i }));
-
+    // Appearance controls are in General group (stacked), already visible
     await user.selectOptions(screen.getByTestId('accent-color-select'), 'emerald');
     await user.selectOptions(screen.getByTestId('chat-font-select'), 'mono');
     await user.selectOptions(screen.getByTestId('mono-font-family-select'), 'courier');
@@ -366,7 +384,7 @@ describe('SettingsPanel', () => {
   test('changing max turns persists to localStorage', async () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await fireEvent.click(screen.getByRole('tab', { name: /advanced/i }));
+    await fireEvent.click(screen.getByRole('tab', { name: /ai & model/i }));
 
     const input = screen.getByTestId('max-turns-input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '50' } });
@@ -379,7 +397,7 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    await user.click(screen.getByRole('tab', { name: /git/i }));
+    await user.click(screen.getByRole('tab', { name: /integrations/i }));
     const prefixInput = screen.getByTestId('workspace-branch-prefix-input');
     await user.clear(prefixInput);
     await user.type(prefixInput, 'feature');
