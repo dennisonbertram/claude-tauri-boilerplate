@@ -55,8 +55,8 @@ const TABS: { id: TabId; label: string }[] = [
 
 function getTablistClass(tabDensity: AppSettings['tabDensity']): string {
   return tabDensity === 'compact'
-    ? 'flex flex-wrap gap-1 border-b border-border px-2 py-1'
-    : 'flex flex-wrap border-b border-border';
+    ? 'flex overflow-x-auto border-b border-border px-2 py-1 gap-0 scrollbar-none'
+    : 'flex overflow-x-auto border-b border-border scrollbar-none';
 }
 
 function getTabButtonClass(
@@ -113,7 +113,7 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 z-50 flex h-full w-[420px] max-w-full flex-col border-l border-border bg-background shadow-xl">
+      <div className="fixed right-0 top-0 z-50 flex h-full w-[480px] max-w-[90vw] flex-col border-l border-border bg-background shadow-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="text-lg font-semibold">Settings</h2>

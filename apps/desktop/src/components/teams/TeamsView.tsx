@@ -39,8 +39,8 @@ export function TeamsView() {
       className="flex flex-1 flex-col min-w-0"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-lg font-semibold">Agent Teams</h2>
+      <div className="flex items-center justify-between border-b border-border px-4 py-3 overflow-hidden">
+        <h2 className="text-lg font-semibold truncate mr-2">Agent Teams</h2>
         <button
           data-testid="create-team-button"
           onClick={() => setShowCreateDialog(true)}
