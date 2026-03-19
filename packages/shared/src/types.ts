@@ -734,3 +734,62 @@ export const VALID_WORKSPACE_TRANSITIONS: Record<WorkspaceStatus, WorkspaceStatu
 export function isValidTransition(from: WorkspaceStatus, to: WorkspaceStatus): boolean {
   return VALID_WORKSPACE_TRANSITIONS[from]?.includes(to) ?? false;
 }
+
+// --- Artifact Types ---
+
+export type ArtifactKind = 'dashboard';
+export type ArtifactStatus = 'active' | 'archived';
+
+export interface Artifact {
+  id: string;
+  kind: ArtifactKind;
+  schemaVersion: number;
+  title: string;
+  projectId: string;
+  workspaceId?: string | null;
+  sourceSessionId?: string | null;
+  sourceMessageId?: string | null;
+  status: ArtifactStatus;
+  currentRevisionId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtifactRevision {
+  id: string;
+  artifactId: string;
+  revisionNumber: number;
+  specJson: string;
+  summary?: string | null;
+  prompt?: string | null;
+  model?: string | null;
+  sourceSessionId?: string | null;
+  sourceMessageId?: string | null;
+  createdAt: string;
+}
+
+export type MessagePartType = 'text' | 'artifact_ref';
+
+export interface TextMessagePart {
+  type: 'text';
+  text: string;
+  ordinal: number;
+}
+
+export interface ArtifactRefMessagePart {
+  type: 'artifact_ref';
+  artifactId: string;
+  artifactRevisionId?: string | null;
+  ordinal: number;
+}
+
+export type MessagePart = TextMessagePart | ArtifactRefMessagePart;
+
+export interface ThreadMessage {
+  id: string;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  parts: MessagePart[];
+  createdAt: string;
+}

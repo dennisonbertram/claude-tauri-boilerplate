@@ -320,12 +320,30 @@ export function addMessage(
   id: string,
   sessionId: string,
   role: string,
-  content: string
+  content: string,
+  parts?: Array<{ type: string; text?: string; artifactId?: string; artifactRevisionId?: string; [key: string]: unknown }>
 ) {
   const stmt = db.prepare(
     `INSERT INTO messages (id, session_id, role, content) VALUES (?, ?, ?, ?) RETURNING *`
   );
   const row = stmt.get(id, sessionId, role, content) as MessageRow;
+  if (parts && parts.length > 0) {
+    const partStmt = db.prepare(
+      `INSERT INTO message_parts (id, message_id, part_type, ordinal, text, artifact_id, artifact_revision_id) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      partStmt.run(
+        crypto.randomUUID(),
+        id,
+        part.type,
+        i,
+        part.text ?? null,
+        part.artifactId ?? null,
+        part.artifactRevisionId ?? null
+      );
+    }
+  }
   return mapMessage(row);
 }
 
@@ -805,4 +823,207 @@ export function deleteDiffComment(db: Database, workspaceId: string, commentId: 
   );
   const result = stmt.run(workspaceId, commentId);
   return result.changes > 0;
+}
+
+// ─── Thread Messages ────────────────────────────────────────────────────────────
+
+interface MessagePartRow {
+  id: string;
+  message_id: string;
+  part_type: string;
+  ordinal: number;
+  text: string | null;
+  artifact_id: string | null;
+  artifact_revision_id: string | null;
+  metadata_json: string | null;
+  created_at: string;
+}
+
+function mapMessagePart(row: MessagePartRow) {
+  return {
+    type: row.part_type,
+    text: row.text ?? undefined,
+    artifactId: row.artifact_id ?? undefined,
+    artifactRevisionId: row.artifact_revision_id ?? undefined,
+    ordinal: row.ordinal,
+  };
+}
+
+export function getThreadMessages(db: Database, sessionId: string) {
+  const msgStmt = db.prepare(
+    `SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC`
+  );
+  const messages = msgStmt.all(sessionId) as MessageRow[];
+
+  const partStmt = db.prepare(
+    `SELECT * FROM message_parts WHERE message_id = ? ORDER BY ordinal ASC`
+  );
+
+  return messages.map((msg) => {
+    const partRows = partStmt.all(msg.id) as MessagePartRow[];
+    let parts: ReturnType<typeof mapMessagePart>[];
+    if (partRows.length === 0) {
+      // Legacy message: synthesize a fallback text part
+      parts = [{ type: 'text', text: msg.content, ordinal: 0, artifactId: undefined, artifactRevisionId: undefined }];
+    } else {
+      parts = partRows.map(mapMessagePart);
+    }
+    return {
+      ...mapMessage(msg),
+      parts,
+    };
+  });
+}
+
+// ─── Artifact Helpers ───────────────────────────────────────────────────────────
+
+interface ArtifactRow {
+  id: string;
+  kind: string;
+  schema_version: number;
+  title: string;
+  project_id: string;
+  workspace_id: string | null;
+  source_session_id: string | null;
+  source_message_id: string | null;
+  status: string;
+  current_revision_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ArtifactRevisionRow {
+  id: string;
+  artifact_id: string;
+  revision_number: number;
+  spec_json: string;
+  summary: string | null;
+  prompt: string | null;
+  model: string | null;
+  source_session_id: string | null;
+  source_message_id: string | null;
+  created_at: string;
+}
+
+function mapArtifact(row: ArtifactRow) {
+  return {
+    id: row.id,
+    kind: row.kind as import('@claude-tauri/shared').ArtifactKind,
+    schemaVersion: row.schema_version,
+    title: row.title,
+    projectId: row.project_id,
+    workspaceId: row.workspace_id,
+    sourceSessionId: row.source_session_id,
+    sourceMessageId: row.source_message_id,
+    status: row.status as import('@claude-tauri/shared').ArtifactStatus,
+    currentRevisionId: row.current_revision_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapArtifactRevision(row: ArtifactRevisionRow) {
+  return {
+    id: row.id,
+    artifactId: row.artifact_id,
+    revisionNumber: row.revision_number,
+    specJson: row.spec_json,
+    summary: row.summary,
+    prompt: row.prompt,
+    model: row.model,
+    sourceSessionId: row.source_session_id,
+    sourceMessageId: row.source_message_id,
+    createdAt: row.created_at,
+  };
+}
+
+export function createArtifact(db: Database, params: {
+  id: string;
+  kind: string;
+  schemaVersion: number;
+  title: string;
+  projectId: string;
+  workspaceId: string | null;
+  sourceSessionId: string | null;
+  sourceMessageId: string | null;
+  status: 'active' | 'archived';
+}) {
+  const stmt = db.prepare(
+    `INSERT INTO artifacts (id, kind, schema_version, title, project_id, workspace_id, source_session_id, source_message_id, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(
+    params.id,
+    params.kind,
+    params.schemaVersion,
+    params.title,
+    params.projectId,
+    params.workspaceId,
+    params.sourceSessionId,
+    params.sourceMessageId,
+    params.status
+  ) as ArtifactRow;
+  return mapArtifact(row);
+}
+
+export function getArtifact(db: Database, id: string) {
+  const stmt = db.prepare(`SELECT * FROM artifacts WHERE id = ?`);
+  const row = stmt.get(id) as ArtifactRow | null;
+  return row ? mapArtifact(row) : null;
+}
+
+export function listArtifactsByProject(db: Database, projectId: string, opts?: { includeArchived?: boolean }) {
+  const includeArchived = opts?.includeArchived ?? false;
+  if (includeArchived) {
+    const stmt = db.prepare(`SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at DESC`);
+    const rows = stmt.all(projectId) as ArtifactRow[];
+    return rows.map(mapArtifact);
+  } else {
+    const stmt = db.prepare(`SELECT * FROM artifacts WHERE project_id = ? AND status = 'active' ORDER BY created_at DESC`);
+    const rows = stmt.all(projectId) as ArtifactRow[];
+    return rows.map(mapArtifact);
+  }
+}
+
+export function setArtifactCurrentRevision(db: Database, artifactId: string, revisionId: string) {
+  const stmt = db.prepare(
+    `UPDATE artifacts SET current_revision_id = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(revisionId, artifactId);
+}
+
+export function archiveArtifact(db: Database, id: string) {
+  const stmt = db.prepare(
+    `UPDATE artifacts SET status = 'archived', updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(id);
+}
+
+export function createArtifactRevision(db: Database, params: {
+  id: string;
+  artifactId: string;
+  revisionNumber: number;
+  specJson: string;
+  summary: string | null;
+  prompt: string | null;
+  model: string | null;
+  sourceSessionId: string | null;
+  sourceMessageId: string | null;
+}) {
+  const stmt = db.prepare(
+    `INSERT INTO artifact_revisions (id, artifact_id, revision_number, spec_json, summary, prompt, model, source_session_id, source_message_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(
+    params.id,
+    params.artifactId,
+    params.revisionNumber,
+    params.specJson,
+    params.summary,
+    params.prompt,
+    params.model,
+    params.sourceSessionId,
+    params.sourceMessageId
+  ) as ArtifactRevisionRow;
+  return mapArtifactRevision(row);
 }
