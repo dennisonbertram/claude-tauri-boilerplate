@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Artifact } from '@claude-tauri/shared';
 import * as api from '@/lib/workspace-api';
+import { DashboardPromptModal } from './DashboardPromptModal';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,14 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
   const [editTitleValue, setEditTitleValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('New Dashboard');
+  const [modalDefaultValue, setModalDefaultValue] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'new' | 'regenerate' | null>(null);
+
   // Load artifacts
   const loadArtifacts = useCallback(async () => {
     setIsLoading(true);
@@ -119,18 +128,13 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, includeArchived]);
 
-  const handleNewDashboard = useCallback(async () => {
-    const prompt = window.prompt('What should this dashboard show?');
-    if (!prompt?.trim()) return;
-    setError(null);
-    try {
-      const { artifact } = await api.generateArtifact(projectId, { prompt: prompt.trim() });
-      setArtifacts((prev) => [artifact, ...prev]);
-      setSelected(artifact);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate dashboard');
-    }
-  }, [projectId]);
+  const handleNewDashboard = useCallback(() => {
+    setModalTitle('New Dashboard');
+    setModalDefaultValue('');
+    setModalError(null);
+    setPendingAction('new');
+    setModalOpen(true);
+  }, []);
 
   const handleArchive = useCallback(async (artifact: Artifact) => {
     setError(null);
@@ -145,22 +149,46 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
     }
   }, [selected]);
 
-  const handleRegenerate = useCallback(async () => {
+  const handleRegenerate = useCallback(() => {
     if (!selected) return;
-    const prompt = window.prompt('What changes should this dashboard have?');
-    if (!prompt?.trim()) return;
-    setIsRegenerating(true);
-    setError(null);
+    setModalTitle('Regenerate Dashboard');
+    setModalDefaultValue('');
+    setModalError(null);
+    setPendingAction('regenerate');
+    setModalOpen(true);
+  }, [selected]);
+
+  const handleModalConfirm = useCallback(async (prompt: string) => {
+    setIsGenerating(true);
+    setModalError(null);
     try {
-      const { artifact } = await api.regenerateArtifact(selected.id, { prompt: prompt.trim() });
-      setArtifacts((prev) => prev.map((a) => (a.id === artifact.id ? artifact : a)));
-      setSelected(artifact);
+      if (pendingAction === 'new') {
+        const { artifact } = await api.generateArtifact(projectId, { prompt });
+        setArtifacts((prev) => [artifact, ...prev]);
+        setSelected(artifact);
+      } else if (pendingAction === 'regenerate' && selected) {
+        setIsRegenerating(true);
+        const { artifact } = await api.regenerateArtifact(selected.id, { prompt });
+        setArtifacts((prev) => prev.map((a) => (a.id === artifact.id ? artifact : a)));
+        setSelected(artifact);
+      }
+      setModalOpen(false);
+      setPendingAction(null);
+      setModalDefaultValue('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to regenerate dashboard');
+      setModalError(err instanceof Error ? err.message : 'Failed to generate dashboard');
     } finally {
+      setIsGenerating(false);
       setIsRegenerating(false);
     }
-  }, [selected]);
+  }, [pendingAction, projectId, selected]);
+
+  const handleModalCancel = useCallback(() => {
+    if (isGenerating) return;
+    setModalOpen(false);
+    setPendingAction(null);
+    setModalError(null);
+  }, [isGenerating]);
 
   const handleTitleClick = useCallback(() => {
     if (!selected) return;
@@ -219,7 +247,7 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
           <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Dashboards</span>
           <button
             type="button"
-            onClick={() => void handleNewDashboard()}
+            onClick={handleNewDashboard}
             title="New dashboard"
             aria-label="New dashboard"
             className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -359,7 +387,7 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
                       type="button"
                       aria-label="Regenerate dashboard"
                       title="Regenerate"
-                      onClick={() => void handleRegenerate()}
+                      onClick={handleRegenerate}
                       disabled={isRegenerating}
                       className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
                     >
@@ -396,6 +424,16 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
           </div>
         )}
       </div>
+
+      <DashboardPromptModal
+        isOpen={modalOpen}
+        title={modalTitle}
+        defaultValue={modalDefaultValue}
+        isLoading={isGenerating}
+        error={modalError}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
+      />
     </div>
   );
 }
