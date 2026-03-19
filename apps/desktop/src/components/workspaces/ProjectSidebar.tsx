@@ -209,7 +209,7 @@ export function ProjectSidebar({
                     >
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                    <span className="text-sm font-medium text-foreground truncate">
+                    <span className="min-w-0 text-sm font-medium text-foreground truncate">
                       {getProjectDisplayName(project)}
                     </span>
                   </button>
@@ -279,19 +279,19 @@ export function ProjectSidebar({
                     {workspaces.map(ws => (
                       <div
                         key={ws.id}
-                        className={`group rounded-md px-2 py-1.5 text-left transition-colors space-y-1 ${
+                        className={`group rounded-md px-2 py-1.5 text-left transition-colors space-y-0.5 ${
                           ws.id === selectedWorkspaceId
                             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                             : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
                           <button
                             type="button"
                             onClick={() => onSelectWorkspace(ws)}
                             className="min-w-0 flex-1 text-left flex items-center gap-1.5"
                           >
-                            <span className="text-sm truncate">{ws.name}</span>
+                            <span className="min-w-0 text-sm truncate">{ws.name}</span>
                             {isWorkspaceUnread?.(ws.id) && (
                               <span
                                 data-testid={`unread-dot-${ws.id}`}
@@ -306,7 +306,7 @@ export function ProjectSidebar({
                           {editingWorkspaceId === ws.id ? (
                             <div className="flex items-center gap-1">
                               <input
-                                className="h-6 min-w-0 rounded border border-border bg-background px-2 text-xs text-foreground"
+                                className="h-6 min-w-0 flex-1 rounded border border-border bg-background px-2 text-xs text-foreground"
                                 value={editingBranch}
                                 onChange={(e) => setEditingBranch(e.target.value)}
                                 onKeyDown={(event) => {
@@ -336,8 +336,8 @@ export function ProjectSidebar({
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <div className="flex items-center gap-1">
-                                <p className="truncate font-mono text-[11px] text-foreground">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">
                                   {ws.branch}
                                 </p>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
