@@ -10,7 +10,6 @@ import {
   createArtifactRevision,
   setArtifactCurrentRevision,
   updateArtifactTitle,
-  countArtifactRevisions,
 } from '../db';
 import { streamClaude } from '../services/claude';
 
@@ -189,11 +188,8 @@ export function createArtifactsRouter(db: Database) {
 
     const { prompt, model } = parsed.data;
 
-    // 3. Get next revision number
-    const existingCount = countArtifactRevisions(db, id);
-    const nextRevisionNumber = existingCount + 1;
-
-    // 4. Call streamClaude with dashboard generation prompt
+    // 3. Call streamClaude with dashboard generation prompt
+    // (revision number is computed inside the transaction below to avoid TOCTOU)
     const fullPrompt = `${DASHBOARD_GENERATION_SYSTEM_PROMPT}\n\nUser request: ${prompt}`;
     let fullResponse = '';
     try {
@@ -215,25 +211,34 @@ export function createArtifactsRouter(db: Database) {
       return c.json({ error: message, code: 'GENERATION_ERROR' }, 500);
     }
 
-    // 5. Parse JSON from response
+    // 4. Parse JSON from response
     const { spec } = parseDashboardSpec(fullResponse);
 
-    // 6. Create revision
+    // 5. Create revision and set current revision atomically, computing next
+    //    revision number inside the transaction to avoid the TOCTOU race.
     const revisionId = crypto.randomUUID();
-    const revision = createArtifactRevision(db, {
-      id: revisionId,
-      artifactId: id,
-      revisionNumber: nextRevisionNumber,
-      specJson: JSON.stringify(spec),
-      summary: null,
-      prompt,
-      model: model ?? 'claude-haiku-4-5-20251001',
-      sourceSessionId: null,
-      sourceMessageId: null,
-    });
+    const { revision } = db.transaction(() => {
+      const row = db.prepare(
+        `SELECT COALESCE(MAX(revision_number), 0) + 1 AS next FROM artifact_revisions WHERE artifact_id = ?`
+      ).get(artifact.id) as { next: number };
+      const nextRevisionNumber = row.next;
 
-    // 7. Set current revision
-    setArtifactCurrentRevision(db, id, revisionId);
+      const rev = createArtifactRevision(db, {
+        id: revisionId,
+        artifactId: artifact.id,
+        revisionNumber: nextRevisionNumber,
+        specJson: JSON.stringify(spec),
+        summary: null,
+        prompt,
+        model: model ?? 'claude-haiku-4-5-20251001',
+        sourceSessionId: null,
+        sourceMessageId: null,
+      });
+
+      setArtifactCurrentRevision(db, artifact.id, revisionId);
+
+      return { revision: rev };
+    })();
 
     // Re-fetch artifact to get updated currentRevisionId
     const updatedArtifact = getArtifact(db, id)!;
@@ -322,35 +327,39 @@ export function createProjectArtifactsRouter(db: Database) {
     // 5. Parse JSON from response (strip markdown fences if present)
     const { spec } = parseDashboardSpec(fullResponse);
 
-    // 6. Create artifact + revision in DB
+    // 6. Create artifact + revision in DB atomically
     const artifactId = crypto.randomUUID();
     const revisionId = crypto.randomUUID();
 
-    const artifact = createArtifact(db, {
-      id: artifactId,
-      kind: 'dashboard',
-      schemaVersion: 1,
-      title: artifactTitle,
-      projectId,
-      workspaceId: workspaceId ?? null,
-      sourceSessionId: sessionId ?? null,
-      sourceMessageId: null,
-      status: 'active',
-    });
+    const { artifact, revision } = db.transaction(() => {
+      const art = createArtifact(db, {
+        id: artifactId,
+        kind: 'dashboard',
+        schemaVersion: 1,
+        title: artifactTitle,
+        projectId,
+        workspaceId: workspaceId ?? null,
+        sourceSessionId: sessionId ?? null,
+        sourceMessageId: null,
+        status: 'active',
+      });
 
-    const revision = createArtifactRevision(db, {
-      id: revisionId,
-      artifactId,
-      revisionNumber: 1,
-      specJson: JSON.stringify(spec),
-      summary: null,
-      prompt,
-      model: model ?? 'claude-haiku-4-5-20251001',
-      sourceSessionId: sessionId ?? null,
-      sourceMessageId: null,
-    });
+      const rev = createArtifactRevision(db, {
+        id: revisionId,
+        artifactId,
+        revisionNumber: 1,
+        specJson: JSON.stringify(spec),
+        summary: null,
+        prompt,
+        model: model ?? 'claude-haiku-4-5-20251001',
+        sourceSessionId: sessionId ?? null,
+        sourceMessageId: null,
+      });
 
-    setArtifactCurrentRevision(db, artifactId, revisionId);
+      setArtifactCurrentRevision(db, artifactId, revisionId);
+
+      return { artifact: art, revision: rev };
+    })();
 
     // Re-fetch artifact to get updated currentRevisionId
     const updatedArtifact = getArtifact(db, artifactId)!;

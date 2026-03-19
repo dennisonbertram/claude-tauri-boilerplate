@@ -323,28 +323,30 @@ export function addMessage(
   content: string,
   parts?: Array<{ type: string; text?: string; artifactId?: string; artifactRevisionId?: string; [key: string]: unknown }>
 ) {
-  const stmt = db.prepare(
-    `INSERT INTO messages (id, session_id, role, content) VALUES (?, ?, ?, ?) RETURNING *`
-  );
-  const row = stmt.get(id, sessionId, role, content) as MessageRow;
-  if (parts && parts.length > 0) {
-    const partStmt = db.prepare(
-      `INSERT INTO message_parts (id, message_id, part_type, ordinal, text, artifact_id, artifact_revision_id) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  return db.transaction(() => {
+    const stmt = db.prepare(
+      `INSERT INTO messages (id, session_id, role, content) VALUES (?, ?, ?, ?) RETURNING *`
     );
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      partStmt.run(
-        crypto.randomUUID(),
-        id,
-        part.type,
-        i,
-        part.text ?? null,
-        part.artifactId ?? null,
-        part.artifactRevisionId ?? null
+    const row = stmt.get(id, sessionId, role, content) as MessageRow;
+    if (parts && parts.length > 0) {
+      const partStmt = db.prepare(
+        `INSERT INTO message_parts (id, message_id, part_type, ordinal, text, artifact_id, artifact_revision_id) VALUES (?, ?, ?, ?, ?, ?, ?)`
       );
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        partStmt.run(
+          crypto.randomUUID(),
+          id,
+          part.type,
+          i,
+          part.text ?? null,
+          part.artifactId ?? null,
+          part.artifactRevisionId ?? null
+        );
+      }
     }
-  }
-  return mapMessage(row);
+    return mapMessage(row);
+  })();
 }
 
 export function getMessages(db: Database, sessionId: string) {
