@@ -200,8 +200,8 @@ const VALID_HOOK_TYPES = new Set<string>([
 ]);
 
 function buildActionData(hook: HookEntryInput): ActionNodeData | null {
-  const type = typeof hook.type === 'string' ? hook.type : 'command';
-  if (!VALID_HOOK_TYPES.has(type)) return null;
+  const type = typeof hook.type === 'string' ? hook.type : null;
+  if (!type || !VALID_HOOK_TYPES.has(type)) return null;
 
   const hookType = type as HookType;
   const base = { hookType, label: type };

@@ -180,6 +180,14 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   const initialized = useRef(false);
   const isFirstRender = useRef(true);
   const lastCompiledHooksJsonRef = useRef<string>(hooksJson ?? '');
+  const latestNodesRef = useRef<CanvasNode[]>([]);
+  const latestEdgesRef = useRef<CanvasEdge[]>([]);
+
+  // Always keep refs up to date — runs after every render
+  useEffect(() => {
+    latestNodesRef.current = nodes;
+    latestEdgesRef.current = edges;
+  });
 
   // Load saved state on mount
   useEffect(() => {
@@ -261,9 +269,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     }
   }, []);
 
-  // Debounced change notification
+  // Debounced change notification — reads from refs to always capture latest snapshot
   const notifyChange = useCallback(
-    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
+    debounce(() => {
+      const currentNodes = latestNodesRef.current;
+      const currentEdges = latestEdgesRef.current;
       const newHooksJson = compileCanvasToHooks(currentNodes, currentEdges);
       const newCanvasJson = JSON.stringify({
         nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
@@ -271,21 +281,23 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       });
       lastCompiledHooksJsonRef.current = newHooksJson;
       onChange(newHooksJson, newCanvasJson);
-    }, 500) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
+    }, 500) as DebouncedFn<() => void>,
     [onChange],
   );
 
   // Debounced layout save — persists position changes without recompiling hooks
   const saveLayout = useCallback(
-    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
+    debounce(() => {
       const currentHooksJson = lastCompiledHooksJsonRef.current;
       if (!currentHooksJson) return; // Don't save if we don't have valid hooks yet
+      const currentNodes = latestNodesRef.current;
+      const currentEdges = latestEdgesRef.current;
       const canvasJson = JSON.stringify({
         nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
         edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
       });
       onChange(currentHooksJson, canvasJson);
-    }, 2000) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
+    }, 2000) as DebouncedFn<() => void>,
     [onChange],
   );
 
@@ -311,12 +323,12 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     const fingerprint = getHooksFingerprint(nodes, edges);
     if (fingerprint === prevStructuralRef.current) {
       // Position-only change — save layout without recompiling hooks
-      saveLayout(nodes, edges);
+      saveLayout();
       return;
     }
     prevStructuralRef.current = fingerprint;
     saveLayout.cancel(); // Cancel pending layout save — structural save will include positions
-    notifyChange(nodes, edges);
+    notifyChange();
   }, [nodes, edges, notifyChange, saveLayout]);
 
   // Connection validation

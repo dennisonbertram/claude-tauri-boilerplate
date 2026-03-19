@@ -32,6 +32,8 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
           const hookList = Array.isArray(group.hooks) ? group.hooks : [];
           for (const hook of hookList) {
             if (hook?.type === 'command' || hook?.type === 'http') return true;
+            // Also catch hooks without explicit type but with dangerous fields
+            if (!hook?.type && (typeof hook?.command === 'string' || typeof hook?.url === 'string')) return true;
           }
         }
       }
