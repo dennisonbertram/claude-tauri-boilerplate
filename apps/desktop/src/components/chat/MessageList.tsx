@@ -25,10 +25,6 @@ import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   ArrowDown,
   Search,
-  BookOpen,
-  FileText,
-  ChevronDown,
-  ChevronUp,
   Send,
   Copy,
   User,
@@ -67,11 +63,15 @@ interface SearchMatch {
   messageId: string;
 }
 
-interface TocItem {
-  messageIndex: number;
-  messageId: string;
-  label: string;
+
+interface ConversationTurn {
+  turnIndex: number;
+  userMessageIndex: number;
+  userMessageId: string;
   summary: string;
+  assistantMessageIndex?: number;
+  hasSearchMatch: boolean;
+  isCurrentMatch: boolean;
 }
 
 const MONO_FONT_STYLE: CSSProperties = { fontFamily: 'var(--chat-mono-font)' };
@@ -133,20 +133,17 @@ function getChatWidthClass(width: 'standard' | 'wide' | 'full'): string {
 
 function getChatDensityClasses(density: 'comfortable' | 'compact'): {
   content: string;
-  toc: string;
   bubble: string;
 } {
   if (density === 'compact') {
     return {
       content: 'space-y-2 p-3',
-      toc: 'max-h-20',
       bubble: 'px-3 py-2.5',
     };
   }
 
   return {
     content: 'space-y-4 p-4',
-    toc: 'max-h-24',
     bubble: 'px-4 py-3',
   };
 }
@@ -269,8 +266,6 @@ export function MessageList({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
-  const [tocCollapsed, setTocCollapsed] = useState(false);
-
   const updateScrollButtonVisibility = useCallback((element?: Element | null) => {
     const viewport = element as HTMLElement | null;
     if (!viewport) return;
@@ -436,18 +431,6 @@ export function MessageList({
     jumpToMessageIndex(activeMatch.messageIndex);
   }, [activeMatchIndex, jumpToMessageIndex, searchMatches]);
 
-  const tocItems = useMemo<TocItem[]>(() => {
-    return visibleMessages.map((message, messageIndex) => {
-      const text = getMessageText(message);
-      return {
-        messageIndex,
-        messageId: message.id,
-        label: `${message.role === 'user' ? 'You' : 'Claude'} #${messageIndex + 1}`,
-        summary: summarizeMessageText(text, message.role, isPrivacyMode),
-      };
-    });
-  }, [visibleMessages, isPrivacyMode]);
-
   const sessionSummary = useMemo(() => {
     if (visibleMessages.length === 0) {
       return 'No messages in this conversation.';
@@ -467,8 +450,6 @@ export function MessageList({
 
     return `${visibleMessages.length} messages (user: ${roleCounts.user}, assistant: ${roleCounts.assistant}). ${firstSummaries.join(' | ')}`;
   }, [isPrivacyMode, visibleMessages]);
-
-  const showToc = visibleMessages.length >= 6;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -497,6 +478,48 @@ export function MessageList({
     : [];
 
   const selectedMatch = searchMatches[activeMatchIndex] ?? null;
+
+  const conversationTurns = useMemo<ConversationTurn[]>(() => {
+    const turns: ConversationTurn[] = [];
+    let i = 0;
+    while (i < visibleMessages.length) {
+      const msg = visibleMessages[i];
+      if (!msg) { i++; continue; }
+      if (msg.role === 'user') {
+        const next = visibleMessages[i + 1];
+        const hasAssistant = next?.role === 'assistant';
+        const userText = getMessageText(msg);
+        const firstLine = userText.split('\n')[0]?.trim() ?? '';
+        const summary = isPrivacyMode
+          ? `Task ${turns.length + 1}`
+          : firstLine.length > 100 ? `${firstLine.slice(0, 100)}…` : firstLine || `Task ${turns.length + 1}`;
+        const userIdx = i;
+        const assistantIdx = hasAssistant ? i + 1 : undefined;
+        const hasSearchMatch = searchMatches.some(
+          (m) => m.messageIndex === userIdx || m.messageIndex === assistantIdx
+        );
+        const isCurrentMatch =
+          selectedMatch?.messageIndex === userIdx ||
+          selectedMatch?.messageIndex === assistantIdx;
+        turns.push({
+          turnIndex: turns.length,
+          userMessageIndex: userIdx,
+          userMessageId: msg.id,
+          summary,
+          assistantMessageIndex: assistantIdx,
+          hasSearchMatch,
+          isCurrentMatch,
+        });
+        i += hasAssistant ? 2 : 1;
+      } else {
+        i++;
+      }
+    }
+    return turns;
+  }, [visibleMessages, isPrivacyMode, searchMatches, selectedMatch]);
+
+  const showMinimap = conversationTurns.length >= 3;
+
   const chatWidthClass = getChatWidthClass(settings.chatWidth);
   const densityClasses = getChatDensityClasses(settings.chatDensity);
   const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
@@ -505,7 +528,7 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-1 min-h-0 overflow-hidden"
+      className="relative flex flex-1 min-h-0 overflow-hidden flex-col"
     >
       {searchOpen || normalizedSearchQuery ? (
         <div className="border-b border-border bg-background px-3 py-2 space-y-2">
@@ -583,198 +606,136 @@ export function MessageList({
         </div>
       ) : null}
 
-      {showToc ? (
-        <div
-          className="border-b border-border bg-background/85 px-3 py-2"
-          data-testid="message-list-toc"
+      <div className="relative flex flex-1 min-h-0">
+        <ScrollArea
+          className="flex-1 h-full"
+          data-testid="message-list-scroll-area"
+          viewportRef={handleViewportMount}
+          viewportProps={{ onScroll: handleViewportScroll }}
         >
-          <button
-            type="button"
-            className="mb-2 flex w-full items-center justify-between gap-2 rounded-md px-0 py-0.5 hover:opacity-80"
-            onClick={() => setTocCollapsed((prev) => !prev)}
-            aria-expanded={!tocCollapsed}
+          <div
+            className={cn('mx-auto', chatWidthClass, densityClasses.content)}
+            data-testid="message-list-content"
           >
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <BookOpen className="h-4 w-4" />
-              <span>Table of Contents</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div
-                className="flex items-center gap-1"
-                data-testid="message-list-session-summary"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                <span>{visibleMessages.length} messages</span>
-              </div>
-              <ChevronDown
-                className={cn('h-3.5 w-3.5 transition-transform duration-200', tocCollapsed && 'rotate-180')}
-              />
-            </div>
-          </button>
+            {visibleMessages.map((message, index) => {
+              const matchIndex = searchMatches.findIndex(
+                (item) => item.messageIndex === index
+              );
+              const isMatch = matchIndex !== -1;
+              const isActiveMatch = selectedMatch?.messageIndex === index;
 
-          {!tocCollapsed && (
-            <div className={cn('flex flex-col gap-1 overflow-auto pr-1', densityClasses.toc)}>
-              {tocItems.map((item, tocIndex) => {
-                const isMatch = searchMatches.some((match) => match.messageIndex === item.messageIndex);
-                const isActive = selectedMatch?.messageIndex === item.messageIndex;
-                const isMatchActive = selectedMatch?.messageIndex === item.messageIndex;
-                const summaryText =
-                  item.summary.length > 120 ? `${item.summary.slice(0, 120)}…` : item.summary;
-
-                return (
-                  <button
-                    key={item.messageId}
-                    type="button"
-                    data-testid="message-list-toc-entry"
-                    data-toc-entry-index={tocIndex}
-                    onClick={() => jumpToMessageIndex(item.messageIndex)}
-                    className={`rounded-md border border-transparent px-2 py-1 text-left text-xs transition-colors ${
-                      isActive
-                        ? 'border-primary/40 bg-primary/8'
-                        : 'hover:bg-muted/80'
-                    } ${isMatch ? 'font-medium' : ''}`}
-                    title={summaryText}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span>{item.label}</span>
-                      <span className="text-muted-foreground">{item.summary}</span>
-                    </div>
-                    <span className="sr-only">{summaryText}</span>
-                    {isMatchActive ? (
-                      <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary">
-                        <ChevronUp className="h-3 w-3" />
-                        Search hit
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      <ScrollArea
-        className="h-full"
-        data-testid="message-list-scroll-area"
-        viewportRef={handleViewportMount}
-        viewportProps={{ onScroll: handleViewportScroll }}
-      >
-        <div
-          className={cn('mx-auto', chatWidthClass, densityClasses.content)}
-          data-testid="message-list-content"
-        >
-          {visibleMessages.map((message, index) => {
-            const matchIndex = searchMatches.findIndex(
-              (item) => item.messageIndex === index
-            );
-            const isMatch = matchIndex !== -1;
-            const isActiveMatch = selectedMatch?.messageIndex === index;
-
-            return (
-              <div
-                key={message.id}
-                ref={(node) => {
-                  messageRefs.current[message.id] = node;
-                }}
-                data-testid={`chat-message-${message.id}`}
-                data-match-index={matchIndex}
-                title={summarizeMessageText(
-                  getMessageText(message),
-                  message.role,
-                  isPrivacyMode
-                )}
-                className={`rounded-lg transition ${
-                  isActiveMatch ? 'outline outline-2 outline-primary/70' : ''
-                }`}
-              >
-                <MessageBubble
-                  message={message}
-                  highlightQuery={normalizedSearchQuery}
-                  isMatch={isMatch}
-                  densityClass={densityClasses.bubble}
-                  chatFontClass={chatFontClass}
-                  chatFontStyle={chatFontStyle}
-                  metadata={assistantMetadata?.[message.id]}
-                  artifactRefs={artifactRefsByMessageId.get(message.id)}
-                  artifactMap={artifactMap}
-                  onArchiveArtifact={handleArchiveArtifact}
-                />
-              </div>
-            );
-          })}
-
-          {/* Streaming indicator when waiting for first response */}
-          {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
-            <div className="flex justify-start">
-              <div className="rounded-lg bg-muted px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <ArrowDown className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Claude is thinking...
-                  </span>
+              return (
+                <div
+                  key={message.id}
+                  ref={(node) => {
+                    messageRefs.current[message.id] = node;
+                  }}
+                  data-testid={`chat-message-${message.id}`}
+                  data-match-index={matchIndex}
+                  title={summarizeMessageText(
+                    getMessageText(message),
+                    message.role,
+                    isPrivacyMode
+                  )}
+                  className={`rounded-lg transition ${
+                    isActiveMatch ? 'outline outline-2 outline-primary/70' : ''
+                  }`}
+                >
+                  <MessageBubble
+                    message={message}
+                    highlightQuery={normalizedSearchQuery}
+                    isMatch={isMatch}
+                    densityClass={densityClasses.bubble}
+                    chatFontClass={chatFontClass}
+                    chatFontStyle={chatFontStyle}
+                    metadata={assistantMetadata?.[message.id]}
+                    artifactRefs={artifactRefsByMessageId.get(message.id)}
+                    artifactMap={artifactMap}
+                    onArchiveArtifact={handleArchiveArtifact}
+                  />
                 </div>
-              </div>
-            </div>
-          )}
+              );
+            })}
 
-          {/* Streaming indicator when assistant is actively generating */}
-          {isLoading &&
-            visibleMessages[visibleMessages.length - 1]?.role === 'assistant' &&
-            toolCallEntries.length === 0 && (
-              <div className="flex justify-start pl-4">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
-                  <span className="text-xs text-muted-foreground">
-                    Generating...
-                  </span>
+            {/* Streaming indicator when waiting for first response */}
+            {isLoading && visibleMessages[visibleMessages.length - 1]?.role === 'user' && (
+              <div className="flex justify-start">
+                <div className="rounded-lg bg-muted px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <ArrowDown className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Claude is thinking...
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
 
-          {/* Render stream event blocks after the last assistant message, only while streaming */}
-          {visibleMessages.map((message, index) => {
-            if (!isLoading || message.role !== 'assistant' || index !== visibleMessages.length - 1) {
-              return null;
-            }
+            {/* Streaming indicator when assistant is actively generating */}
+            {isLoading &&
+              visibleMessages[visibleMessages.length - 1]?.role === 'assistant' &&
+              toolCallEntries.length === 0 && (
+                <div className="flex justify-start pl-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+                    <span className="text-xs text-muted-foreground">
+                      Generating...
+                    </span>
+                  </div>
+                </div>
+              )}
 
-            return (
-              <div key={`stream-events-${message.id}`} className="mt-2 space-y-1">
-                {thinkingEntries.map(([key, text]) => (
-                  <ThinkingBlock
-                    key={`${key}-${thinkingToggleVersion}`}
-                    text={text}
-                    defaultExpanded={thinkingExpanded}
-                  />
-                ))}
+            {/* Render stream event blocks after the last assistant message, only while streaming */}
+            {visibleMessages.map((message, index) => {
+              if (!isLoading || message.role !== 'assistant' || index !== visibleMessages.length - 1) {
+                return null;
+              }
 
-                {toolCallEntries.map((tc) => (
-                  <ToolCallBlock
-                    key={tc.toolUseId}
-                    toolCall={tc}
-                    onFixErrors={onToolFixErrors}
-                  />
-                ))}
-              </div>
-            );
-          })}
+              return (
+                <div key={`stream-events-${message.id}`} className="mt-2 space-y-1">
+                  {thinkingEntries.map(([key, text]) => (
+                    <ThinkingBlock
+                      key={`${key}-${thinkingToggleVersion}`}
+                      text={text}
+                      defaultExpanded={thinkingExpanded}
+                    />
+                  ))}
 
-          <div ref={bottomRef} />
-        </div>
-      </ScrollArea>
+                  {toolCallEntries.map((tc) => (
+                    <ToolCallBlock
+                      key={tc.toolUseId}
+                      toolCall={tc}
+                      onFixErrors={onToolFixErrors}
+                    />
+                  ))}
+                </div>
+              );
+            })}
 
-      {showScrollToBottom && (
-        <button
-          type="button"
-          onClick={handleScrollToBottom}
-          data-testid="message-list-scroll-to-bottom"
-          className="absolute right-4 bottom-4 z-10 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs shadow-sm transition hover:bg-muted/60"
-          aria-label="Scroll to bottom"
-        >
-          <ArrowDown className="h-4 w-4" />
-          <span>Latest</span>
-        </button>
-      )}
+            <div ref={bottomRef} />
+          </div>
+        </ScrollArea>
+
+        {showMinimap && (
+          <ConversationMinimap
+            turns={conversationTurns}
+            onJumpTo={jumpToMessageIndex}
+          />
+        )}
+
+        {showScrollToBottom && (
+          <button
+            type="button"
+            onClick={handleScrollToBottom}
+            data-testid="message-list-scroll-to-bottom"
+            className="absolute right-10 bottom-4 z-10 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs shadow-sm transition hover:bg-muted/60"
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDown className="h-4 w-4" />
+            <span>Latest</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -938,6 +899,56 @@ function AssistantResponseFooter({
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ConversationMinimap({
+  turns,
+  onJumpTo,
+}: {
+  turns: ConversationTurn[];
+  onJumpTo: (messageIndex: number) => void;
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  return (
+    <div
+      className="relative w-7 flex-shrink-0 border-l border-border/20 bg-background/30 select-none flex flex-col items-center pt-3 pb-3 gap-1.5 overflow-y-auto"
+      aria-label="Conversation outline"
+    >
+      {turns.map((turn) => {
+        const isHovered = hoveredIndex === turn.turnIndex;
+
+        return (
+          <div key={turn.userMessageId} className="relative w-full flex justify-center">
+            <button
+              type="button"
+              onClick={() => onJumpTo(turn.userMessageIndex)}
+              onMouseEnter={() => setHoveredIndex(turn.turnIndex)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              className={cn(
+                'w-3.5 h-[3px] rounded-full cursor-pointer transition-all duration-150 focus-visible:outline-none',
+                turn.hasSearchMatch
+                  ? 'bg-yellow-400 opacity-90'
+                  : 'bg-zinc-400',
+                turn.isCurrentMatch ? 'opacity-100 w-4' : 'opacity-40',
+                'hover:opacity-100 hover:w-4'
+              )}
+            />
+
+            {/* Hover tooltip — floats to the left */}
+            {isHovered && (
+              <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+                <div className="rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs shadow-md whitespace-nowrap max-w-[220px] overflow-hidden text-ellipsis">
+                  <span className="text-muted-foreground mr-1">#{turn.turnIndex + 1}</span>
+                  <span className="text-foreground">{turn.summary}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
