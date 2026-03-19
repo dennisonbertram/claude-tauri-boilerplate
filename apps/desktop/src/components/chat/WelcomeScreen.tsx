@@ -1,10 +1,20 @@
 import { Button } from '@/components/ui/button';
+import { ProfileSelector } from '@/components/agent-builder/shared/ProfileSelector';
+import type { AgentProfile } from '@claude-tauri/shared';
 
 interface WelcomeScreenProps {
   onNewChat: () => void;
+  agentProfiles?: AgentProfile[];
+  selectedProfileId?: string | null;
+  onSelectProfile?: (id: string | null) => void;
 }
 
-export function WelcomeScreen({ onNewChat }: WelcomeScreenProps) {
+export function WelcomeScreen({
+  onNewChat,
+  agentProfiles,
+  selectedProfileId,
+  onSelectProfile,
+}: WelcomeScreenProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
       <div className="flex flex-col items-center gap-3">
@@ -18,6 +28,16 @@ export function WelcomeScreen({ onNewChat }: WelcomeScreenProps) {
           Start a conversation to work with Claude on your code. Each conversation is saved and can be resumed at any time.
         </p>
       </div>
+
+      {agentProfiles && agentProfiles.length > 0 && onSelectProfile && (
+        <div className="max-w-md w-full">
+          <ProfileSelector
+            profiles={agentProfiles}
+            selectedProfileId={selectedProfileId ?? null}
+            onSelectProfile={onSelectProfile}
+          />
+        </div>
+      )}
 
       <Button onClick={onNewChat} size="lg" className="gap-2 px-8">
         <span>New Conversation</span>

@@ -9,6 +9,7 @@ import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
+import { AgentBuilderView } from '@/components/agent-builder';
 import { ProjectSidebar } from '@/components/workspaces/ProjectSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
 import { AddProjectDialog } from '@/components/workspaces/AddProjectDialog';
@@ -16,6 +17,7 @@ import { CreateWorkspaceDialog } from '@/components/workspaces/CreateWorkspaceDi
 import { StatusBar } from '@/components/StatusBar';
 import type { StatusBarProps } from '@/components/StatusBar';
 import { useSessions } from '@/hooks/useSessions';
+import { useAgentProfiles } from '@/hooks/useAgentProfiles';
 import { useProjects } from '@/hooks/useProjects';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useTheme } from '@/hooks/useTheme';
@@ -84,12 +86,16 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     return () => document.removeEventListener('keydown', handler);
   }, [handleOpenSettings]);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
-  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
   const selectedSessionHasMessages = (session?: (typeof sessions)[number]) => {
     if (!session) return false;
     return session.claudeSessionId != null || (session.messageCount ?? 0) > 0;
   };
+
+  // Agent profiles
+  const { profiles: agentProfiles } = useAgentProfiles();
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // Workspace state
   const { projects, addProject, removeProject } = useProjects();
@@ -172,14 +178,21 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     return next;
   }, [selectedProjectId, workspaces]);
 
-  const handleNewChat = async () => {
+  const handleNewChat = async (profileId?: string) => {
     // If there's already a truly empty session active, don't create another.
     // Use messageCount (from the server) as the reliable signal — timestamp
     // comparison is unreliable due to SQLite second-level precision.
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const hasActiveSessionMessages = activeSession ? selectedSessionHasMessages(activeSession) : false;
     if (activeSessionId !== null && !hasActiveSessionMessages) {
+      // If a profile was selected, update the selected profile even for existing empty session
+      if (profileId !== undefined) {
+        setSelectedProfileId(profileId);
+      }
       return;
+    }
+    if (profileId !== undefined) {
+      setSelectedProfileId(profileId);
     }
     await createSession();
     setActiveSessionHasMessages(false);
@@ -258,7 +271,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }, [removeProject, selectedProjectId]);
 
   // When switching to workspaces view, auto-select first project
-  const handleSwitchView = useCallback((view: 'chat' | 'teams' | 'workspaces') => {
+  const handleSwitchView = useCallback((view: 'chat' | 'teams' | 'workspaces' | 'agents') => {
     setActiveView(view);
     if (view === 'workspaces' && !selectedProjectId && projects.length > 0) {
       setSelectedProjectId(projects[0].id);
@@ -315,7 +328,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             isWorkspaceUnread={isUnread}
           />
         )}
-        {activeView === 'teams' && (
+        {(activeView === 'teams' || activeView === 'agents') && (
           <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
             {/* View toggle tabs */}
             <div className="flex border-b border-border">
@@ -335,9 +348,24 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               <button
                 data-testid="view-tab-teams"
                 onClick={() => handleSwitchView('teams')}
-                className="flex-1 px-3 py-2 text-sm font-medium transition-colors border-b-2 border-primary text-foreground"
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  activeView === 'teams'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 Teams
+              </button>
+              <button
+                data-testid="view-tab-agents"
+                onClick={() => handleSwitchView('agents')}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  activeView === 'agents'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Agents
               </button>
             </div>
             <div className="flex-1" />
@@ -356,9 +384,17 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onOpenSessions={handleOpenSessions}
               onOpenPullRequests={handleOpenPullRequests}
               onTaskComplete={(params) => handleTaskComplete(params)}
+              profileId={selectedProfileId}
+              agentProfiles={agentProfiles}
+              onSelectProfile={setSelectedProfileId}
             />
           ) : (
-            <WelcomeScreen onNewChat={handleNewChat} />
+            <WelcomeScreen
+              onNewChat={handleNewChat}
+              agentProfiles={agentProfiles}
+              selectedProfileId={selectedProfileId}
+              onSelectProfile={setSelectedProfileId}
+            />
           )
         ) : activeView === 'workspaces' ? (
           selectedWorkspace ? (
@@ -379,6 +415,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               </p>
             </div>
           )
+        ) : activeView === 'agents' ? (
+          <AgentBuilderView />
         ) : (
           <TeamsView />
         )}
