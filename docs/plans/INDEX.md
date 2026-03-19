@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [canvas-workspace.md](canvas-workspace.md) | Canvas Workspace feature plan (#176-#183): infinite canvas with React Flow for multi-thread spatial UI, split-pane view, freeze pattern, FigJam-style annotations. DEFERRED. |
 | [issue-111-tracker-first-workspace-creation.md](issue-111-tracker-first-workspace-creation.md) | Issue #111 plan for tracker-first workspace creation: mode tabs (Manual/Branch/GitHub Issue), github_issue_* DB fields, proxy endpoint, context injection. COMPLETE. |
 | [issue-102-latex-mermaid.md](issue-102-latex-mermaid.md) | Issue #102 implementation of LaTeX rendering (via remark-math + rehype-katex) and Mermaid diagram rendering (MermaidDiagram component with fullscreen pan/zoom). Completed. |
 | [issue-85-ai-code-review.md](issue-85-ai-code-review.md) | Issue #85 plan for AI code review with customizable prompts: backend endpoint, CodeReviewDialog, inline AI comments, CodeReviewSummary, and settings for model/effort. |
@@ -60,6 +61,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | [issue-154-runtime-capability-registry.md](issue-154-runtime-capability-registry.md) | Plan for issue #154 to centralize provider/runtime capability metadata across shared types, settings UI, chat transport, backend validation, and Claude env mapping. |
 | [issue-158-workflow-memory-404s.md](issue-158-workflow-memory-404s.md) | Issue #158 plan for removing normal-startup workflow memory 404s by treating missing prompt overrides as a clean empty state. |
 | [persistent-dashboard-artifacts-v1.md](persistent-dashboard-artifacts-v1.md) | Multi-phase plan for Persistent Dashboard Artifacts V1, including baseline capture and Phase 1 durable artifact/message-part foundation checklist. |
+| [mpp-marketplace-integration.md](mpp-marketplace-integration.md) | MPP Marketplace Integration: crypto wallet (macOS Keychain), MPP/x402 payment protocols, service marketplace, agent-autonomous payments, spend tracking dashboard. 6 phases, 19 issues. DEFERRED. |
 | [issue-103-notifications.md](issue-103-notifications.md) | Issue #103 implementation plan for desktop notifications, notification sounds, macOS badge updates, workspace unread indicators, and quit confirmation. |
 | [issue-105-open-in-ide.md](issue-105-open-in-ide.md) | Issue #105 plan for Open In IDE integration: preferred IDE setting, ide-opener utility, Open In button on WorkspacePanel, and IDE selector in Settings. |
 | [issue-85-ai-code-review.md](issue-85-ai-code-review.md) | Implementation plan for issue #85: AI code review with customizable prompts, inline comments, model/effort selection, and review summary. |
