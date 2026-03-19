@@ -7,7 +7,7 @@ import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
-import { FolderOpen, GitBranch } from 'lucide-react';
+import { FolderOpen, GitBranch, Plus } from 'lucide-react';
 
 interface ProjectSidebarProps {
   projects: Project[];
@@ -136,6 +136,20 @@ export function ProjectSidebar({
 
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
+      {/* Section header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Projects
+        </span>
+        <button
+          onClick={onAddProject}
+          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label="Add project"
+          title="Add project"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <div className="p-3">
         <Button onClick={onAddProject} className="w-full" variant="secondary">
           + Add Project
