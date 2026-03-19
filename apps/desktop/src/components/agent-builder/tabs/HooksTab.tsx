@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import type { UpdateAgentProfileRequest } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { HookCanvas } from '../HookCanvas';
@@ -11,7 +11,13 @@ interface HooksTabProps {
 
 export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
   const [view, setView] = useState<'json' | 'canvas'>('json');
+  const [unsupportedConfirmed, setUnsupportedConfirmed] = useState(false);
   const hooksJson = draft.hooksJson ?? '';
+
+  // Reset unsupported confirmation when profile changes
+  useEffect(() => {
+    setUnsupportedConfirmed(false);
+  }, [profileId]);
 
   const hasDangerousHooks = useMemo(() => {
     if (!draft.hooksJson) return false;
@@ -226,13 +232,38 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
       )}
 
       {view === 'canvas' && (
-        <div className="h-[500px] rounded-lg border border-neutral-700 overflow-hidden">
-          <HookCanvas
-            key={profileId}
-            hooksJson={draft.hooksJson ?? null}
-            hooksCanvasJson={draft.hooksCanvasJson ?? null}
-            onChange={handleCanvasChange}
-          />
+        <div>
+          {hasUnsupportedHooks && !unsupportedConfirmed && (
+            <div className="p-4 bg-orange-900/30 border border-orange-700/50 rounded-lg">
+              <p className="text-sm text-orange-300 mb-3">
+                This profile contains <strong>unsupported hook types</strong> that cannot be represented in the canvas. Editing in canvas mode will <strong>permanently remove</strong> these hooks.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setView('json')}
+                  className="px-3 py-1.5 text-xs rounded border border-border text-foreground hover:bg-neutral-800"
+                >
+                  Keep JSON view
+                </button>
+                <button
+                  onClick={() => setUnsupportedConfirmed(true)}
+                  className="px-3 py-1.5 text-xs rounded bg-orange-700 hover:bg-orange-600 text-white"
+                >
+                  Edit in canvas anyway (will drop unsupported hooks)
+                </button>
+              </div>
+            </div>
+          )}
+          {(!hasUnsupportedHooks || unsupportedConfirmed) && (
+            <div className="h-[500px] rounded-lg border border-neutral-700 overflow-hidden">
+              <HookCanvas
+                key={profileId}
+                hooksJson={draft.hooksJson ?? null}
+                hooksCanvasJson={draft.hooksCanvasJson ?? null}
+                onChange={handleCanvasChange}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

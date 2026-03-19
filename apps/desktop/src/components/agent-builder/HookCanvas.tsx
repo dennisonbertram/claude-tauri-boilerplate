@@ -48,6 +48,17 @@ function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown
   return result;
 }
 
+function stripDangerousKeys(obj: Record<string, unknown>): Record<string, unknown> {
+  const DANGEROUS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (!DANGEROUS.has(k) && typeof k === 'string' && k.length < 200) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
 function isValidCanvasState(saved: unknown): saved is CanvasState {
   if (!saved || typeof saved !== 'object') return false;
   const s = saved as Record<string, unknown>;
@@ -66,6 +77,26 @@ function isValidCanvasState(saved: unknown): saved is CanvasState {
     if (!pos || typeof pos.x !== 'number' || !isFinite(pos.x)) return false;
     if (typeof pos.y !== 'number' || !isFinite(pos.y)) return false;
     if (!n.data || typeof n.data !== 'object') return false;
+
+    // Reject dangerous keys in node IDs
+    const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    if (DANGEROUS_KEYS.has(n.id)) return false;
+
+    // Validate primitive types per node type
+    if (n.type === 'trigger') {
+      if ((n.data as any).event !== undefined && typeof (n.data as any).event !== 'string') return false;
+    }
+    if (n.type === 'condition') {
+      if ((n.data as any).matcher !== undefined && typeof (n.data as any).matcher !== 'string') return false;
+    }
+    if (n.type === 'action') {
+      const d = n.data as any;
+      if (d.command !== undefined && typeof d.command !== 'string') return false;
+      if (d.url !== undefined && typeof d.url !== 'string') return false;
+      if (d.prompt !== undefined && typeof d.prompt !== 'string') return false;
+      if (d.description !== undefined && typeof d.description !== 'string') return false;
+    }
+
     if (nodeIds.has(n.id)) return false; // duplicate ID
     nodeIds.add(n.id);
   }
@@ -125,7 +156,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       try {
         const saved = JSON.parse(hooksCanvasJson);
         if (isValidCanvasState(saved)) {
-          setNodes(saved.nodes as CanvasNode[]);
+          const sanitizedNodes = saved.nodes.map((n: any) => ({
+            ...n,
+            data: stripDangerousKeys(n.data),
+          }));
+          setNodes(sanitizedNodes as CanvasNode[]);
           setEdges(saved.edges as CanvasEdge[]);
           return; // Only return early if we successfully loaded BOTH
         }
@@ -158,22 +193,12 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     [onChange],
   );
 
-  // Debounced layout-only save (preserves positions without recompiling hooks)
-  const layoutSave = useCallback(
-    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[], currentHooksJson: string | null) => {
-      const canvasJson = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
-      onChange(currentHooksJson ?? '', canvasJson);
-    }, 2000) as DebouncedFn<(n: CanvasNode[], e: CanvasEdge[], h: string | null) => void>,
-    [onChange],
-  );
-
   // Cancel pending debounces on unmount
   useEffect(() => {
     return () => {
       notifyChange.cancel();
-      layoutSave.cancel();
     };
-  }, [notifyChange, layoutSave]);
+  }, [notifyChange]);
 
   // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
   const prevStructuralRef = useRef<string>('');
@@ -191,23 +216,6 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     prevStructuralRef.current = fingerprint;
     notifyChange(nodes, edges);
   }, [nodes, edges, notifyChange]);
-
-  // Save canvas layout on position-only changes (dragging nodes)
-  const prevCanvasJsonRef = useRef<string>('');
-
-  useEffect(() => {
-    if (isFirstRender.current) return;
-
-    const canvasJson = JSON.stringify({ nodes, edges });
-    if (canvasJson === prevCanvasJsonRef.current) return;
-    prevCanvasJsonRef.current = canvasJson;
-
-    const fingerprint = getHooksFingerprint(nodes, edges);
-    if (fingerprint === prevStructuralRef.current) {
-      // Position-only change — save canvas JSON without recompiling hooks
-      layoutSave(nodes, edges, hooksJson);
-    }
-  }, [nodes, edges, layoutSave, hooksJson]);
 
   // Connection validation
   const onConnect: OnConnect = useCallback(
