@@ -29,10 +29,29 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
+
+      const MAX_IMPORT_SIZE = 500_000; // 500KB
+      if (file.size > MAX_IMPORT_SIZE) {
+        alert(`File too large. Maximum import size is ${MAX_IMPORT_SIZE / 1000}KB.`);
+        return;
+      }
+
       try {
         const text = await file.text();
-        // Validate
-        JSON.parse(text);
+        const parsed = JSON.parse(text);
+
+        // Detect execution hooks and warn
+        const stringified = JSON.stringify(parsed);
+        const hasCommandHooks = stringified.includes('"type":"command"');
+        const hasHttpHooks = stringified.includes('"type":"http"');
+        if (hasCommandHooks || hasHttpHooks) {
+          const types = [hasCommandHooks && 'command', hasHttpHooks && 'HTTP'].filter(Boolean).join(' and ');
+          const confirmed = window.confirm(
+            `This hooks file contains ${types} hooks that can execute local commands or make HTTP requests. Import anyway?`
+          );
+          if (!confirmed) return;
+        }
+
         onChange({ hooksJson: text });
       } catch {
         // Invalid JSON file - silently ignore

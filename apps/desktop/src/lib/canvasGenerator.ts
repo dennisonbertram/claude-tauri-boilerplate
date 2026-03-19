@@ -61,89 +61,96 @@ export function generateCanvasFromHooks(
   const ROW_HEIGHT = 150;
   let triggerY = 50;
 
-  for (const [event, groups] of Object.entries(
-    hooks as Record<string, unknown>,
-  )) {
-    if (!Array.isArray(groups)) continue;
+  try {
+    for (const [event, groups] of Object.entries(
+      hooks as Record<string, unknown>,
+    )) {
+      if (!Array.isArray(groups)) continue;
 
-    const triggerId = genId('trigger');
-    const triggerData: TriggerNodeData = { event, label: event };
-    nodes.push({
-      id: triggerId,
-      type: 'trigger' as const,
-      position: { x: TRIGGER_X, y: triggerY },
-      data: triggerData,
-    });
+      const triggerId = genId('trigger');
+      const triggerData: TriggerNodeData = { event, label: event };
+      nodes.push({
+        id: triggerId,
+        type: 'trigger' as const,
+        position: { x: TRIGGER_X, y: triggerY },
+        data: triggerData,
+      });
 
-    let conditionY = triggerY;
+      let conditionY = triggerY;
 
-    for (const group of groups as HookGroupInput[]) {
-      const hookList = group.hooks ?? [];
-      if (hookList.length === 0) continue;
+      for (const group of groups) {
+        if (!group || typeof group !== 'object') continue;
+        const hookList = Array.isArray((group as HookGroupInput).hooks) ? (group as HookGroupInput).hooks! : [];
+        if (hookList.length === 0) continue;
 
-      if (group.matcher) {
-        // Create a condition node for the matcher
-        const conditionId = genId('condition');
-        const condData: ConditionNodeData = {
-          matcher: group.matcher,
-          label: `Match: ${group.matcher}`,
-        };
-        nodes.push({
-          id: conditionId,
-          type: 'condition' as const,
-          position: { x: CONDITION_X, y: conditionY },
-          data: condData,
-        });
-        edges.push({
-          id: genId('edge'),
-          source: triggerId,
-          target: conditionId,
-        });
-
-        let actionY = conditionY;
-        for (const hook of hookList) {
-          const actionData = buildActionData(hook);
-          if (!actionData) continue;
-          const actionId = genId('action');
+        if ((group as HookGroupInput).matcher) {
+          // Create a condition node for the matcher
+          const conditionId = genId('condition');
+          const condData: ConditionNodeData = {
+            matcher: (group as HookGroupInput).matcher!,
+            label: `Match: ${(group as HookGroupInput).matcher}`,
+          };
           nodes.push({
-            id: actionId,
-            type: 'action' as const,
-            position: { x: ACTION_X, y: actionY },
-            data: actionData,
-          });
-          edges.push({
-            id: genId('edge'),
-            source: conditionId,
-            target: actionId,
-          });
-          actionY += ROW_HEIGHT;
-        }
-        conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
-      } else {
-        // No condition — connect actions directly to trigger
-        let actionY = conditionY;
-        for (const hook of hookList) {
-          const actionData = buildActionData(hook);
-          if (!actionData) continue;
-          const actionId = genId('action');
-          nodes.push({
-            id: actionId,
-            type: 'action' as const,
-            position: { x: ACTION_X, y: actionY },
-            data: actionData,
+            id: conditionId,
+            type: 'condition' as const,
+            position: { x: CONDITION_X, y: conditionY },
+            data: condData,
           });
           edges.push({
             id: genId('edge'),
             source: triggerId,
-            target: actionId,
+            target: conditionId,
           });
-          actionY += ROW_HEIGHT;
-        }
-        conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
-      }
-    }
 
-    triggerY = Math.max(triggerY + ROW_HEIGHT, conditionY + ROW_HEIGHT);
+          let actionY = conditionY;
+          for (const hook of hookList) {
+            if (!hook || typeof hook !== 'object') continue;
+            const actionData = buildActionData(hook);
+            if (!actionData) continue;
+            const actionId = genId('action');
+            nodes.push({
+              id: actionId,
+              type: 'action' as const,
+              position: { x: ACTION_X, y: actionY },
+              data: actionData,
+            });
+            edges.push({
+              id: genId('edge'),
+              source: conditionId,
+              target: actionId,
+            });
+            actionY += ROW_HEIGHT;
+          }
+          conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
+        } else {
+          // No condition — connect actions directly to trigger
+          let actionY = conditionY;
+          for (const hook of hookList) {
+            if (!hook || typeof hook !== 'object') continue;
+            const actionData = buildActionData(hook);
+            if (!actionData) continue;
+            const actionId = genId('action');
+            nodes.push({
+              id: actionId,
+              type: 'action' as const,
+              position: { x: ACTION_X, y: actionY },
+              data: actionData,
+            });
+            edges.push({
+              id: genId('edge'),
+              source: triggerId,
+              target: actionId,
+            });
+            actionY += ROW_HEIGHT;
+          }
+          conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
+        }
+      }
+
+      triggerY = Math.max(triggerY + ROW_HEIGHT, conditionY + ROW_HEIGHT);
+    }
+  } catch {
+    return null;
   }
 
   if (nodes.length === 0) return null;

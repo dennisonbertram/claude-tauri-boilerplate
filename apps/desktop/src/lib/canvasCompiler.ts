@@ -5,6 +5,7 @@ import type {
   ActionNodeData,
   HookType,
 } from '../components/agent-builder/types/canvas';
+import { HOOK_EVENTS } from '../components/agent-builder/types/canvas';
 
 interface HookEntry {
   type: HookType;
@@ -38,7 +39,7 @@ interface HooksJson {
  * - Invalid/incomplete nodes are skipped gracefully.
  */
 export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
-  const result: HooksJson = { hooks: {} };
+  const result: HooksJson = { hooks: Object.create(null) as Record<string, HookGroup[]> };
 
   // Build adjacency map: sourceId → targetIds
   const adjacency = new Map<string, string[]>();
@@ -63,6 +64,7 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
     const data = trigger.data as TriggerNodeData;
     const event = data.event;
     if (!event) continue;
+    if (!HOOK_EVENTS.includes(event as any)) continue;
 
     const groups: HookGroup[] = [];
     const connectedIds = adjacency.get(trigger.id) ?? [];
@@ -105,7 +107,7 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
 
     if (groups.length > 0) {
       // If multiple triggers share the same event, merge groups
-      if (result.hooks[event]) {
+      if (Object.prototype.hasOwnProperty.call(result.hooks, event)) {
         result.hooks[event].push(...groups);
       } else {
         result.hooks[event] = groups;
@@ -131,8 +133,19 @@ function buildHookEntry(data: ActionNodeData): HookEntry | null {
       if (!data.url) return null;
       entry.url = data.url;
       if (data.method) entry.method = data.method;
-      if (data.headers && Object.keys(data.headers).length > 0) {
-        entry.headers = data.headers;
+      if (data.headers && typeof data.headers === 'object' && !Array.isArray(data.headers)) {
+        const CRLF_RE = /[\r\n]/;
+        const sanitizedHeaders: Record<string, string> = {};
+        for (const [k, v] of Object.entries(data.headers)) {
+          if (typeof k === 'string' && typeof v === 'string'
+              && !CRLF_RE.test(k) && !CRLF_RE.test(v)
+              && k.length < 200 && v.length < 1000) {
+            sanitizedHeaders[k] = v;
+          }
+        }
+        if (Object.keys(sanitizedHeaders).length > 0) {
+          entry.headers = sanitizedHeaders;
+        }
       }
       if (data.timeout != null) entry.timeout = data.timeout;
       break;

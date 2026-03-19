@@ -26,6 +26,27 @@ import type {
   CanvasNodeType,
 } from './types/canvas';
 
+const VALID_NODE_TYPES = new Set(['trigger', 'condition', 'action']);
+const MAX_STRING_LENGTH = 10_000;
+const MAX_NODE_COUNT = 200;
+
+function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (typeof val === 'string') {
+      result[key] = val.slice(0, MAX_STRING_LENGTH);
+    } else if (typeof val === 'number' && isFinite(val)) {
+      result[key] = val;
+    } else if (val === null || val === undefined) {
+      result[key] = val;
+    } else if (typeof val === 'boolean') {
+      result[key] = val;
+    }
+    // Skip objects/arrays — keep data flat
+  }
+  return result;
+}
+
 interface HookCanvasProps {
   hooksJson: string | null;
   hooksCanvasJson: string | null;
@@ -58,7 +79,9 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     if (hooksCanvasJson) {
       try {
         const saved: CanvasState = JSON.parse(hooksCanvasJson);
-        if (saved.nodes) setNodes(saved.nodes as CanvasNode[]);
+        if (saved.nodes && saved.nodes.length <= MAX_NODE_COUNT) {
+          setNodes(saved.nodes as CanvasNode[]);
+        }
         if (saved.edges) setEdges(saved.edges as CanvasEdge[]);
         return;
       } catch {
@@ -129,6 +152,22 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
 
       try {
         const { nodeType, data } = JSON.parse(raw);
+
+        // Validate nodeType
+        if (!VALID_NODE_TYPES.has(nodeType)) return;
+
+        // Validate data is a plain object
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+
+        // Enforce max node count
+        if (nodes.length >= MAX_NODE_COUNT) {
+          console.warn('Maximum node count reached');
+          return;
+        }
+
+        // Sanitize string fields
+        const sanitizedData = sanitizeNodeData(data);
+
         const position = screenToFlowPosition({
           x: event.clientX,
           y: event.clientY,
@@ -138,7 +177,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
           id: `${nodeType}-${Date.now()}`,
           type: nodeType,
           position,
-          data,
+          data: sanitizedData,
         } as CanvasNode;
 
         setNodes((nds) => [...nds, newNode]);
@@ -146,7 +185,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         // invalid drag data
       }
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, setNodes, nodes],
   );
 
   // Node selection
