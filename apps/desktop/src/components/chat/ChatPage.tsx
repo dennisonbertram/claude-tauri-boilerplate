@@ -39,6 +39,7 @@ import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import * as workspaceApi from '@/lib/workspace-api';
 import { generateArtifact } from '@/lib/workspace-api';
 import { toast } from 'sonner';
+import { DashboardPromptModal } from '@/components/workspaces/DashboardPromptModal';
 import type { AttachedImage } from './ChatInput';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
@@ -158,6 +159,9 @@ export function ChatPage({
   const [costOpen, setCostOpen] = useState(false);
   const [thinkingExpanded, setThinkingExpanded] = useState(false);
   const [thinkingToggleVersion, setThinkingToggleVersion] = useState(0);
+  const [dashboardModalOpen, setDashboardModalOpen] = useState(false);
+  const [dashboardModalLoading, setDashboardModalLoading] = useState(false);
+  const [dashboardModalError, setDashboardModalError] = useState<string | null>(null);
   const {
     toolCalls,
     thinkingBlocks,
@@ -507,26 +511,38 @@ export function ChatPage({
     [settings.workflowPrompts, sendMessage]
   );
 
+  const handleDashboardModalConfirm = useCallback(
+    async (prompt: string) => {
+      if (!workspaceId || !projectId) return;
+      setDashboardModalLoading(true);
+      setDashboardModalError(null);
+      try {
+        const result = await generateArtifact(projectId, {
+          prompt,
+          workspaceId,
+          sessionId: sessionId ?? undefined,
+        });
+        toast.success(`Dashboard "${result.artifact.title}" created`);
+        setDashboardModalOpen(false);
+      } catch (err) {
+        setDashboardModalError(err instanceof Error ? err.message : 'Failed to generate dashboard');
+      } finally {
+        setDashboardModalLoading(false);
+      }
+    },
+    [workspaceId, projectId, sessionId]
+  );
+
   const generateDashboard = useCallback(
     workspaceId && projectId
-      ? async () => {
-          const prompt = window.prompt('What should this dashboard show?');
-          if (!prompt) return;
-          try {
-            const result = await generateArtifact(projectId, {
-              prompt,
-              workspaceId,
-              sessionId: sessionId ?? undefined,
-            });
-            toast.success(`Dashboard "${result.artifact.title}" created`);
-          } catch {
-            toast.error('Failed to generate dashboard');
-          }
+      ? () => {
+          setDashboardModalError(null);
+          setDashboardModalOpen(true);
         }
       : async () => {
           toast.info('Open a workspace to generate dashboard artifacts');
         },
-    [workspaceId, projectId, sessionId]
+    [workspaceId, projectId]
   );
 
   const commandContext = useMemo(
@@ -1396,6 +1412,20 @@ export function ChatPage({
           window.location.hash = `#linear/issue/${encodeURIComponent(issue.id)}`;
         }}
         onOpenSettings={() => onOpenSettings?.('linear')}
+      />
+
+      <DashboardPromptModal
+        isOpen={dashboardModalOpen}
+        title="New Dashboard"
+        isLoading={dashboardModalLoading}
+        error={dashboardModalError}
+        onConfirm={handleDashboardModalConfirm}
+        onCancel={() => {
+          if (!dashboardModalLoading) {
+            setDashboardModalOpen(false);
+            setDashboardModalError(null);
+          }
+        }}
       />
     </div>
   );
