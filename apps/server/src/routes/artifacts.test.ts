@@ -351,3 +351,207 @@ describe('POST /api/projects/:projectId/artifacts/generate', () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ─── POST /api/artifacts/:id/regenerate ──────────────────────────────────────
+
+describe('POST /api/artifacts/:id/regenerate', () => {
+  test('returns 404 for unknown artifact', async () => {
+    const res = await app.request('/api/artifacts/nonexistent-id/regenerate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Add a chart widget' }),
+    });
+    expect(res.status).toBe(404);
+
+    const body = await res.json();
+    expect(body.code).toBe('NOT_FOUND');
+  });
+
+  test('returns 400 for archived artifact', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Archived Dashboard',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    // Archive it
+    const { archiveArtifact: archive } = await import('../db');
+    archive(db, artifact.id);
+
+    const res = await app.request(`/api/artifacts/${artifact.id}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Add more widgets' }),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
+    expect(body.code).toBe('INVALID_STATE');
+  });
+
+  test('returns 400 when prompt is missing', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Active Dashboard',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    const res = await app.request(`/api/artifacts/${artifact.id}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('returns 400 when prompt is empty string', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Active Dashboard',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    const res = await app.request(`/api/artifacts/${artifact.id}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: '' }),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+});
+
+// ─── PATCH /api/artifacts/:id (rename) ───────────────────────────────────────
+
+describe('PATCH /api/artifacts/:id (rename)', () => {
+  test('returns 404 for unknown artifact', async () => {
+    const res = await app.request('/api/artifacts/nonexistent-id', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'New Title' }),
+    });
+    expect(res.status).toBe(404);
+
+    const body = await res.json();
+    expect(body.code).toBe('NOT_FOUND');
+  });
+
+  test('returns 200 with updated title for known artifact', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Old Title',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    const res = await app.request(`/api/artifacts/${artifact.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'New Title' }),
+    });
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.id).toBe(artifact.id);
+    expect(body.title).toBe('New Title');
+  });
+
+  test('returns 400 when title is empty', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Some Title',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    const res = await app.request(`/api/artifacts/${artifact.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: '' }),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('returns 400 when title is missing', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Some Title',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    const res = await app.request(`/api/artifacts/${artifact.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('title update persists in DB', async () => {
+    const artifact = createArtifact(db, {
+      id: crypto.randomUUID(),
+      kind: 'dashboard',
+      schemaVersion: 1,
+      title: 'Before',
+      projectId,
+      workspaceId: null,
+      sourceSessionId: null,
+      sourceMessageId: null,
+      status: 'active',
+    });
+
+    await app.request(`/api/artifacts/${artifact.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'After' }),
+    });
+
+    const fetched = getArtifact(db, artifact.id);
+    expect(fetched?.title).toBe('After');
+  });
+});

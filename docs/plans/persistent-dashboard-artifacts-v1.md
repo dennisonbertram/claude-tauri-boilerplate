@@ -43,8 +43,8 @@ Implement a durable, artifact-backed dashboard flow where workspace chat can cre
 - [x] Add `/dashboard` workspace-only interception and flow.
 
 ### Phase 4 - Dashboard surface
-- [ ] Add dashboards listing + full-page canvas surface in workspace/project UI.
-- [ ] Add rename/duplicate/archive/regenerate actions.
+- [x] Add dashboards listing + full-page canvas surface in workspace/project UI.
+- [x] Add rename/duplicate/archive/regenerate actions.
 
 ### Phase 5 - Docs + manual verification
 - [ ] Document implementation details in `docs/implementation/` + index updates.

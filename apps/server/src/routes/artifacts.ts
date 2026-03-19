@@ -9,6 +9,8 @@ import {
   createArtifact,
   createArtifactRevision,
   setArtifactCurrentRevision,
+  updateArtifactTitle,
+  countArtifactRevisions,
 } from '../db';
 import { streamClaude } from '../services/claude';
 
@@ -37,6 +39,15 @@ const generateArtifactSchema = z.object({
   workspaceId: z.string().optional(),
   sessionId: z.string().optional(),
   model: z.string().optional(),
+});
+
+const regenerateArtifactSchema = z.object({
+  prompt: z.string().min(1),
+  model: z.string().optional(),
+});
+
+const renameArtifactSchema = z.object({
+  title: z.string().min(1),
 });
 
 const dashboardSpecSchema = z.object({
@@ -108,6 +119,126 @@ export function createArtifactsRouter(db: Database) {
     archiveArtifact(db, id);
     const updated = getArtifact(db, id)!;
     return c.json(updated);
+  });
+
+  // PATCH /api/artifacts/:id — rename an artifact
+  router.patch('/:id', async (c) => {
+    const id = c.req.param('id');
+
+    const artifact = getArtifact(db, id);
+    if (!artifact) {
+      return c.json({ error: 'Artifact not found', code: 'NOT_FOUND' }, 404);
+    }
+
+    let bodyRaw: unknown;
+    try {
+      bodyRaw = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON in request body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const parsed = renameArtifactSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: 'Invalid rename request',
+          code: 'VALIDATION_ERROR',
+          details: parsed.error.issues,
+        },
+        400
+      );
+    }
+
+    updateArtifactTitle(db, id, parsed.data.title);
+    const updated = getArtifact(db, id)!;
+    return c.json(updated);
+  });
+
+  // POST /api/artifacts/:id/regenerate — regenerate an artifact with a new prompt
+  router.post('/:id/regenerate', async (c) => {
+    const id = c.req.param('id');
+
+    // 1. Fetch artifact (404 if not found, 400 if archived)
+    const artifact = getArtifact(db, id);
+    if (!artifact) {
+      return c.json({ error: 'Artifact not found', code: 'NOT_FOUND' }, 404);
+    }
+    if (artifact.status === 'archived') {
+      return c.json({ error: 'Cannot regenerate an archived artifact', code: 'INVALID_STATE' }, 400);
+    }
+
+    // 2. Parse and validate body
+    let bodyRaw: unknown;
+    try {
+      bodyRaw = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON in request body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const parsed = regenerateArtifactSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: 'Invalid regenerate request',
+          code: 'VALIDATION_ERROR',
+          details: parsed.error.issues,
+        },
+        400
+      );
+    }
+
+    const { prompt, model } = parsed.data;
+
+    // 3. Get next revision number
+    const existingCount = countArtifactRevisions(db, id);
+    const nextRevisionNumber = existingCount + 1;
+
+    // 4. Call streamClaude with dashboard generation prompt
+    const fullPrompt = `${DASHBOARD_GENERATION_SYSTEM_PROMPT}\n\nUser request: ${prompt}`;
+    let fullResponse = '';
+    try {
+      for await (const event of streamClaude({
+        prompt: fullPrompt,
+        model: model ?? 'claude-haiku-4-5-20251001',
+        effort: 'low',
+        permissionMode: 'dontAsk',
+      })) {
+        if (event.type === 'text:delta') {
+          fullResponse += event.text;
+        }
+        if (event.type === 'error') {
+          return c.json({ error: event.message, code: 'GENERATION_ERROR' }, 500);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Artifact regeneration failed';
+      return c.json({ error: message, code: 'GENERATION_ERROR' }, 500);
+    }
+
+    // 5. Parse JSON from response
+    const { spec } = parseDashboardSpec(fullResponse);
+
+    // 6. Create revision
+    const revisionId = crypto.randomUUID();
+    const revision = createArtifactRevision(db, {
+      id: revisionId,
+      artifactId: id,
+      revisionNumber: nextRevisionNumber,
+      specJson: JSON.stringify(spec),
+      summary: null,
+      prompt,
+      model: model ?? 'claude-haiku-4-5-20251001',
+      sourceSessionId: null,
+      sourceMessageId: null,
+    });
+
+    // 7. Set current revision
+    setArtifactCurrentRevision(db, id, revisionId);
+
+    // Re-fetch artifact to get updated currentRevisionId
+    const updatedArtifact = getArtifact(db, id)!;
+
+    return c.json({ artifact: updatedArtifact, revision });
   });
 
   return router;
