@@ -37,42 +37,78 @@ type TabId =
   | 'advanced'
   | 'status';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'git', label: 'Git' },
-  { id: 'model', label: 'Model' },
-  { id: 'workflows', label: 'Workflows' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'instructions', label: 'Instructions' },
-  { id: 'memory', label: 'Memory' },
-  { id: 'mcp', label: 'MCP' },
-  { id: 'linear', label: 'Linear' },
-  { id: 'hooks', label: 'Hooks' },
-  { id: 'advanced', label: 'Advanced' },
-  { id: 'status', label: 'Status' },
-];
+type GroupId = 'general' | 'ai-model' | 'data-context' | 'integrations' | 'status';
 
-function getTablistClass(tabDensity: AppSettings['tabDensity']): string {
-  return tabDensity === 'compact'
-    ? 'flex overflow-x-auto border-b border-border px-2 py-1 gap-0 scrollbar-none'
-    : 'flex overflow-x-auto border-b border-border scrollbar-none';
+interface SettingsGroup {
+  id: GroupId;
+  label: string;
+  tabs: { id: TabId; label: string }[];
 }
 
-function getTabButtonClass(
-  active: boolean,
-  tabDensity: AppSettings['tabDensity']
-): string {
-  const densityClass =
-    tabDensity === 'compact'
-      ? 'px-2.5 py-1.5 text-xs'
-      : 'px-3 py-2 text-sm';
+const GROUPS: SettingsGroup[] = [
+  {
+    id: 'general',
+    label: 'General',
+    tabs: [
+      { id: 'general', label: 'General' },
+      { id: 'appearance', label: 'Appearance' },
+      { id: 'notifications', label: 'Notifications' },
+    ],
+  },
+  {
+    id: 'ai-model',
+    label: 'AI & Model',
+    tabs: [
+      { id: 'model', label: 'Model' },
+      { id: 'advanced', label: 'Advanced' },
+      { id: 'workflows', label: 'Workflows' },
+    ],
+  },
+  {
+    id: 'data-context',
+    label: 'Data & Context',
+    tabs: [
+      { id: 'instructions', label: 'Instructions' },
+      { id: 'memory', label: 'Memory' },
+      { id: 'mcp', label: 'MCP' },
+      { id: 'hooks', label: 'Hooks' },
+    ],
+  },
+  {
+    id: 'integrations',
+    label: 'Integrations',
+    tabs: [
+      { id: 'git', label: 'Git' },
+      { id: 'linear', label: 'Linear' },
+    ],
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    tabs: [
+      { id: 'status', label: 'Status' },
+    ],
+  },
+];
 
-  return `shrink-0 ${densityClass} font-medium transition-colors whitespace-nowrap ${
-    active
-      ? 'border-b-2 border-primary text-foreground'
-      : 'text-muted-foreground hover:text-foreground'
-  }`;
+/** Map a legacy TabId (used by deep-link callers) to a GroupId */
+function tabToGroup(tabId: string): GroupId {
+  const mapping: Record<string, GroupId> = {
+    general: 'general',
+    appearance: 'general',
+    notifications: 'general',
+    model: 'ai-model',
+    advanced: 'ai-model',
+    workflows: 'ai-model',
+    instructions: 'data-context',
+    memory: 'data-context',
+    mcp: 'data-context',
+    hooks: 'data-context',
+    git: 'integrations',
+    linear: 'integrations',
+    status: 'status',
+  };
+  return mapping[tabId] ?? 'general';
 }
 
 export interface SessionRuntimeInfo {
@@ -93,15 +129,19 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initialTab }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? 'general');
+  const [activeGroup, setActiveGroup] = useState<GroupId>(
+    initialTab ? tabToGroup(initialTab) : 'general'
+  );
 
   useEffect(() => {
-    if (isOpen) setActiveTab(initialTab ?? 'general');
+    if (isOpen) setActiveGroup(initialTab ? tabToGroup(initialTab) : 'general');
   }, [isOpen, initialTab]);
   const [showApiKey, setShowApiKey] = useState(false);
   const { settings, updateSettings } = useSettings();
 
   if (!isOpen) return null;
+
+  const currentGroup = GROUPS.find((g) => g.id === activeGroup) ?? GROUPS[0];
 
   return (
     <>
@@ -113,7 +153,7 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 z-50 flex h-full w-[480px] max-w-[90vw] flex-col border-l border-border bg-background shadow-xl overflow-hidden">
+      <div className="fixed right-0 top-0 z-50 flex h-full w-[560px] max-w-[90vw] flex-col border-l border-border bg-background shadow-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="text-lg font-semibold">Settings</h2>
@@ -138,73 +178,105 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className={getTablistClass(settings.tabDensity)} role="tablist">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={getTabButtonClass(
-                activeTab === tab.id,
-                settings.tabDensity
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Sidebar + Content */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left sidebar */}
+          <nav className="w-[180px] shrink-0 border-r border-border py-2 overflow-y-auto" role="tablist">
+            {GROUPS.map((group) => (
+              <button
+                key={group.id}
+                role="tab"
+                aria-selected={activeGroup === group.id}
+                onClick={() => setActiveGroup(group.id)}
+                className={`w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
+                  activeGroup === group.id
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                }`}
+              >
+                {group.label}
+              </button>
+            ))}
+          </nav>
 
-        {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {activeTab === 'general' && (
-            <GeneralTab
-              settings={settings}
-              updateSettings={updateSettings}
-              showApiKey={showApiKey}
-              onToggleApiKey={() => setShowApiKey(!showApiKey)}
-            />
-          )}
-          {activeTab === 'git' && (
-            <GitTab settings={settings} updateSettings={updateSettings} />
-          )}
-          {activeTab === 'model' && (
-            <ModelTab settings={settings} updateSettings={updateSettings} />
-          )}
-          {activeTab === 'workflows' && (
-            <WorkflowsTab settings={settings} updateSettings={updateSettings} />
-          )}
-          {activeTab === 'appearance' && (
-            <AppearanceTab
-              settings={settings}
-              updateSettings={updateSettings}
-            />
-          )}
-          {activeTab === 'notifications' && (
-            <NotificationsTab settings={settings} updateSettings={updateSettings} />
-          )}
-          {activeTab === 'instructions' && <InstructionsPanel />}
-          {activeTab === 'memory' && <MemoryPanel />}
-          {activeTab === 'mcp' && <McpPanel />}
-          {activeTab === 'linear' && <LinearPanel />}
-          {activeTab === 'hooks' && <HooksPanel />}
-          {activeTab === 'advanced' && (
-            <AdvancedTab settings={settings} updateSettings={updateSettings} />
-          )}
-          {activeTab === 'status' && (
-            <StatusTab
-              sessionInfo={sessionInfo}
-              email={email}
-              plan={plan}
-              settings={settings}
-              updateSettings={updateSettings}
-            />
-          )}
+          {/* Right content area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {currentGroup.tabs.map((tab, idx) => (
+              <div key={tab.id}>
+                {idx > 0 && <hr className="border-border mb-6" />}
+                <h3 className="text-sm font-semibold text-foreground mb-4">{tab.label}</h3>
+                <div className="space-y-6">
+                  <TabContent
+                    tabId={tab.id}
+                    settings={settings}
+                    updateSettings={updateSettings}
+                    showApiKey={showApiKey}
+                    onToggleApiKey={() => setShowApiKey(!showApiKey)}
+                    sessionInfo={sessionInfo}
+                    email={email}
+                    plan={plan}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
   );
+}
+
+// ─── Tab Content Router ───
+
+function TabContent({
+  tabId,
+  settings,
+  updateSettings,
+  showApiKey,
+  onToggleApiKey,
+  sessionInfo,
+  email,
+  plan,
+}: {
+  tabId: TabId;
+  settings: AppSettings;
+  updateSettings: (updates: Partial<AppSettings>) => void;
+  showApiKey: boolean;
+  onToggleApiKey: () => void;
+  sessionInfo?: SessionRuntimeInfo;
+  email?: string;
+  plan?: string;
+}) {
+  switch (tabId) {
+    case 'general':
+      return <GeneralTab settings={settings} updateSettings={updateSettings} showApiKey={showApiKey} onToggleApiKey={onToggleApiKey} />;
+    case 'git':
+      return <GitTab settings={settings} updateSettings={updateSettings} />;
+    case 'model':
+      return <ModelTab settings={settings} updateSettings={updateSettings} />;
+    case 'workflows':
+      return <WorkflowsTab settings={settings} updateSettings={updateSettings} />;
+    case 'appearance':
+      return <AppearanceTab settings={settings} updateSettings={updateSettings} />;
+    case 'notifications':
+      return <NotificationsTab settings={settings} updateSettings={updateSettings} />;
+    case 'instructions':
+      return <InstructionsPanel />;
+    case 'memory':
+      return <MemoryPanel />;
+    case 'mcp':
+      return <McpPanel />;
+    case 'linear':
+      return <LinearPanel />;
+    case 'hooks':
+      return <HooksPanel />;
+    case 'advanced':
+      return <AdvancedTab settings={settings} updateSettings={updateSettings} />;
+    case 'status':
+      return <StatusTab sessionInfo={sessionInfo} email={email} plan={plan} settings={settings} updateSettings={updateSettings} />;
+    default:
+      return null;
+  }
 }
 
 // ─── Tab Components ───
