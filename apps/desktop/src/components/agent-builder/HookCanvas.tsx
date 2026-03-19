@@ -95,6 +95,32 @@ function canvasHasDangerousActions(savedState: { nodes: Array<Record<string, unk
   );
 }
 
+function pruneInvalidEdges(
+  sanitizedNodes: Array<{ id: string; type?: string }>,
+  sanitizedEdges: Array<{ id: string; source: string; target: string }>,
+): Array<{ id: string; source: string; target: string }> {
+  const nodeTypeMap = new Map(sanitizedNodes.map((n) => [n.id, n.type]));
+
+  // Filter edges that violate connection rules
+  const validEdges = sanitizedEdges.filter((e) => {
+    const sourceType = nodeTypeMap.get(e.source) as CanvasNodeType | undefined;
+    const targetType = nodeTypeMap.get(e.target) as CanvasNodeType | undefined;
+    if (!sourceType || !targetType) return false;
+    return checkConnection(sourceType, targetType);
+  });
+
+  // Enforce single inbound edge per action node
+  const actionInboundEdges = new Map<string, string>();
+  return validEdges.filter((e) => {
+    const targetType = nodeTypeMap.get(e.target);
+    if (targetType === 'action') {
+      if (actionInboundEdges.has(e.target)) return false;
+      actionInboundEdges.set(e.target, e.id);
+    }
+    return true;
+  });
+}
+
 function isValidCanvasState(saved: unknown): saved is CanvasState {
   if (!saved || typeof saved !== 'object') return false;
   const s = saved as Record<string, unknown>;
@@ -114,8 +140,7 @@ function isValidCanvasState(saved: unknown): saved is CanvasState {
     if (typeof pos.y !== 'number' || !isFinite(pos.y)) return false;
     if (!n.data || typeof n.data !== 'object') return false;
 
-    // Reject dangerous keys in node IDs
-    const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    // Reject dangerous keys in node IDs (uses module-level DANGEROUS_KEYS)
     if (DANGEROUS_KEYS.has(n.id)) return false;
 
     // Validate primitive types per node type
@@ -137,11 +162,15 @@ function isValidCanvasState(saved: unknown): saved is CanvasState {
     nodeIds.add(n.id);
   }
 
+  const edgeIds = new Set<string>();
   for (const edge of s.edges) {
     if (!edge || typeof edge !== 'object') return false;
     const e = edge as Record<string, unknown>;
     if (typeof e.id !== 'string' || typeof e.source !== 'string' || typeof e.target !== 'string') return false;
+    if (DANGEROUS_KEYS.has(e.id) || DANGEROUS_KEYS.has(e.source) || DANGEROUS_KEYS.has(e.target)) return false;
     if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) return false; // dangling edge
+    if (edgeIds.has(e.id)) return false; // duplicate edge ID
+    edgeIds.add(e.id);
   }
 
   return true;
@@ -225,10 +254,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
                 source: String(e.source).slice(0, 100),
                 target: String(e.target).slice(0, 100),
               }));
+              const prunedEdges = pruneInvalidEdges(sanitizedNodes, sanitizedEdges);
               setNodes(sanitizedNodes as CanvasNode[]);
-              setEdges(sanitizedEdges as CanvasEdge[]);
+              setEdges(prunedEdges as CanvasEdge[]);
               lastCompiledHooksJsonRef.current =
-                hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+                hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], prunedEdges as CanvasEdge[]);
               return;
             }
           } else {
@@ -244,10 +274,11 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
               source: String(e.source).slice(0, 100),
               target: String(e.target).slice(0, 100),
             }));
+            const prunedEdges = pruneInvalidEdges(sanitizedNodes, sanitizedEdges);
             setNodes(sanitizedNodes as CanvasNode[]);
-            setEdges(sanitizedEdges as CanvasEdge[]);
+            setEdges(prunedEdges as CanvasEdge[]);
             lastCompiledHooksJsonRef.current =
-              hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+              hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], prunedEdges as CanvasEdge[]);
             return;
           }
         }

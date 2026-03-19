@@ -150,8 +150,9 @@ function buildHookEntry(data: ActionNodeData): HookEntry | null {
       if (typeof data.method === 'string') entry.method = data.method.slice(0, 20);
       if (data.headers && typeof data.headers === 'object' && !Array.isArray(data.headers)) {
         const CRLF_RE = /[\r\n]/;
-        const sanitizedHeaders: Record<string, string> = {};
+        const sanitizedHeaders: Record<string, string> = Object.create(null);
         for (const [k, v] of Object.entries(data.headers)) {
+          if (DANGEROUS_KEYS.has(k)) continue;
           if (typeof k === 'string' && typeof v === 'string'
               && !CRLF_RE.test(k) && !CRLF_RE.test(v)
               && k.length < 200 && v.length < 1000) {

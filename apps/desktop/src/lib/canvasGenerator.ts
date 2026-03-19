@@ -192,12 +192,29 @@ export function generateCanvasFromHooks(
   return { nodes, edges };
 }
 
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
 const VALID_HOOK_TYPES = new Set<string>([
   'command',
   'http',
   'prompt',
   'agent',
 ]);
+
+function sanitizeHeaders(headers: Record<string, string>): Record<string, string> | undefined {
+  const CRLF_RE = /[\r\n]/;
+  const result: Record<string, string> = Object.create(null);
+  let count = 0;
+  for (const [k, v] of Object.entries(headers)) {
+    if (DANGEROUS_KEYS.has(k)) continue;
+    if (typeof k === 'string' && typeof v === 'string'
+        && !CRLF_RE.test(k) && !CRLF_RE.test(v)
+        && k.length < 200 && v.length < 1000) {
+      result[k] = v;
+      count++;
+    }
+  }
+  return count > 0 ? result : undefined;
+}
 
 function buildActionData(hook: HookEntryInput): ActionNodeData | null {
   const type = typeof hook.type === 'string' ? hook.type : null;
@@ -224,7 +241,7 @@ function buildActionData(hook: HookEntryInput): ActionNodeData | null {
         label: url ? `${method}: ${url.slice(0, 25)}` : 'http',
         url: url.slice(0, 2000),
         method: method.slice(0, 20),
-        headers: hook.headers && typeof hook.headers === 'object' && !Array.isArray(hook.headers) ? hook.headers : undefined,
+        headers: hook.headers && typeof hook.headers === 'object' && !Array.isArray(hook.headers) ? sanitizeHeaders(hook.headers) : undefined,
         timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
       };
     }

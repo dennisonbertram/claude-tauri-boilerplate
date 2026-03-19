@@ -3,6 +3,25 @@ import type { UpdateAgentProfileRequest } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { HookCanvas } from '../HookCanvas';
 
+function hasExecutionHooks(parsed: any): boolean {
+  try {
+    const hooksObj = parsed?.hooks;
+    if (!hooksObj || typeof hooksObj !== 'object') return false;
+    for (const groups of Object.values(hooksObj)) {
+      if (!Array.isArray(groups)) continue;
+      for (const group of groups as any[]) {
+        if (!group || typeof group !== 'object') continue;
+        const hookList = Array.isArray(group.hooks) ? group.hooks : [];
+        for (const hook of hookList) {
+          if (hook?.type === 'command' || hook?.type === 'http') return true;
+          if (!hook?.type && (typeof hook?.command === 'string' || typeof hook?.url === 'string')) return true;
+        }
+      }
+    }
+    return false;
+  } catch { return false; }
+}
+
 interface HooksTabProps {
   draft: UpdateAgentProfileRequest;
   onChange: (updates: Partial<UpdateAgentProfileRequest>) => void;
@@ -91,14 +110,10 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
         const text = await file.text();
         const parsed = JSON.parse(text);
 
-        // Detect execution hooks and warn
-        const stringified = JSON.stringify(parsed);
-        const hasCommandHooks = stringified.includes('"type":"command"');
-        const hasHttpHooks = stringified.includes('"type":"http"');
-        if (hasCommandHooks || hasHttpHooks) {
-          const types = [hasCommandHooks && 'command', hasHttpHooks && 'HTTP'].filter(Boolean).join(' and ');
+        // Detect execution hooks using proper parse-and-walk (matches hasDangerousHooks logic)
+        if (hasExecutionHooks(parsed)) {
           const confirmed = window.confirm(
-            `This hooks file contains ${types} hooks that can execute local commands or make HTTP requests. Import anyway?`
+            'This hooks file contains command or HTTP hooks that can execute local commands or make HTTP requests. Import anyway?'
           );
           if (!confirmed) return;
         }
