@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-19: Session search query parameter not passed to listSessions
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: The GET `/api/sessions` route handler called `listSessions(db)` without forwarding the `q` query parameter sent by the frontend. As a result, the sidebar search input had no effect — all sessions were always returned regardless of the search term. Fix: extract `c.req.query('q')` in the route handler and pass it to `listSessions(db, searchQuery)`, which already supported the optional search parameter.
+**Regression Test**: `apps/server/src/routes/sessions.test.ts` — three new tests: matching query filters results, non-matching query returns empty array, empty query returns all sessions.
+**Related Issue**: —
+
+---
+
 ### 2026-03-18: Issue 85 AI code review feature implementation
 
 **Type**: New Feature

@@ -45,6 +45,72 @@ describe('Sessions Routes', () => {
       const body = await res.json();
       expect(body).toHaveLength(2);
     });
+
+    test('search with matching query returns only matching sessions', async () => {
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Python Helpers' }),
+      });
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'JavaScript Notes' }),
+      });
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Python Data Science' }),
+      });
+
+      const res = await app.request('/api/sessions?q=Python');
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toHaveLength(2);
+      const titles = body.map((s: { title: string }) => s.title);
+      expect(titles).toContain('Python Helpers');
+      expect(titles).toContain('Python Data Science');
+      expect(titles).not.toContain('JavaScript Notes');
+    });
+
+    test('search with non-matching query returns empty array', async () => {
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Python Helpers' }),
+      });
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'JavaScript Notes' }),
+      });
+
+      const res = await app.request('/api/sessions?q=rust-session-xyz-no-match');
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toEqual([]);
+    });
+
+    test('empty search query returns all sessions', async () => {
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Alpha' }),
+      });
+      await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Beta' }),
+      });
+
+      const res = await app.request('/api/sessions?q=');
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toHaveLength(2);
+    });
   });
 
   describe('POST /api/sessions', () => {

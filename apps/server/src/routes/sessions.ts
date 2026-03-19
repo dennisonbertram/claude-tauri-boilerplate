@@ -32,7 +32,8 @@ export function createSessionsRouter(db: Database) {
   const router = new Hono();
 
   router.get('/', (c) => {
-    const sessions = listSessions(db);
+    const searchQuery = c.req.query('q') || '';
+    const sessions = listSessions(db, searchQuery);
     return c.json(sessions);
   });
 
