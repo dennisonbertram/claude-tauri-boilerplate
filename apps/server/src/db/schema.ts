@@ -100,6 +100,51 @@ export const SCHEMA = `
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_diff_comments_workspace_id ON diff_comments(workspace_id);
+
+  CREATE TABLE IF NOT EXISTS artifacts (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL DEFAULT 'dashboard',
+    schema_version INTEGER NOT NULL DEFAULT 1,
+    title TEXT NOT NULL,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL,
+    source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+    source_message_id TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'archived')),
+    current_revision_id TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_artifacts_project_id ON artifacts(project_id);
+  CREATE INDEX IF NOT EXISTS idx_artifacts_status ON artifacts(status);
+
+  CREATE TABLE IF NOT EXISTS artifact_revisions (
+    id TEXT PRIMARY KEY,
+    artifact_id TEXT NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+    revision_number INTEGER NOT NULL,
+    spec_json TEXT NOT NULL,
+    summary TEXT,
+    prompt TEXT,
+    model TEXT,
+    source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+    source_message_id TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(artifact_id, revision_number)
+  );
+  CREATE INDEX IF NOT EXISTS idx_artifact_revisions_artifact_id ON artifact_revisions(artifact_id);
+
+  CREATE TABLE IF NOT EXISTS message_parts (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    part_type TEXT NOT NULL,
+    ordinal INTEGER NOT NULL DEFAULT 0,
+    text TEXT,
+    artifact_id TEXT REFERENCES artifacts(id) ON DELETE SET NULL,
+    artifact_revision_id TEXT REFERENCES artifact_revisions(id) ON DELETE SET NULL,
+    metadata_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_message_parts_message_id ON message_parts(message_id);
 `;
 
 /**
