@@ -145,6 +145,39 @@ export const SCHEMA = `
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_message_parts_message_id ON message_parts(message_id);
+
+  CREATE TABLE IF NOT EXISTS agent_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK(length(trim(name)) > 0),
+    description TEXT,
+    icon TEXT,
+    color TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    system_prompt TEXT,
+    use_claude_code_prompt INTEGER NOT NULL DEFAULT 1,
+    model TEXT,
+    effort TEXT CHECK(effort IS NULL OR effort IN ('low', 'medium', 'high')),
+    thinking_budget_tokens INTEGER,
+    allowed_tools TEXT NOT NULL DEFAULT '[]',
+    disallowed_tools TEXT NOT NULL DEFAULT '[]',
+    permission_mode TEXT CHECK(permission_mode IS NULL OR permission_mode IN ('default', 'plan', 'acceptEdits', 'bypassPermissions')),
+    hooks_json TEXT,
+    hooks_canvas_json TEXT,
+    mcp_servers_json TEXT,
+    sandbox_json TEXT,
+    cwd TEXT,
+    additional_directories TEXT NOT NULL DEFAULT '[]',
+    setting_sources TEXT NOT NULL DEFAULT '[]',
+    max_turns INTEGER,
+    max_budget_usd REAL,
+    agents_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_name ON agent_profiles(name);
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_is_default ON agent_profiles(is_default);
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_sort_order ON agent_profiles(sort_order);
 `;
 
 /**
