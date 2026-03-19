@@ -107,6 +107,48 @@ describe('artifact + durable thread persistence', () => {
     expect(revision2.revisionNumber).toBe(2);
   });
 
+  test('addMessage transaction safety: all parts are present when message is created successfully', () => {
+    // This guards against the partial-write scenario where message INSERT
+    // succeeds but one of the part INSERTs fails, leaving the message in the
+    // DB without its parts. The invariant: if addMessage returns without
+    // throwing, ALL parts must be present in the DB.
+    createProject(db, 'proj-tx', 'TX Project', '/tmp/tx', '/tmp/tx', 'main');
+    createSession(db, 'sess-tx', 'TX Chat');
+
+    const msg = addMessage(db, 'msg-tx', 'sess-tx', 'user', 'hello', [
+      { type: 'text', text: 'hello' },
+      { type: 'text', text: 'world' },
+      { type: 'text', text: 'foo' },
+    ]);
+
+    expect(msg.id).toBe('msg-tx');
+
+    // All 3 parts must be in message_parts
+    const parts = db
+      .prepare('SELECT * FROM message_parts WHERE message_id = ? ORDER BY ordinal ASC')
+      .all('msg-tx') as Array<{ ordinal: number; text: string | null }>;
+
+    expect(parts).toHaveLength(3);
+    expect(parts[0].text).toBe('hello');
+    expect(parts[1].text).toBe('world');
+    expect(parts[2].text).toBe('foo');
+  });
+
+  test('addMessage transaction safety: message with no parts has zero message_parts rows', () => {
+    createProject(db, 'proj-tx2', 'TX Project 2', '/tmp/tx2', '/tmp/tx2', 'main');
+    createSession(db, 'sess-tx2', 'TX Chat 2');
+
+    const msg = addMessage(db, 'msg-tx2', 'sess-tx2', 'assistant', 'bare content');
+
+    expect(msg.id).toBe('msg-tx2');
+
+    const parts = db
+      .prepare('SELECT * FROM message_parts WHERE message_id = ?')
+      .all('msg-tx2');
+
+    expect(parts).toHaveLength(0);
+  });
+
   test('archived artifacts disappear from listings but old thread refs still render', () => {
     createProject(db, 'proj-archive', 'Project', '/tmp/archive', '/tmp/archive', 'main');
     createSession(db, 'sess-archive', 'Archive Chat');
