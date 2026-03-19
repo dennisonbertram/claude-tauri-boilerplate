@@ -275,16 +275,15 @@ const PERMISSION_MODE_LABELS: Record<string, string> = {
 function PermissionModeSegment({ onShowSettings }: { onShowSettings?: (tab?: string) => void }) {
   const { settings } = useSettings();
 
-  if (settings.permissionMode === 'default') return null;
-
   const label = PERMISSION_MODE_LABELS[settings.permissionMode] ?? 'Normal';
+  const isDefault = settings.permissionMode === 'default';
 
   return (
     <button
       type="button"
       data-testid="permission-mode-segment"
       onClick={() => onShowSettings?.('advanced')}
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors"
+      className={`flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors ${isDefault ? 'text-muted-foreground/50' : ''}`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

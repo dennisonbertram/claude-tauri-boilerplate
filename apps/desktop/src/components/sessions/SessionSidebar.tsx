@@ -129,7 +129,7 @@ export function SessionSidebar({
               <p className="text-sm font-medium mb-1">No conversations yet</p>
               <p className="text-xs mb-3 opacity-70">Start a conversation with Claude</p>
               <button
-                onClick={onNewChat}
+                onClick={() => onNewChat?.()}
                 className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 New Chat
