@@ -1027,3 +1027,18 @@ export function createArtifactRevision(db: Database, params: {
   ) as ArtifactRevisionRow;
   return mapArtifactRevision(row);
 }
+
+export function updateArtifactTitle(db: Database, id: string, title: string) {
+  const stmt = db.prepare(
+    `UPDATE artifacts SET title = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(title, id);
+}
+
+export function countArtifactRevisions(db: Database, artifactId: string): number {
+  const stmt = db.prepare(
+    `SELECT COUNT(*) AS count FROM artifact_revisions WHERE artifact_id = ?`
+  );
+  const row = stmt.get(artifactId) as { count: number } | null;
+  return row?.count ?? 0;
+}

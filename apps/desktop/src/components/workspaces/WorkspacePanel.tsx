@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { WorkspaceDiffView } from './WorkspaceDiffView';
+import { WorkspaceDashboardsView } from './WorkspaceDashboardsView';
 import { WorkspaceMergeDialog } from './WorkspaceMergeDialog';
 import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
@@ -15,7 +16,7 @@ import { getWorkflowPrompt, buildMergeMemoryDraft } from '@/lib/workflowPrompts'
 import * as api from '@/lib/workspace-api';
 import { openInIde, IDE_CONFIGS } from '@/lib/ide-opener';
 
-type Tab = 'chat' | 'diff' | 'paths' | 'notes';
+type Tab = 'chat' | 'diff' | 'paths' | 'notes' | 'dashboards';
 
 interface WorkspacePanelProps {
   workspace: Workspace;
@@ -334,6 +335,32 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
         >
           Notes
         </button>
+        <button
+          onClick={() => setActiveTab('dashboards')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'dashboards'
+              ? 'border-b-2 border-primary text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Dashboards
+        </button>
       </div>
 
       {/* Content */}
@@ -361,6 +388,8 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           )
         ) : activeTab === 'diff' ? (
           <WorkspaceDiffView workspaceId={workspace.id} />
+        ) : activeTab === 'dashboards' ? (
+          <WorkspaceDashboardsView projectId={workspace.projectId} workspaceId={workspace.id} />
         ) : activeTab === 'notes' ? (
           <div className="flex flex-1 min-h-0 flex-col p-4 gap-3">
             <div className="flex items-center justify-between">
