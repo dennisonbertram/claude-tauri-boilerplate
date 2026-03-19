@@ -40,20 +40,20 @@ describe('SessionSidebar', () => {
   test('renders session list with titles', () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    expect(screen.getByText('First Chat')).toBeInTheDocument();
-    expect(screen.getByText('Second Chat')).toBeInTheDocument();
+    expect(screen.getByText('First Chat')).toBeTruthy();
+    expect(screen.getByText('Second Chat')).toBeTruthy();
   });
 
   test('renders New Chat button', () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    expect(screen.getByText('New Chat')).toBeInTheDocument();
+    expect(screen.getByText('New Chat')).toBeTruthy();
   });
 
   test('shows empty state when no sessions', () => {
     render(<SessionSidebar {...defaultProps} sessions={[]} />);
 
-    expect(screen.getByText('No conversations yet')).toBeInTheDocument();
+    expect(screen.getByText('No conversations yet')).toBeTruthy();
   });
 
   // ─── Context Menu / Three-dot Menu ───
@@ -67,7 +67,7 @@ describe('SessionSidebar', () => {
 
     // Should have a menu trigger (three dots or similar)
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]');
-    expect(menuButton).toBeInTheDocument();
+    expect(menuButton).toBeTruthy();
   });
 
   test('opens context menu with right-click on session item', async () => {
@@ -77,8 +77,8 @@ describe('SessionSidebar', () => {
     fireEvent.contextMenu(sessionItem);
 
     await waitFor(() => {
-      expect(screen.getByText('Rename')).toBeInTheDocument();
-      expect(screen.getByText('Fork')).toBeInTheDocument();
+      expect(screen.getByText('Rename')).toBeTruthy();
+      expect(screen.getByText('Fork')).toBeTruthy();
     });
   });
 
@@ -92,7 +92,7 @@ describe('SessionSidebar', () => {
     fireEvent.click(menuButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Rename')).toBeInTheDocument();
+      expect(screen.getByText('Rename')).toBeTruthy();
     });
   });
 
@@ -106,7 +106,7 @@ describe('SessionSidebar', () => {
     fireEvent.click(menuButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Fork')).toBeInTheDocument();
+      expect(screen.getByText('Fork')).toBeTruthy();
     });
   });
 
@@ -120,7 +120,7 @@ describe('SessionSidebar', () => {
     fireEvent.click(menuButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Export JSON')).toBeInTheDocument();
+      expect(screen.getByText('Export JSON')).toBeTruthy();
     });
   });
 
@@ -134,7 +134,7 @@ describe('SessionSidebar', () => {
     fireEvent.click(menuButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Export Markdown')).toBeInTheDocument();
+      expect(screen.getByText('Export Markdown')).toBeTruthy();
     });
   });
 
@@ -148,7 +148,7 @@ describe('SessionSidebar', () => {
     fireEvent.click(menuButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Delete')).toBeInTheDocument();
+      expect(screen.getByText('Delete')).toBeTruthy();
     });
   });
 
@@ -169,7 +169,7 @@ describe('SessionSidebar', () => {
 
     // An input field should appear with the current title
     const input = screen.getByDisplayValue('First Chat');
-    expect(input).toBeInTheDocument();
+    expect(input).toBeTruthy();
     expect(input.tagName).toBe('INPUT');
   });
 
@@ -221,7 +221,7 @@ describe('SessionSidebar', () => {
     expect(defaultProps.onRenameSession).not.toHaveBeenCalled();
 
     // Should show original title
-    expect(screen.getByText('First Chat')).toBeInTheDocument();
+    expect(screen.getByText('First Chat')).toBeTruthy();
   });
 
   // ─── Fork ───
@@ -299,7 +299,7 @@ describe('SessionSidebar', () => {
 
     // Should show confirmation state
     await waitFor(() => {
-      expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
+      expect(screen.getByText('Confirm Delete')).toBeTruthy();
     });
   });
 
@@ -321,5 +321,68 @@ describe('SessionSidebar', () => {
     });
 
     expect(defaultProps.onDeleteSession).toHaveBeenCalledWith('session-1');
+  });
+
+  // ─── Section Header ───
+
+  test('renders the "CONVERSATIONS" section header', () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    expect(screen.getByText('Conversations')).toBeTruthy();
+  });
+
+  test('renders the + button in the section header', () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    const plusButton = screen.getByRole('button', { name: 'New chat' });
+    expect(plusButton).toBeTruthy();
+  });
+
+  test('clicking the + button in the header calls onNewChat', () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    const plusButton = screen.getByRole('button', { name: 'New chat' });
+    fireEvent.click(plusButton);
+
+    expect(defaultProps.onNewChat).toHaveBeenCalledTimes(1);
+  });
+
+  test('+ button does not throw when onNewChat is undefined', () => {
+    const propsWithoutOnNewChat = {
+      ...defaultProps,
+      onNewChat: undefined as unknown as () => void,
+    };
+
+    render(<SessionSidebar {...propsWithoutOnNewChat} />);
+
+    const plusButton = screen.getByRole('button', { name: 'New chat' });
+    expect(() => fireEvent.click(plusButton)).not.toThrow();
+  });
+
+  // ─── Regression: header does not break existing functionality ───
+
+  test('New Chat button below header still works', () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    // The "New Chat" Button component (not the + icon button)
+    const newChatButton = screen.getByText('New Chat');
+    fireEvent.click(newChatButton);
+
+    expect(defaultProps.onNewChat).toHaveBeenCalled();
+  });
+
+  test('session list still renders below header', () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    expect(screen.getByText('Conversations')).toBeTruthy();
+    expect(screen.getByText('First Chat')).toBeTruthy();
+    expect(screen.getByText('Second Chat')).toBeTruthy();
+  });
+
+  test('empty state still renders when no sessions', () => {
+    render(<SessionSidebar {...defaultProps} sessions={[]} />);
+
+    expect(screen.getByText('Conversations')).toBeTruthy();
+    expect(screen.getByText('No conversations yet')).toBeTruthy();
   });
 });
