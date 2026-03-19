@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Wrench, GitBranch, Github, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { GithubIssue, GithubBranch } from '@/lib/workspace-api';
@@ -231,10 +232,10 @@ export function CreateWorkspaceDialog({
 
   if (!isOpen) return null;
 
-  const tabs: { id: Mode; label: string }[] = [
-    { id: 'manual', label: 'Manual' },
-    { id: 'branch', label: 'Branch' },
-    { id: 'github-issue', label: 'GitHub Issue' },
+  const tabs: { id: Mode; label: string; icon: React.ReactNode }[] = [
+    { id: 'manual', label: 'Manual', icon: <Wrench className="h-3.5 w-3.5" /> },
+    { id: 'branch', label: 'Branch', icon: <GitBranch className="h-3.5 w-3.5" /> },
+    { id: 'github-issue', label: 'GitHub Issue', icon: <Github className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -258,12 +259,13 @@ export function CreateWorkspaceDialog({
               key={tab.id}
               type="button"
               onClick={() => { setMode(tab.id); setError(null); }}
-              className={`mr-4 pb-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`mr-4 pb-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
                 mode === tab.id
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
+              {tab.icon}
               {tab.label}
             </button>
           ))}
@@ -315,7 +317,10 @@ export function CreateWorkspaceDialog({
               <div>
                 <label className="text-sm font-medium text-foreground">Select Branch</label>
                 {branchLoading ? (
-                  <p className="mt-2 text-sm text-muted-foreground">Loading branches...</p>
+                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading branches...
+                  </div>
                 ) : branchError ? (
                   <p className="mt-2 text-sm text-destructive">{branchError}</p>
                 ) : (
@@ -359,7 +364,10 @@ export function CreateWorkspaceDialog({
               </div>
               <div className="max-h-48 overflow-auto rounded-md border border-border">
                 {issueLoading ? (
-                  <p className="p-3 text-sm text-muted-foreground">Loading issues...</p>
+                  <div className="p-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading issues...
+                  </div>
                 ) : issueError ? (
                   <p className="p-3 text-sm text-destructive">{issueError}</p>
                 ) : issues.length === 0 ? (

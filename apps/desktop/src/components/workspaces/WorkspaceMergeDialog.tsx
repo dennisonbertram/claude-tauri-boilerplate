@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { AlertTriangle, GitMerge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WorkspaceMergeDialogProps {
@@ -52,12 +53,33 @@ export function WorkspaceMergeDialog({ isOpen, mode, workspaceName, branch, base
             </p>
           ) : (
             <>
-              <p>
-                This will delete the worktree and branch for{' '}
-                <span className="font-medium text-foreground">{workspaceName}</span>.
-              </p>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <p>
+                  This will delete the worktree and branch for{' '}
+                  <span className="font-medium text-foreground">{workspaceName}</span>.
+                </p>
+              </div>
               <p className="text-destructive">This cannot be undone.</p>
             </>
+          )}
+        </div>
+        {/* Confirmation summary */}
+        <div className="mt-3 border rounded-md p-3 bg-muted/30 text-sm">
+          {mode === 'merge' ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <GitMerge className="h-4 w-4 shrink-0" />
+              <span>
+                Merge workspace <span className="font-medium text-foreground">{workspaceName}</span> (<span className="font-mono text-foreground">{branch}</span>) into <span className="font-mono text-foreground">{baseBranch}</span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+              <span>
+                Permanently discard workspace <span className="font-medium text-foreground">{workspaceName}</span> and branch <span className="font-mono text-foreground">{branch}</span>
+              </span>
+            </div>
           )}
         </div>
         {error && (
