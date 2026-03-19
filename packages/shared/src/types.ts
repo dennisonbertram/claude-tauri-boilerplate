@@ -24,6 +24,8 @@ export interface Session {
   claudeSessionId?: string;
   model?: string;
   workspaceId?: string;
+  profileId?: string | null;
+  profile?: AgentProfileSummary | null;
   linearIssueId?: string | null;
   linearIssueTitle?: string | null;
   linearIssueSummary?: string | null;
@@ -48,6 +50,7 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
+  profileId?: string;
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
@@ -792,4 +795,94 @@ export interface ThreadMessage {
   content: string;
   parts: MessagePart[];
   createdAt: string;
+}
+
+// ── Agent Profile Types ──────────────────────────────────────────────
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;        // emoji
+  color: string | null;       // hex color
+  isDefault: boolean;
+  sortOrder: number;
+
+  // Prompt
+  systemPrompt: string | null;
+  useClaudeCodePrompt: boolean;
+
+  // Model
+  model: string | null;
+  effort: string | null;       // 'low' | 'medium' | 'high'
+  thinkingBudgetTokens: number | null;
+
+  // Tools
+  allowedTools: string[] | null;
+  disallowedTools: string[] | null;
+  permissionMode: string | null;  // 'default' | 'plan' | 'acceptEdits' | 'bypassPermissions'
+
+  // Hooks (JSON)
+  hooksJson: string | null;
+  hooksCanvasJson: string | null;  // Phase 2 canvas data
+
+  // MCP Servers (JSON)
+  mcpServersJson: string | null;
+
+  // Sandbox (JSON)
+  sandboxJson: string | null;
+
+  // Execution
+  cwd: string | null;
+  additionalDirectories: string[] | null;
+  settingSources: string[] | null;  // which setting sources to load
+
+  // Limits
+  maxTurns: number | null;
+  maxBudgetUsd: number | null;
+
+  // Sub-agents (JSON)
+  agentsJson: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAgentProfileRequest {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+  systemPrompt?: string;
+  useClaudeCodePrompt?: boolean;
+  model?: string;
+  effort?: string;
+  thinkingBudgetTokens?: number;
+  allowedTools?: string[];
+  disallowedTools?: string[];
+  permissionMode?: string;
+  hooksJson?: string;
+  hooksCanvasJson?: string;
+  mcpServersJson?: string;
+  sandboxJson?: string;
+  cwd?: string;
+  additionalDirectories?: string[];
+  settingSources?: string[];
+  maxTurns?: number;
+  maxBudgetUsd?: number;
+  agentsJson?: string;
+}
+
+export interface UpdateAgentProfileRequest extends Partial<CreateAgentProfileRequest> {
+  sortOrder?: number;
+  hooksCanvasJson?: string;
+}
+
+export interface AgentProfileSummary {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
 }
