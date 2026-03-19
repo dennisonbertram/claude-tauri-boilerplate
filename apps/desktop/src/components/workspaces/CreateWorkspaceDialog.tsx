@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Wrench, GitBranch, Github, Loader2, Folder2 } from 'lucide-react';
+import { Wrench, GitBranch, Github, Loader2, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { isTauri } from '@/lib/platform';
@@ -331,7 +331,7 @@ export function CreateWorkspaceDialog({
                   />
                   {isTauri() && (
                     <Button type="button" variant="outline" size="sm" onClick={handleBrowseFolder}>
-                      <Folder2 className="h-3.5 w-3.5 mr-1" />
+                      <FolderOpen className="h-3.5 w-3.5 mr-1" />
                       Browse
                     </Button>
                   )}
