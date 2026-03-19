@@ -793,3 +793,51 @@ export interface ThreadMessage {
   parts: MessagePart[];
   createdAt: string;
 }
+
+// --- Agent Profile Types ---
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  model?: string | null;
+  tools?: string[] | null;
+  permissionMode?: 'normal' | 'acceptEdits' | 'dontAsk' | 'plan' | null;
+  mcpServers?: string[] | null;
+  hooks?: Record<string, unknown> | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAgentProfileRequest {
+  name: string;
+  description?: string;
+  systemPrompt?: string;
+  model?: string;
+  tools?: string[];
+  permissionMode?: 'normal' | 'acceptEdits' | 'dontAsk' | 'plan';
+  mcpServers?: string[];
+  hooks?: Record<string, unknown>;
+}
+
+export interface UpdateAgentProfileRequest {
+  name?: string;
+  description?: string;
+  systemPrompt?: string;
+  model?: string;
+  tools?: string[];
+  permissionMode?: 'normal' | 'acceptEdits' | 'dontAsk' | 'plan';
+  mcpServers?: string[];
+  hooks?: Record<string, unknown>;
+  isDefault?: boolean;
+}
+
+export interface AgentProfileSummary {
+  id: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+  createdAt: string;
+}
