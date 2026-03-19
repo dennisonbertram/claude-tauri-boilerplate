@@ -337,9 +337,12 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     onNodesChange(changes);
   }, [onNodesChange]);
 
-  // All edge changes are structural
+  // Only structural edge changes (add/remove/replace) trigger recompilation
   const handleEdgesChange = useCallback((changes: EdgeChange<CanvasEdge>[]) => {
-    if (changes.length > 0) structuralDirtyRef.current = true;
+    const hasStructural = changes.some(
+      (c) => c.type === 'add' || c.type === 'remove' || c.type === 'replace'
+    );
+    if (hasStructural) structuralDirtyRef.current = true;
     onEdgesChange(changes);
   }, [onEdgesChange]);
 

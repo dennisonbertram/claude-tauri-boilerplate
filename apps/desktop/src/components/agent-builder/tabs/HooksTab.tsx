@@ -66,6 +66,11 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
     if (!draft.hooksJson) return false;
     try {
       const parsed = JSON.parse(draft.hooksJson);
+      // Extra root-level fields beyond 'hooks' will be dropped by canvas compilation
+      if (parsed && typeof parsed === 'object') {
+        const rootKeys = Object.keys(parsed).filter(k => k !== 'hooks');
+        if (rootKeys.length > 0) return true;
+      }
       const hooksObj = parsed?.hooks;
       if (!hooksObj || typeof hooksObj !== 'object') return false;
       const SUPPORTED_TYPES = new Set(['command', 'http', 'prompt', 'agent']);
