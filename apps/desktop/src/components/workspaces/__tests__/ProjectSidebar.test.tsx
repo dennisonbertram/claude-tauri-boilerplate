@@ -80,7 +80,7 @@ describe('ProjectSidebar', () => {
     await waitFor(() => {
       expect(mockFetchWorkspaceStatus).toHaveBeenCalledWith('/tmp/workspace-1');
     });
-    expect(await screen.findByText('Clean')).toBeInTheDocument();
+    expect(await screen.findByText('Clean')).toBeTruthy();
   });
 
   it('shows committed and uncommitted sections for dirty workspaces', async () => {
@@ -101,8 +101,8 @@ describe('ProjectSidebar', () => {
       />
     );
 
-    expect(await screen.findByText('Committed 1')).toBeInTheDocument();
-    expect(screen.getByText('Uncommitted 1')).toBeInTheDocument();
+    expect(await screen.findByText('Committed 1')).toBeTruthy();
+    expect(screen.getByText('Uncommitted 1')).toBeTruthy();
   });
 
   it('supports inline branch rename on Enter key', async () => {
@@ -179,6 +179,137 @@ describe('ProjectSidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onRenameWorkspace).not.toHaveBeenCalled();
-    expect(screen.getByText('workspace/feature-workspace')).toBeInTheDocument();
+    expect(screen.getByText('workspace/feature-workspace')).toBeTruthy();
+  });
+
+  // ─── Section Header ───
+
+  it('renders the "PROJECTS" section header text', () => {
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[]}
+        workspacesByProject={{}}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    const header = screen.getByText('Projects');
+    expect(header).toBeTruthy();
+    expect(header.className).toContain('uppercase');
+  });
+
+  it('renders the + button with correct aria-label', () => {
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[]}
+        workspacesByProject={{}}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    const addButton = screen.getByRole('button', { name: 'Add project' });
+    expect(addButton).toBeTruthy();
+    expect(addButton.getAttribute('title')).toBe('Add project');
+  });
+
+  it('clicking the + button calls onAddProject', async () => {
+    const onAddProject = vi.fn();
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        onAddProject={onAddProject}
+        projects={[]}
+        workspacesByProject={{}}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    expect(onAddProject).toHaveBeenCalledTimes(1);
+  });
+
+  // ─── Regression: header does not break existing functionality ───
+
+  it('workspace list still renders below header', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // Header is present
+    expect(screen.getByText('Projects')).toBeTruthy();
+    // Workspace still renders
+    expect(screen.getByText('feature-workspace')).toBeTruthy();
+    // Project name still renders
+    expect(screen.getByText('Test Project')).toBeTruthy();
+  });
+
+  it('git status still displays correctly below header', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValueOnce(
+      makeStatus({
+        isClean: false,
+        modifiedFiles: [{ path: 'src/app.ts', status: 'modified' }],
+        stagedFiles: [{ path: 'src/ready.ts', status: 'added' }],
+      })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // Header present
+    expect(screen.getByText('Projects')).toBeTruthy();
+    // Git status still renders
+    expect(await screen.findByText('Committed 1')).toBeTruthy();
+    expect(screen.getByText('Uncommitted 1')).toBeTruthy();
+  });
+
+  it('existing workspace rename still works with header present', async () => {
+    const onRenameWorkspace = vi.fn().mockResolvedValue(makeWorkspace({ branch: 'workspace/renamed' }));
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        onRenameWorkspace={onRenameWorkspace}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    // Header present
+    expect(screen.getByText('Projects')).toBeTruthy();
+
+    // Rename still works
+    await screen.findByText('Rename');
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+
+    const input = screen.getByRole('textbox');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'workspace/renamed');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(onRenameWorkspace).toHaveBeenCalledWith('ws-1', 'workspace/renamed');
+    });
   });
 });
