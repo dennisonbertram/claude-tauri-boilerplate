@@ -64,10 +64,14 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
     const data = trigger.data as TriggerNodeData;
     const event = data.event;
     if (!event) continue;
-    if (!HOOK_EVENTS.includes(event as any)) continue;
+    if (!HOOK_EVENTS.includes(event as any)) {
+      console.warn(`[canvasCompiler] Unknown hook event: "${event}" — preserving in output`);
+      // Don't skip — preserve unknown events
+    }
 
     const groups: HookGroup[] = [];
     const connectedIds = adjacency.get(trigger.id) ?? [];
+    const processedActionIds = new Set<string>();
 
     for (const connectedId of connectedIds) {
       const connectedNode = nodeById.get(connectedId);
@@ -77,11 +81,17 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
         // Trigger → Condition → Action(s)
         const condData = connectedNode.data as ConditionNodeData;
         const actionIds = adjacency.get(connectedNode.id) ?? [];
-        const hooks = actionIds
-          .map((id) => nodeById.get(id))
-          .filter((n): n is Node => n != null && n.type === 'action')
-          .map((n) => buildHookEntry(n.data as ActionNodeData))
-          .filter((entry): entry is HookEntry => entry !== null);
+        const hooks: HookEntry[] = [];
+        for (const id of actionIds) {
+          if (processedActionIds.has(id)) continue; // skip duplicates
+          const node = nodeById.get(id);
+          if (!node || node.type !== 'action') continue;
+          const hookEntry = buildHookEntry(node.data as ActionNodeData);
+          if (hookEntry) {
+            hooks.push(hookEntry);
+            processedActionIds.add(id);
+          }
+        }
 
         if (hooks.length > 0) {
           const group: HookGroup = { hooks };
@@ -91,16 +101,12 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
           groups.push(group);
         }
       } else if (connectedNode.type === 'action') {
-        // Trigger → Action directly (no condition)
+        // Trigger → Action directly (no condition) — each gets its own group
+        if (processedActionIds.has(connectedNode.id)) continue;
         const hookEntry = buildHookEntry(connectedNode.data as ActionNodeData);
         if (hookEntry) {
-          // Collect into a single no-matcher group per trigger
-          let noMatcherGroup = groups.find((g) => g.matcher === undefined);
-          if (!noMatcherGroup) {
-            noMatcherGroup = { hooks: [] };
-            groups.push(noMatcherGroup);
-          }
-          noMatcherGroup.hooks.push(hookEntry);
+          groups.push({ hooks: [hookEntry] });
+          processedActionIds.add(connectedNode.id);
         }
       }
     }

@@ -930,7 +930,7 @@ export interface CreateAgentProfileRequest {
   disallowedTools?: string[];
   permissionMode?: string;
   hooksJson?: string;
-  hooksCanvasJson?: string;
+  hooksCanvasJson?: string | null;
   mcpServersJson?: string;
   sandboxJson?: string;
   cwd?: string;
@@ -943,7 +943,7 @@ export interface CreateAgentProfileRequest {
 
 export interface UpdateAgentProfileRequest extends Partial<CreateAgentProfileRequest> {
   sortOrder?: number;
-  hooksCanvasJson?: string;
+  hooksCanvasJson?: string | null;
 }
 
 export interface AgentProfileSummary {

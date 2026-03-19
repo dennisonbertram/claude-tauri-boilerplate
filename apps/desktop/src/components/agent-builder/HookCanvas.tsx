@@ -53,12 +53,18 @@ interface HookCanvasProps {
   onChange: (hooksJson: string, hooksCanvasJson: string) => void;
 }
 
-function debounce<T extends (...args: any[]) => void>(fn: T, ms: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
+type DebouncedFn<T extends (...args: any[]) => void> = T & { cancel: () => void };
+
+function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): DebouncedFn<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const debounced = (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn(...args); }, ms);
   };
+  debounced.cancel = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+  };
+  return debounced as DebouncedFn<T>;
 }
 
 function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasProps) {
@@ -75,15 +81,18 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     if (initialized.current) return;
     initialized.current = true;
 
-    // Priority 1: saved canvas JSON
+    // Priority 1: saved canvas JSON (atomic load — both nodes and edges or neither)
     if (hooksCanvasJson) {
       try {
         const saved: CanvasState = JSON.parse(hooksCanvasJson);
-        if (saved.nodes && saved.nodes.length <= MAX_NODE_COUNT) {
+        if (saved.nodes && Array.isArray(saved.nodes) && saved.nodes.length <= MAX_NODE_COUNT
+            && saved.edges && Array.isArray(saved.edges)) {
           setNodes(saved.nodes as CanvasNode[]);
+          setEdges(saved.edges as CanvasEdge[]);
+          return; // Only return early if we successfully loaded BOTH
         }
-        if (saved.edges) setEdges(saved.edges as CanvasEdge[]);
-        return;
+        // If nodes exceed limit or arrays missing, fall through to regenerate from hooksJson
+        console.warn(`Canvas state has ${saved.nodes?.length} nodes (max ${MAX_NODE_COUNT}), regenerating from hooks JSON`);
       } catch {
         // fall through to priority 2
       }
@@ -108,9 +117,16 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         edges: currentEdges,
       });
       onChange(newHooksJson, newCanvasJson);
-    }, 500),
+    }, 500) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
     [onChange],
   );
+
+  // Cancel pending debounce on unmount
+  useEffect(() => {
+    return () => {
+      notifyChange.cancel();
+    };
+  }, [notifyChange]);
 
   // Watch nodes/edges for changes (skip first render)
   useEffect(() => {

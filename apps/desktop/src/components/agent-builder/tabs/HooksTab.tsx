@@ -52,7 +52,7 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
           if (!confirmed) return;
         }
 
-        onChange({ hooksJson: text });
+        onChange({ hooksJson: text, hooksCanvasJson: null });
       } catch {
         // Invalid JSON file - silently ignore
       }
@@ -125,7 +125,7 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
             </div>
             <textarea
               value={hooksJson}
-              onChange={(e) => onChange({ hooksJson: e.target.value })}
+              onChange={(e) => onChange({ hooksJson: e.target.value, hooksCanvasJson: null })}
               placeholder={`{
   "hooks": {
     "PreToolUse": [

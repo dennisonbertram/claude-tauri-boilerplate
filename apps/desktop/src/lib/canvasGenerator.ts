@@ -155,6 +155,16 @@ export function generateCanvasFromHooks(
 
   if (nodes.length === 0) return null;
 
+  const MAX_GENERATED_NODES = 200;
+  if (nodes.length > MAX_GENERATED_NODES) {
+    console.warn(`Generated ${nodes.length} nodes, truncating to ${MAX_GENERATED_NODES}`);
+    const allowedNodeIds = new Set(nodes.slice(0, MAX_GENERATED_NODES).map(n => n.id));
+    return {
+      nodes: nodes.slice(0, MAX_GENERATED_NODES),
+      edges: edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target)),
+    };
+  }
+
   return { nodes, edges };
 }
 
