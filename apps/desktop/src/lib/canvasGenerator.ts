@@ -8,6 +8,9 @@ import type {
   HookType,
 } from '../components/agent-builder/types/canvas';
 
+const MAX_EDGES = 400;
+const MAX_MATCHER_LENGTH = 200;
+
 interface HookEntryInput {
   type?: string;
   command?: string;
@@ -86,9 +89,10 @@ export function generateCanvasFromHooks(
         if ((group as HookGroupInput).matcher) {
           // Create a condition node for the matcher
           const conditionId = genId('condition');
+          const rawMatcher = (group as HookGroupInput).matcher!;
           const condData: ConditionNodeData = {
-            matcher: (group as HookGroupInput).matcher!,
-            label: `Match: ${(group as HookGroupInput).matcher}`,
+            matcher: typeof rawMatcher === 'string' ? rawMatcher.slice(0, MAX_MATCHER_LENGTH) : '',
+            label: `Match: ${typeof rawMatcher === 'string' ? rawMatcher.slice(0, 50) : ''}`,
           };
           nodes.push({
             id: conditionId,
@@ -159,9 +163,21 @@ export function generateCanvasFromHooks(
   if (nodes.length > MAX_GENERATED_NODES) {
     console.warn(`Generated ${nodes.length} nodes, truncating to ${MAX_GENERATED_NODES}`);
     const allowedNodeIds = new Set(nodes.slice(0, MAX_GENERATED_NODES).map(n => n.id));
+    const truncatedNodes = nodes.slice(0, MAX_GENERATED_NODES);
+    let truncatedEdges = edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target));
+    if (truncatedEdges.length > MAX_EDGES) {
+      truncatedEdges = truncatedEdges.slice(0, MAX_EDGES);
+    }
+    return { nodes: truncatedNodes, edges: truncatedEdges };
+  }
+
+  // Cap edges even when nodes are within limit
+  if (edges.length > MAX_EDGES) {
+    console.warn(`Generated ${edges.length} edges, truncating to ${MAX_EDGES}`);
+    const allowedNodeIds = new Set(nodes.map(n => n.id));
     return {
-      nodes: nodes.slice(0, MAX_GENERATED_NODES),
-      edges: edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target)),
+      nodes,
+      edges: edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target)).slice(0, MAX_EDGES),
     };
   }
 

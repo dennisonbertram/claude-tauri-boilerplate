@@ -29,6 +29,7 @@ import type {
 const VALID_NODE_TYPES = new Set(['trigger', 'condition', 'action']);
 const MAX_STRING_LENGTH = 10_000;
 const MAX_NODE_COUNT = 200;
+const MAX_EDGES = 400;
 
 function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -86,7 +87,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       try {
         const saved: CanvasState = JSON.parse(hooksCanvasJson);
         if (saved.nodes && Array.isArray(saved.nodes) && saved.nodes.length <= MAX_NODE_COUNT
-            && saved.edges && Array.isArray(saved.edges)) {
+            && saved.edges && Array.isArray(saved.edges) && saved.edges.length <= MAX_EDGES) {
           setNodes(saved.nodes as CanvasNode[]);
           setEdges(saved.edges as CanvasEdge[]);
           return; // Only return early if we successfully loaded BOTH
@@ -128,14 +129,25 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     };
   }, [notifyChange]);
 
-  // Watch nodes/edges for changes (skip first render)
+  // Watch nodes/edges for structural changes (skip first render + selection/drag changes)
+  const prevStructuralRef = useRef<string>('');
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
+    // Structural fingerprint: only id, type, position, data — ignore selected/dragging/positionAbsolute
+    const structural = JSON.stringify(
+      nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data }))
+    ) + '|' + JSON.stringify(
+      edges.map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle }))
+    );
+
+    if (structural === prevStructuralRef.current) return; // Only presentational change, skip
+    prevStructuralRef.current = structural;
     notifyChange(nodes, edges);
-  }, [nodes, edges]);
+  }, [nodes, edges, notifyChange]);
 
   // Connection validation
   const onConnect: OnConnect = useCallback(
@@ -183,6 +195,18 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
 
         // Sanitize string fields
         const sanitizedData = sanitizeNodeData(data);
+
+        // Warn on dangerous hook types created via drag-and-drop
+        if (nodeType === 'action') {
+          const hookType = (data as Record<string, unknown>).hookType;
+          if (hookType === 'command' || hookType === 'http') {
+            const typeName = hookType === 'command' ? 'command execution' : 'HTTP request';
+            const confirmed = window.confirm(
+              `This will add a ${typeName} hook that can ${hookType === 'command' ? 'run local commands' : 'make HTTP requests'}. Add anyway?`
+            );
+            if (!confirmed) return;
+          }
+        }
 
         const position = screenToFlowPosition({
           x: event.clientX,

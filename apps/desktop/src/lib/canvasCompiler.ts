@@ -7,6 +7,9 @@ import type {
 } from '../components/agent-builder/types/canvas';
 import { HOOK_EVENTS } from '../components/agent-builder/types/canvas';
 
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+const MAX_MATCHER_LENGTH = 200;
+
 interface HookEntry {
   type: HookType;
   command?: string;
@@ -64,6 +67,10 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
     const data = trigger.data as TriggerNodeData;
     const event = data.event;
     if (!event) continue;
+    if (DANGEROUS_KEYS.has(event)) {
+      console.warn(`[canvasCompiler] Blocking dangerous event key: "${event}"`);
+      continue;
+    }
     if (!HOOK_EVENTS.includes(event as any)) {
       console.warn(`[canvasCompiler] Unknown hook event: "${event}" — preserving in output`);
       // Don't skip — preserve unknown events
@@ -96,7 +103,7 @@ export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
         if (hooks.length > 0) {
           const group: HookGroup = { hooks };
           if (condData.matcher) {
-            group.matcher = condData.matcher;
+            group.matcher = condData.matcher.slice(0, MAX_MATCHER_LENGTH);
           }
           groups.push(group);
         }
