@@ -8,6 +8,7 @@ import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
 import { FolderOpen, GitBranch, Plus } from 'lucide-react';
+import { getProjectDisplayName } from '@/lib/project-display';
 
 interface ProjectSidebarProps {
   projects: Project[];
@@ -209,7 +210,7 @@ export function ProjectSidebar({
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                     <span className="text-sm font-medium text-foreground truncate">
-                      {project.name}
+                      {getProjectDisplayName(project)}
                     </span>
                   </button>
                   {confirmDeleteId === project.id ? (

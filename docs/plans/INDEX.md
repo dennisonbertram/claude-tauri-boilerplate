@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [self-healing-dev-environment.md](self-healing-dev-environment.md) | Self-Healing Development Environment (#220-#229): flight recorder, bug report UI, AI diagnosis, worktree fix agent, hot patch delivery. 10 issues across 4 phases. Reviewed by GPT-5.4. DEFERRED. |
 | [canvas-workspace.md](canvas-workspace.md) | Canvas Workspace feature plan (#176-#183): infinite canvas with React Flow for multi-thread spatial UI, split-pane view, freeze pattern, FigJam-style annotations. DEFERRED. |
 | [issue-111-tracker-first-workspace-creation.md](issue-111-tracker-first-workspace-creation.md) | Issue #111 plan for tracker-first workspace creation: mode tabs (Manual/Branch/GitHub Issue), github_issue_* DB fields, proxy endpoint, context injection. COMPLETE. |
 | [issue-102-latex-mermaid.md](issue-102-latex-mermaid.md) | Issue #102 implementation of LaTeX rendering (via remark-math + rehype-katex) and Mermaid diagram rendering (MermaidDiagram component with fullscreen pan/zoom). Completed. |

@@ -1,0 +1,1808 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: src/components/agent-builder/HookCanvas.tsx, src/components/agent-builder/nodes/**, src/components/agent-builder/panels/**, src/components/agent-builder/tabs/HooksTab.tsx, src/lib/canvasCompiler.ts, src/lib/canvasGenerator.ts, src/lib/connectionRules.ts
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+
+
+================================================================
+Directory Structure
+================================================================
+src/
+  components/
+    agent-builder/
+      nodes/
+        ActionNode.tsx
+        ConditionNode.tsx
+        index.ts
+        TriggerNode.tsx
+      panels/
+        index.ts
+        NodeConfigPanel.tsx
+        NodePalette.tsx
+      tabs/
+        HooksTab.tsx
+      HookCanvas.tsx
+  lib/
+    canvasCompiler.ts
+    canvasGenerator.ts
+    connectionRules.ts
+
+================================================================
+Files
+================================================================
+
+================
+File: src/components/agent-builder/nodes/ActionNode.tsx
+================
+import { memo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import type { ActionNode as ActionNodeType } from '../types/canvas';
+
+const TYPE_STYLES = {
+  command: {
+    border: 'border-green-500/50',
+    selectedBorder: 'border-green-400',
+    bg: 'bg-green-900/20',
+    header: 'bg-green-900/40',
+    headerBorder: 'border-green-500/30',
+    text: 'text-green-300',
+    handle: '!bg-green-400 !border-green-600',
+    icon: '\u25B6',
+  },
+  http: {
+    border: 'border-yellow-500/50',
+    selectedBorder: 'border-yellow-400',
+    bg: 'bg-yellow-900/20',
+    header: 'bg-yellow-900/40',
+    headerBorder: 'border-yellow-500/30',
+    text: 'text-yellow-300',
+    handle: '!bg-yellow-400 !border-yellow-600',
+    icon: '\u2197',
+  },
+  prompt: {
+    border: 'border-pink-500/50',
+    selectedBorder: 'border-pink-400',
+    bg: 'bg-pink-900/20',
+    header: 'bg-pink-900/40',
+    headerBorder: 'border-pink-500/30',
+    text: 'text-pink-300',
+    handle: '!bg-pink-400 !border-pink-600',
+    icon: '\uD83D\uDCAC',
+  },
+  agent: {
+    border: 'border-orange-500/50',
+    selectedBorder: 'border-orange-400',
+    bg: 'bg-orange-900/20',
+    header: 'bg-orange-900/40',
+    headerBorder: 'border-orange-500/30',
+    text: 'text-orange-300',
+    handle: '!bg-orange-400 !border-orange-600',
+    icon: '\uD83E\uDD16',
+  },
+} as const;
+
+function getPreview(data: ActionNodeType['data']): string {
+  switch (data.hookType) {
+    case 'command':
+      return data.command ? data.command.slice(0, 40) : 'No command';
+    case 'http':
+      return data.url ? `${data.method ?? 'GET'} ${data.url}`.slice(0, 40) : 'No URL';
+    case 'prompt':
+      return data.prompt ? data.prompt.slice(0, 40) : 'No prompt';
+    case 'agent':
+      return data.description ? data.description.slice(0, 40) : 'No description';
+    default:
+      return '';
+  }
+}
+
+export const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeType>) => {
+  const style = TYPE_STYLES[data.hookType] ?? TYPE_STYLES.command;
+  const preview = getPreview(data);
+
+  return (
+    <div className={`min-w-[200px] max-w-[280px] rounded-lg border-2 ${
+      selected ? style.selectedBorder : style.border
+    } ${style.bg} shadow-lg`}>
+      <Handle
+        type="target"
+        position={Position.Top}
+        className={`${style.handle} !w-3 !h-3`}
+      />
+      {/* Header */}
+      <div className={`flex items-center gap-2 px-3 py-2 ${style.header} rounded-t-lg border-b ${style.headerBorder}`}>
+        <span className="text-xs">{style.icon}</span>
+        <span className={`text-xs font-semibold ${style.text} uppercase tracking-wide`}>
+          {data.hookType}
+        </span>
+      </div>
+      {/* Body */}
+      <div className="px-3 py-2">
+        <div className="text-sm text-white font-mono truncate">{preview}</div>
+      </div>
+      {/* No source handle -- actions are leaf nodes */}
+    </div>
+  );
+});
+ActionNode.displayName = 'ActionNode';
+
+================
+File: src/components/agent-builder/nodes/ConditionNode.tsx
+================
+import { memo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import type { ConditionNode as ConditionNodeType } from '../types/canvas';
+
+export const ConditionNode = memo(({ data, selected }: NodeProps<ConditionNodeType>) => {
+  return (
+    <div className={`min-w-[180px] rounded-lg border-2 ${
+      selected ? 'border-blue-400' : 'border-blue-500/50'
+    } bg-blue-900/20 shadow-lg`}>
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!bg-blue-400 !border-blue-600 !w-3 !h-3"
+      />
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-blue-900/40 rounded-t-lg border-b border-blue-500/30">
+        <span className="text-blue-400 text-xs">&#9881;</span>
+        <span className="text-xs font-semibold text-blue-300 uppercase tracking-wide">Condition</span>
+      </div>
+      {/* Body */}
+      <div className="px-3 py-2">
+        <div className="text-sm font-medium text-white font-mono">
+          {data.matcher || 'No matcher'}
+        </div>
+        <div className="text-xs text-neutral-400 mt-0.5">Tool matcher (regex)</div>
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!bg-blue-400 !border-blue-600 !w-3 !h-3"
+      />
+    </div>
+  );
+});
+ConditionNode.displayName = 'ConditionNode';
+
+================
+File: src/components/agent-builder/nodes/index.ts
+================
+import { TriggerNode } from './TriggerNode';
+import { ConditionNode } from './ConditionNode';
+import { ActionNode } from './ActionNode';
+
+export { TriggerNode, ConditionNode, ActionNode };
+
+export const nodeTypes = {
+  trigger: TriggerNode,
+  condition: ConditionNode,
+  action: ActionNode,
+} as const;
+
+================
+File: src/components/agent-builder/nodes/TriggerNode.tsx
+================
+import { memo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import type { TriggerNode as TriggerNodeType } from '../types/canvas';
+
+export const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeType>) => {
+  return (
+    <div className={`min-w-[180px] rounded-lg border-2 ${
+      selected ? 'border-purple-400' : 'border-purple-500/50'
+    } bg-purple-900/20 shadow-lg`}>
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-purple-900/40 rounded-t-lg border-b border-purple-500/30">
+        <span className="text-purple-400 text-xs">&#9889;</span>
+        <span className="text-xs font-semibold text-purple-300 uppercase tracking-wide">Trigger</span>
+      </div>
+      {/* Body */}
+      <div className="px-3 py-2">
+        <div className="text-sm font-medium text-white">{data.event || 'Select event'}</div>
+        <div className="text-xs text-neutral-400 mt-0.5">Hook event</div>
+      </div>
+      {/* Output handle only */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!bg-purple-400 !border-purple-600 !w-3 !h-3"
+      />
+    </div>
+  );
+});
+TriggerNode.displayName = 'TriggerNode';
+
+================
+File: src/components/agent-builder/panels/index.ts
+================
+export { NodePalette } from './NodePalette';
+export { NodeConfigPanel } from './NodeConfigPanel';
+
+================
+File: src/components/agent-builder/panels/NodeConfigPanel.tsx
+================
+import type { FC } from 'react';
+import type { CanvasNode, TriggerNodeData, ConditionNodeData, ActionNodeData } from '../types/canvas';
+import { HOOK_EVENTS } from '../types/canvas';
+
+interface NodeConfigPanelProps {
+  selectedNode: CanvasNode | null;
+  onUpdateNode: (nodeId: string, data: Partial<TriggerNodeData | ConditionNodeData | ActionNodeData>) => void;
+  className?: string;
+}
+
+const inputClass =
+  'w-full bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-neutral-500';
+
+const labelClass = 'block text-xs font-medium text-neutral-400 mb-1';
+
+function TriggerConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<TriggerNodeData>) => void;
+}) {
+  const data = node.data as TriggerNodeData;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-purple-300">Trigger Configuration</h3>
+      <div>
+        <label className={labelClass}>Event</label>
+        <select
+          value={data.event}
+          onChange={(e) => onUpdate({ event: e.target.value, label: e.target.value })}
+          className={inputClass}
+        >
+          {HOOK_EVENTS.map((event) => (
+            <option key={event} value={event}>
+              {event}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function ConditionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ConditionNodeData>) => void;
+}) {
+  const data = node.data as ConditionNodeData;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-blue-300">Condition Configuration</h3>
+      <div>
+        <label className={labelClass}>Matcher (regex)</label>
+        <input
+          type="text"
+          value={data.matcher}
+          onChange={(e) =>
+            onUpdate({
+              matcher: e.target.value,
+              label: e.target.value ? `Match: ${e.target.value}` : 'Condition',
+            })
+          }
+          placeholder="e.g. Bash, Edit|Write, .*"
+          className={inputClass}
+        />
+        <p className="mt-1 text-[10px] text-neutral-500">
+          Matches tool names. E.g. <code>Bash</code>, <code>Edit|Write</code>, <code>.*</code>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CommandActionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ActionNodeData>) => void;
+}) {
+  const data = node.data as ActionNodeData;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>Command</label>
+        <textarea
+          value={data.command ?? ''}
+          onChange={(e) => onUpdate({ command: e.target.value })}
+          placeholder="echo 'hello world'"
+          rows={3}
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Timeout (ms)</label>
+        <input
+          type="number"
+          value={data.timeout ?? ''}
+          onChange={(e) => onUpdate({ timeout: e.target.value ? Number(e.target.value) : undefined })}
+          placeholder="10000"
+          className={inputClass}
+        />
+      </div>
+    </div>
+  );
+}
+
+function HttpActionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ActionNodeData>) => void;
+}) {
+  const data = node.data as ActionNodeData;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>URL</label>
+        <input
+          type="text"
+          value={data.url ?? ''}
+          onChange={(e) => onUpdate({ url: e.target.value })}
+          placeholder="https://example.com/webhook"
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Method</label>
+        <select
+          value={data.method ?? 'GET'}
+          onChange={(e) => onUpdate({ method: e.target.value })}
+          className={inputClass}
+        >
+          {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={labelClass}>Timeout (ms)</label>
+        <input
+          type="number"
+          value={data.timeout ?? ''}
+          onChange={(e) => onUpdate({ timeout: e.target.value ? Number(e.target.value) : undefined })}
+          placeholder="10000"
+          className={inputClass}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PromptActionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ActionNodeData>) => void;
+}) {
+  const data = node.data as ActionNodeData;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>Prompt</label>
+        <textarea
+          value={data.prompt ?? ''}
+          onChange={(e) => onUpdate({ prompt: e.target.value })}
+          placeholder="Summarize the changes..."
+          rows={4}
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Model (optional)</label>
+        <input
+          type="text"
+          value={data.model ?? ''}
+          onChange={(e) => onUpdate({ model: e.target.value || undefined })}
+          placeholder="claude-sonnet-4-5-20250514"
+          className={inputClass}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AgentActionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ActionNodeData>) => void;
+}) {
+  const data = node.data as ActionNodeData;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>Description</label>
+        <textarea
+          value={data.description ?? ''}
+          onChange={(e) => onUpdate({ description: e.target.value })}
+          placeholder="Describe what this agent should do..."
+          rows={4}
+          className={inputClass}
+        />
+      </div>
+    </div>
+  );
+}
+
+const ACTION_CONFIG_COMPONENTS: Record<
+  string,
+  FC<{ node: CanvasNode; onUpdate: (data: Partial<ActionNodeData>) => void }>
+> = {
+  command: CommandActionConfig,
+  http: HttpActionConfig,
+  prompt: PromptActionConfig,
+  agent: AgentActionConfig,
+};
+
+const ACTION_TITLES: Record<string, { label: string; color: string }> = {
+  command: { label: 'Command Action', color: 'text-green-300' },
+  http: { label: 'HTTP Action', color: 'text-yellow-300' },
+  prompt: { label: 'Prompt Action', color: 'text-pink-300' },
+  agent: { label: 'Agent Action', color: 'text-orange-300' },
+};
+
+function ActionConfig({
+  node,
+  onUpdate,
+}: {
+  node: CanvasNode;
+  onUpdate: (data: Partial<ActionNodeData>) => void;
+}) {
+  const data = node.data as ActionNodeData;
+  const ConfigComponent = ACTION_CONFIG_COMPONENTS[data.hookType];
+  const titleInfo = ACTION_TITLES[data.hookType] ?? { label: 'Action', color: 'text-green-300' };
+
+  return (
+    <div className="space-y-3">
+      <h3 className={`text-sm font-semibold ${titleInfo.color}`}>{titleInfo.label}</h3>
+      {ConfigComponent && <ConfigComponent node={node} onUpdate={onUpdate} />}
+    </div>
+  );
+}
+
+export function NodeConfigPanel({ selectedNode, onUpdateNode, className = '' }: NodeConfigPanelProps) {
+  if (!selectedNode) return null;
+
+  const handleUpdate = (data: Partial<TriggerNodeData | ConditionNodeData | ActionNodeData>) => {
+    onUpdateNode(selectedNode.id, data);
+  };
+
+  return (
+    <div className={`w-[260px] shrink-0 border-l border-neutral-700 bg-neutral-900 flex flex-col min-h-0 overflow-hidden ${className}`}>
+      <div className="px-3 py-2 border-b border-neutral-700">
+        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          Configuration
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3">
+        {selectedNode.type === 'trigger' && (
+          <TriggerConfig node={selectedNode} onUpdate={handleUpdate} />
+        )}
+        {selectedNode.type === 'condition' && (
+          <ConditionConfig node={selectedNode} onUpdate={handleUpdate} />
+        )}
+        {selectedNode.type === 'action' && (
+          <ActionConfig node={selectedNode} onUpdate={handleUpdate} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+================
+File: src/components/agent-builder/panels/NodePalette.tsx
+================
+import { useState, type DragEvent, type ReactNode } from 'react';
+import { HOOK_EVENTS } from '../types/canvas';
+
+interface NodePaletteProps {
+  className?: string;
+}
+
+const TRIGGER_TEMPLATES = HOOK_EVENTS.map((event) => ({
+  nodeType: 'trigger' as const,
+  data: { event, label: event },
+}));
+
+const CONDITION_TEMPLATE = {
+  nodeType: 'condition' as const,
+  data: { matcher: '', label: 'Condition' },
+};
+
+const ACTION_TEMPLATES = [
+  { nodeType: 'action' as const, data: { hookType: 'command' as const, label: 'Command', command: '' } },
+  { nodeType: 'action' as const, data: { hookType: 'http' as const, label: 'HTTP', url: '', method: 'GET' } },
+  { nodeType: 'action' as const, data: { hookType: 'prompt' as const, label: 'Prompt', prompt: '' } },
+  { nodeType: 'action' as const, data: { hookType: 'agent' as const, label: 'Agent', description: '' } },
+];
+
+const ACTION_COLORS: Record<string, string> = {
+  command: 'border-green-500/50 bg-green-900/20 text-green-300',
+  http: 'border-yellow-500/50 bg-yellow-900/20 text-yellow-300',
+  prompt: 'border-pink-500/50 bg-pink-900/20 text-pink-300',
+  agent: 'border-orange-500/50 bg-orange-900/20 text-orange-300',
+};
+
+const ACTION_ICONS: Record<string, string> = {
+  command: '>_',
+  http: '@',
+  prompt: '?',
+  agent: '&',
+};
+
+function DraggableNode({
+  label,
+  color,
+  icon,
+  onDragStart,
+}: {
+  label: string;
+  color: string;
+  icon: string;
+  onDragStart: (e: DragEvent) => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-grab active:cursor-grabbing text-xs ${color} select-none`}
+    >
+      <span>{icon}</span>
+      <span className="truncate">{label}</span>
+    </div>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 w-full px-2 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-400 hover:text-neutral-200 transition-colors"
+      >
+        <span className={`transition-transform ${open ? 'rotate-90' : ''}`}>
+          &#9654;
+        </span>
+        {title}
+      </button>
+      {open && <div className="space-y-1 px-2 pb-2">{children}</div>}
+    </div>
+  );
+}
+
+function handleDragStart(e: DragEvent, template: { nodeType: string; data: Record<string, unknown> }) {
+  e.dataTransfer.setData('application/reactflow', JSON.stringify(template));
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+export function NodePalette({ className = '' }: NodePaletteProps) {
+  return (
+    <div className={`w-[200px] shrink-0 border-r border-neutral-700 bg-neutral-900 flex flex-col min-h-0 overflow-hidden ${className}`}>
+      <div className="px-3 py-2 border-b border-neutral-700">
+        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          Node Palette
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-1 py-2">
+        <CollapsibleSection title="Triggers">
+          {TRIGGER_TEMPLATES.map((t) => (
+            <DraggableNode
+              key={t.data.event}
+              label={t.data.event}
+              color="border-purple-500/50 bg-purple-900/20 text-purple-300"
+              icon="&#9889;"
+              onDragStart={(e) => handleDragStart(e, { nodeType: t.nodeType, data: { ...t.data } })}
+            />
+          ))}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Condition">
+          <DraggableNode
+            label="Condition"
+            color="border-blue-500/50 bg-blue-900/20 text-blue-300"
+            icon="&#9881;"
+            onDragStart={(e) => handleDragStart(e, { nodeType: CONDITION_TEMPLATE.nodeType, data: { ...CONDITION_TEMPLATE.data } })}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Actions">
+          {ACTION_TEMPLATES.map((t) => (
+            <DraggableNode
+              key={t.data.hookType}
+              label={t.data.label}
+              color={ACTION_COLORS[t.data.hookType]}
+              icon={ACTION_ICONS[t.data.hookType]}
+              onDragStart={(e) => handleDragStart(e, { nodeType: t.nodeType, data: { ...t.data } })}
+            />
+          ))}
+        </CollapsibleSection>
+      </div>
+    </div>
+  );
+}
+
+================
+File: src/components/agent-builder/tabs/HooksTab.tsx
+================
+import { useMemo, useCallback, useState } from 'react';
+import type { UpdateAgentProfileRequest } from '@claude-tauri/shared';
+import { Button } from '@/components/ui/button';
+import { HookCanvas } from '../HookCanvas';
+
+interface HooksTabProps {
+  draft: UpdateAgentProfileRequest;
+  onChange: (updates: Partial<UpdateAgentProfileRequest>) => void;
+  profileId?: string;
+}
+
+export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
+  const [view, setView] = useState<'json' | 'canvas'>('json');
+  const hooksJson = draft.hooksJson ?? '';
+
+  const hasDangerousHooks = useMemo(() => {
+    if (!draft.hooksJson) return false;
+    try {
+      const parsed = JSON.parse(draft.hooksJson);
+      const hooksObj = parsed?.hooks;
+      if (!hooksObj || typeof hooksObj !== 'object') return false;
+      for (const groups of Object.values(hooksObj)) {
+        if (!Array.isArray(groups)) continue;
+        for (const group of groups as any[]) {
+          if (!group || typeof group !== 'object') continue;
+          const hookList = Array.isArray(group.hooks) ? group.hooks : [];
+          for (const hook of hookList) {
+            if (hook?.type === 'command' || hook?.type === 'http') return true;
+          }
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, [draft.hooksJson]);
+
+  const hasUnsupportedHooks = useMemo(() => {
+    if (!draft.hooksJson) return false;
+    try {
+      const parsed = JSON.parse(draft.hooksJson);
+      const hooksObj = parsed?.hooks;
+      if (!hooksObj || typeof hooksObj !== 'object') return false;
+      const SUPPORTED_TYPES = new Set(['command', 'http', 'prompt', 'agent']);
+      for (const groups of Object.values(hooksObj)) {
+        if (!Array.isArray(groups)) continue;
+        for (const group of groups as any[]) {
+          if (!group?.hooks) continue;
+          for (const hook of group.hooks) {
+            if (hook?.type && !SUPPORTED_TYPES.has(hook.type)) return true;
+          }
+        }
+      }
+      return false;
+    } catch { return false; }
+  }, [draft.hooksJson]);
+
+  const jsonValid = useMemo(() => {
+    if (!hooksJson.trim()) return null; // empty is neutral
+    try {
+      JSON.parse(hooksJson);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [hooksJson]);
+
+  const handleImport = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const MAX_IMPORT_SIZE = 500_000; // 500KB
+      if (file.size > MAX_IMPORT_SIZE) {
+        alert(`File too large. Maximum import size is ${MAX_IMPORT_SIZE / 1000}KB.`);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        // Detect execution hooks and warn
+        const stringified = JSON.stringify(parsed);
+        const hasCommandHooks = stringified.includes('"type":"command"');
+        const hasHttpHooks = stringified.includes('"type":"http"');
+        if (hasCommandHooks || hasHttpHooks) {
+          const types = [hasCommandHooks && 'command', hasHttpHooks && 'HTTP'].filter(Boolean).join(' and ');
+          const confirmed = window.confirm(
+            `This hooks file contains ${types} hooks that can execute local commands or make HTTP requests. Import anyway?`
+          );
+          if (!confirmed) return;
+        }
+
+        onChange({ hooksJson: text, hooksCanvasJson: null });
+      } catch {
+        // Invalid JSON file - silently ignore
+      }
+    };
+    input.click();
+  }, [onChange]);
+
+  const handleExport = useCallback(() => {
+    if (!hooksJson.trim()) return;
+    const blob = new Blob([hooksJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hooks.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [hooksJson]);
+
+  const handleCanvasChange = useCallback(
+    (newHooksJson: string, newCanvasJson: string) => {
+      onChange({ hooksJson: newHooksJson, hooksCanvasJson: newCanvasJson });
+    },
+    [onChange],
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Dangerous hooks warning */}
+      {hasDangerousHooks && (
+        <div className="px-4 py-2 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-xs text-yellow-300 flex items-center gap-2">
+          <span>Warning:</span>
+          <span>This profile contains <strong>command or HTTP hooks</strong> that can execute local commands or make HTTP requests when the agent runs.</span>
+        </div>
+      )}
+
+      {/* Unsupported hooks warning */}
+      {hasUnsupportedHooks && (
+        <div className="px-4 py-2 bg-orange-900/30 border border-orange-700/50 rounded-lg text-xs text-orange-300 flex items-center gap-2">
+          <span>Warning:</span>
+          <span>This profile contains <strong>unsupported hook types</strong>. Editing in Canvas view will drop unsupported hooks. Use JSON view to preserve them.</span>
+        </div>
+      )}
+
+      {/* View toggle */}
+      <div className="flex items-center gap-1 p-0.5 rounded-lg bg-neutral-800 w-fit">
+        <button
+          onClick={() => setView('json')}
+          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+            view === 'json'
+              ? 'bg-neutral-700 text-white'
+              : 'text-neutral-400 hover:text-neutral-200'
+          }`}
+        >
+          JSON
+        </button>
+        <button
+          onClick={() => setView('canvas')}
+          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+            view === 'canvas'
+              ? 'bg-neutral-700 text-white'
+              : 'text-neutral-400 hover:text-neutral-200'
+          }`}
+        >
+          Canvas
+        </button>
+      </div>
+
+      {view === 'json' && (
+        <div className="space-y-5">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                Hooks JSON
+              </label>
+              <div className="flex items-center gap-2">
+                {jsonValid !== null && (
+                  <span
+                    className={`text-xs font-medium ${
+                      jsonValid ? 'text-green-500' : 'text-destructive'
+                    }`}
+                  >
+                    {jsonValid ? 'Valid JSON' : 'Invalid JSON'}
+                  </span>
+                )}
+              </div>
+            </div>
+            <textarea
+              value={hooksJson}
+              onChange={(e) => onChange({ hooksJson: e.target.value, hooksCanvasJson: null })}
+              placeholder={`{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'checking...'"
+          }
+        ]
+      }
+    ]
+  }
+}`}
+              rows={14}
+              className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none dark:bg-input/30"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Define hooks that run before/after tool use, at session start/end, or
+              on notifications. Uses the Claude Code hooks format.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleImport}>
+              Import JSON
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={!hooksJson.trim()}
+            >
+              Export JSON
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {view === 'canvas' && (
+        <div className="h-[500px] rounded-lg border border-neutral-700 overflow-hidden">
+          <HookCanvas
+            key={profileId}
+            hooksJson={draft.hooksJson ?? null}
+            hooksCanvasJson={draft.hooksCanvasJson ?? null}
+            onChange={handleCanvasChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+================
+File: src/components/agent-builder/HookCanvas.tsx
+================
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  type Connection,
+  type OnConnect,
+  type NodeMouseHandler,
+} from '@xyflow/react';
+import { nodeTypes } from './nodes';
+import { NodePalette } from './panels/NodePalette';
+import { NodeConfigPanel } from './panels/NodeConfigPanel';
+import { compileCanvasToHooks } from '../../lib/canvasCompiler';
+import { generateCanvasFromHooks } from '../../lib/canvasGenerator';
+import { isValidConnection as checkConnection } from '../../lib/connectionRules';
+import type {
+  CanvasNode,
+  CanvasEdge,
+  CanvasState,
+  CanvasNodeType,
+} from './types/canvas';
+
+const VALID_NODE_TYPES = new Set(['trigger', 'condition', 'action']);
+const MAX_STRING_LENGTH = 10_000;
+const MAX_NODE_COUNT = 200;
+const MAX_EDGES = 400;
+
+function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (typeof val === 'string') {
+      result[key] = val.slice(0, MAX_STRING_LENGTH);
+    } else if (typeof val === 'number' && isFinite(val)) {
+      result[key] = val;
+    } else if (val === null || val === undefined) {
+      result[key] = val;
+    } else if (typeof val === 'boolean') {
+      result[key] = val;
+    }
+    // Skip objects/arrays — keep data flat
+  }
+  return result;
+}
+
+function isValidCanvasState(saved: unknown): saved is CanvasState {
+  if (!saved || typeof saved !== 'object') return false;
+  const s = saved as Record<string, unknown>;
+  if (!Array.isArray(s.nodes) || !Array.isArray(s.edges)) return false;
+  if (s.nodes.length > MAX_NODE_COUNT || s.edges.length > MAX_EDGES) return false;
+
+  const VALID_TYPES = new Set(['trigger', 'condition', 'action']);
+  const nodeIds = new Set<string>();
+
+  for (const node of s.nodes) {
+    if (!node || typeof node !== 'object') return false;
+    const n = node as Record<string, unknown>;
+    if (typeof n.id !== 'string' || n.id.length === 0 || n.id.length > 100) return false;
+    if (typeof n.type !== 'string' || !VALID_TYPES.has(n.type)) return false;
+    const pos = n.position as Record<string, unknown> | undefined;
+    if (!pos || typeof pos.x !== 'number' || !isFinite(pos.x)) return false;
+    if (typeof pos.y !== 'number' || !isFinite(pos.y)) return false;
+    if (!n.data || typeof n.data !== 'object') return false;
+    if (nodeIds.has(n.id)) return false; // duplicate ID
+    nodeIds.add(n.id);
+  }
+
+  for (const edge of s.edges) {
+    if (!edge || typeof edge !== 'object') return false;
+    const e = edge as Record<string, unknown>;
+    if (typeof e.id !== 'string' || typeof e.source !== 'string' || typeof e.target !== 'string') return false;
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) return false; // dangling edge
+  }
+
+  return true;
+}
+
+function getHooksFingerprint(nodes: CanvasNode[], edges: CanvasEdge[]): string {
+  return JSON.stringify(nodes.map(n => ({ id: n.id, type: n.type, data: n.data })))
+    + '|'
+    + JSON.stringify(edges.map(e => ({ source: e.source, target: e.target })));
+}
+
+interface HookCanvasProps {
+  hooksJson: string | null;
+  hooksCanvasJson: string | null;
+  onChange: (hooksJson: string, hooksCanvasJson: string) => void;
+}
+
+type DebouncedFn<T extends (...args: any[]) => void> = T & { cancel: () => void };
+
+function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): DebouncedFn<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const debounced = (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn(...args); }, ms);
+  };
+  debounced.cancel = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+  };
+  return debounced as DebouncedFn<T>;
+}
+
+function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<CanvasEdge>([]);
+  const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
+  const initialized = useRef(false);
+  const isFirstRender = useRef(true);
+
+  // Load saved state on mount
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    // Priority 1: saved canvas JSON (atomic load — both nodes and edges or neither)
+    if (hooksCanvasJson) {
+      try {
+        const saved = JSON.parse(hooksCanvasJson);
+        if (isValidCanvasState(saved)) {
+          setNodes(saved.nodes as CanvasNode[]);
+          setEdges(saved.edges as CanvasEdge[]);
+          return; // Only return early if we successfully loaded BOTH
+        }
+        console.warn('[HookCanvas] Invalid canvas state, regenerating from hooks JSON');
+      } catch {
+        console.warn('[HookCanvas] Failed to parse canvas JSON, regenerating');
+      }
+    }
+
+    // Priority 2: generate from hooks JSON
+    if (hooksJson) {
+      const generated = generateCanvasFromHooks(hooksJson);
+      if (generated) {
+        setNodes(generated.nodes as CanvasNode[]);
+        setEdges(generated.edges as CanvasEdge[]);
+      }
+    }
+  }, []);
+
+  // Debounced change notification
+  const notifyChange = useCallback(
+    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
+      const newHooksJson = compileCanvasToHooks(currentNodes, currentEdges);
+      const newCanvasJson = JSON.stringify({
+        nodes: currentNodes,
+        edges: currentEdges,
+      });
+      onChange(newHooksJson, newCanvasJson);
+    }, 500) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
+    [onChange],
+  );
+
+  // Debounced layout-only save (preserves positions without recompiling hooks)
+  const layoutSave = useCallback(
+    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[], currentHooksJson: string | null) => {
+      const canvasJson = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
+      onChange(currentHooksJson ?? '', canvasJson);
+    }, 2000) as DebouncedFn<(n: CanvasNode[], e: CanvasEdge[], h: string | null) => void>,
+    [onChange],
+  );
+
+  // Cancel pending debounces on unmount
+  useEffect(() => {
+    return () => {
+      notifyChange.cancel();
+      layoutSave.cancel();
+    };
+  }, [notifyChange, layoutSave]);
+
+  // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
+  const prevStructuralRef = useRef<string>('');
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      const initial = getHooksFingerprint(nodes, edges);
+      prevStructuralRef.current = initial;
+      return;
+    }
+
+    const fingerprint = getHooksFingerprint(nodes, edges);
+    if (fingerprint === prevStructuralRef.current) return;
+    prevStructuralRef.current = fingerprint;
+    notifyChange(nodes, edges);
+  }, [nodes, edges, notifyChange]);
+
+  // Save canvas layout on position-only changes (dragging nodes)
+  const prevCanvasJsonRef = useRef<string>('');
+
+  useEffect(() => {
+    if (isFirstRender.current) return;
+
+    const canvasJson = JSON.stringify({ nodes, edges });
+    if (canvasJson === prevCanvasJsonRef.current) return;
+    prevCanvasJsonRef.current = canvasJson;
+
+    const fingerprint = getHooksFingerprint(nodes, edges);
+    if (fingerprint === prevStructuralRef.current) {
+      // Position-only change — save canvas JSON without recompiling hooks
+      layoutSave(nodes, edges, hooksJson);
+    }
+  }, [nodes, edges, layoutSave, hooksJson]);
+
+  // Connection validation
+  const onConnect: OnConnect = useCallback(
+    (params: Connection) => {
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+      if (!sourceNode || !targetNode) return;
+
+      const sourceType = sourceNode.type as CanvasNodeType;
+      const targetType = targetNode.type as CanvasNodeType;
+
+      if (!checkConnection(sourceType, targetType)) return;
+
+      setEdges((eds) => {
+        if (eds.length >= MAX_EDGES) return eds;
+        if (targetType === 'action' && eds.some(e => e.target === params.target)) return eds;
+        return addEdge(params, eds);
+      });
+    },
+    [nodes, setEdges],
+  );
+
+  // Drag and drop from palette
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const raw = event.dataTransfer.getData('application/reactflow');
+      if (!raw) return;
+
+      try {
+        const { nodeType, data } = JSON.parse(raw);
+
+        // Validate nodeType
+        if (!VALID_NODE_TYPES.has(nodeType)) return;
+
+        // Validate data is a plain object
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+
+        // Enforce max node count
+        if (nodes.length >= MAX_NODE_COUNT) {
+          console.warn('Maximum node count reached');
+          return;
+        }
+
+        // Sanitize string fields
+        const sanitizedData = sanitizeNodeData(data);
+
+        // Warn on dangerous hook types created via drag-and-drop
+        if (nodeType === 'action') {
+          const hookType = (data as Record<string, unknown>).hookType;
+          if (hookType === 'command' || hookType === 'http') {
+            const typeName = hookType === 'command' ? 'command execution' : 'HTTP request';
+            const confirmed = window.confirm(
+              `This will add a ${typeName} hook that can ${hookType === 'command' ? 'run local commands' : 'make HTTP requests'}. Add anyway?`
+            );
+            if (!confirmed) return;
+          }
+        }
+
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        const newNode: CanvasNode = {
+          id: `${nodeType}-${crypto.randomUUID()}`,
+          type: nodeType,
+          position,
+          data: sanitizedData,
+        } as CanvasNode;
+
+        setNodes((nds) => [...nds, newNode]);
+      } catch {
+        // invalid drag data
+      }
+    },
+    [screenToFlowPosition, setNodes, nodes],
+  );
+
+  // Clear selected node if it was deleted
+  useEffect(() => {
+    if (selectedNode && !nodes.find(n => n.id === selectedNode.id)) {
+      setSelectedNode(null);
+    }
+  }, [nodes, selectedNode]);
+
+  // Node selection
+  const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
+    setSelectedNode(node as CanvasNode);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  // Update node data from config panel
+  const onUpdateNode = useCallback(
+    (nodeId: string, newData: Record<string, unknown>) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n,
+        ) as CanvasNode[],
+      );
+      setSelectedNode((prev) =>
+        prev && prev.id === nodeId
+          ? ({ ...prev, data: { ...prev.data, ...newData } } as CanvasNode)
+          : prev,
+      );
+    },
+    [],
+  );
+
+  return (
+    <div className="flex h-full w-full">
+      {/* Left palette */}
+      <NodePalette />
+
+      {/* Canvas */}
+      <div ref={reactFlowWrapper} className="flex-1 h-full bg-neutral-950">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          nodeTypes={nodeTypes}
+          fitView
+          deleteKeyCode="Delete"
+          className="bg-neutral-950"
+        >
+          <Background color="#374151" gap={16} />
+          <Controls className="[&>button]:bg-neutral-800 [&>button]:border-neutral-700 [&>button]:text-white" />
+          <MiniMap className="!bg-neutral-900" />
+        </ReactFlow>
+      </div>
+
+      {/* Right config panel */}
+      {selectedNode && (
+        <NodeConfigPanel
+          selectedNode={selectedNode}
+          onUpdateNode={onUpdateNode}
+        />
+      )}
+    </div>
+  );
+}
+
+export function HookCanvas(props: HookCanvasProps) {
+  return (
+    <ReactFlowProvider>
+      <HookCanvasInner {...props} />
+    </ReactFlowProvider>
+  );
+}
+
+================
+File: src/lib/canvasCompiler.ts
+================
+import type { Node, Edge } from '@xyflow/react';
+import type {
+  TriggerNodeData,
+  ConditionNodeData,
+  ActionNodeData,
+  HookType,
+} from '../components/agent-builder/types/canvas';
+import { HOOK_EVENTS } from '../components/agent-builder/types/canvas';
+
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+const MAX_MATCHER_LENGTH = 200;
+
+interface HookEntry {
+  type: HookType;
+  command?: string;
+  url?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  prompt?: string;
+  model?: string;
+  description?: string;
+  timeout?: number;
+}
+
+interface HookGroup {
+  matcher?: string;
+  hooks: HookEntry[];
+}
+
+interface HooksJson {
+  hooks: Record<string, HookGroup[]>;
+}
+
+/**
+ * Converts React Flow canvas nodes + edges into a Claude Code hooks JSON string.
+ *
+ * Rules:
+ * - Each TriggerNode becomes an event key in the hooks object.
+ * - Trigger → Condition → Action(s): creates a group WITH a matcher.
+ * - Trigger → Action(s) directly: creates a group WITHOUT a matcher.
+ * - Orphaned nodes (not reachable from a trigger) are skipped.
+ * - Invalid/incomplete nodes are skipped gracefully.
+ */
+export function compileCanvasToHooks(nodes: Node[], edges: Edge[]): string {
+  const result: HooksJson = { hooks: Object.create(null) as Record<string, HookGroup[]> };
+
+  // Build adjacency map: sourceId → targetIds
+  const adjacency = new Map<string, string[]>();
+  for (const edge of edges) {
+    const targets = adjacency.get(edge.source);
+    if (targets) {
+      targets.push(edge.target);
+    } else {
+      adjacency.set(edge.source, [edge.target]);
+    }
+  }
+
+  // Index nodes by id for fast lookup
+  const nodeById = new Map<string, Node>();
+  for (const node of nodes) {
+    nodeById.set(node.id, node);
+  }
+
+  const triggerNodes = nodes.filter((n) => n.type === 'trigger');
+
+  for (const trigger of triggerNodes) {
+    const data = trigger.data as TriggerNodeData;
+    const event = data.event;
+    if (!event) continue;
+    if (DANGEROUS_KEYS.has(event)) {
+      console.warn(`[canvasCompiler] Blocking dangerous event key: "${event}"`);
+      continue;
+    }
+    if (!HOOK_EVENTS.includes(event as any)) {
+      console.warn(`[canvasCompiler] Unknown hook event: "${event}" — preserving in output`);
+      // Don't skip — preserve unknown events
+    }
+
+    const groups: HookGroup[] = [];
+    const connectedIds = adjacency.get(trigger.id) ?? [];
+    const processedActionIds = new Set<string>();
+
+    for (const connectedId of connectedIds) {
+      const connectedNode = nodeById.get(connectedId);
+      if (!connectedNode) continue;
+
+      if (connectedNode.type === 'condition') {
+        // Trigger → Condition → Action(s)
+        const condData = connectedNode.data as ConditionNodeData;
+        const actionIds = adjacency.get(connectedNode.id) ?? [];
+        const hooks: HookEntry[] = [];
+        for (const id of actionIds) {
+          if (processedActionIds.has(id)) continue; // skip duplicates
+          const node = nodeById.get(id);
+          if (!node || node.type !== 'action') continue;
+          const hookEntry = buildHookEntry(node.data as ActionNodeData);
+          if (hookEntry) {
+            hooks.push(hookEntry);
+            processedActionIds.add(id);
+          }
+        }
+
+        if (hooks.length > 0) {
+          const group: HookGroup = { hooks };
+          if (condData.matcher) {
+            group.matcher = condData.matcher.slice(0, MAX_MATCHER_LENGTH);
+          }
+          groups.push(group);
+        }
+      } else if (connectedNode.type === 'action') {
+        // Trigger → Action directly (no condition) — each gets its own group
+        if (processedActionIds.has(connectedNode.id)) continue;
+        const hookEntry = buildHookEntry(connectedNode.data as ActionNodeData);
+        if (hookEntry) {
+          groups.push({ hooks: [hookEntry] });
+          processedActionIds.add(connectedNode.id);
+        }
+      }
+    }
+
+    if (groups.length > 0) {
+      // If multiple triggers share the same event, merge groups
+      if (Object.prototype.hasOwnProperty.call(result.hooks, event)) {
+        result.hooks[event].push(...groups);
+      } else {
+        result.hooks[event] = groups;
+      }
+    }
+  }
+
+  return JSON.stringify(result, null, 2);
+}
+
+function buildHookEntry(data: ActionNodeData): HookEntry | null {
+  if (!data.hookType) return null;
+
+  const entry: HookEntry = { type: data.hookType };
+
+  switch (data.hookType) {
+    case 'command':
+      if (typeof data.command !== 'string' || !data.command.trim()) return null;
+      entry.command = data.command.slice(0, 10_000);
+      if (data.timeout != null && Number.isFinite(Number(data.timeout)) && Number(data.timeout) > 0) {
+        entry.timeout = Math.floor(Number(data.timeout));
+      }
+      break;
+    case 'http':
+      if (typeof data.url !== 'string' || !data.url.trim()) return null;
+      entry.url = data.url.slice(0, 2000);
+      if (typeof data.method === 'string') entry.method = data.method.slice(0, 20);
+      if (data.headers && typeof data.headers === 'object' && !Array.isArray(data.headers)) {
+        const CRLF_RE = /[\r\n]/;
+        const sanitizedHeaders: Record<string, string> = {};
+        for (const [k, v] of Object.entries(data.headers)) {
+          if (typeof k === 'string' && typeof v === 'string'
+              && !CRLF_RE.test(k) && !CRLF_RE.test(v)
+              && k.length < 200 && v.length < 1000) {
+            sanitizedHeaders[k] = v;
+          }
+        }
+        if (Object.keys(sanitizedHeaders).length > 0) {
+          entry.headers = sanitizedHeaders;
+        }
+      }
+      if (data.timeout != null && Number.isFinite(Number(data.timeout)) && Number(data.timeout) > 0) {
+        entry.timeout = Math.floor(Number(data.timeout));
+      }
+      break;
+    case 'prompt':
+      if (typeof data.prompt !== 'string' || !data.prompt.trim()) return null;
+      entry.prompt = data.prompt.slice(0, 50_000);
+      if (typeof data.model === 'string') entry.model = data.model.slice(0, 200);
+      break;
+    case 'agent':
+      if (typeof data.description !== 'string' || !data.description.trim()) return null;
+      entry.description = data.description.slice(0, 10_000);
+      break;
+    default:
+      return null;
+  }
+
+  return entry;
+}
+
+================
+File: src/lib/canvasGenerator.ts
+================
+import type {
+  CanvasState,
+  CanvasNode,
+  CanvasEdge,
+  TriggerNodeData,
+  ConditionNodeData,
+  ActionNodeData,
+  HookType,
+} from '../components/agent-builder/types/canvas';
+
+const MAX_EDGES = 400;
+const MAX_GENERATED_NODES = 200;
+const MAX_MATCHER_LENGTH = 200;
+
+interface HookEntryInput {
+  type?: string;
+  command?: string;
+  url?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  prompt?: string;
+  model?: string;
+  description?: string;
+  timeout?: number;
+}
+
+interface HookGroupInput {
+  matcher?: string;
+  hooks?: HookEntryInput[];
+}
+
+/**
+ * Converts a Claude Code hooks JSON string into React Flow canvas nodes + edges.
+ *
+ * Returns null for invalid/empty input. Gracefully skips malformed groups.
+ *
+ * Layout: triggers at x=50, conditions at x=350, actions at x=650, rows spaced 150px apart.
+ */
+export function generateCanvasFromHooks(
+  hooksJsonString: string | null,
+): CanvasState | null {
+  if (!hooksJsonString) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(hooksJsonString);
+  } catch {
+    return null;
+  }
+
+  if (!parsed || typeof parsed !== 'object') return null;
+  const hooks = (parsed as Record<string, unknown>).hooks;
+  if (!hooks || typeof hooks !== 'object') return null;
+
+  const nodes: CanvasNode[] = [];
+  const edges: CanvasEdge[] = [];
+  let nodeIdCounter = 0;
+
+  const genId = (prefix: string) => `${prefix}-${++nodeIdCounter}`;
+
+  // Layout constants
+  const TRIGGER_X = 50;
+  const CONDITION_X = 350;
+  const ACTION_X = 650;
+  const ROW_HEIGHT = 150;
+  let triggerY = 50;
+
+  const limitReached = () => nodes.length >= MAX_GENERATED_NODES || edges.length >= MAX_EDGES;
+
+  try {
+    for (const [event, groups] of Object.entries(
+      hooks as Record<string, unknown>,
+    )) {
+      if (!Array.isArray(groups)) continue;
+      if (limitReached()) break;
+
+      const triggerId = genId('trigger');
+      const triggerData: TriggerNodeData = { event, label: event };
+      nodes.push({
+        id: triggerId,
+        type: 'trigger' as const,
+        position: { x: TRIGGER_X, y: triggerY },
+        data: triggerData,
+      });
+      if (limitReached()) break;
+
+      let conditionY = triggerY;
+
+      for (const group of groups) {
+        if (!group || typeof group !== 'object') continue;
+        if (limitReached()) break;
+        const hookList = Array.isArray((group as HookGroupInput).hooks) ? (group as HookGroupInput).hooks! : [];
+        if (hookList.length === 0) continue;
+
+        if ((group as HookGroupInput).matcher) {
+          // Create a condition node for the matcher
+          const conditionId = genId('condition');
+          const rawMatcher = (group as HookGroupInput).matcher!;
+          const condData: ConditionNodeData = {
+            matcher: typeof rawMatcher === 'string' ? rawMatcher.slice(0, MAX_MATCHER_LENGTH) : '',
+            label: `Match: ${typeof rawMatcher === 'string' ? rawMatcher.slice(0, 50) : ''}`,
+          };
+          nodes.push({
+            id: conditionId,
+            type: 'condition' as const,
+            position: { x: CONDITION_X, y: conditionY },
+            data: condData,
+          });
+          edges.push({
+            id: genId('edge'),
+            source: triggerId,
+            target: conditionId,
+          });
+          if (limitReached()) break;
+
+          let actionY = conditionY;
+          for (const hook of hookList) {
+            if (limitReached()) break;
+            if (!hook || typeof hook !== 'object') continue;
+            const actionData = buildActionData(hook);
+            if (!actionData) continue;
+            const actionId = genId('action');
+            nodes.push({
+              id: actionId,
+              type: 'action' as const,
+              position: { x: ACTION_X, y: actionY },
+              data: actionData,
+            });
+            edges.push({
+              id: genId('edge'),
+              source: conditionId,
+              target: actionId,
+            });
+            actionY += ROW_HEIGHT;
+          }
+          conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
+        } else {
+          // No condition — connect actions directly to trigger
+          let actionY = conditionY;
+          for (const hook of hookList) {
+            if (limitReached()) break;
+            if (!hook || typeof hook !== 'object') continue;
+            const actionData = buildActionData(hook);
+            if (!actionData) continue;
+            const actionId = genId('action');
+            nodes.push({
+              id: actionId,
+              type: 'action' as const,
+              position: { x: ACTION_X, y: actionY },
+              data: actionData,
+            });
+            edges.push({
+              id: genId('edge'),
+              source: triggerId,
+              target: actionId,
+            });
+            actionY += ROW_HEIGHT;
+          }
+          conditionY = Math.max(conditionY + ROW_HEIGHT, actionY);
+        }
+      }
+
+      triggerY = Math.max(triggerY + ROW_HEIGHT, conditionY + ROW_HEIGHT);
+    }
+  } catch {
+    return null;
+  }
+
+  if (nodes.length === 0) return null;
+
+  if (nodes.length > MAX_GENERATED_NODES) {
+    console.warn(`Generated ${nodes.length} nodes, truncating to ${MAX_GENERATED_NODES}`);
+    const allowedNodeIds = new Set(nodes.slice(0, MAX_GENERATED_NODES).map(n => n.id));
+    const truncatedNodes = nodes.slice(0, MAX_GENERATED_NODES);
+    let truncatedEdges = edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target));
+    if (truncatedEdges.length > MAX_EDGES) {
+      truncatedEdges = truncatedEdges.slice(0, MAX_EDGES);
+    }
+    return { nodes: truncatedNodes, edges: truncatedEdges };
+  }
+
+  // Cap edges even when nodes are within limit
+  if (edges.length > MAX_EDGES) {
+    console.warn(`Generated ${edges.length} edges, truncating to ${MAX_EDGES}`);
+    const allowedNodeIds = new Set(nodes.map(n => n.id));
+    return {
+      nodes,
+      edges: edges.filter(e => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target)).slice(0, MAX_EDGES),
+    };
+  }
+
+  return { nodes, edges };
+}
+
+const VALID_HOOK_TYPES = new Set<string>([
+  'command',
+  'http',
+  'prompt',
+  'agent',
+]);
+
+function buildActionData(hook: HookEntryInput): ActionNodeData | null {
+  const type = typeof hook.type === 'string' ? hook.type : 'command';
+  if (!VALID_HOOK_TYPES.has(type)) return null;
+
+  const hookType = type as HookType;
+  const base = { hookType, label: type };
+
+  switch (hookType) {
+    case 'command': {
+      const command = typeof hook.command === 'string' ? hook.command : '';
+      return {
+        ...base,
+        label: command ? `cmd: ${command.slice(0, 30)}` : 'command',
+        command: command.slice(0, 10_000),
+        timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
+      };
+    }
+    case 'http': {
+      const url = typeof hook.url === 'string' ? hook.url : '';
+      const method = typeof hook.method === 'string' ? hook.method : 'GET';
+      return {
+        ...base,
+        label: url ? `${method}: ${url.slice(0, 25)}` : 'http',
+        url: url.slice(0, 2000),
+        method: method.slice(0, 20),
+        headers: hook.headers && typeof hook.headers === 'object' && !Array.isArray(hook.headers) ? hook.headers : undefined,
+        timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
+      };
+    }
+    case 'prompt': {
+      const prompt = typeof hook.prompt === 'string' ? hook.prompt : '';
+      const model = typeof hook.model === 'string' ? hook.model : undefined;
+      return {
+        ...base,
+        label: prompt ? `prompt: ${prompt.slice(0, 25)}` : 'prompt',
+        prompt: prompt.slice(0, 50_000),
+        model: model?.slice(0, 200),
+      };
+    }
+    case 'agent': {
+      const description = typeof hook.description === 'string' ? hook.description : '';
+      return {
+        ...base,
+        label: description ? `agent: ${description.slice(0, 25)}` : 'agent',
+        description: description.slice(0, 10_000),
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+================
+File: src/lib/connectionRules.ts
+================
+import type { CanvasNodeType } from '../components/agent-builder/types/canvas';
+
+// Valid connection combinations
+const VALID_CONNECTIONS: Record<CanvasNodeType, CanvasNodeType[]> = {
+  trigger: ['condition', 'action'],
+  condition: ['action'],
+  action: [], // leaf node, no outgoing connections
+};
+
+/**
+ * Returns true if a connection from sourceType to targetType is valid.
+ * Used as the isValidConnection prop on ReactFlow.
+ */
+export function isValidConnection(
+  sourceType: CanvasNodeType,
+  targetType: CanvasNodeType
+): boolean {
+  return VALID_CONNECTIONS[sourceType]?.includes(targetType) ?? false;
+}
+
+/**
+ * Returns a human-readable reason why a connection is invalid.
+ */
+export function getInvalidConnectionReason(
+  sourceType: CanvasNodeType,
+  targetType: CanvasNodeType
+): string {
+  if (sourceType === 'action') {
+    return 'Action nodes are leaf nodes — they cannot have outgoing connections.';
+  }
+  if (targetType === 'trigger') {
+    return 'Trigger nodes cannot be targets — they are always the start of a flow.';
+  }
+  if (sourceType === 'condition' && targetType === 'condition') {
+    return 'Conditions cannot connect to other conditions.';
+  }
+  return `Cannot connect ${sourceType} → ${targetType}.`;
+}
+
+
+
+
+
+================================================================
+End of Codebase
+================================================================

@@ -361,23 +361,23 @@ the Chrome browser automation tool against `http://localhost:1420`.
 
 | Path | Status | Bugs Found | Fixed |
 |------|--------|-----------|-------|
-| 1 | ⬜ Pending | — | — |
+| 1 | ✅ Pass | — | — |
 | 2 | ✅ Fixed | Search query param not forwarded to `listSessions` | Yes — route now passes `q` param; 3 regression tests added |
-| 3 | ⬜ Pending | — | — |
-| 4 | ⬜ Pending | — | — |
-| 5 | ⬜ Pending | — | — |
-| 6 | ⬜ Pending | — | — |
-| 7 | ⬜ Pending | — | — |
-| 8 | ⬜ Pending | — | — |
-| 9 | ⬜ Pending | — | — |
-| 10 | ⬜ Pending | — | — |
-| 11 | ⬜ Pending | — | — |
-| 12 | ⬜ Pending | — | — |
-| 13 | ⬜ Pending | — | — |
-| 14 | ⬜ Pending | — | — |
-| 15 | ⬜ Pending | — | — |
-| 16 | ⬜ Pending | — | — |
-| 17 | ⬜ Pending | — | — |
-| 18 | ⬜ Pending | — | — |
-| 19 | ⬜ Pending | — | — |
-| 20 | ⬜ Pending | — | — |
+| 3 | ✅ Fixed | Rename Enter key propagated to session select after submit | Yes — stopPropagation added to Enter handler |
+| 4 | ✅ Pass | — | — |
+| 5 | ✅ Pass | — | — |
+| 6 | ✅ Pass | — | — |
+| 7 | ✅ Pass | — | — |
+| 8 | ✅ Pass | — | — |
+| 9 | ✅ Pass | — | — |
+| 10 | ✅ Pass | — | — |
+| 11 | ⚠️ Bug | "New Team" button off-screen — settings panel renders wider than viewport (1731px vs 1612px visible) | No — GitHub issue filed |
+| 12 | ⚠️ Gap | Rewind/Checkpoint only works in workspace sessions with file-edit tool calls; not available in regular chat | No — feature gap, not a bug |
+| 13 | ✅ Pass | — | — |
+| 14 | ⚠️ Gap | TOC exists but no in-conversation keyword search and no "Export summary to new chat" button | No — feature gap |
+| 15 | ✅ Pass | — | — |
+| 16 | ✅ Pass | — | — |
+| 17 | ✅ Pass | "+ Add Server" and delete buttons are off-screen (same layout bug as path 11) but functionality works | No — same root cause as path 11 bug |
+| 18 | ✅ Pass | — | — |
+| 19 | ✅ Pass | — | — |
+| 20 | ✅ Pass | — | — |

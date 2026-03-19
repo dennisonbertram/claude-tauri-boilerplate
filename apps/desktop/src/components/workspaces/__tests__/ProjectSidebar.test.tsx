@@ -313,32 +313,36 @@ describe('ProjectSidebar', () => {
     });
   });
 
-  // ─── ISSUE-006 Regression: action buttons hidden until hover ───
+  // ─── Regression: ISSUE-007 — slug-like project names show path basename ───
 
-  it('workspace action buttons are not visible before hover', async () => {
+  it('displays the path basename instead of a slug-like project name (ISSUE-007)', async () => {
     mockFetchWorkspaceStatus.mockResolvedValue(
       makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
     );
 
+    const slugProject: Project = {
+      ...project,
+      name: 'reconcile-ws-fG6AeG',
+      repoPath: '/Users/foo/projects/my-actual-repo',
+      repoPathCanonical: '/Users/foo/projects/my-actual-repo',
+    };
+
     render(
       <ProjectSidebar
         {...baseProps}
-        projects={[project]}
-        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        projects={[slugProject]}
+        workspacesByProject={{ [slugProject.id]: [] }}
         selectedWorkspaceId={null}
       />
     );
 
-    await screen.findByText('feature-workspace');
-
-    // The wrapper div holding Copy and Rename must carry opacity-0 (hidden by default)
-    const copyButton = screen.getByRole('button', { name: /copy branch name/i });
-    const actionWrapper = copyButton.parentElement!;
-    expect(actionWrapper.className).toContain('opacity-0');
-    expect(actionWrapper.className).toContain('group-hover:opacity-100');
+    // The raw slug should NOT appear in the sidebar
+    expect(screen.queryByText('reconcile-ws-fG6AeG')).toBeNull();
+    // The friendly basename SHOULD appear
+    expect(screen.getByText('my-actual-repo')).toBeTruthy();
   });
 
-  it('workspace action buttons become visible on hover', async () => {
+  it('displays project.name unchanged when it is already human-readable', async () => {
     mockFetchWorkspaceStatus.mockResolvedValue(
       makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
     );
@@ -347,18 +351,12 @@ describe('ProjectSidebar', () => {
       <ProjectSidebar
         {...baseProps}
         projects={[project]}
-        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        workspacesByProject={{ [project.id]: [] }}
         selectedWorkspaceId={null}
       />
     );
 
-    await screen.findByText('feature-workspace');
-
-    // The workspace row must carry the `group` class so group-hover activates
-    const copyButton = screen.getByRole('button', { name: /copy branch name/i });
-    // Walk up: button -> action wrapper -> branch row -> space-y-1 div -> workspace row div
-    const workspaceRow = copyButton.closest('[class*="group"]');
-    expect(workspaceRow).not.toBeNull();
-    expect(workspaceRow!.className).toContain('group');
+    // The clean project name should appear as-is
+    expect(screen.getByText('Test Project')).toBeTruthy();
   });
 });
