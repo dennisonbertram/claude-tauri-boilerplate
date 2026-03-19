@@ -138,14 +138,16 @@ function buildHookEntry(data: ActionNodeData): HookEntry | null {
 
   switch (data.hookType) {
     case 'command':
-      if (!data.command) return null;
-      entry.command = data.command;
-      if (data.timeout != null) entry.timeout = data.timeout;
+      if (typeof data.command !== 'string' || !data.command.trim()) return null;
+      entry.command = data.command.slice(0, 10_000);
+      if (data.timeout != null && Number.isFinite(Number(data.timeout)) && Number(data.timeout) > 0) {
+        entry.timeout = Math.floor(Number(data.timeout));
+      }
       break;
     case 'http':
-      if (!data.url) return null;
-      entry.url = data.url;
-      if (data.method) entry.method = data.method;
+      if (typeof data.url !== 'string' || !data.url.trim()) return null;
+      entry.url = data.url.slice(0, 2000);
+      if (typeof data.method === 'string') entry.method = data.method.slice(0, 20);
       if (data.headers && typeof data.headers === 'object' && !Array.isArray(data.headers)) {
         const CRLF_RE = /[\r\n]/;
         const sanitizedHeaders: Record<string, string> = {};
@@ -160,16 +162,18 @@ function buildHookEntry(data: ActionNodeData): HookEntry | null {
           entry.headers = sanitizedHeaders;
         }
       }
-      if (data.timeout != null) entry.timeout = data.timeout;
+      if (data.timeout != null && Number.isFinite(Number(data.timeout)) && Number(data.timeout) > 0) {
+        entry.timeout = Math.floor(Number(data.timeout));
+      }
       break;
     case 'prompt':
-      if (!data.prompt) return null;
-      entry.prompt = data.prompt;
-      if (data.model) entry.model = data.model;
+      if (typeof data.prompt !== 'string' || !data.prompt.trim()) return null;
+      entry.prompt = data.prompt.slice(0, 50_000);
+      if (typeof data.model === 'string') entry.model = data.model.slice(0, 200);
       break;
     case 'agent':
-      if (!data.description) return null;
-      entry.description = data.description;
+      if (typeof data.description !== 'string' || !data.description.trim()) return null;
+      entry.description = data.description.slice(0, 10_000);
       break;
     default:
       return null;

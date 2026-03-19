@@ -12,6 +12,17 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
   const [view, setView] = useState<'json' | 'canvas'>('json');
   const hooksJson = draft.hooksJson ?? '';
 
+  const hasDangerousHooks = useMemo(() => {
+    if (!draft.hooksJson) return false;
+    try {
+      const str = draft.hooksJson;
+      return str.includes('"type":"command"') || str.includes('"type":"http"') ||
+             str.includes('"type": "command"') || str.includes('"type": "http"');
+    } catch {
+      return false;
+    }
+  }, [draft.hooksJson]);
+
   const jsonValid = useMemo(() => {
     if (!hooksJson.trim()) return null; // empty is neutral
     try {
@@ -80,6 +91,14 @@ export function HooksTab({ draft, onChange }: HooksTabProps) {
 
   return (
     <div className="space-y-4">
+      {/* Dangerous hooks warning */}
+      {hasDangerousHooks && (
+        <div className="px-4 py-2 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-xs text-yellow-300 flex items-center gap-2">
+          <span>Warning:</span>
+          <span>This profile contains <strong>command or HTTP hooks</strong> that can execute local commands or make HTTP requests when the agent runs.</span>
+        </div>
+      )}
+
       {/* View toggle */}
       <div className="flex items-center gap-1 p-0.5 rounded-lg bg-neutral-800 w-fit">
         <button

@@ -48,6 +48,44 @@ function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown
   return result;
 }
 
+function isValidCanvasState(saved: unknown): saved is CanvasState {
+  if (!saved || typeof saved !== 'object') return false;
+  const s = saved as Record<string, unknown>;
+  if (!Array.isArray(s.nodes) || !Array.isArray(s.edges)) return false;
+  if (s.nodes.length > MAX_NODE_COUNT || s.edges.length > MAX_EDGES) return false;
+
+  const VALID_TYPES = new Set(['trigger', 'condition', 'action']);
+  const nodeIds = new Set<string>();
+
+  for (const node of s.nodes) {
+    if (!node || typeof node !== 'object') return false;
+    const n = node as Record<string, unknown>;
+    if (typeof n.id !== 'string' || n.id.length === 0 || n.id.length > 100) return false;
+    if (typeof n.type !== 'string' || !VALID_TYPES.has(n.type)) return false;
+    const pos = n.position as Record<string, unknown> | undefined;
+    if (!pos || typeof pos.x !== 'number' || !isFinite(pos.x)) return false;
+    if (typeof pos.y !== 'number' || !isFinite(pos.y)) return false;
+    if (!n.data || typeof n.data !== 'object') return false;
+    if (nodeIds.has(n.id)) return false; // duplicate ID
+    nodeIds.add(n.id);
+  }
+
+  for (const edge of s.edges) {
+    if (!edge || typeof edge !== 'object') return false;
+    const e = edge as Record<string, unknown>;
+    if (typeof e.id !== 'string' || typeof e.source !== 'string' || typeof e.target !== 'string') return false;
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) return false; // dangling edge
+  }
+
+  return true;
+}
+
+function getHooksFingerprint(nodes: CanvasNode[], edges: CanvasEdge[]): string {
+  return JSON.stringify(nodes.map(n => ({ id: n.id, type: n.type, data: n.data })))
+    + '|'
+    + JSON.stringify(edges.map(e => ({ source: e.source, target: e.target })));
+}
+
 interface HookCanvasProps {
   hooksJson: string | null;
   hooksCanvasJson: string | null;
@@ -85,17 +123,15 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     // Priority 1: saved canvas JSON (atomic load — both nodes and edges or neither)
     if (hooksCanvasJson) {
       try {
-        const saved: CanvasState = JSON.parse(hooksCanvasJson);
-        if (saved.nodes && Array.isArray(saved.nodes) && saved.nodes.length <= MAX_NODE_COUNT
-            && saved.edges && Array.isArray(saved.edges) && saved.edges.length <= MAX_EDGES) {
+        const saved = JSON.parse(hooksCanvasJson);
+        if (isValidCanvasState(saved)) {
           setNodes(saved.nodes as CanvasNode[]);
           setEdges(saved.edges as CanvasEdge[]);
           return; // Only return early if we successfully loaded BOTH
         }
-        // If nodes exceed limit or arrays missing, fall through to regenerate from hooksJson
-        console.warn(`Canvas state has ${saved.nodes?.length} nodes (max ${MAX_NODE_COUNT}), regenerating from hooks JSON`);
+        console.warn('[HookCanvas] Invalid canvas state, regenerating from hooks JSON');
       } catch {
-        // fall through to priority 2
+        console.warn('[HookCanvas] Failed to parse canvas JSON, regenerating');
       }
     }
 
@@ -129,23 +165,20 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     };
   }, [notifyChange]);
 
-  // Watch nodes/edges for structural changes (skip first render + selection/drag changes)
+  // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
   const prevStructuralRef = useRef<string>('');
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
+      const initial = getHooksFingerprint(nodes, edges);
+      prevStructuralRef.current = initial;
       return;
     }
-    // Structural fingerprint: only id, type, position, data — ignore selected/dragging/positionAbsolute
-    const structural = JSON.stringify(
-      nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data }))
-    ) + '|' + JSON.stringify(
-      edges.map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle }))
-    );
 
-    if (structural === prevStructuralRef.current) return; // Only presentational change, skip
-    prevStructuralRef.current = structural;
+    const fingerprint = getHooksFingerprint(nodes, edges);
+    if (fingerprint === prevStructuralRef.current) return;
+    prevStructuralRef.current = fingerprint;
     notifyChange(nodes, edges);
   }, [nodes, edges, notifyChange]);
 
@@ -159,11 +192,26 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       const sourceType = sourceNode.type as CanvasNodeType;
       const targetType = targetNode.type as CanvasNodeType;
 
-      if (checkConnection(sourceType, targetType)) {
-        setEdges((eds) => addEdge(params, eds));
+      if (!checkConnection(sourceType, targetType)) return;
+
+      // Enforce max edges
+      if (edges.length >= MAX_EDGES) {
+        console.warn('[HookCanvas] Maximum edge count reached');
+        return;
       }
+
+      // Enforce single inbound edge per action node (prevents duplicate hook execution)
+      if (targetType === 'action') {
+        const existingInbound = edges.some(e => e.target === params.target);
+        if (existingInbound) {
+          console.warn('[HookCanvas] Action node already has a parent connection');
+          return;
+        }
+      }
+
+      setEdges((eds) => addEdge(params, eds));
     },
-    [nodes, setEdges],
+    [nodes, edges, setEdges],
   );
 
   // Drag and drop from palette
@@ -214,7 +262,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         });
 
         const newNode: CanvasNode = {
-          id: `${nodeType}-${Date.now()}`,
+          id: `${nodeType}-${crypto.randomUUID()}`,
           type: nodeType,
           position,
           data: sanitizedData,
@@ -227,6 +275,13 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     },
     [screenToFlowPosition, setNodes, nodes],
   );
+
+  // Clear selected node if it was deleted
+  useEffect(() => {
+    if (selectedNode && !nodes.find(n => n.id === selectedNode.id)) {
+      setSelectedNode(null);
+    }
+  }, [nodes, selectedNode]);
 
   // Node selection
   const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
