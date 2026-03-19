@@ -17,6 +17,8 @@ import { createWorkspaceRouter, createFlatWorkspaceRouter } from './routes/works
 import { createDiffCommentsRouter } from './routes/diff-comments';
 import { createWorkspaceNotesRouter } from './routes/workspace-notes';
 import { createCodeReviewRouter } from './routes/code-review';
+import { createArtifactsRouter, createProjectArtifactsRouter } from './routes/artifacts';
+import { createSessionThreadRouter } from './routes/sessions-thread';
 import { createLinearRouter } from './routes/linear';
 import { createGithubIssuesRouter } from './routes/github-issues';
 import { createSystemRouter } from './routes/system';
@@ -61,6 +63,9 @@ app.route('/api/workspaces', createFlatWorkspaceRouter(db));
 app.route('/api/workspaces', createDiffCommentsRouter(db));
 app.route('/api/workspaces', createWorkspaceNotesRouter(db));
 app.route('/api/workspaces', createCodeReviewRouter(db));
+app.route('/api/artifacts', createArtifactsRouter(db));
+app.route('/api/projects', createProjectArtifactsRouter(db));
+app.route('/api/sessions', createSessionThreadRouter(db));
 app.route('/api/system', createSystemRouter());
 app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
 
