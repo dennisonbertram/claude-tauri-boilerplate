@@ -231,12 +231,8 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         const saved = JSON.parse(hooksCanvasJson);
         if (isValidCanvasState(saved)) {
           const hasDangerous = canvasHasDangerousActions(saved);
-          const hooksAlreadyDangerous =
-            hooksJson &&
-            (hooksJson.includes('"type":"command"') ||
-              hooksJson.includes('"type":"http"'));
 
-          if (hasDangerous && !hooksAlreadyDangerous) {
+          if (hasDangerous) {
             const confirmed = window.confirm(
               'This saved canvas contains command or HTTP hooks that can execute local commands or make HTTP requests. Load canvas anyway?',
             );

@@ -75,6 +75,8 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
           if (!group?.hooks) continue;
           for (const hook of group.hooks) {
             if (hook?.type && !SUPPORTED_TYPES.has(hook.type)) return true;
+            // Treat missing type as unsupported — canvas cannot represent it and will drop it
+            if (!hook?.type) return true;
           }
         }
       }
