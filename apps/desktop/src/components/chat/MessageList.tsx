@@ -456,27 +456,7 @@ export function MessageList({
     updateScrollButtonVisibility(viewportRef.current);
   }, [messages, toolCalls, thinkingBlocks, searchMatches, activeMatchIndex]);
 
-  if (messages.length === 0) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">Start a conversation</h2>
-          <p className="text-sm text-muted-foreground">
-            Type a message below to begin chatting with Claude.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const shouldShowThinking = showThinking ?? settings.showThinking ?? true;
-  const thinkingEntries = shouldShowThinking && thinkingBlocks
-    ? Array.from(thinkingBlocks.entries())
-    : [];
-  const toolCallEntries = toolCalls
-    ? Array.from(toolCalls.values())
-    : [];
-
+  // Must be before any early returns to satisfy Rules of Hooks
   const selectedMatch = searchMatches[activeMatchIndex] ?? null;
 
   const conversationTurns = useMemo<ConversationTurn[]>(() => {
@@ -517,6 +497,28 @@ export function MessageList({
     }
     return turns;
   }, [visibleMessages, isPrivacyMode, searchMatches, selectedMatch]);
+
+  // Early return after all hooks are declared
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold">Start a conversation</h2>
+          <p className="text-sm text-muted-foreground">
+            Type a message below to begin chatting with Claude.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const shouldShowThinking = showThinking ?? settings.showThinking ?? true;
+  const thinkingEntries = shouldShowThinking && thinkingBlocks
+    ? Array.from(thinkingBlocks.entries())
+    : [];
+  const toolCallEntries = toolCalls
+    ? Array.from(toolCalls.values())
+    : [];
 
   const showMinimap = conversationTurns.length >= 3;
 
