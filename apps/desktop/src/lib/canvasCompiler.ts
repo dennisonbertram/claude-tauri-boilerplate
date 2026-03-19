@@ -146,8 +146,13 @@ function buildHookEntry(data: ActionNodeData): HookEntry | null {
       break;
     case 'http':
       if (typeof data.url !== 'string' || !data.url.trim()) return null;
+      const CRLF_URL = /[\r\n]/;
+      if (CRLF_URL.test(data.url)) return null; // Reject CRLF injection in URL
       entry.url = data.url.slice(0, 2000);
-      if (typeof data.method === 'string') entry.method = data.method.slice(0, 20);
+      if (typeof data.method === 'string') {
+        const cleanMethod = data.method.replace(/[\r\n]/g, '').slice(0, 20);
+        if (cleanMethod) entry.method = cleanMethod;
+      }
       if (data.headers && typeof data.headers === 'object' && !Array.isArray(data.headers)) {
         const CRLF_RE = /[\r\n]/;
         const sanitizedHeaders: Record<string, string> = Object.create(null);

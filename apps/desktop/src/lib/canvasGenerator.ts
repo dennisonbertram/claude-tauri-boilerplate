@@ -234,13 +234,15 @@ function buildActionData(hook: HookEntryInput): ActionNodeData | null {
       };
     }
     case 'http': {
-      const url = typeof hook.url === 'string' ? hook.url : '';
-      const method = typeof hook.method === 'string' ? hook.method : 'GET';
+      const rawUrl = typeof hook.url === 'string' ? hook.url : '';
+      const url = /[\r\n]/.test(rawUrl) ? '' : rawUrl; // Strip CRLF-injected URLs
+      const rawMethod = typeof hook.method === 'string' ? hook.method : 'GET';
+      const method = rawMethod.replace(/[\r\n]/g, '').slice(0, 20) || 'GET';
       return {
         ...base,
         label: url ? `${method}: ${url.slice(0, 25)}` : 'http',
         url: url.slice(0, 2000),
-        method: method.slice(0, 20),
+        method,
         headers: hook.headers && typeof hook.headers === 'object' && !Array.isArray(hook.headers) ? sanitizeHeaders(hook.headers) : undefined,
         timeout: typeof hook.timeout === 'number' && isFinite(hook.timeout) ? hook.timeout : undefined,
       };
