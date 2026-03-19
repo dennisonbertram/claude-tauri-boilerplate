@@ -182,6 +182,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   const lastCompiledHooksJsonRef = useRef<string>(hooksJson ?? '');
   const latestNodesRef = useRef<CanvasNode[]>([]);
   const latestEdgesRef = useRef<CanvasEdge[]>([]);
+  const pendingStructuralRef = useRef(false);
 
   // Always keep refs up to date — runs after every render
   useEffect(() => {
@@ -280,6 +281,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
       });
       lastCompiledHooksJsonRef.current = newHooksJson;
+      pendingStructuralRef.current = false; // Structural change has been processed
       onChange(newHooksJson, newCanvasJson);
     }, 500) as DebouncedFn<() => void>,
     [onChange],
@@ -316,17 +318,23 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     if (isFirstRender.current) {
       isFirstRender.current = false;
       prevStructuralRef.current = getHooksFingerprint(nodes, edges);
-      lastCompiledHooksJsonRef.current = hooksJson ?? '';
+      // Only set if mount effect hasn't already populated it with a real compiled value
+      if (!lastCompiledHooksJsonRef.current) {
+        lastCompiledHooksJsonRef.current = hooksJson ?? '';
+      }
       return;
     }
 
     const fingerprint = getHooksFingerprint(nodes, edges);
     if (fingerprint === prevStructuralRef.current) {
-      // Position-only change — save layout without recompiling hooks
-      saveLayout();
+      // Position-only change — only save layout if no structural change is pending
+      if (!pendingStructuralRef.current) {
+        saveLayout();
+      }
       return;
     }
     prevStructuralRef.current = fingerprint;
+    pendingStructuralRef.current = true; // Mark structural change pending
     saveLayout.cancel(); // Cancel pending layout save — structural save will include positions
     notifyChange();
   }, [nodes, edges, notifyChange, saveLayout]);
