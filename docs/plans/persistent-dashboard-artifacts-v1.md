@@ -33,9 +33,9 @@ Implement a durable, artifact-backed dashboard flow where workspace chat can cre
   - [x] archive semantics preserving old thread references.
 
 ### Phase 2 - Artifact services and routes
-- [ ] Add server artifact service + generation service (Claude Agent SDK query, Zod validation, retry-on-repair).
-- [ ] Add artifact CRUD/regenerate/runtime routes.
-- [ ] Add `GET /api/sessions/:id/thread` route.
+- [x] Add server artifact service + generation service (Claude Agent SDK query, Zod validation, retry-on-repair).
+- [x] Add artifact CRUD/regenerate/runtime routes.
+- [x] Add `GET /api/sessions/:id/thread` route.
 
 ### Phase 3 - Frontend chat artifact rendering
 - [ ] Add persisted artifact renderer layer (separate from transient tool renderers).
