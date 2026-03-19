@@ -267,6 +267,7 @@ export function MessageList({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+  const [tocCollapsed, setTocCollapsed] = useState(false);
 
   const updateScrollButtonVisibility = useCallback((element?: Element | null) => {
     const viewport = element as HTMLElement | null;
@@ -585,57 +586,69 @@ export function MessageList({
           className="border-b border-border bg-background/85 px-3 py-2"
           data-testid="message-list-toc"
         >
-          <div className="mb-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            className="mb-2 flex w-full items-center justify-between gap-2 rounded-md px-0 py-0.5 hover:opacity-80"
+            onClick={() => setTocCollapsed((prev) => !prev)}
+            aria-expanded={!tocCollapsed}
+          >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <BookOpen className="h-4 w-4" />
               <span>Table of Contents</span>
             </div>
-            <div
-              className="flex items-center gap-1 text-xs text-muted-foreground"
-              data-testid="message-list-session-summary"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>{visibleMessages.length} messages</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div
+                className="flex items-center gap-1"
+                data-testid="message-list-session-summary"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>{visibleMessages.length} messages</span>
+              </div>
+              <ChevronDown
+                className={cn('h-3.5 w-3.5 transition-transform duration-200', tocCollapsed && 'rotate-180')}
+              />
             </div>
-          </div>
+          </button>
 
-          <div className={cn('flex flex-col gap-1 overflow-auto pr-1', densityClasses.toc)}>
-            {tocItems.map((item, tocIndex) => {
-              const isMatch = searchMatches.some((match) => match.messageIndex === item.messageIndex);
-              const isActive = selectedMatch?.messageIndex === item.messageIndex;
-              const isMatchActive = selectedMatch?.messageIndex === item.messageIndex;
-              const summaryText =
-                item.summary.length > 120 ? `${item.summary.slice(0, 120)}…` : item.summary;
+          {!tocCollapsed && (
+            <div className={cn('flex flex-col gap-1 overflow-auto pr-1', densityClasses.toc)}>
+              {tocItems.map((item, tocIndex) => {
+                const isMatch = searchMatches.some((match) => match.messageIndex === item.messageIndex);
+                const isActive = selectedMatch?.messageIndex === item.messageIndex;
+                const isMatchActive = selectedMatch?.messageIndex === item.messageIndex;
+                const summaryText =
+                  item.summary.length > 120 ? `${item.summary.slice(0, 120)}…` : item.summary;
 
-              return (
-                <button
-                  key={item.messageId}
-                  type="button"
-                  data-testid="message-list-toc-entry"
-                  data-toc-entry-index={tocIndex}
-                  onClick={() => jumpToMessageIndex(item.messageIndex)}
-                  className={`rounded-md border border-transparent px-2 py-1 text-left text-xs transition-colors ${
-                    isActive
-                      ? 'border-primary/40 bg-primary/8'
-                      : 'hover:bg-muted/80'
-                  } ${isMatch ? 'font-medium' : ''}`}
-                  title={summaryText}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span>{item.label}</span>
-                    <span className="text-muted-foreground">{item.summary}</span>
-                  </div>
-                  <span className="sr-only">{summaryText}</span>
-                  {isMatchActive ? (
-                    <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary">
-                      <ChevronUp className="h-3 w-3" />
-                      Search hit
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={item.messageId}
+                    type="button"
+                    data-testid="message-list-toc-entry"
+                    data-toc-entry-index={tocIndex}
+                    onClick={() => jumpToMessageIndex(item.messageIndex)}
+                    className={`rounded-md border border-transparent px-2 py-1 text-left text-xs transition-colors ${
+                      isActive
+                        ? 'border-primary/40 bg-primary/8'
+                        : 'hover:bg-muted/80'
+                    } ${isMatch ? 'font-medium' : ''}`}
+                    title={summaryText}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{item.label}</span>
+                      <span className="text-muted-foreground">{item.summary}</span>
+                    </div>
+                    <span className="sr-only">{summaryText}</span>
+                    {isMatchActive ? (
+                      <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary">
+                        <ChevronUp className="h-3 w-3" />
+                        Search hit
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : null}
 
