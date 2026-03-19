@@ -284,7 +284,7 @@ describe('SessionSidebar', () => {
 
   // ─── Delete with confirmation ───
 
-  test('clicking Delete shows confirmation before deleting', async () => {
+  test('clicking Delete shows inline confirmation within the session row', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
     const sessionItem = screen.getByText('First Chat').closest('button')!;
@@ -297,9 +297,12 @@ describe('SessionSidebar', () => {
       fireEvent.click(screen.getByText('Delete'));
     });
 
-    // Should show confirmation state
+    // Dropdown should be gone; inline confirmation should appear inside the row
     await waitFor(() => {
-      expect(screen.getByText('Confirm Delete')).toBeTruthy();
+      const inlineConfirm = screen.getByTestId('inline-delete-confirmation');
+      expect(inlineConfirm).toBeTruthy();
+      // The inline confirm must be a descendant of the session row button
+      expect(sessionItem.contains(inlineConfirm)).toBe(true);
     });
   });
 
@@ -317,10 +320,65 @@ describe('SessionSidebar', () => {
     });
 
     await waitFor(() => {
-      fireEvent.click(screen.getByText('Confirm Delete'));
+      fireEvent.click(screen.getByTestId('confirm-delete-button'));
     });
 
     expect(defaultProps.onDeleteSession).toHaveBeenCalledWith('session-1');
+  });
+
+  // ─── Regression: inline delete confirmation ───
+
+  test('clicking Delete then Cancel does not remove the session', async () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    fireEvent.mouseEnter(sessionItem);
+
+    const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
+    fireEvent.click(menuButton);
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Delete'));
+    });
+
+    // Cancel the deletion
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('cancel-delete-button'));
+    });
+
+    // onDeleteSession must NOT have been called
+    expect(defaultProps.onDeleteSession).not.toHaveBeenCalled();
+
+    // Session title should still be visible (session not removed)
+    expect(screen.getByText('First Chat')).toBeTruthy();
+  });
+
+  test('the confirmation is contained within the session row, not a separate floating menu', async () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    fireEvent.mouseEnter(sessionItem);
+
+    const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
+    fireEvent.click(menuButton);
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Delete'));
+    });
+
+    await waitFor(() => {
+      const inlineConfirm = screen.getByTestId('inline-delete-confirmation');
+
+      // Confirmation element is inside the session row button
+      expect(sessionItem.contains(inlineConfirm)).toBe(true);
+
+      // No separate floating dropdown should be open (no element with top-full positioning outside the row)
+      const floatingMenus = document.querySelectorAll('[class*="top-full"]');
+      // Any remaining top-full elements must be inside the session row (not floating outside)
+      floatingMenus.forEach((el) => {
+        expect(sessionItem.contains(el)).toBe(true);
+      });
+    });
   });
 
   // ─── Section Header ───

@@ -201,30 +201,31 @@ function SessionItem({
         onExport('md');
         break;
       case 'delete':
+        // Close the dropdown and show inline confirmation within the row
+        setMenuOpen(false);
         setConfirmDelete(true);
         break;
       case 'confirm-delete':
-        setMenuOpen(false);
         setConfirmDelete(false);
         onDelete();
+        break;
+      case 'cancel-delete':
+        setConfirmDelete(false);
         break;
     }
   };
 
   return (
     <button
-      onClick={onSelect}
+      onClick={confirmDelete ? undefined : onSelect}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        setMenuOpen(true);
+        if (!confirmDelete) setMenuOpen(true);
       }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => {
         setHovering(false);
-        if (!menuOpen) {
-          setConfirmDelete(false);
-        }
       }}
       className={`w-full rounded-md px-3 py-2 text-left transition-colors relative group ${
         isActive
@@ -232,74 +233,95 @@ function SessionItem({
           : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        {isRenaming ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={handleRenameKeyDown}
-            onBlur={handleRenameSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="text-sm font-medium flex-1 bg-background border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring"
-          />
-        ) : (
-          <span className="text-sm font-medium truncate flex-1">
-            {session.title || 'New Chat'}
-          </span>
-        )}
-        {hovering && !isRenaming && (
-          <div
-            data-testid="session-menu-trigger"
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation();
-                setMenuOpen(!menuOpen);
-              }
-            }}
-            className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="5" r="1" />
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="12" cy="19" r="1" />
-            </svg>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">{dateStr}</span>
-        {session.profile && <ProfileBadge profile={session.profile} />}
-      </div>
-
-      {/* Context menu dropdown */}
-      {menuOpen && (
+      {confirmDelete ? (
+        /* Inline delete confirmation — contained within the session row */
         <div
-          ref={menuRef}
-          className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-md border border-border bg-popover p-1 shadow-md"
+          data-testid="inline-delete-confirmation"
+          className="flex items-center justify-between w-full gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {confirmDelete ? (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => handleMenuAction('confirm-delete')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleMenuAction('confirm-delete');
+          <span className="text-xs text-muted-foreground truncate">
+            Delete &ldquo;{session.title}&rdquo;?
+          </span>
+          <div className="flex gap-1 shrink-0">
+            <button
+              data-testid="confirm-delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMenuAction('confirm-delete');
               }}
-              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
+              className="text-xs px-2 py-0.5 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Confirm Delete
-            </div>
-          ) : (
-            <>
+              Delete
+            </button>
+            <button
+              data-testid="cancel-delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMenuAction('cancel-delete');
+              }}
+              className="text-xs px-2 py-0.5 rounded hover:bg-accent"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                onBlur={handleRenameSubmit}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm font-medium flex-1 bg-background border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring"
+              />
+            ) : (
+              <span className="text-sm font-medium truncate flex-1">
+                {session.title || 'New Chat'}
+              </span>
+            )}
+            {hovering && !isRenaming && (
+              <div
+                data-testid="session-menu-trigger"
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(!menuOpen);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    setMenuOpen(!menuOpen);
+                  }
+                }}
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="19" r="1" />
+                </svg>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">{dateStr}</span>
+            {session.profile && <ProfileBadge profile={session.profile} />}
+          </div>
+
+          {/* Context menu dropdown */}
+          {menuOpen && (
+            <div
+              ref={menuRef}
+              className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-md border border-border bg-popover p-1 shadow-md"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div
                 role="button"
                 tabIndex={0}
@@ -356,9 +378,9 @@ function SessionItem({
               >
                 Delete
               </div>
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
     </button>
   );
