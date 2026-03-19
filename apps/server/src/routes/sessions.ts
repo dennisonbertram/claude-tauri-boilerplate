@@ -9,6 +9,8 @@ import {
   deleteSession,
   updateSessionTitle,
   addMessage,
+  linkSessionToProfile,
+  getAgentProfile,
 } from '../db';
 import { generateRandomName } from '../services/name-generator';
 import { generateSessionTitle } from '../services/auto-namer';
@@ -17,6 +19,7 @@ import { generateContextSummary } from '../services/context-summary';
 const createSessionSchema = z.object({
   title: z.string().max(500).optional(),
   model: z.string().max(200).optional(),
+  profileId: z.string().uuid().optional(),
 });
 
 const renameSessionSchema = z.object({
@@ -53,7 +56,25 @@ export function createSessionsRouter(db: Database) {
     const title = (parsed.data.title && parsed.data.title !== 'New Chat')
       ? parsed.data.title
       : generateRandomName();
+
+    // Validate the profile exists if profileId is provided
+    if (parsed.data.profileId) {
+      const profile = getAgentProfile(db, parsed.data.profileId);
+      if (!profile) {
+        return c.json(
+          { error: 'Agent profile not found', code: 'NOT_FOUND' },
+          404
+        );
+      }
+    }
+
     const session = createSession(db, id, title, undefined, parsed.data.model);
+
+    // Link the session to the agent profile if applicable
+    if (parsed.data.profileId) {
+      linkSessionToProfile(db, id, parsed.data.profileId);
+    }
+
     return c.json(session, 201);
   });
 

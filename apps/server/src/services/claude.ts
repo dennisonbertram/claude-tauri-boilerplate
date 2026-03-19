@@ -2,6 +2,7 @@ import { query } from '@anthropic-ai/claude-agent-sdk';
 import { mapSdkEvent } from './event-mapper';
 import {
   getProviderCapability,
+  type AgentProfile,
   type PermissionMode,
   type ProviderConfig,
   type ProviderType,
@@ -20,6 +21,7 @@ export interface ClaudeStreamOptions {
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
+  agentProfile?: AgentProfile | null;
 }
 
 type EnvSnapshot = Record<string, string | undefined>;
@@ -81,6 +83,84 @@ function restoreProviderEnv(original: EnvSnapshot) {
   }
 }
 
+function buildProfileQueryOptions(profile: AgentProfile): Record<string, unknown> {
+  const opts: Record<string, unknown> = {};
+
+  // Setting sources - empty array means no filesystem settings (sandboxed)
+  if (profile.settingSources && profile.settingSources.length > 0) {
+    opts.settingSources = profile.settingSources;
+  } else {
+    opts.settingSources = []; // Default: sandboxed, no filesystem settings
+  }
+
+  // System prompt
+  if (profile.systemPrompt) {
+    if (profile.useClaudeCodePrompt) {
+      opts.systemPrompt = {
+        type: 'preset' as const,
+        preset: 'claude_code' as const,
+        append: profile.systemPrompt,
+      };
+    } else {
+      opts.systemPrompt = profile.systemPrompt;
+    }
+  } else if (profile.useClaudeCodePrompt) {
+    opts.systemPrompt = {
+      type: 'preset' as const,
+      preset: 'claude_code' as const,
+    };
+  }
+
+  // Model and thinking
+  if (profile.model) opts.model = profile.model;
+  if (profile.effort) opts.effort = profile.effort;
+  if (profile.thinkingBudgetTokens) {
+    opts.thinkingConfig = {
+      type: 'enabled',
+      budgetTokens: profile.thinkingBudgetTokens,
+    };
+  }
+
+  // Tool permissions
+  if (profile.allowedTools?.length) opts.allowedTools = profile.allowedTools;
+  if (profile.disallowedTools?.length) opts.disallowedTools = profile.disallowedTools;
+  if (profile.permissionMode && profile.permissionMode !== 'default') {
+    opts.permissionMode = profile.permissionMode;
+  }
+
+  // Hooks
+  if (profile.hooksJson) {
+    try { opts.hooks = JSON.parse(profile.hooksJson); } catch { /* ignore invalid JSON */ }
+  }
+
+  // MCP Servers
+  if (profile.mcpServersJson) {
+    try { opts.mcpServers = JSON.parse(profile.mcpServersJson); } catch { /* ignore invalid JSON */ }
+  }
+
+  // Sandbox
+  if (profile.sandboxJson) {
+    try { opts.sandbox = JSON.parse(profile.sandboxJson); } catch { /* ignore invalid JSON */ }
+  }
+
+  // Working directory
+  if (profile.cwd) opts.cwd = profile.cwd;
+  if (profile.additionalDirectories?.length) {
+    opts.additionalDirectories = profile.additionalDirectories;
+  }
+
+  // Limits
+  if (profile.maxTurns) opts.maxTurns = profile.maxTurns;
+  if (profile.maxBudgetUsd) opts.maxBudgetUsd = profile.maxBudgetUsd;
+
+  // Sub-agents
+  if (profile.agentsJson) {
+    try { opts.agents = JSON.parse(profile.agentsJson); } catch { /* ignore invalid JSON */ }
+  }
+
+  return opts;
+}
+
 export async function* streamClaude(
   options: ClaudeStreamOptions
 ): AsyncGenerator<StreamEvent> {
@@ -117,6 +197,12 @@ export async function* streamClaude(
 
   if (options.additionalDirectories && options.additionalDirectories.length > 0) {
     queryOptions.additionalDirectories = options.additionalDirectories;
+  }
+
+  // If agent profile provided, apply profile options (overrides individual fields)
+  if (options.agentProfile) {
+    const profileOpts = buildProfileQueryOptions(options.agentProfile);
+    Object.assign(queryOptions, profileOpts);
   }
 
   const originalEnv = applyProviderEnv(

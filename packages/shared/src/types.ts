@@ -24,6 +24,8 @@ export interface Session {
   claudeSessionId?: string;
   model?: string;
   workspaceId?: string;
+  profileId?: string | null;
+  profile?: AgentProfileSummary | null;
   linearIssueId?: string | null;
   linearIssueTitle?: string | null;
   linearIssueSummary?: string | null;
@@ -48,6 +50,7 @@ export interface ChatRequest {
     parts?: Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   sessionId?: string;
+  profileId?: string;
   provider?: ProviderType;
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
@@ -766,6 +769,72 @@ export interface ArtifactRevision {
   sourceSessionId?: string | null;
   sourceMessageId?: string | null;
   createdAt: string;
+}
+
+// --- Agent Profile Types ---
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+
+  // System Prompt
+  systemPrompt: string | null;
+  useClaudeCodePrompt: boolean;
+
+  // Model
+  model: string | null;
+  effort: string | null;
+  thinkingBudgetTokens: number | null;
+
+  // Tools
+  allowedTools: string[];
+  disallowedTools: string[];
+  permissionMode: string;
+
+  // Hooks
+  hooksJson: string | null;
+  hooksCanvasJson: string | null;
+
+  // MCP Servers
+  mcpServersJson: string | null;
+
+  // Sandbox
+  sandboxJson: string | null;
+
+  // Execution
+  cwd: string | null;
+  additionalDirectories: string[];
+  settingSources: string[];
+
+  // Limits
+  maxTurns: number | null;
+  maxBudgetUsd: number | null;
+
+  // Subagents
+  agentsJson: string | null;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentProfileSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+  model: string | null;
+  permissionMode: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MessagePartType = 'text' | 'artifact_ref';

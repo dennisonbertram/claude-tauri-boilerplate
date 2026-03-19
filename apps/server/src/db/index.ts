@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionProfileId } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -13,6 +13,7 @@ interface SessionRow {
   claude_session_id: string | null;
   model: string;
   workspace_id: string | null;
+  profile_id: string | null;
   linear_issue_id: string | null;
   linear_issue_title: string | null;
   linear_issue_summary: string | null;
@@ -85,6 +86,7 @@ function mapSession(row: SessionRow) {
     claudeSessionId: row.claude_session_id,
     model: row.model,
     workspaceId: row.workspace_id,
+    profileId: row.profile_id,
     linearIssueId: row.linear_issue_id,
     linearIssueTitle: row.linear_issue_title,
     linearIssueSummary: row.linear_issue_summary,
@@ -181,6 +183,7 @@ export function createDb(path?: string): Database {
   migrateSessionModelColumn(db);
   migrateWorkspaceAdditionalDirectories(db);
   migrateGithubIssueColumns(db);
+  migrateSessionProfileId(db);
   return db;
 }
 
@@ -1043,4 +1046,252 @@ export function countArtifactRevisions(db: Database, artifactId: string): number
   );
   const row = stmt.get(artifactId) as { count: number } | null;
   return row?.count ?? 0;
+}
+
+// ─── Agent Profile Helpers ──────────────────────────────────────────────────────
+
+interface AgentProfileRow {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  is_default: number;
+  sort_order: number;
+  system_prompt: string | null;
+  use_claude_code_prompt: number;
+  model: string | null;
+  effort: string | null;
+  thinking_budget_tokens: number | null;
+  allowed_tools: string;
+  disallowed_tools: string;
+  permission_mode: string;
+  hooks_json: string | null;
+  hooks_canvas_json: string | null;
+  mcp_servers_json: string | null;
+  sandbox_json: string | null;
+  cwd: string | null;
+  additional_directories: string;
+  setting_sources: string;
+  max_turns: number | null;
+  max_budget_usd: number | null;
+  agents_json: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function parseJsonArray(json: string): string[] {
+  try {
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === 'string');
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function mapAgentProfile(row: AgentProfileRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    icon: row.icon,
+    color: row.color,
+    isDefault: row.is_default === 1,
+    sortOrder: row.sort_order,
+    systemPrompt: row.system_prompt,
+    useClaudeCodePrompt: row.use_claude_code_prompt === 1,
+    model: row.model,
+    effort: row.effort,
+    thinkingBudgetTokens: row.thinking_budget_tokens,
+    allowedTools: parseJsonArray(row.allowed_tools),
+    disallowedTools: parseJsonArray(row.disallowed_tools),
+    permissionMode: row.permission_mode,
+    hooksJson: row.hooks_json,
+    hooksCanvasJson: row.hooks_canvas_json,
+    mcpServersJson: row.mcp_servers_json,
+    sandboxJson: row.sandbox_json,
+    cwd: row.cwd,
+    additionalDirectories: parseJsonArray(row.additional_directories),
+    settingSources: parseJsonArray(row.setting_sources),
+    maxTurns: row.max_turns,
+    maxBudgetUsd: row.max_budget_usd,
+    agentsJson: row.agents_json,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapAgentProfileSummary(row: AgentProfileRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    icon: row.icon,
+    color: row.color,
+    isDefault: row.is_default === 1,
+    sortOrder: row.sort_order,
+    model: row.model,
+    permissionMode: row.permission_mode,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function createAgentProfile(
+  db: Database,
+  id: string,
+  name: string,
+  params: {
+    description?: string | null;
+    icon?: string | null;
+    color?: string | null;
+    isDefault?: boolean;
+    sortOrder?: number;
+    systemPrompt?: string | null;
+    useClaudeCodePrompt?: boolean;
+    model?: string | null;
+    effort?: string | null;
+    thinkingBudgetTokens?: number | null;
+    allowedTools?: string[];
+    disallowedTools?: string[];
+    permissionMode?: string;
+    hooksJson?: string | null;
+    hooksCanvasJson?: string | null;
+    mcpServersJson?: string | null;
+    sandboxJson?: string | null;
+    cwd?: string | null;
+    additionalDirectories?: string[];
+    settingSources?: string[];
+    maxTurns?: number | null;
+    maxBudgetUsd?: number | null;
+    agentsJson?: string | null;
+  } = {}
+) {
+  const stmt = db.prepare(
+    `INSERT INTO agent_profiles (
+      id, name, description, icon, color, is_default, sort_order,
+      system_prompt, use_claude_code_prompt,
+      model, effort, thinking_budget_tokens,
+      allowed_tools, disallowed_tools, permission_mode,
+      hooks_json, hooks_canvas_json, mcp_servers_json, sandbox_json,
+      cwd, additional_directories, setting_sources,
+      max_turns, max_budget_usd, agents_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(
+    id,
+    name,
+    params.description ?? null,
+    params.icon ?? null,
+    params.color ?? null,
+    params.isDefault ? 1 : 0,
+    params.sortOrder ?? 0,
+    params.systemPrompt ?? null,
+    params.useClaudeCodePrompt !== false ? 1 : 0,
+    params.model ?? null,
+    params.effort ?? null,
+    params.thinkingBudgetTokens ?? null,
+    JSON.stringify(params.allowedTools ?? []),
+    JSON.stringify(params.disallowedTools ?? []),
+    params.permissionMode ?? 'default',
+    params.hooksJson ?? null,
+    params.hooksCanvasJson ?? null,
+    params.mcpServersJson ?? null,
+    params.sandboxJson ?? null,
+    params.cwd ?? null,
+    JSON.stringify(params.additionalDirectories ?? []),
+    JSON.stringify(params.settingSources ?? []),
+    params.maxTurns ?? null,
+    params.maxBudgetUsd ?? null,
+    params.agentsJson ?? null
+  ) as AgentProfileRow;
+  return mapAgentProfile(row);
+}
+
+export function getAgentProfile(db: Database, id: string) {
+  const stmt = db.prepare(`SELECT * FROM agent_profiles WHERE id = ?`);
+  const row = stmt.get(id) as AgentProfileRow | null;
+  return row ? mapAgentProfile(row) : null;
+}
+
+export function listAgentProfiles(db: Database) {
+  const stmt = db.prepare(`SELECT * FROM agent_profiles ORDER BY sort_order ASC, created_at ASC`);
+  const rows = stmt.all() as AgentProfileRow[];
+  return rows.map(mapAgentProfileSummary);
+}
+
+export function updateAgentProfile(
+  db: Database,
+  id: string,
+  updates: Record<string, unknown>
+) {
+  const fieldMap: Record<string, string> = {
+    name: 'name',
+    description: 'description',
+    icon: 'icon',
+    color: 'color',
+    isDefault: 'is_default',
+    sortOrder: 'sort_order',
+    systemPrompt: 'system_prompt',
+    useClaudeCodePrompt: 'use_claude_code_prompt',
+    model: 'model',
+    effort: 'effort',
+    thinkingBudgetTokens: 'thinking_budget_tokens',
+    allowedTools: 'allowed_tools',
+    disallowedTools: 'disallowed_tools',
+    permissionMode: 'permission_mode',
+    hooksJson: 'hooks_json',
+    hooksCanvasJson: 'hooks_canvas_json',
+    mcpServersJson: 'mcp_servers_json',
+    sandboxJson: 'sandbox_json',
+    cwd: 'cwd',
+    additionalDirectories: 'additional_directories',
+    settingSources: 'setting_sources',
+    maxTurns: 'max_turns',
+    maxBudgetUsd: 'max_budget_usd',
+    agentsJson: 'agents_json',
+  };
+
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+
+  for (const [key, value] of Object.entries(updates)) {
+    const col = fieldMap[key];
+    if (!col) continue;
+
+    setClauses.push(`${col} = ?`);
+    if (key === 'isDefault' || key === 'useClaudeCodePrompt') {
+      values.push(value ? 1 : 0);
+    } else if (key === 'allowedTools' || key === 'disallowedTools' || key === 'additionalDirectories' || key === 'settingSources') {
+      values.push(JSON.stringify(value ?? []));
+    } else {
+      values.push(value ?? null);
+    }
+  }
+
+  if (setClauses.length === 0) return null;
+
+  setClauses.push("updated_at = datetime('now')");
+  values.push(id);
+
+  const stmt = db.prepare(
+    `UPDATE agent_profiles SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`
+  );
+  const row = stmt.get(...values) as AgentProfileRow | null;
+  return row ? mapAgentProfile(row) : null;
+}
+
+export function deleteAgentProfile(db: Database, id: string) {
+  const stmt = db.prepare(`DELETE FROM agent_profiles WHERE id = ?`);
+  return stmt.run(id);
+}
+
+export function linkSessionToProfile(db: Database, sessionId: string, profileId: string) {
+  const stmt = db.prepare(
+    `UPDATE sessions SET profile_id = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+  return stmt.run(profileId, sessionId);
 }

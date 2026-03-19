@@ -145,6 +145,61 @@ export const SCHEMA = `
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_message_parts_message_id ON message_parts(message_id);
+
+  CREATE TABLE IF NOT EXISTS agent_profiles (
+    id TEXT PRIMARY KEY,
+
+    -- Metadata
+    name TEXT NOT NULL CHECK(length(trim(name)) > 0),
+    description TEXT,
+    icon TEXT,
+    color TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+
+    -- System Prompt
+    system_prompt TEXT,
+    use_claude_code_prompt INTEGER NOT NULL DEFAULT 1,
+
+    -- Model
+    model TEXT,
+    effort TEXT CHECK(effort IS NULL OR effort IN ('low', 'medium', 'high', 'max')),
+    thinking_budget_tokens INTEGER,
+
+    -- Tools (stored as JSON arrays)
+    allowed_tools TEXT NOT NULL DEFAULT '[]',
+    disallowed_tools TEXT NOT NULL DEFAULT '[]',
+    permission_mode TEXT NOT NULL DEFAULT 'default'
+      CHECK(permission_mode IN ('default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk')),
+
+    -- Hooks
+    hooks_json TEXT,
+    hooks_canvas_json TEXT,
+
+    -- MCP Servers
+    mcp_servers_json TEXT,
+
+    -- Sandbox
+    sandbox_json TEXT,
+
+    -- Execution
+    cwd TEXT,
+    additional_directories TEXT NOT NULL DEFAULT '[]',
+    setting_sources TEXT NOT NULL DEFAULT '[]',
+
+    -- Limits
+    max_turns INTEGER,
+    max_budget_usd REAL,
+
+    -- Subagents
+    agents_json TEXT,
+
+    -- Timestamps
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_name ON agent_profiles(name);
+  CREATE INDEX IF NOT EXISTS idx_agent_profiles_sort_order ON agent_profiles(sort_order);
 `;
 
 /**
@@ -226,6 +281,15 @@ export function migrateGithubIssueColumns(db: import('bun:sqlite').Database): vo
   if (!wsHasRepo) {
     db.exec('ALTER TABLE workspaces ADD COLUMN github_issue_repo TEXT');
   }
+}
+
+export function migrateSessionProfileId(db: import('bun:sqlite').Database): void {
+  const columns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+  const hasProfileId = columns.some((col) => col.name === 'profile_id');
+  if (!hasProfileId) {
+    db.exec('ALTER TABLE sessions ADD COLUMN profile_id TEXT REFERENCES agent_profiles(id) ON DELETE SET NULL');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_profile_id ON sessions(profile_id)');
 }
 
 export function migrateSessionModelColumn(db: import('bun:sqlite').Database): void {
