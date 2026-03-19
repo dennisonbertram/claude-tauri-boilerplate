@@ -8,8 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 
-type ViewType = 'chat' | 'teams' | 'workspaces' | 'agents';
-
 interface SessionSidebarProps {
   sessions: Session[];
   activeSessionId: string | null;
@@ -24,8 +22,6 @@ interface SessionSidebarProps {
   onForkSession: (id: string) => void;
   onExportSession: (id: string, format: 'json' | 'md') => void;
   onOpenSettings?: (tab?: string) => void;
-  activeView?: ViewType;
-  onSwitchView?: (view: ViewType) => void;
 }
 
 export function SessionSidebar({
@@ -39,67 +35,11 @@ export function SessionSidebar({
   onRenameSession,
   onForkSession,
   onExportSession,
-  onOpenSettings,
-  activeView,
-  onSwitchView,
   searchQuery = '',
   onSearchQueryChange,
 }: SessionSidebarProps) {
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
-      {/* View toggle tabs (Chat / Teams) */}
-      {onSwitchView && (
-        <div className="flex border-b border-border">
-          <button
-            data-testid="view-tab-chat"
-            title="Standalone conversations — quick questions and one-off tasks"
-            onClick={() => onSwitchView('chat')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'chat'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Chat
-          </button>
-          <button
-            data-testid="view-tab-workspaces"
-            title="Git worktree environments with isolated branches and embedded chat"
-            onClick={() => onSwitchView('workspaces')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'workspaces'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Workspaces
-          </button>
-          <button
-            data-testid="view-tab-teams"
-            title="Multi-agent PR and team workflows"
-            onClick={() => onSwitchView('teams')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'teams'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Teams
-          </button>
-          <button
-            data-testid="view-tab-agents"
-            title="Custom agent profiles and configurations"
-            onClick={() => onSwitchView('agents')}
-            className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-              activeView === 'agents'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Agents
-          </button>
-        </div>
-      )}
       <div className="p-3">
         <Button onClick={onNewChat} className="w-full" variant="secondary">
           New Chat
@@ -142,31 +82,9 @@ export function SessionSidebar({
           )}
         </div>
       </ScrollArea>
-      {/* Footer: UserBadge + Settings */}
-      <div className="border-t border-border p-2 flex items-center justify-between">
+      {/* Footer: UserBadge */}
+      <div className="border-t border-border p-2 flex items-center">
         <UserBadge email={email} plan={plan} />
-        {onOpenSettings && (
-          <button
-            data-testid="settings-gear-button"
-            onClick={() => onOpenSettings()}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            aria-label="Open settings"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </button>
-        )}
       </div>
     </div>
   );
