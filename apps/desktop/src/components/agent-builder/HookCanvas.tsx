@@ -30,10 +30,12 @@ const VALID_NODE_TYPES = new Set(['trigger', 'condition', 'action']);
 const MAX_STRING_LENGTH = 10_000;
 const MAX_NODE_COUNT = 200;
 const MAX_EDGES = 400;
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
 
 function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(data)) {
+    if (DANGEROUS_KEYS.has(key)) continue;
     if (typeof val === 'string') {
       result[key] = val.slice(0, MAX_STRING_LENGTH);
     } else if (typeof val === 'number' && isFinite(val)) {
@@ -49,10 +51,9 @@ function sanitizeNodeData(data: Record<string, unknown>): Record<string, unknown
 }
 
 function stripDangerousKeys(obj: Record<string, unknown>): Record<string, unknown> {
-  const DANGEROUS = new Set(['__proto__', 'constructor', 'prototype', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
   const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (!DANGEROUS.has(k) && typeof k === 'string' && k.length < 200) {
+    if (!DANGEROUS_KEYS.has(k) && typeof k === 'string' && k.length < 200) {
       result[k] = v;
     }
   }
@@ -145,6 +146,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   const { screenToFlowPosition } = useReactFlow();
   const initialized = useRef(false);
   const isFirstRender = useRef(true);
+  const lastCompiledHooksJsonRef = useRef<string>(hooksJson ?? '');
 
   // Load saved state on mount
   useEffect(() => {
@@ -188,8 +190,18 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         nodes: currentNodes,
         edges: currentEdges,
       });
+      lastCompiledHooksJsonRef.current = newHooksJson;
       onChange(newHooksJson, newCanvasJson);
     }, 500) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
+    [onChange],
+  );
+
+  // Debounced layout save — persists position changes without recompiling hooks
+  const saveLayout = useCallback(
+    debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
+      const canvasJson = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
+      onChange(lastCompiledHooksJsonRef.current, canvasJson);
+    }, 2000) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
     [onChange],
   );
 
@@ -197,8 +209,9 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   useEffect(() => {
     return () => {
       notifyChange.cancel();
+      saveLayout.cancel();
     };
-  }, [notifyChange]);
+  }, [notifyChange, saveLayout]);
 
   // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
   const prevStructuralRef = useRef<string>('');
@@ -206,16 +219,21 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      const initial = getHooksFingerprint(nodes, edges);
-      prevStructuralRef.current = initial;
+      prevStructuralRef.current = getHooksFingerprint(nodes, edges);
+      lastCompiledHooksJsonRef.current = hooksJson ?? '';
       return;
     }
 
     const fingerprint = getHooksFingerprint(nodes, edges);
-    if (fingerprint === prevStructuralRef.current) return;
+    if (fingerprint === prevStructuralRef.current) {
+      // Position-only change — save layout without recompiling hooks
+      saveLayout(nodes, edges);
+      return;
+    }
     prevStructuralRef.current = fingerprint;
+    saveLayout.cancel(); // Cancel pending layout save — structural save will include positions
     notifyChange(nodes, edges);
-  }, [nodes, edges, notifyChange]);
+  }, [nodes, edges, notifyChange, saveLayout]);
 
   // Connection validation
   const onConnect: OnConnect = useCallback(
