@@ -10,6 +10,7 @@ import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
 import { AgentBuilderView } from '@/components/agent-builder';
+import { ActivityBar } from '@/components/ActivityBar';
 import { ProjectSidebar } from '@/components/workspaces/ProjectSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
 import { AddProjectDialog } from '@/components/workspaces/AddProjectDialog';
@@ -286,6 +287,13 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   return (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 min-h-0">
+        <ActivityBar
+          activeView={activeView}
+          onSelectView={handleSwitchView}
+          onOpenSettings={() => handleOpenSettings()}
+          email={email}
+          plan={plan}
+        />
         {activeView === 'chat' && sidebarOpen && (
           <SessionSidebar
             sessions={sessions}
@@ -306,8 +314,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             onForkSession={forkSession}
             onExportSession={exportSession}
             onOpenSettings={handleOpenSettings}
-            activeView={activeView}
-            onSwitchView={handleSwitchView}
           />
         )}
         {activeView === 'workspaces' && (
@@ -323,53 +329,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             }}
             onRenameWorkspace={handleRenameWorkspace}
             onDeleteProject={handleDeleteProject}
-            activeView={activeView}
-            onSwitchView={handleSwitchView}
             isWorkspaceUnread={isUnread}
           />
-        )}
-        {(activeView === 'teams' || activeView === 'agents') && (
-          <div className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-sidebar">
-            {/* View toggle tabs */}
-            <div className="flex border-b border-border">
-              <button
-                data-testid="view-tab-chat"
-                onClick={() => handleSwitchView('chat')}
-                className="flex-1 px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-              >
-                Chat
-              </button>
-              <button
-                onClick={() => handleSwitchView('workspaces')}
-                className="flex-1 px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-              >
-                Workspaces
-              </button>
-              <button
-                data-testid="view-tab-teams"
-                onClick={() => handleSwitchView('teams')}
-                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                  activeView === 'teams'
-                    ? 'border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Teams
-              </button>
-              <button
-                data-testid="view-tab-agents"
-                onClick={() => handleSwitchView('agents')}
-                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                  activeView === 'agents'
-                    ? 'border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Agents
-              </button>
-            </div>
-            <div className="flex-1" />
-          </div>
         )}
         {activeView === 'chat' ? (
           activeSessionId ? (
