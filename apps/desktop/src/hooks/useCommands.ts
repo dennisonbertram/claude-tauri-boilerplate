@@ -53,7 +53,7 @@ export function useCommands(context: CommandContext) {
         name: 'restart',
         description: 'Restart the session',
         category: 'chat' as CommandCategory,
-        shortcut: 'Cmd+N',
+        shortcut: 'Cmd+Shift+R',
         execute: () => context.createSession(),
       },
       {

@@ -159,6 +159,7 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
           <h2 className="text-lg font-semibold">Settings</h2>
           <button
             data-testid="settings-close-button"
+            aria-label="Close settings"
             onClick={onClose}
             className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
@@ -1369,7 +1370,7 @@ function StatusTab({
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Email</span>
-            <span className="font-mono">{email || '—'}</span>
+            <span className="font-mono">{email || 'Connected via Claude subscription'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Plan</span>
