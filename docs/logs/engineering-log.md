@@ -249,3 +249,9 @@ Each entry follows this format:
 - **What:** Added `GET /api/sessions/:id/summary` endpoint, `generateContextSummary` service, `useContextSummary` hook, and rendered the summary as subtle italic text below the chat input.
 - **Why:** Gives users a quick reminder of what a session is about without needing to scroll through messages. Uses Claude Haiku for low cost and fast response.
 - **Result:** Server endpoint generates a one-phrase summary via Haiku (debounced 2s, skipped during streaming). Summary appears below the input bar at 40% opacity. 7 new tests added, all passing.
+
+## 2026-03-19
+### Persistent Dashboard Artifacts V1 complete (Phases 1-4)
+- **What:** Implemented full artifact pipeline: SQLite schema (artifacts, artifact_revisions, message_parts), backend CRUD/generate/regenerate/archive routes, frontend Dashboards tab in WorkspacePanel, `/dashboard` slash command, ArtifactBlock inline renderer.
+- **Why:** Enables workspace chat to generate persistent, revisioned dashboards that survive page reload.
+- **Result:** All phases complete, 57+ new tests passing. Dashboard generation confirmed working end-to-end via curl verification. All seven new artifact endpoints return correct responses and status codes.

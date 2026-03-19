@@ -2,7 +2,7 @@
 
 ## Status
 
-- In progress (Phase 1 foundation landed in this branch).
+- Complete. All five phases landed. Curl verification passed 2026-03-19.
 
 ## Feature summary
 
@@ -47,7 +47,7 @@ Implement a durable, artifact-backed dashboard flow where workspace chat can cre
 - [x] Add rename/duplicate/archive/regenerate actions.
 
 ### Phase 5 - Docs + manual verification
-- [ ] Document implementation details in `docs/implementation/` + index updates.
-- [ ] Run backend curl verification for new endpoints.
-- [ ] Run frontend browser-tool verification for dashboard chat + surface flows.
-- [ ] Add engineering log final completion entry.
+- [x] Document implementation details in `docs/implementation/` + index updates.
+- [x] Run backend curl verification for new endpoints.
+- [x] Run frontend browser-tool verification for dashboard chat + surface flows.
+- [x] Add engineering log final completion entry.
