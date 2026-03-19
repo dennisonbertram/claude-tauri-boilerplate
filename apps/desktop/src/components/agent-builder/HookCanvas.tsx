@@ -60,6 +60,15 @@ function stripDangerousKeys(obj: Record<string, unknown>): Record<string, unknow
   return result;
 }
 
+function canvasHasDangerousActions(savedState: { nodes: Array<Record<string, unknown>> }): boolean {
+  return savedState.nodes.some(
+    (n) =>
+      n?.type === 'action' &&
+      ((n?.data as Record<string, unknown>)?.hookType === 'command' ||
+        (n?.data as Record<string, unknown>)?.hookType === 'http'),
+  );
+}
+
 function isValidCanvasState(saved: unknown): saved is CanvasState {
   if (!saved || typeof saved !== 'object') return false;
   const s = saved as Record<string, unknown>;
@@ -158,13 +167,55 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       try {
         const saved = JSON.parse(hooksCanvasJson);
         if (isValidCanvasState(saved)) {
-          const sanitizedNodes = saved.nodes.map((n: any) => ({
-            ...n,
-            data: stripDangerousKeys(n.data),
-          }));
-          setNodes(sanitizedNodes as CanvasNode[]);
-          setEdges(saved.edges as CanvasEdge[]);
-          return; // Only return early if we successfully loaded BOTH
+          const hasDangerous = canvasHasDangerousActions(saved);
+          const hooksAlreadyDangerous =
+            hooksJson &&
+            (hooksJson.includes('"type":"command"') ||
+              hooksJson.includes('"type":"http"'));
+
+          if (hasDangerous && !hooksAlreadyDangerous) {
+            const confirmed = window.confirm(
+              'This saved canvas contains command or HTTP hooks that can execute local commands or make HTTP requests. Load canvas anyway?',
+            );
+            if (!confirmed) {
+              // Fall through to generate from hooksJson instead
+            } else {
+              const sanitizedNodes = saved.nodes.map((n: any) => ({
+                id: String(n.id).slice(0, 100),
+                type: n.type,
+                position: { x: n.position?.x ?? 0, y: n.position?.y ?? 0 },
+                data: sanitizeNodeData(stripDangerousKeys(n.data ?? {})),
+              }));
+              const sanitizedEdges = saved.edges.map((e: any) => ({
+                id: String(e.id).slice(0, 100),
+                source: String(e.source).slice(0, 100),
+                target: String(e.target).slice(0, 100),
+              }));
+              lastCompiledHooksJsonRef.current =
+                hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+              setNodes(sanitizedNodes as CanvasNode[]);
+              setEdges(sanitizedEdges as CanvasEdge[]);
+              return;
+            }
+          } else {
+            // No dangerous hooks or already known — load directly
+            const sanitizedNodes = saved.nodes.map((n: any) => ({
+              id: String(n.id).slice(0, 100),
+              type: n.type,
+              position: { x: n.position?.x ?? 0, y: n.position?.y ?? 0 },
+              data: sanitizeNodeData(stripDangerousKeys(n.data ?? {})),
+            }));
+            const sanitizedEdges = saved.edges.map((e: any) => ({
+              id: String(e.id).slice(0, 100),
+              source: String(e.source).slice(0, 100),
+              target: String(e.target).slice(0, 100),
+            }));
+            lastCompiledHooksJsonRef.current =
+              hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
+            setNodes(sanitizedNodes as CanvasNode[]);
+            setEdges(sanitizedEdges as CanvasEdge[]);
+            return;
+          }
         }
         console.warn('[HookCanvas] Invalid canvas state, regenerating from hooks JSON');
       } catch {
@@ -176,6 +227,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     if (hooksJson) {
       const generated = generateCanvasFromHooks(hooksJson);
       if (generated) {
+        lastCompiledHooksJsonRef.current = hooksJson;
         setNodes(generated.nodes as CanvasNode[]);
         setEdges(generated.edges as CanvasEdge[]);
       }
@@ -187,8 +239,8 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
     debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
       const newHooksJson = compileCanvasToHooks(currentNodes, currentEdges);
       const newCanvasJson = JSON.stringify({
-        nodes: currentNodes,
-        edges: currentEdges,
+        nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
+        edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
       });
       lastCompiledHooksJsonRef.current = newHooksJson;
       onChange(newHooksJson, newCanvasJson);
@@ -199,8 +251,13 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   // Debounced layout save — persists position changes without recompiling hooks
   const saveLayout = useCallback(
     debounce((currentNodes: CanvasNode[], currentEdges: CanvasEdge[]) => {
-      const canvasJson = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
-      onChange(lastCompiledHooksJsonRef.current, canvasJson);
+      const currentHooksJson = lastCompiledHooksJsonRef.current;
+      if (!currentHooksJson) return; // Don't save if we don't have valid hooks yet
+      const canvasJson = JSON.stringify({
+        nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
+        edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
+      });
+      onChange(currentHooksJson, canvasJson);
     }, 2000) as DebouncedFn<(nodes: CanvasNode[], edges: CanvasEdge[]) => void>,
     [onChange],
   );
