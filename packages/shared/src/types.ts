@@ -771,6 +771,72 @@ export interface ArtifactRevision {
   createdAt: string;
 }
 
+// --- Agent Profile Types ---
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+
+  // System Prompt
+  systemPrompt: string | null;
+  useClaudeCodePrompt: boolean;
+
+  // Model
+  model: string | null;
+  effort: string | null;
+  thinkingBudgetTokens: number | null;
+
+  // Tools
+  allowedTools: string[];
+  disallowedTools: string[];
+  permissionMode: string;
+
+  // Hooks
+  hooksJson: string | null;
+  hooksCanvasJson: string | null;
+
+  // MCP Servers
+  mcpServersJson: string | null;
+
+  // Sandbox
+  sandboxJson: string | null;
+
+  // Execution
+  cwd: string | null;
+  additionalDirectories: string[];
+  settingSources: string[];
+
+  // Limits
+  maxTurns: number | null;
+  maxBudgetUsd: number | null;
+
+  // Subagents
+  agentsJson: string | null;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentProfileSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+  model: string | null;
+  permissionMode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type MessagePartType = 'text' | 'artifact_ref';
 
 export interface TextMessagePart {

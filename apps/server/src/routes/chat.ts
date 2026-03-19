@@ -25,10 +25,12 @@ import {
   getMessages,
   getWorkspace,
   getSessionForWorkspace,
+  getAgentProfile,
   updateClaudeSessionId,
   updateSessionModel,
   updateWorkspaceClaudeSession,
   linkSessionToWorkspace,
+  linkSessionToProfile,
   setSessionLinearIssue,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
@@ -53,6 +55,7 @@ const chatMessageSchema = z.object({
 const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1),
   sessionId: z.string().nullish(),
+  profileId: z.string().uuid().optional(),
   provider: z.enum(PROVIDER_TYPES).optional(),
   providerConfig: z.object(providerConfigShape).optional(),
   runtimeEnv: z.record(z.string(), z.string()).optional(),
@@ -362,6 +365,15 @@ export function createChatRouter(db: Database) {
     const attachmentRefs = body.attachments ?? [];
     let resolvedAttachmentRefs: string[] = attachmentRefs;
 
+    // Look up agent profile if profileId is provided
+    let agentProfile: ReturnType<typeof getAgentProfile> = null;
+    if (body.profileId) {
+      agentProfile = getAgentProfile(db, body.profileId);
+      if (!agentProfile) {
+        return c.json({ error: 'Agent profile not found', code: 'NOT_FOUND' }, 404);
+      }
+    }
+
     // Extract the last user message as the prompt
     const lastUserMessage = messages
       .filter((m: any) => m.role === 'user')
@@ -590,6 +602,11 @@ export function createChatRouter(db: Database) {
             linkSessionToWorkspace(db, appSessionId, workspaceId);
           }
 
+          // Link the session to the agent profile if applicable
+          if (body.profileId) {
+            linkSessionToProfile(db, appSessionId, body.profileId);
+          }
+
           // Persist the user message now that we have a valid session
           addMessage(db, crypto.randomUUID(), appSessionId, 'user', promptForDb);
         }
@@ -616,6 +633,7 @@ export function createChatRouter(db: Database) {
             runtimeEnv,
             cwd: workspaceCwd,
             additionalDirectories,
+            agentProfile,
           })) {
             // Lazily create the session on first successful event
             ensureSession();
