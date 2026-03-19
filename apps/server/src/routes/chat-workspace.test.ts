@@ -837,6 +837,78 @@ describe('Chat Route - Workspace Integration', () => {
     const callArgs = mockQuery.mock.calls[0][0] as any;
     expect(callArgs.options.cwd).toBeUndefined();
   });
+
+  // Regression test for: null sessionId from workspace with no existing session
+  // Bug: frontend sends { sessionId: null } when workspace has no session yet,
+  //      causing a Zod validation error because the schema only accepted string | undefined.
+  test('accepts null sessionId with a valid workspaceId (does not return 400)', async () => {
+    setupStandardMock('ws-null-session-id', 'Hello from workspace');
+    const { workspaceId } = createTestWorkspace(db);
+
+    const body = {
+      messages: [{ role: 'user', content: 'Hello' }],
+      sessionId: null,
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    // Must not be a validation error (400)
+    expect(res.status).not.toBe(400);
+    // Should succeed with a stream response
+    expect(res.status).toBe(200);
+  });
+
+  test('reuses existing workspace session instead of creating a new one when sessionId is null', async () => {
+    setupStandardMock('ws-reuse-session', 'Hello again');
+    const { workspaceId } = createTestWorkspace(db);
+
+    // First message: creates a session linked to the workspace
+    const firstBody = {
+      messages: [{ role: 'user', content: 'First message' }],
+      sessionId: null,
+      workspaceId,
+    };
+
+    const firstRes = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(firstBody),
+    });
+    await firstRes.text(); // consume stream
+    expect(firstRes.status).toBe(200);
+
+    // Check a session was created and linked to the workspace
+    const { getSessionForWorkspace: getWsSession } = await import('../db');
+    const sessionAfterFirstMessage = getWsSession(db, workspaceId);
+    expect(sessionAfterFirstMessage).not.toBeNull();
+    const firstSessionId = sessionAfterFirstMessage!.id;
+
+    // Second message: should reuse the same session, not create a new one
+    setupStandardMock('ws-reuse-session-2', 'Second reply');
+    const secondBody = {
+      messages: [{ role: 'user', content: 'Second message' }],
+      sessionId: null,
+      workspaceId,
+    };
+
+    const secondRes = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(secondBody),
+    });
+    await secondRes.text(); // consume stream
+    expect(secondRes.status).toBe(200);
+
+    // Session linked to workspace should be the SAME session (not a new orphaned one)
+    const sessionAfterSecondMessage = getWsSession(db, workspaceId);
+    expect(sessionAfterSecondMessage).not.toBeNull();
+    expect(sessionAfterSecondMessage!.id).toBe(firstSessionId);
+  });
 });
 
 describe('Claude Service - cwd option', () => {

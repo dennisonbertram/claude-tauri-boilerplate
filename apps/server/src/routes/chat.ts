@@ -24,6 +24,7 @@ import {
   getSession,
   getMessages,
   getWorkspace,
+  getSessionForWorkspace,
   updateClaudeSessionId,
   updateSessionModel,
   updateWorkspaceClaudeSession,
@@ -51,7 +52,7 @@ const chatMessageSchema = z.object({
 
 const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1),
-  sessionId: z.string().optional(),
+  sessionId: z.string().nullish(),
   provider: z.enum(PROVIDER_TYPES).optional(),
   providerConfig: z.object(providerConfigShape).optional(),
   runtimeEnv: z.record(z.string(), z.string()).optional(),
@@ -567,8 +568,21 @@ export function createChatRouter(db: Database) {
               updateSessionModel(db, callerSessionId, model);
             }
           } else {
-            appSessionId = crypto.randomUUID();
-            createSession(db, appSessionId, generateRandomName(), resolvedLinearIssue ?? undefined, model);
+            // If a workspaceId was provided, check if it already has a linked session.
+            // Re-use it to avoid creating orphaned sessions on every message.
+            const existingWorkspaceSession = workspaceId ? getSessionForWorkspace(db, workspaceId) : null;
+            if (existingWorkspaceSession) {
+              appSessionId = existingWorkspaceSession.id;
+              if (resolvedLinearIssue) {
+                setSessionLinearIssue(db, appSessionId, resolvedLinearIssue);
+              }
+              if (model && existingWorkspaceSession.model !== model) {
+                updateSessionModel(db, appSessionId, model);
+              }
+            } else {
+              appSessionId = crypto.randomUUID();
+              createSession(db, appSessionId, generateRandomName(), resolvedLinearIssue ?? undefined, model);
+            }
           }
 
           // Link the session to the workspace if applicable
