@@ -18,6 +18,10 @@ apps/desktop/src-tauri/binaries/
 .vscode/
 .idea/
 
+# Local database (when DB_DIR=./data or DB_PATH=./data/data.db)
+data/
+*.db
+
 # pnpm
 .pnpm-debug.log
 .claude/worktrees/

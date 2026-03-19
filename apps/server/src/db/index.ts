@@ -4,8 +4,8 @@ import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
 
-const DB_DIR = join(process.env.HOME || '~', '.claude-tauri');
-const DB_PATH = join(DB_DIR, 'data.db');
+const DB_DIR = process.env.DB_DIR || join(process.env.HOME || '~', '.claude-tauri');
+const DB_PATH = process.env.DB_PATH || join(DB_DIR, 'data.db');
 
 interface SessionRow {
   id: string;
