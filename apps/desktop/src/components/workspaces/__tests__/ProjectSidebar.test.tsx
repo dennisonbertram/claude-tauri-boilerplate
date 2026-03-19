@@ -312,4 +312,53 @@ describe('ProjectSidebar', () => {
       expect(onRenameWorkspace).toHaveBeenCalledWith('ws-1', 'workspace/renamed');
     });
   });
+
+  // ─── ISSUE-006 Regression: action buttons hidden until hover ───
+
+  it('workspace action buttons are not visible before hover', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    await screen.findByText('feature-workspace');
+
+    // The wrapper div holding Copy and Rename must carry opacity-0 (hidden by default)
+    const copyButton = screen.getByRole('button', { name: /copy branch name/i });
+    const actionWrapper = copyButton.parentElement!;
+    expect(actionWrapper.className).toContain('opacity-0');
+    expect(actionWrapper.className).toContain('group-hover:opacity-100');
+  });
+
+  it('workspace action buttons become visible on hover', async () => {
+    mockFetchWorkspaceStatus.mockResolvedValue(
+      makeStatus({ isClean: true, modifiedFiles: [], stagedFiles: [] })
+    );
+
+    render(
+      <ProjectSidebar
+        {...baseProps}
+        projects={[project]}
+        workspacesByProject={{ [project.id]: [makeWorkspace()] }}
+        selectedWorkspaceId={null}
+      />
+    );
+
+    await screen.findByText('feature-workspace');
+
+    // The workspace row must carry the `group` class so group-hover activates
+    const copyButton = screen.getByRole('button', { name: /copy branch name/i });
+    // Walk up: button -> action wrapper -> branch row -> space-y-1 div -> workspace row div
+    const workspaceRow = copyButton.closest('[class*="group"]');
+    expect(workspaceRow).not.toBeNull();
+    expect(workspaceRow!.className).toContain('group');
+  });
 });

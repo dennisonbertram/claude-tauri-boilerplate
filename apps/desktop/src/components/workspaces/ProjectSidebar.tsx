@@ -268,7 +268,7 @@ export function ProjectSidebar({
                     {workspaces.map(ws => (
                       <div
                         key={ws.id}
-                        className={`rounded-md px-2 py-1.5 text-left transition-colors space-y-1 ${
+                        className={`group rounded-md px-2 py-1.5 text-left transition-colors space-y-1 ${
                           ws.id === selectedWorkspaceId
                             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                             : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
@@ -329,27 +329,29 @@ export function ProjectSidebar({
                                 <p className="truncate font-mono text-[11px] text-foreground">
                                   {ws.branch}
                                 </p>
-                                <button
-                                  type="button"
-                                  className="rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                                  aria-label={`Copy branch name for ${ws.name}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void copyBranchName(ws.branch);
-                                  }}
-                                >
-                                  Copy
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-[10px] text-muted-foreground underline hover:text-foreground"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    beginRename(ws);
-                                  }}
-                                >
-                                  Rename
-                                </button>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    type="button"
+                                    className="rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                    aria-label={`Copy branch name for ${ws.name}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void copyBranchName(ws.branch);
+                                    }}
+                                  >
+                                    Copy
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-muted-foreground underline hover:text-foreground"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      beginRename(ws);
+                                    }}
+                                  >
+                                    Rename
+                                  </button>
+                                </div>
                               </div>
                               {workspaceStatus[ws.id] ? (
                                 workspaceStatus[ws.id]!.isClean ? (
