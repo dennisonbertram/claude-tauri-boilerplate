@@ -603,6 +603,16 @@ export function ChatInput({
         />
 
         <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            title="Open command palette (/)"
+            onClick={() => onInputChange('/')}
+          >
+            <span className="text-sm font-mono leading-none">/</span>
+          </Button>
           <Button type="button" size="sm" variant="outline" onClick={handlePickFilesClick}>
             <Paperclip className="h-4 w-4 mr-1.5" />
             Attach

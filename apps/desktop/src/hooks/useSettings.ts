@@ -63,6 +63,9 @@ export interface AppSettings {
   // IDE
   preferredIde: IdeId;
   customIdeUrl: string;
+
+  // UX hints
+  hasDismissedCommandTip?: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -120,6 +123,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // IDE
   preferredIde: 'vscode',
   customIdeUrl: '',
+
+  // UX hints
+  hasDismissedCommandTip: false,
 };
 
 const STORAGE_KEY = 'claude-tauri-settings';
