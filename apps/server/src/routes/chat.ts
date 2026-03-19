@@ -38,7 +38,7 @@ const providerConfigShape = Object.fromEntries(
 
 const chatMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
-  content: z.string(),
+  content: z.string().optional(),
   parts: z
     .array(
       z.object({

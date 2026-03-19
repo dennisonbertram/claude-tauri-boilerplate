@@ -1655,4 +1655,154 @@ describe('Chat Route - Message Persistence', () => {
     const updatedSession = getSession(db, session.id);
     expect(updatedSession?.claudeSessionId).toBe('claude-real-id-xyz');
   });
+
+  // ---------------------------------------------------------------------------
+  // Regression: AI SDK v6 parts-based messages must not be rejected by Zod
+  //
+  // Bug: chatMessageSchema required `content: z.string()` (non-optional).
+  // AI SDK v6 sends messages where `content` is undefined and uses a `parts`
+  // array instead.  The schema rejected these payloads with a 400 before
+  // reaching the fallback code that handles parts-based messages.
+  //
+  // Fix: `content` is now `z.string().optional()`.
+  // ---------------------------------------------------------------------------
+  describe('Regression: AI SDK v6 parts-based messages (content optional)', () => {
+    function setupV6Mock() {
+      mockQuery.mockImplementation(() =>
+        (async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'v6-session-1',
+            model: 'claude-opus-4-6',
+            tools: [],
+            mcp_servers: [],
+            claude_code_version: '2.1.39',
+            cwd: '/project',
+            permissionMode: 'bypassPermissions',
+            apiKeySource: 'env',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+          };
+          yield {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              delta: { type: 'text_delta', text: 'Four.' },
+              index: 0,
+            },
+            parent_tool_use_id: null,
+            uuid: 'uuid-v6-1',
+            session_id: 'v6-session-1',
+          };
+        })()
+      );
+    }
+
+    test('accepts user message with parts array and no content field', async () => {
+      setupV6Mock();
+      const session = createSession(db, 'v6-parts-only', 'V6 Test');
+
+      // AI SDK v6 format: parts present, content absent
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              // content intentionally absent — this is what AI SDK v6 sends
+              parts: [{ type: 'text', text: 'What is 2+2?' }],
+            },
+          ],
+          sessionId: session.id,
+        }),
+      });
+
+      // Must NOT be rejected by Zod validation (400 "Invalid chat request payload")
+      expect(res.status).not.toBe(400);
+      // Should stream successfully
+      expect(res.status).toBe(200);
+    });
+
+    test('accepts multi-message conversation in AI SDK v6 format', async () => {
+      setupV6Mock();
+      const session = createSession(db, 'v6-multi-msg', 'V6 Multi Test');
+
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'What is 2+2?' }],
+            },
+            {
+              role: 'assistant',
+              parts: [{ type: 'text', text: 'Four.' }],
+            },
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'And 3+3?' }],
+            },
+          ],
+          sessionId: session.id,
+        }),
+      });
+
+      // Must not be rejected at the Zod validation layer
+      expect(res.status).not.toBe(400);
+      expect(res.status).toBe(200);
+    });
+
+    test('accepts message with both content and parts (mixed format)', async () => {
+      setupV6Mock();
+      const session = createSession(db, 'v6-mixed', 'V6 Mixed Test');
+
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: 'Hello',
+              parts: [{ type: 'text', text: 'Hello' }],
+            },
+          ],
+          sessionId: session.id,
+        }),
+      });
+
+      expect(res.status).not.toBe(400);
+      expect(res.status).toBe(200);
+    });
+
+    test('still rejects messages with invalid role with 400', async () => {
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'system', parts: [{ type: 'text', text: 'Be helpful' }] }],
+        }),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('Invalid chat request payload');
+    });
+
+    test('still rejects empty messages array with 400', async () => {
+      const res = await testApp.request('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [] }),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('Invalid chat request payload');
+    });
+  });
 });
