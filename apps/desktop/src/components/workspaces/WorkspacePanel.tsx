@@ -296,6 +296,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
       {/* Tabs */}
       <div className="flex border-b border-border">
         <button
+          type="button"
           onClick={() => setActiveTab('chat')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'chat'
@@ -306,6 +307,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           Chat
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('diff')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'diff'
@@ -316,6 +318,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           Diff
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('paths')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'paths'
@@ -326,6 +329,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           Paths
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('notes')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'notes'
@@ -336,6 +340,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           Notes
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('dashboards')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'dashboards'

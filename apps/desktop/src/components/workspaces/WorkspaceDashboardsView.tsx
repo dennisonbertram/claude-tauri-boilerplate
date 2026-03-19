@@ -282,10 +282,17 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
             <ul className="divide-y divide-border">
               {artifacts.map((artifact) => (
                 <li key={artifact.id}>
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelected(artifact)}
-                    className={`group w-full text-left px-3 py-2.5 transition-colors hover:bg-accent/50 ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelected(artifact);
+                      }
+                    }}
+                    className={`group w-full text-left px-3 py-2.5 transition-colors hover:bg-accent/50 cursor-pointer ${
                       selected?.id === artifact.id ? 'bg-accent' : ''
                     } ${artifact.status === 'archived' ? 'opacity-50' : ''}`}
                   >
@@ -314,7 +321,7 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
                         </button>
                       )}
                     </div>
-                  </button>
+                  </div>
                 </li>
               ))}
             </ul>
