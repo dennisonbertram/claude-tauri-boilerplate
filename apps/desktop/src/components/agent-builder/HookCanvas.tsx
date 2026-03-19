@@ -12,6 +12,8 @@ import {
   type Connection,
   type OnConnect,
   type NodeMouseHandler,
+  type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react';
 import { nodeTypes } from './nodes';
 import { NodePalette } from './panels/NodePalette';
@@ -145,12 +147,6 @@ function isValidCanvasState(saved: unknown): saved is CanvasState {
   return true;
 }
 
-function getHooksFingerprint(nodes: CanvasNode[], edges: CanvasEdge[]): string {
-  return JSON.stringify(nodes.map(n => ({ id: n.id, type: n.type, data: n.data })))
-    + '|'
-    + JSON.stringify(edges.map(e => ({ source: e.source, target: e.target })));
-}
-
 interface HookCanvasProps {
   hooksJson: string | null;
   hooksCanvasJson: string | null;
@@ -182,7 +178,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   const lastCompiledHooksJsonRef = useRef<string>(hooksJson ?? '');
   const latestNodesRef = useRef<CanvasNode[]>([]);
   const latestEdgesRef = useRef<CanvasEdge[]>([]);
-  const pendingStructuralRef = useRef(false);
+  const structuralDirtyRef = useRef(false);
 
   // Always keep refs up to date — runs after every render
   useEffect(() => {
@@ -226,7 +222,6 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
               }));
               setNodes(sanitizedNodes as CanvasNode[]);
               setEdges(sanitizedEdges as CanvasEdge[]);
-              prevStructuralRef.current = getHooksFingerprint(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
               lastCompiledHooksJsonRef.current =
                 hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
               return;
@@ -246,7 +241,6 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
             }));
             setNodes(sanitizedNodes as CanvasNode[]);
             setEdges(sanitizedEdges as CanvasEdge[]);
-            prevStructuralRef.current = getHooksFingerprint(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
             lastCompiledHooksJsonRef.current =
               hooksJson ?? compileCanvasToHooks(sanitizedNodes as CanvasNode[], sanitizedEdges as CanvasEdge[]);
             return;
@@ -264,80 +258,58 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       if (generated) {
         setNodes(generated.nodes as CanvasNode[]);
         setEdges(generated.edges as CanvasEdge[]);
-        prevStructuralRef.current = getHooksFingerprint(generated.nodes as CanvasNode[], generated.edges as CanvasEdge[]);
         lastCompiledHooksJsonRef.current = hooksJson;
       }
     }
   }, []);
 
-  // Debounced change notification — reads from refs to always capture latest snapshot
-  const notifyChange = useCallback(
+  // Single debounced save — handles both layout-only and structural changes
+  const saveCanvas = useCallback(
     debounce(() => {
-      const currentNodes = latestNodesRef.current;
-      const currentEdges = latestEdgesRef.current;
-      const newHooksJson = compileCanvasToHooks(currentNodes, currentEdges);
-      const newCanvasJson = JSON.stringify({
-        nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
-        edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
-      });
-      lastCompiledHooksJsonRef.current = newHooksJson;
-      pendingStructuralRef.current = false; // Structural change has been processed
-      onChange(newHooksJson, newCanvasJson);
-    }, 500) as DebouncedFn<() => void>,
-    [onChange],
-  );
-
-  // Debounced layout save — persists position changes without recompiling hooks
-  const saveLayout = useCallback(
-    debounce(() => {
-      const currentHooksJson = lastCompiledHooksJsonRef.current;
-      if (!currentHooksJson) return; // Don't save if we don't have valid hooks yet
       const currentNodes = latestNodesRef.current;
       const currentEdges = latestEdgesRef.current;
       const canvasJson = JSON.stringify({
         nodes: currentNodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
         edges: currentEdges.map(({ id, source, target }) => ({ id, source, target })),
       });
-      onChange(currentHooksJson, canvasJson);
-    }, 2000) as DebouncedFn<() => void>,
+      const hooksJson = structuralDirtyRef.current
+        ? compileCanvasToHooks(currentNodes, currentEdges)
+        : (lastCompiledHooksJsonRef.current || compileCanvasToHooks(currentNodes, currentEdges));
+      structuralDirtyRef.current = false;
+      lastCompiledHooksJsonRef.current = hooksJson;
+      onChange(hooksJson, canvasJson);
+    }, 500) as DebouncedFn<() => void>,
     [onChange],
   );
 
-  // Cancel pending debounces on unmount
+  // Cancel on unmount
   useEffect(() => {
-    return () => {
-      notifyChange.cancel();
-      saveLayout.cancel();
-    };
-  }, [notifyChange, saveLayout]);
+    return () => { saveCanvas.cancel(); };
+  }, [saveCanvas]);
 
-  // Watch nodes/edges for structural changes — excludes position so dragging doesn't recompile hooks
-  const prevStructuralRef = useRef<string>('');
-
+  // Single effect — fires on any nodes/edges change
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      prevStructuralRef.current = getHooksFingerprint(nodes, edges);
-      // Only set if mount effect hasn't already populated it with a real compiled value
-      if (!lastCompiledHooksJsonRef.current) {
-        lastCompiledHooksJsonRef.current = hooksJson ?? '';
-      }
       return;
     }
+    saveCanvas();
+  }, [nodes, edges, saveCanvas]);
 
-    const fingerprint = getHooksFingerprint(nodes, edges);
-    if (fingerprint === prevStructuralRef.current) {
-      // Position-only change — only save layout if no structural change is pending
-      if (!pendingStructuralRef.current) {
-        saveLayout();
-      }
-      return;
-    }
-    prevStructuralRef.current = fingerprint;
-    pendingStructuralRef.current = true; // Mark structural change pending
-    saveLayout.cancel(); // Cancel pending layout save — structural save will include positions
-    notifyChange();
-  }, [nodes, edges, notifyChange, saveLayout]);
+  // Wrap React Flow's onNodesChange to detect structural changes
+  const handleNodesChange = useCallback((changes: NodeChange<CanvasNode>[]) => {
+    const hasStructural = changes.some(
+      (c) => c.type === 'add' || c.type === 'remove' || c.type === 'replace'
+    );
+    if (hasStructural) structuralDirtyRef.current = true;
+    onNodesChange(changes);
+  }, [onNodesChange]);
+
+  // All edge changes are structural
+  const handleEdgesChange = useCallback((changes: EdgeChange<CanvasEdge>[]) => {
+    if (changes.length > 0) structuralDirtyRef.current = true;
+    onEdgesChange(changes);
+  }, [onEdgesChange]);
 
   // Connection validation
   const onConnect: OnConnect = useCallback(
@@ -354,6 +326,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
       setEdges((eds) => {
         if (eds.length >= MAX_EDGES) return eds;
         if (targetType === 'action' && eds.some(e => e.target === params.target)) return eds;
+        structuralDirtyRef.current = true;
         return addEdge(params, eds);
       });
     },
@@ -414,6 +387,7 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
           data: sanitizedData,
         } as CanvasNode;
 
+        structuralDirtyRef.current = true;
         setNodes((nds) => [...nds, newNode]);
       } catch {
         // invalid drag data
@@ -441,11 +415,13 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
   // Update node data from config panel
   const onUpdateNode = useCallback(
     (nodeId: string, newData: Record<string, unknown>) => {
-      setNodes((nds) =>
-        nds.map((n) =>
+      structuralDirtyRef.current = true;
+      setNodes((nds) => {
+        const updated = nds.map((n) =>
           n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n,
-        ) as CanvasNode[],
-      );
+        ) as CanvasNode[];
+        return updated;
+      });
       setSelectedNode((prev) =>
         prev && prev.id === nodeId
           ? ({ ...prev, data: { ...prev.data, ...newData } } as CanvasNode)
@@ -465,8 +441,8 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
           onDragOver={onDragOver}
           onDrop={onDrop}
