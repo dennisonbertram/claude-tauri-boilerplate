@@ -1384,7 +1384,7 @@ export function ChatPage({
         images={attachments}
         onImagesChange={setAttachments}
         availableFiles={suggestedFiles}
-        ghostText={isLoading ? undefined : currentSuggestion}
+        ghostText={undefined}
         onAcceptSuggestion={handleAcceptGhostText}
         contextSummary={isLoading ? undefined : contextSummary}
       />

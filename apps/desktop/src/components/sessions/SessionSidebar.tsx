@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Session } from '@claude-tauri/shared';
 import { MessageSquare, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -55,9 +54,6 @@ export function SessionSidebar({
         </button>
       </div>
       <div className="p-3">
-        <Button onClick={onNewChat} className="w-full" variant="secondary">
-          New Chat
-        </Button>
         <Input
           data-testid="session-search-input"
           value={searchQuery}
@@ -85,13 +81,7 @@ export function SessionSidebar({
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground">
               <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
               <p className="text-sm font-medium mb-1">No conversations yet</p>
-              <p className="text-xs mb-3 opacity-70">Start a conversation with Claude</p>
-              <button
-                onClick={() => onNewChat?.()}
-                className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                New Chat
-              </button>
+              <p className="text-xs opacity-70">Start a conversation with Claude</p>
             </div>
           )}
         </div>

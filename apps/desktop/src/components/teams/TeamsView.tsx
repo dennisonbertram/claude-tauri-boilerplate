@@ -62,12 +62,6 @@ export function TeamsView() {
                 Create a team to coordinate multiple agents working together.
               </p>
             </div>
-            <button
-              onClick={() => setShowCreateDialog(true)}
-              className="h-8 rounded-lg bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              New Team
-            </button>
           </div>
         ) : (
           teams.map((team) => (

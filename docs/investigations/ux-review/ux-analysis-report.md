@@ -1,0 +1,701 @@
+# UX Analysis Report: Claude Code Desktop App
+**Audit Date:** March 19, 2026
+**Auditor:** World-class UX Design Review
+**App:** Claude Code (Tauri + React desktop application)
+**Screenshots reviewed:** 25 (01 through 25, all surfaces covered)
+
+---
+
+## Executive Summary
+
+Claude Code is a technically ambitious desktop application that wraps powerful AI agent capabilities — workspaces, agent profiles, automations, MCP integrations, sandbox environments — inside a native shell. The core conversation experience is clean and functional, but the surrounding infrastructure surfaces (Agent Profiles, Workspaces, Settings) feel significantly underpolished relative to what the product is trying to accomplish. Three themes dominate the audit findings: **identity confusion** (broken session names, duplicate items, unknown user), **interaction model inconsistency** (settings panel vs. page, button groups vs. dropdowns for the same concept, JSON everywhere non-technical users shouldn't see it), and **incomplete feature exposure** (placeholder text visible to users, unreachable dashboard widgets, orphaned canvas artifacts). Fixing the 5 critical issues and the top quick wins would meaningfully change the perceived quality of the product without requiring architectural changes.
+
+---
+
+## Issues by Severity
+
+---
+
+### CRITICAL Issues
+
+---
+
+### ISSUE-01: Duplicate "New Agent Profile" Entries Are Indistinguishable
+**Severity:** Critical
+**Where:** Agent Profiles sidebar (screenshot 12) and Welcome screen agent selector (screenshot 01)
+
+**What happens:** The sidebar shows two list items, both with the identical robot emoji icon and the identical text "New Agent Profile." There is no timestamp, no subtitle, no visual differentiation of any kind. On the Welcome screen, the agent profile selector shows "Default | New Agent Profile | New Agent Profile" — three buttons in a row, with two being pixel-identical.
+
+**Why it's bad:** This is one of the most fundamental usability violations possible: the system has created an ambiguous state from which there is no recovery without guessing. The user cannot tell which profile is which, cannot select the correct one, cannot delete the wrong one without risk, and has no information to navigate by. The presence of this on the welcome screen — the first thing a returning user sees — means the very first interaction asks the user to make a blind choice. This violates Nielsen's "Visibility of System Status" and "Recognition over Recall" heuristics simultaneously.
+
+**Fix:**
+1. Enforce unique names at save time — if a name already exists, append " (2)" or prompt the user to rename before saving.
+2. Show a creation timestamp as a secondary line in the sidebar item (e.g., "Created Mar 19 · 3:42 PM").
+3. On the Welcome screen agent selector, if name collision occurs, append the creation date as disambiguating text.
+4. Long-term: auto-generate unique placeholder names ("New Agent Profile," "New Agent Profile 2") instead of duplicating the same string.
+
+---
+
+### ISSUE-02: "Normal" Status Bar Button Teleports User to Settings Panel
+**Severity:** Critical
+**Where:** Status bar, bottom of every screen (screenshots 01, 04, etc.) — "Normal" effort indicator
+
+**What happens:** The status bar shows "Haiku 4.5 | Normal | main •" as a persistent row. The word "Normal" appears to be an inline control for adjusting effort level, like a quick toggle. Clicking it does not show an inline popover or dropdown — it opens the full Settings panel, navigated directly to the "AI & Model" section. This is a context-destroying navigation action triggered from what looks like a status indicator.
+
+**Why it's bad:** The user is mid-task in Agent Profiles (or a Workspace, or a chat). They want to bump the effort level up. They click "Normal" expecting a 2-3 item quick picker. Instead their entire editing context is hidden behind a full Settings overlay. The principle of least surprise is violated. The user now has to close settings and navigate back. The status bar visual language (small, monochromatic text chips) does not communicate "clicking this opens a full screen overlay." This is the single biggest interaction mismatch in the app.
+
+**Fix:**
+1. Clicking "Normal" should open a compact popover anchored to the status bar with exactly three options: Low / Normal / High (with descriptions on hover).
+2. The model name "Haiku 4.5" can separately open the model picker (as it already does with the popup shown in screenshot 25).
+3. If you need to send users to Settings for advanced configuration, add a "More settings..." link inside the popover.
+
+---
+
+### ISSUE-03: Session Titles Contain Raw Markdown Syntax
+**Severity:** Critical
+**Where:** Conversations sidebar (screenshot 01)
+
+**What happens:** One session in the sidebar is titled: "You're right — I apologize for the confusion! Your **first q" — with literal `**` characters visible. The session title was clearly generated by slicing the raw text of an AI response, markdown and all, without stripping or rendering the formatting.
+
+**Why it's bad:** This exposes an implementation detail to the user that makes the app look broken. Beyond aesthetics, it completely defeats the purpose of session naming — "Your **first q" is not a useful session identifier. The user cannot distinguish this conversation from others, cannot search for it by topic, and is confronted with a technical artifact every time they look at the sidebar. This also suggests the naming logic is fragile — it may fail in other ways (code blocks, XML tags, tool call syntax) under different conditions.
+
+**Fix:**
+1. Strip all markdown before using AI output as a session title. A simple regex or a markdown-to-plaintext utility call is sufficient.
+2. Better: generate session titles as a deliberate, separate API call with a constrained prompt ("Summarize this conversation in 4-6 words, title case, no punctuation") rather than slicing the first message.
+3. Enforce a character limit on display (already done at ~50 chars) but also a content filter that detects and rejects strings containing `**`, `##`, ` ``` `, etc.
+
+---
+
+### ISSUE-04: "Unknown / pro Plan" User Identity in Sidebar
+**Severity:** Critical
+**Where:** Bottom of conversations sidebar, user profile widget (screenshot 01)
+
+**What happens:** The user profile area shows a "?" avatar with "Unknown" as the display name and "pro Plan" as the subtitle. The authentication succeeded (the app shows "Connected via Claude subscription" in Settings > Status), but the user's name and avatar failed to load.
+
+**Why it's bad:** The user's identity widget is the one piece of persistent chrome in the app. Displaying "Unknown" is both alarming (am I logged in? is this the right account?) and unprofessional. The email shown in Settings > Status is "Connected via Claude subscription" without a real email address either, suggesting the account metadata API call is failing silently. This is the first thing visible when you open the app and the last thing visible when you close it — a persistent signal that something is broken.
+
+**Fix:**
+1. If user metadata fails to load, show a specific fallback: the plan name ("Pro") and a generic avatar, but replace "Unknown" with "Claude Account" or simply the plan tier.
+2. Add a retry mechanism for the user metadata fetch with exponential backoff.
+3. In Settings > Status, show the email address from the auth token even if the profile metadata API fails.
+4. Consider showing a non-blocking toast or status indicator if profile data fails to load, rather than displaying corrupted state silently.
+
+---
+
+### ISSUE-05: Dashboard Shows Internal Implementation Placeholder to End Users
+**Severity:** Critical
+**Where:** Workspaces > Dashboard tab > Dashboard detail (screenshot 10)
+
+**What happens:** Clicking on "Test Dashboard" in the Dashboards list reveals a detail panel with the text: "Spec stored in revision 232f2ded. Widget canvas rendering is coming in Phase 5." This is developer-internal roadmap language displayed verbatim as if it were feature UI.
+
+**Why it's bad:** This is the textbook definition of an unfinished feature shipped to users. "Phase 5" is an internal project management term that means nothing to an end user. The user has created a dashboard (or it was created for them), clicked on it expecting to see something, and is told in developer language that the feature doesn't exist yet. This destroys trust. If a dashboard feature is not ready for users, it should either be hidden entirely, locked behind a feature flag, or replaced with a proper "Coming soon" empty state with a meaningful description of what it will do.
+
+**Fix:**
+1. Replace the internal text with a proper empty state: icon, heading ("Dashboards are coming soon"), one-line description ("Build custom monitoring views for your workspaces"), and optionally a "Notify me" or "Join waitlist" CTA.
+2. Gate the Dashboards tab behind a feature flag until the canvas rendering is implemented.
+3. Audit all other screens for similar internal strings. The Automations canvas (screenshot 17) has a suspicious white rectangle in the lower right that may be another artifact.
+
+---
+
+## HIGH Issues
+
+---
+
+### ISSUE-06: Window Title Reads "Tauri + React + Typescript"
+**Severity:** High
+**Where:** OS title bar / window title (visible in all screenshots)
+
+**What happens:** Every screenshot confirms the app title bar reads "Tauri + React + Typescript" — the default Tauri application template name, never replaced during development.
+
+**Why it's bad:** This is a boilerplate artifact that communicates the development stack to the user rather than the product name. It appears in the macOS dock, in Command-Tab switching, in screen sharing contexts, and in any OS-level window management. It signals either that the app is a demo/prototype or that the developer never considered this property. It's a 30-second fix that has a disproportionate impact on perceived polish.
+
+**Fix:** Set the `productName` in `tauri.conf.json` and the `<title>` in `index.html` to "Claude Code." This is a one-line change.
+
+---
+
+### ISSUE-07: Duplicate "New Chat" / "New Conversation" CTAs on Welcome Screen
+**Severity:** High
+**Where:** Welcome / home screen (screenshot 01)
+
+**What happens:** The sidebar shows a prominent "New Chat" button at the top. The main content area also shows a "New Conversation ⌘N" button in the center. Both do the same thing. The center button additionally shows the keyboard shortcut but the sidebar button does not.
+
+**Why it's bad:** Two identical CTAs create decision paralysis (which one should I click?) and also imply a meaningful distinction that doesn't exist. The center button is larger and more prominent yet shows the same action. This is a classic case of the designer adding a button to both locations "just in case" without defining a clear information hierarchy. The sidebar button should be the primary persistent entry point; the center empty state should explain *what* a conversation is and why the user would want one, then offer a single CTA.
+
+**Fix:**
+1. Remove the duplicate. Keep the "New Chat" sidebar button as the persistent action.
+2. Redesign the welcome state's center panel as a proper onboarding moment: show 2-3 example prompts the user might start with, list the 3 available agent profiles, and use a single "Start a conversation" button that respects the active profile selection above.
+3. Move the keyboard shortcut ⌘N to a tooltip on the sidebar "New Chat" button rather than on a redundant center button.
+
+---
+
+### ISSUE-08: Duplicate "New Team" CTAs on Empty Teams Screen
+**Severity:** High
+**Where:** Agent Teams empty state (screenshot 11)
+
+**What happens:** "Agent Teams" screen shows a "New Team" button in the top-right corner of the header AND a "New Team" button in the center empty state. Same action, same label, same screen.
+
+**Why it's bad:** Same pattern as ISSUE-07 — this appears to be a repeated anti-pattern throughout the app. Every empty state duplicates the header action. While empty states should include a CTA, the pattern of having the *exact same label* in both locations signals a lack of deliberate hierarchy thinking. The empty state CTA should be the primary button style; the header button should be the persistent, always-available ghost or icon variant.
+
+**Fix:** Standardize the pattern: the header button is for persistent access (icon + label, secondary style). The empty state CTA is primary, prominent, and includes supporting copy explaining what teams do. Keep both, but differentiate their visual weight and surround the empty state CTA with explanatory context.
+
+---
+
+### ISSUE-09: Left Navigation Icons Have No Persistent Labels
+**Severity:** High
+**Where:** Left navigation rail (all screenshots)
+
+**What happens:** The leftmost column shows four icon buttons stacked vertically: a chat bubble, a folder, two-person silhouette, and a robot/agent icon. There are no text labels anywhere on this rail — not on hover, not persistently below the icons.
+
+**Why it's bad:** Icon-only navigation is a well-documented usability failure for anything beyond 3-4 items that don't have established universal meanings. A folder icon could mean "files," "projects," "workspaces," or "documents." A two-person icon could mean "team," "contacts," "sharing," or "collaboration." The robot icon is the least universal of all — it means something very specific in this context (Agent Profiles) but that meaning is entirely app-specific. First-time users have no way to know what any of these tabs do without trial and error. Labels also aid muscle memory for returning users.
+
+**Fix:**
+1. Add persistent text labels below each icon in the navigation rail (standard practice: icon above, 2-3 word label below).
+2. At minimum, show a tooltip on hover with the tab name — but tooltips are a poor substitute for persistent labels.
+3. Consider expanding the rail slightly (from ~40px to ~72px) to accommodate labels. This is the difference between a cryptic toolbar and a navigable sidebar.
+
+---
+
+### ISSUE-10: Input Placeholder Mirrors the Suggestion Chip Text
+**Severity:** High
+**Where:** Chat composer, when suggestion chips are displayed (screenshot 05)
+
+**What happens:** When suggestion chips appear above the composer ("Can you explain this code?", "Add tests for this", "Refactor this"), the placeholder text inside the input field also reads "Can you explain this code?" — the same text as the first chip.
+
+**Why it's bad:** The user sees "Can you explain this code?" twice: once as an interactive chip and once as ghost text inside the input. This creates two confusing ambiguities: (1) Am I supposed to type this, or click the chip? (2) If I start typing, will my input replace this text, or is the chip already "selected"? The placeholder mimicking a chip implies the chip is in a selected/active state when it isn't. This is an accidental coupling between two independent components that produces a confusing signal.
+
+**Fix:** The composer placeholder should be a generic, stable prompt that does not change based on chip content. Use something like "Ask Claude anything..." or "Message Claude" as a static placeholder. The chips are affordances for quick selection; the input field is for free-form typing. They should not reflect each other's content.
+
+---
+
+### ISSUE-11: Suggestion Chip Interaction Model Is Ambiguous
+**Severity:** High
+**Where:** Chat composer suggestion chips (screenshot 05)
+
+**What happens:** Each suggestion chip (e.g., "Can you explain this code?") has a body area and an "×" dismiss button. The affordance split is unclear: clicking the chip body presumably submits it, clicking × dismisses it. But there is no visual signal that the chip body is a "submit" action — it looks identical to a filter chip in a search interface where clicking selects/deselects.
+
+**Why it's bad:** Submit chips and filter chips look identical in this implementation. A user trained on filter chip patterns (Google, Gmail, many design systems) will expect clicking the chip to toggle its selected state, not immediately fire a message. If clicking the chip body immediately sends the message to Claude, this is a high-stakes accidental action with no undo. The × button compounds this — does it dismiss all chips, or just that one? What does "dismiss" mean — gone forever, or just hidden?
+
+**Fix:**
+1. Distinguish submit chips visually from filter chips: use a distinct visual treatment (e.g., an arrow/send icon on the right side of each chip, or a different background color indicating "action").
+2. Add a visual hover state that makes the submit affordance obvious — the cursor should change to a pointer, the chip should lift subtly, and optionally show a tooltip "Send this message."
+3. The × button should be clearly labeled (or tooltipped) "Dismiss suggestion" and should only affect that one chip. Dismissed chips should not reappear in the session.
+
+---
+
+### ISSUE-12: Auto-Generated Session Names Are Whimsical but Useless
+**Severity:** High
+**Where:** Conversations sidebar (screenshot 01)
+
+**What happens:** Sessions without user-defined names receive auto-generated names like "Sizzling Truffle," "Peppy Pretzel," "Peppy Kimchi," "Zesty Scone," and "Peppy Truffle." These are clearly from a food-adjective generator. The sidebar shows at least 5 such sessions out of ~15 visible.
+
+**Why it's bad:** A session list is a navigational tool. Users return to previous conversations by name. "Peppy Kimchi" and "Peppy Truffle" are not distinguishable from each other, not searchable by topic, and not memorable by content. The whimsy is pleasant for a single session but actively harmful as the list grows. When a user has 50 sessions, they will need to open each "Peppy X" one-by-one to find what they're looking for. This also means the search bar becomes useless for finding past conversations by topic.
+
+**Fix:**
+1. Generate meaningful names from conversation content. After the first user message (or after the first AI response), make a lightweight summarization call: "Summarize this conversation starter in 4-6 words, title case." Cache and display the result.
+2. If you want to preserve some whimsy, offer "Peppy Pretzel" as a fallback only when there is genuinely no content to summarize yet (e.g., the conversation was started but no messages sent).
+3. Add topic-based session grouping in the sidebar (see ISSUE-25) so even random names have context.
+
+---
+
+### ISSUE-13: "Copy" Button on Branch Name Provides No Context
+**Severity:** High
+**Where:** Workspace detail header — branch path area (screenshot 06)
+
+**What happens:** The workspace header shows "Investigation | workspace/investigation | Copy | Ready." The "Copy" button sits next to the branch path with no label, no tooltip, and no visual context indicating what it copies. It presumably copies the branch name for `git checkout`, but this is not communicated anywhere.
+
+**Why it's bad:** "Copy" is an extremely generic affordance. In this context it could copy: the full workspace path, the branch name, the git command to check out the branch, or the workspace URL. Without a tooltip or label, users either don't use it or copy it and paste it somewhere only to discover it's not what they expected. The "Copy" label is also visually ambiguous — it appears as a secondary action but has no icon to signal clipboard copy.
+
+**Fix:**
+1. Replace the bare "Copy" text with a clipboard icon button.
+2. Add a tooltip: "Copy branch name" (or "Copy git checkout command" if that's more useful).
+3. On click, show a brief "Copied!" confirmation state on the button itself (1.5 seconds then revert).
+
+---
+
+### ISSUE-14: Automations Canvas Has Visible Rendering Artifacts
+**Severity:** High
+**Where:** Agent Profiles > Automations tab > Canvas view (screenshot 17)
+
+**What happens:** The canvas view shows a node palette on the left with trigger/condition/action nodes. The main canvas area to the right is mostly empty but contains two visual artifacts: a thin white vertical rectangle near the left edge of the canvas, and a larger, partially-rendered rectangular block in the lower-right corner that appears to be a floating panel or minimap that has lost its styling.
+
+**Why it's bad:** Rendering artifacts in a canvas are deeply alarming — they suggest the canvas library is not fully initialized, that there's a Z-index or CSS painting bug, or that the component is mounting/unmounting incorrectly. For an automation builder (a sophisticated power-user feature), these artifacts destroy confidence. A user who sees a broken canvas will not trust the automations they build in it to execute correctly.
+
+**Fix:**
+1. Identify the white rectangle — likely an unclipped overflow from a panel or a ReactFlow ghost node.
+2. The lower-right element appears to be a minimap (standard in node canvas libraries like ReactFlow) that has lost its background/border styling. Apply the correct dark theme to the minimap component.
+3. Add a `min-height` and `min-width` guard on the canvas container to prevent collapsed rendering at smaller panel sizes.
+4. Consider a canvas "reset view" button that re-centers and repaints the canvas on demand.
+
+---
+
+### ISSUE-15: "Discard" Button on Workspace Is Styled Danger-Red Without Confirmation Context
+**Severity:** High
+**Where:** Workspace detail header (screenshot 06)
+
+**What happens:** The workspace header shows two primary actions: "Merge" (neutral/primary style) and "Discard" (solid red). The red "Discard" button implies a destructive, irreversible action. There is no tooltip, no hint text, and no visible confirmation step.
+
+**Why it's bad:** Red buttons signal danger and irreversibility. In a version-control context, "Discard" likely means discarding uncommitted changes in the worktree — a potentially significant data loss action. Without a confirmation dialog or at minimum a tooltip explaining what gets discarded, users will either avoid the button entirely (losing discoverability) or click it by mistake. The Workspace detail header is also visible while in "Clean" state (screenshot 06 shows "0 changed files"), where "Discard" would be a no-op — but it still appears prominent and red, creating cognitive alarm without cause.
+
+**Fix:**
+1. "Discard" should open a confirmation dialog: "Discard all uncommitted changes in this workspace? This will reset the working tree to the last commit. This cannot be undone."
+2. When the workspace is in a clean state (0 changed files), grey out / disable the Discard button.
+3. Consider replacing "Discard" with "Reset to HEAD" to be more semantically precise for developer users.
+
+---
+
+## MEDIUM Issues
+
+---
+
+### ISSUE-16: Settings Opens as Overlay Panel, Not Navigation
+**Severity:** Medium
+**Where:** Settings panel (screenshots 21, 22, 23, 24)
+
+**What happens:** Clicking the settings gear icon in the left rail slides in a panel from the right side of the screen, overlapping whatever view is currently active. The Agent Profile editor (in screenshot 21) remains visible but dimmed behind the Settings panel. Closing Settings returns the user to the Agent Profile.
+
+**Why it's bad:** This creates a complex layering situation where the user is simultaneously in "Agent Profile editor" and "Settings" — two editing contexts stacked on top of each other. The Settings panel has its own tabs (General, AI & Model, Data & Context, Integrations, Status) that are as complex as any primary view. Opening a full multi-tab editing panel as an overlay on top of another multi-tab editing panel is disorienting. Users lose track of what was "under" the settings. Additionally, the "Normal" status bar click opens the AI & Model section of this panel (see ISSUE-02), meaning a one-click action from the status bar produces a two-layer edit context.
+
+**Fix:**
+1. Give Settings its own dedicated navigation slot (a separate left-rail icon that takes you to a full Settings page, not a drawer).
+2. If you must use a drawer, limit its contents to truly "global" settings (API key, theme, font size) and move model/prompt settings into the relevant profile editors where they actually apply.
+3. At minimum, prevent Settings from opening if the user has unsaved changes in a form — or show a "You have unsaved changes in Agent Profile. Continue?" prompt.
+
+---
+
+### ISSUE-17: Settings "Integrations" Tab vs Agent Profile "Integrations" Tab — Same Name, Different Content
+**Severity:** Medium
+**Where:** Settings sidebar tab labeled "Integrations" (screenshot 21), Agent Profile tab also labeled "Integrations" (screenshot 18)
+
+**What happens:** Settings has a tab called "Integrations." Agent Profiles also has a tab called "Integrations." Both are visible in the same session. The Settings > Integrations tab presumably manages global integrations; the Agent Profile > Integrations tab manages MCP servers for that specific profile. They are meaningfully different scopes of the same concept, given the same name.
+
+**Why it's bad:** This is a terminology collision. If a user asks "where do I configure my MCP server?" they will find "Integrations" in two places and get confused about which one applies, whether they conflict, and whether changes in one affect the other. This is a navigation ambiguity that leads to incorrect configuration.
+
+**Fix:**
+1. Rename the Agent Profile tab to "MCP Servers" (which is what it actually configures).
+2. Or rename the Settings tab to "Global Integrations" and the Agent Profile tab to "Profile MCP."
+3. Add a brief header description at the top of each tab explaining scope: "These MCP servers are available globally" vs. "These MCP servers are available only when this agent profile is active."
+
+---
+
+### ISSUE-18: Settings Status "No Active Session" Contradicts Status Bar
+**Severity:** Medium
+**Where:** Settings > Status tab (screenshot 24) vs. Status bar
+
+**What happens:** Settings > Status shows "Session: Model — No active session / Version — —". Meanwhile the status bar at the bottom of every screen shows a green dot next to "main," which signals an active connection. The user is clearly connected (they can have conversations), but the Status tab says there is no active session.
+
+**Why it's bad:** "No active session" in a diagnostics panel when the app is clearly functional creates anxiety. The user questions: Is my session broken? Am I wasting API calls? Will my next message fail? The conflict between "green dot = connected" and "No active session" in Settings is a trust-eroding inconsistency. These two pieces of UI are reporting different things (one is the WebSocket/API connection status, the other is a live conversation session context), but that distinction is invisible to users.
+
+**Fix:**
+1. Rename the "Session" section in Status to "Active Conversation" to differentiate it from "connection status."
+2. Add explanatory copy: "Active conversation details appear here while a chat is open. Open a conversation to see model and session information."
+3. The green dot in the status bar should have a tooltip explaining exactly what it represents ("Connected to Claude API").
+
+---
+
+### ISSUE-19: MCP Configuration Requires Raw JSON — No Form UI
+**Severity:** Medium
+**Where:** Agent Profile > Integrations tab (screenshot 18), Data & Context settings (screenshot 23)
+
+**What happens:** The Integrations tab presents MCP server configuration as a raw JSON textarea containing an example skeleton (`{"mcpServers": {"my-server": {"command": "npx", "args": [...], "env": {...}}}}`). There is no form-based UI for adding servers — no "Add Server" button, no individual fields for command, args, env vars, etc.
+
+**Why it's bad:** MCP server configuration is already a complex concept for many users. Requiring raw JSON entry compounds that complexity by adding a second technical skill requirement (valid JSON syntax) on top of the conceptual understanding. A single misplaced comma or unclosed brace will silently fail or show an opaque error. This gates an important feature behind a technical barrier that excludes non-developer users and slows down even developer users who have to carefully format JSON manually.
+
+**Fix:**
+1. Add a form-based "Add MCP Server" UI with labeled fields: Server Name, Command, Args (repeating fields), Environment Variables (key/value pairs). The form serializes to JSON under the hood.
+2. Keep the raw JSON textarea as an "Advanced / Edit JSON" toggle for power users.
+3. Add JSON validation with real-time error highlighting in the textarea view. Show specific error messages ("Missing closing brace on line 6") rather than generic failures.
+
+---
+
+### ISSUE-20: Agent Profile Icon Field Shows Duplicate Emoji Preview
+**Severity:** Medium
+**Where:** Agent Profiles > General tab, Icon field (screenshot 13)
+
+**What happens:** The Icon field shows two robot emojis side-by-side: one as a preview swatch on the left, and one inside the text input field itself. Both show the same emoji character. The help text beneath reads "Enter an emoji character."
+
+**Why it's bad:** The duplicate display is visually noisy and implies the field might have two values. More importantly, having a text input for emoji entry is an awkward interaction — users on macOS would use the system emoji picker (Control + Command + Space), but there's no hint that this is how it works. The swatch preview serves no purpose when it's just repeating what's in the input field immediately adjacent.
+
+**Fix:**
+1. Remove the duplicate swatch or make it a distinct preview area that shows what the profile icon will look like in context (e.g., as it appears in the sidebar).
+2. Replace the text input with an emoji picker button that opens the system emoji picker or a curated in-app picker.
+3. The preview swatch's purpose should be "preview in context" — show a miniaturized sidebar item with the chosen emoji so the user can see how it will look, not just a bare emoji.
+
+---
+
+### ISSUE-21: Workspace Notes Textarea Has No Toolbar, Autosave, or Character Count
+**Severity:** Medium
+**Where:** Workspaces > Notes tab (screenshot 08)
+
+**What happens:** The Notes tab contains a full-page textarea with the placeholder "Add notes, plans, or context for this workspace..." and a "Preview" button in the top right. There is no formatting toolbar, no autosave indicator, no character limit, and no save button visible. The interface implies markdown support (given the "Preview" button) but provides no help for writing it.
+
+**Why it's bad:** Notes that "are shared with Claude as context" are a significant feature — they directly affect AI behavior. A bare textarea with no autosave indication creates anxiety (will my notes be lost if I navigate away?). No markdown help means users don't know what formatting is available to them. No character count means users have no idea if they're approaching a context limit that might affect Claude's performance. The "Preview" button in the top right is also easily missed.
+
+**Fix:**
+1. Add a minimal markdown toolbar (Bold, Italic, Heading, List, Code Block — 5 icons).
+2. Implement and visibly indicate autosave (e.g., "Saved" / "Saving..." indicator near the Preview button).
+3. Add a character / token count near the bottom: "1,240 characters (~310 tokens)" to help users stay within practical context budgets.
+4. Move the Preview/Edit toggle to a more prominent position — consider a tab-style toggle (like GitHub's issue editor) rather than a small top-right button.
+
+---
+
+### ISSUE-22: Model Picker Keyboard Shortcuts (1, 2, 3) Are Unexplained
+**Severity:** Medium
+**Where:** Model picker dropdown (screenshot 25)
+
+**What happens:** The model picker dropdown shows three options: "Sonnet 4.6 | 1", "Opus 4.6 | 2", "Haiku 4.5 | 3" with the numbers 1, 2, 3 aligned to the right. These are presumably keyboard shortcuts, but there is no label, header, or tooltip explaining this. The numbers could be model tier rankings, arbitrary internal IDs, or API version numbers.
+
+**Why it's bad:** Undiscoverable keyboard shortcuts that look like arbitrary numbers are worse than no keyboard shortcuts, because they add visual noise without communicating function. A user who doesn't know these are shortcuts will wonder what the numbers mean — and may never discover they're interactive. Power users who would use keyboard shortcuts cannot find them except by accident.
+
+**Fix:**
+1. Add a small header label inside the dropdown: "Press 1, 2, or 3 to switch models."
+2. Or style the numbers as keyboard shortcut hints (a small bordered key-cap style: `[1]`, `[2]`, `[3]`) which is a universally understood affordance for shortcuts.
+3. Document these shortcuts in a keyboard shortcut overlay (⌘?), or at minimum in a "Pro tip" banner or tooltip on the model name in the status bar.
+
+---
+
+### ISSUE-23: Workspace "Clean" Status Lacks Explanation
+**Severity:** Medium
+**Where:** Workspaces sidebar, under workspace branch info (screenshot 04)
+
+**What happens:** Each workspace in the sidebar shows the branch path (e.g., "workspace/investigation") and below it the word "Clean" in green text. "Ready" also appears as a badge on some workspaces.
+
+**Why it's bad:** "Clean" is git terminology for "clean working tree" (no uncommitted changes). This is meaningful to developers who know git, but opaque to others. The same concept could be expressed as "No changes" or "Up to date" in plain language. Additionally, "Clean" and "Ready" are two different signals that are presented in visually similar styles — "Clean" is plain green text while "Ready" is a green badge — but their semantic distinction (git state vs. workspace operational state) is not communicated.
+
+**Fix:**
+1. Add a tooltip to "Clean": "No uncommitted changes in this workspace."
+2. Add a tooltip to "Ready": "This workspace is ready to use. Claude can access this directory."
+3. Consider whether both signals need to be visible simultaneously — a workspace that is "Ready" and "Clean" could show a single unified "Active, no changes" state.
+
+---
+
+### ISSUE-24: Pro Tip Bar Cannot Be Permanently Dismissed
+**Severity:** Medium
+**Where:** Chat interface, bottom bar above composer (screenshot 05)
+
+**What happens:** A "Pro tip: Type / to access commands like /review, /compact, and /pr" bar appears at the bottom of the chat view with an × button to dismiss it. The × presumably closes it for the session. There is no "Don't show again" option, and there is no corresponding setting in Settings to control this.
+
+**Why it's bad:** Tips that re-appear every session are training noise for experienced users. A user who has been using Claude Code for months and knows all the slash commands is forced to dismiss this bar every time. The × button implies dismissal is permanent; if it isn't, that's a betrayal of the control affordance. If it is permanent, users who accidentally dismiss it have no way to recover the information (there's no help section listing commands).
+
+**Fix:**
+1. Make the dismissal persistent (stored in user preferences, not session state).
+2. Add a "Pro Tips" toggle in Settings > General: "Show tips and hints" on/off.
+3. Consider surfacing slash command documentation in a dedicated help panel or command palette (⌘K) instead of a persistent tip bar.
+
+---
+
+### ISSUE-25: Conversation Sidebar Has No Date Grouping
+**Severity:** Medium
+**Where:** Conversations sidebar (screenshot 01)
+
+**What happens:** The sidebar shows a flat, chronologically descending list of sessions. Each item shows a name and a date ("Mar 19," "Mar 18," "Mar 17"). There is no grouping by date period (Today, Yesterday, This Week, Last Week, Older).
+
+**Why it's bad:** As the conversation list grows, the sidebar becomes increasingly difficult to navigate. Date grouping is a standard pattern used by virtually every chat application (ChatGPT, Slack, iMessage, Claude.ai) because it allows users to quickly orient to the temporal context of past conversations. A flat list requires the user to read each date individually rather than scanning group headers. With >20 sessions (easily reached within a week of normal use), this becomes a real navigation problem.
+
+**Fix:**
+1. Add date group headers: "Today," "Yesterday," "This Week," "Last Month," "Older."
+2. Make groups collapsible to reduce visual clutter.
+3. Consider a secondary sort/filter option: by agent profile, by workspace, or by project.
+
+---
+
+### ISSUE-26: Fork Suffix in Session Names Is Inconsistent
+**Severity:** Medium
+**Where:** Conversations sidebar (screenshot 01)
+
+**What happens:** One session in the sidebar is named "My Python Notes (fork)" — showing the "(fork)" suffix. Other sessions do not show this suffix even though the Fork option exists in the context menu.
+
+**Why it's bad:** If a session is a fork, that information is architecturally significant — it means the session branched from another session at a specific point. Whether the "(fork)" label appears or not affects whether users understand the relationship between sessions. An inconsistent suffix suggests either a bug (forks sometimes don't get labeled) or an intentional design choice that was inconsistently applied.
+
+**Fix:**
+1. Define a clear policy: all forked sessions display a fork indicator (either "(fork)" suffix or a branch icon prefix).
+2. Consider making the fork relationship navigable — clicking "(fork)" should let the user see the parent session.
+3. If the suffix is intentional only for recent forks, document the rule (e.g., forks only show the suffix for 7 days, then it's dropped).
+
+---
+
+### ISSUE-27: Data & Context Settings Shows Truncated File Paths
+**Severity:** Medium
+**Where:** Settings > Data & Context tab (screenshot 23)
+
+**What happens:** The CLAUDE.md Files section shows file paths like "/Users/dennisonbertram/De..." — truncated with an ellipsis that makes the path unreadable. The user cannot tell which file is referenced from this view alone.
+
+**Why it's bad:** File paths are identification strings — truncating them defeats their purpose. A user with CLAUDE.md files in multiple project directories (the common case, since the tool supports per-project, personal, global, and org settings) cannot distinguish between "/Users/dennisonbertram/Develop/project-a/CLAUDE.md" and "/Users/dennisonbertram/Develop/project-b/CLAUDE.md" from a truncated display.
+
+**Fix:**
+1. Show file paths with intelligent truncation: display the beginning and end of the path, truncating the middle. Example: "/Users/dennisonbertram/.../project-a/CLAUDE.md".
+2. Add a tooltip on hover showing the complete path.
+3. Make the path clickable to open the file in the preferred IDE or Finder.
+
+---
+
+### ISSUE-28: Effort Selector Uses Different UI Pattern in Two Places
+**Severity:** Medium
+**Where:** Agent Profile > Model tab (screenshot 15) uses a button group (Low | Medium | High). Settings > AI & Model (screenshot 22) uses a dropdown labeled "Thinking Effort."
+
+**What happens:** The effort level concept appears in two places with two different UI patterns: a segmented button group (three buttons) in Agent Profiles and a dropdown select in Settings. These control semantically related (possibly the same) concept.
+
+**Why it's bad:** Pattern inconsistency increases cognitive load. When a user learns that effort is a 3-way button group in Agent Profiles and then sees a dropdown in Settings, they question whether these are the same setting or different ones. The button group also uses "Low/Medium/High" while the Settings dropdown uses "High" (with other values presumably below). The labels and interaction paradigms don't match.
+
+**Fix:**
+1. Pick one pattern and use it everywhere. The segmented button group is superior for a 3-option discrete choice — it shows all options simultaneously and makes the current selection clear.
+2. Ensure the label is consistent: "Effort" in Agent Profiles and "Thinking Effort" in Settings — pick one.
+3. Show the same description text ("Balanced performance. Recommended for most tasks.") in both locations so users understand the effect of each level regardless of where they encounter the setting.
+
+---
+
+### ISSUE-29: Status Bar "Normal" Label Does Not Update in Real-Time
+**Severity:** Medium
+**Where:** Status bar, effort indicator (all screenshots)
+
+**What happens:** The status bar shows "Normal" as the effort level. When a user changes the effort in Settings > AI & Model (to "High" for example), the status bar label should immediately reflect this change. Whether it does is unclear, but the static appearance of "Normal" across all screenshots — even when "High" is set in Settings — suggests this binding may be missing.
+
+**Why it's bad:** The status bar is meant to be a real-time dashboard of active configuration. If the effort level shown there is stale or doesn't reflect the active profile's setting, users will make decisions based on incorrect information. This is especially problematic given that the status bar is the primary place users will look to confirm their effort configuration.
+
+**Fix:**
+1. Ensure the status bar effort label is reactively bound to the active profile's effort setting.
+2. If the active profile has "Default" effort (inheriting from session defaults), show the resolved value, not "Default."
+3. Add a visual distinction between "this is overridden by the active profile" vs. "this is the session default."
+
+---
+
+### ISSUE-30: Advanced Tab Hides Critical Configuration Behind "Advanced" Label
+**Severity:** Medium
+**Where:** Agent Profile > Advanced tab (screenshot 20)
+
+**What happens:** The Advanced tab contains: Working Directory (cwd), Additional Directories, Sort Order, Max Turns, Max Budget (USD), and Sub-agents JSON. "Max Budget (USD)" — a billing protection setting — is buried at the end of the Advanced tab where many users will never look.
+
+**Why it's bad:** "Max Budget (USD)" is arguably the most user-protective setting in the entire app, directly controlling how much an agent can spend per session. Burying it in "Advanced" means users who don't explore every tab will have no spending cap, potentially incurring unexpected API charges. This is a financial safety feature, not a power-user configuration.
+
+**Fix:**
+1. Move "Max Budget (USD)" to the top of the Model tab, where it is contextually adjacent to model and effort selection (all three are cost-affecting choices).
+2. Alternatively, show it in the status bar alongside the current model: "Haiku 4.5 | Normal | Budget: $5.00."
+3. Show a first-run nudge encouraging users to set a budget when creating a new profile.
+
+---
+
+## Top 5 Quick Wins
+
+These are the fixes with the highest impact-to-effort ratio — each can be implemented in hours, not days, and will immediately improve perceived polish and usability.
+
+---
+
+### Quick Win 1: Fix the Window Title (30 minutes)
+**Impact:** High. Every user sees this every time they use the app.
+**Effort:** Minimal. One-line change in `tauri.conf.json` (`productName: "Claude Code"`) and `<title>` in `index.html`.
+**Why:** Removing the "Tauri + React + Typescript" boilerplate title is the single highest-visibility, lowest-effort fix in this entire audit. It transforms the app from "prototype" to "product" at the OS level.
+
+---
+
+### Quick Win 2: Strip Markdown from Session Titles (2-4 hours)
+**Impact:** High. Affects every session title generated from AI responses.
+**Effort:** Low. Add a `stripMarkdown(text)` utility function before storing session titles. Libraries like `remove-markdown` (npm) handle this in one line.
+**Why:** Raw `**bold**` syntax in sidebar session titles is one of the most visually jarring broken states in the app. It's also a straightforward data transformation bug with no UI changes required.
+
+---
+
+### Quick Win 3: Add Labels to Navigation Rail Icons (2-4 hours)
+**Impact:** High. Affects every new user's ability to understand the app structure.
+**Effort:** Low. Add 2-3 word text labels below each nav icon. Requires minor CSS layout adjustment to widen the rail by ~30px.
+**Why:** The four unlabeled icons are a first-impression barrier. Users who don't know what the robot icon means will never discover Agent Profiles. Labels pay compound interest — every feature built on top of those sections becomes more discoverable.
+
+---
+
+### Quick Win 4: Replace "Normal" Status Bar Navigation with an Inline Popover (4-8 hours)
+**Impact:** High. Eliminates the single most surprising interaction in the app (clicking "Normal" teleporting to Settings).
+**Effort:** Medium-low. Create a 3-option popover component (Low/Normal/High) anchored to the "Normal" status bar chip. Wire it to update the session effort setting. No Settings panel navigation needed.
+**Why:** This directly removes the principle-of-least-surprise violation that will frustrate every user who discovers it. The fix also simplifies the user's mental model: status bar chips are quick pickers, Settings is for persistent configuration.
+
+---
+
+### Quick Win 5: Enforce Unique Agent Profile Names at Save Time (2-4 hours)
+**Impact:** Critical. Directly resolves ISSUE-01, the most confusing state in the app.
+**Effort:** Low. Add a uniqueness check before save: compare the entered name against existing profile names, and if a collision exists, either auto-append " (2)" or block the save with an inline validation message.
+**Why:** Two identically-named "New Agent Profile" entries in the sidebar is the most immediately confusing state a user will encounter. This fix prevents the bad state from forming rather than requiring the user to recover from it.
+
+---
+
+## User Journey Friction Points
+
+The following eight user journeys document specific friction encountered during common task flows.
+
+---
+
+### Journey 1: First Launch — "What can I do here?"
+
+**Flow:** User opens app for the first time → sees Welcome screen
+
+**Friction points:**
+1. The user sees four unlabeled icons on the left rail. They have no idea what the second, third, and fourth icons do without clicking each one.
+2. The user sees "Default | New Agent Profile | New Agent Profile" as the profile selector. Two identical options are confusing before they've even sent a message.
+3. The welcome copy ("Start a conversation to work with Claude on your code") is accurate but minimal — no examples, no feature highlights, no orientation to what projects/workspaces are.
+4. Two "New Conversation" buttons (one sidebar, one center) require the user to make a choice between identical actions.
+
+**Ideal journey:** Clear nav labels, a single onboarding empty state with 3 example prompts, and a single CTA. Profile selector only shows profiles with real names.
+
+---
+
+### Journey 2: Returning User — "Find my conversation from yesterday"
+
+**Flow:** User opens app → scans sidebar → tries to find specific past conversation
+
+**Friction points:**
+1. Flat list with no date grouping — user must scan individual dates rather than scanning "Yesterday" group header.
+2. Multiple sessions named "Peppy X" or "Sizzling Truffle" are indistinguishable by topic.
+3. No full-text search — the "Search sessions" field searches by name only (presumably), so a user who remembers "I asked about Python decorators" cannot find that session.
+4. Markdown artifacts in one session title ("Your **first q") add visual noise that slows scanning.
+
+**Ideal journey:** Date-grouped sidebar, topic-derived session names, full-text search that searches within conversation content.
+
+---
+
+### Journey 3: Power User — "Change to Opus for this next complex task"
+
+**Flow:** User in conversation → wants to switch to Opus 4.6 → opens model picker
+
+**Friction points:**
+1. Model picker opens correctly from the "Haiku 4.5" chip in the status bar — this works well.
+2. However, keyboard shortcuts (1, 2, 3) in the picker are unlabeled and look like tier rankings.
+3. After switching, if the user wants to also increase effort, they click "Normal" and get teleported to Settings instead of getting an inline picker.
+4. There is no confirmation or visual feedback that the model switch has taken effect except the status bar label updating.
+
+**Ideal journey:** Model picker is clean, shortcuts are labeled. Effort picker is adjacent or accessible without a full settings navigation.
+
+---
+
+### Journey 4: Developer — "Create a new Agent Profile for code review tasks"
+
+**Flow:** Agent Profiles → + button → fills in General tab → tries to save → navigates to other tabs
+
+**Friction points:**
+1. New profile is created with the same name as any existing "New Agent Profile" — immediately produces a duplicate in the sidebar.
+2. The profile is not auto-selected after creation — user must click it in the sidebar manually.
+3. Save/Delete buttons are in the header. When changes are made, Save becomes enabled (correctly). But the relationship between unsaved state and tab navigation is unclear — can the user navigate to the Model tab without losing General tab changes?
+4. Icon field shows duplicate emoji (swatch + input field).
+5. The "Default Profile" checkbox effect is non-obvious — does it affect existing sessions? New sessions? All sessions?
+
+**Ideal journey:** Name uniqueness enforced, profile auto-selected on creation, unsaved state persists across tab navigation within the profile, clear explanation of "Default Profile" effect.
+
+---
+
+### Journey 5: Non-Developer — "Set up an MCP server"
+
+**Flow:** Agent Profile → Integrations tab → tries to add MCP server
+
+**Friction points:**
+1. Immediately confronted with a raw JSON textarea — no form, no "Add Server" button, no guidance beyond a single example skeleton.
+2. The example JSON uses placeholder values (`"my-server"`, `"npx"`, `"..."`) — the user must know how to modify JSON syntax correctly.
+3. No validation feedback — a JSON syntax error produces no visible error message in the UI (unclear from the screenshot, but typical for raw textarea approaches).
+4. The Settings > Integrations tab (presumably for global MCP config) causes confusion about where to configure (see ISSUE-17).
+
+**Ideal journey:** "Add MCP Server" button opens a form with labeled fields. JSON view available as an advanced toggle. Inline validation with helpful error messages.
+
+---
+
+### Journey 6: Workspace User — "Review what changed in this worktree"
+
+**Flow:** Workspaces → click workspace → Diff tab
+
+**Friction points:**
+1. The Diff tab shows commit SHAs in the compare dropdowns (e.g., "1b74302 — feat(mpp): add MPP Phase 1..."). This is information-dense and git-native, but the SHA prefix (7 characters) adds cognitive overhead for users who just want to know "what changed."
+2. "Unified" / "Side-by-side" toggle is available — good. But there's no explanation of what "Review" does (top right button).
+3. "Mark all unreviewed" button exists but its purpose and effect are not self-explanatory.
+4. "Copy" button next to branch name has no context (ISSUE-13).
+5. The "Discard" button is red and prominent even when there are 0 changed files (ISSUE-15).
+
+**Ideal journey:** Diff view defaults to showing the most recent change. "Review" and "Mark as reviewed" are explained. Discard is disabled when no changes.
+
+---
+
+### Journey 7: User in Settings — "Change my API key"
+
+**Flow:** Clicks gear icon → Settings opens as overlay → navigates to General
+
+**Friction points:**
+1. Settings opens as an overlay on top of whatever the user was doing — disorienting layer.
+2. The API key field shows a partially masked value ("sk-ant-...") with a "Show" button — correct.
+3. But the "Provider" dropdown (Anthropic, Bedrock, Vertex) is immediately adjacent to the API key — changing provider likely invalidates the current key format, but there's no warning of this.
+4. "Runtime Environment Variables" section uses placeholder columns ("VARIABLE_NAME" / "value") that look like they already have content but are actually input fields — the lack of contrast between placeholder and actual text (in dark mode) is subtle.
+
+**Ideal journey:** Settings is a dedicated page, not an overlay. Provider change shows an inline warning about API key format. Env var table uses clearly differentiated placeholder styling.
+
+---
+
+### Journey 8: User — "Understand what the Teams section does"
+
+**Flow:** Clicks people icon → Agent Teams screen → sees empty state
+
+**Friction points:**
+1. The nav icon is a "two-person silhouette" but the section is called "Agent Teams." This is not a human collaboration feature — it's a multi-agent coordination feature. The icon implies "people management" when it should convey "AI agents working together."
+2. The empty state has good copy ("Create a team to coordinate multiple agents working together") but the "New Team" CTA in both the header and the center is redundant (ISSUE-08).
+3. There is no explanation of what a "team" is in this context, how it differs from a profile, how teams interact with workspaces, or what the expected workflow is. The description is a single line.
+4. No examples of what a team looks like when populated — no "example team" or "see how teams work" link.
+
+**Ideal journey:** Icon reflects multi-agent concept (e.g., interconnected nodes or robots). Empty state explains the concept in 2-3 sentences with a concrete example ("A team might include a Researcher agent for web search and a Coder agent for implementation"). Single CTA.
+
+---
+
+## Visual Consistency Issues
+
+The following patterns show inconsistency across the product that erodes the sense of a unified design system.
+
+---
+
+### VC-01: Button Styles Are Inconsistently Applied for the Same Action Weight
+
+Throughout the app, destructive actions (Delete, Discard) use solid red. Save uses a neutral style. In some contexts, Delete is the same visual weight as Save ("Save" | "Delete" in Agent Profile header — same size, both visible, one neutral and one red). In the Workspace header, "Merge" and "Discard" are the two primary actions — Discard is red, Merge is neutral/blue — appropriate. But the Save button in Agent Profiles is sometimes white-outlined and sometimes filled depending on the tab, suggesting the enabled/disabled state styling is inconsistent.
+
+**Fix:** Define a strict button hierarchy: Primary (filled, accent color) for the single most important action per view. Secondary (outlined) for supporting actions. Danger (red) for irreversible actions, always with a confirmation step. Ghost (text-only) for contextual actions. Apply consistently.
+
+---
+
+### VC-02: Effort Level Setting Uses Three Different UI Patterns
+
+- Agent Profile > Model tab: Segmented button group (Low | Medium | High)
+- Settings > AI & Model: Dropdown select ("Thinking Effort: High")
+- Status bar: Text chip ("Normal") that clicks to open Settings
+
+Three different UI patterns for the same concept in the same app. Users who learn effort in one location will not immediately recognize it in another.
+
+**Fix:** Standardize on the segmented button group where space allows. Use a compact dropdown only where the button group won't fit. Ensure labels match: "Effort" everywhere.
+
+---
+
+### VC-03: Tab Bars Have Inconsistent Visual Treatment
+
+The Agent Profile tab bar (General, Prompt, Model, Tools, Automations, Integrations, Sandbox, Advanced) uses underline-style active tabs on a dark background. The Settings panel sidebar uses a full-width selected state on a lighter panel. The Workspace tabs (Chat, Diff, Paths, Notes, Dashboards) use a third style with a slightly different underline weight. Three tab bar styles in one app.
+
+**Fix:** Define a single tab component with two variants: inline (for content tabs within a page) and sidebar (for navigation). Apply consistently.
+
+---
+
+### VC-04: Icon Usage Is Inconsistent — Mix of Custom and System Icons
+
+The navigation rail uses filled/solid icons. The agent profile and workspace headers use outlined/stroke icons for the same concepts. The "Copy" action sometimes uses text ("Copy") and sometimes would use an icon (the clipboard icon on the context menu). The dashboard item in the sidebar uses a grid icon while Dashboards tab uses the same icon with text — consistent here, but not all icon usages are this clean.
+
+**Fix:** Choose one icon family and one weight (filled vs. outlined) and apply it consistently throughout the app. The navigation rail being filled while detail-view icons are outlined is a pattern (active vs. contextual), but it should be documented and enforced, not accidental.
+
+---
+
+### VC-05: Empty States Are Inconsistent in Structure
+
+- Agent Profiles empty state: icon + "No profile selected" + subtitle + single CTA ("Create New Profile") — clean.
+- Agent Teams empty state: icon + "No teams yet" + subtitle + single CTA ("New Team") — identical structure, but then the header also has a "New Team" button.
+- Workspace detail empty state: "Select a workspace or create one to get started" + "Add Project" button — slightly different copy pattern.
+- Dashboard detail empty state: Not a designed empty state — just the leftover panel with "Select a dashboard to view it" — no icon, no CTA.
+
+**Fix:** Create an `<EmptyState>` component with props: `icon`, `title`, `description`, `cta`. Apply it consistently across all zero-data states. Remove duplicate CTAs from headers when the empty state CTA is present.
+
+---
+
+### VC-06: Timestamp Display Format Is Inconsistent
+
+In the conversations sidebar, timestamps show as "Mar 19," "Mar 18," etc. — just month and day, no year, no time. In the dashboard detail (screenshot 10), the timestamp shows "Created Mar 19, 2026" — full date with year. In the sidebar context menu, there are no timestamps. The inconsistency means the user can't rely on a consistent format to read temporal information.
+
+**Fix:** Define a timestamp component that applies consistent formatting based on recency: same day → "Today, 3:42 PM"; past 7 days → "Mon, 3:42 PM"; same year → "Mar 19, 3:42 PM"; older → "Mar 19, 2025." Apply to all timestamps in the product.
+
+---
+
+*End of UX Analysis Report*
+
+**Total issues catalogued:** 30 (5 Critical, 10 High, 15 Medium)
+**Recommended immediate action:** ISSUE-06 (window title), ISSUE-03 (markdown in session names), ISSUE-09 (nav labels), ISSUE-01 (duplicate profile names) — all fixable in one sprint with minimal risk.

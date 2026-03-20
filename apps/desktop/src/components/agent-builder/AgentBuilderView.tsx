@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useAgentProfiles } from '@/hooks/useAgentProfiles';
 import { AgentProfileSidebar } from './AgentProfileSidebar';
 import { AgentProfileEditor } from './AgentProfileEditor';
-import { Button } from '@/components/ui/button';
 
 export function AgentBuilderView() {
   const {
@@ -21,6 +20,13 @@ export function AgentBuilderView() {
   const handleCreateProfile = async () => {
     if (editorIsDirty) {
       if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+    }
+    // If an unsaved profile with the default name already exists, select it instead
+    const existing = profiles.find((p) => p.name === 'New Agent Profile');
+    if (existing) {
+      setSelectedProfileId(existing.id);
+      setEditorIsDirty(false);
+      return;
     }
     const profile = await addProfile({ name: 'New Agent Profile' });
     setSelectedProfileId(profile.id);
@@ -91,9 +97,6 @@ export function AgentBuilderView() {
               <p className="text-sm mt-1">
                 Select a profile from the sidebar or create a new one
               </p>
-              <Button className="mt-4" onClick={handleCreateProfile}>
-                Create New Profile
-              </Button>
             </div>
           </div>
         )}
