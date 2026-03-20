@@ -1244,7 +1244,7 @@ export function ChatPage({
   };
 
   return (
-    <div className="flex flex-1 flex-col min-w-0">
+    <div className="flex flex-1 flex-col min-w-0 min-h-0">
       <MessageList
         messages={messages}
         isLoading={isLoading}

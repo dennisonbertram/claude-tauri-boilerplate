@@ -1,13 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Project, Workspace } from '@claude-tauri/shared';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
-import { FolderOpen, GitBranch, Plus } from 'lucide-react';
+import { FolderOpen, Plus } from 'lucide-react';
 import { getProjectDisplayName } from '@/lib/project-display';
 
 interface ProjectSidebarProps {
@@ -162,13 +160,6 @@ export function ProjectSidebar({
           <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="p-3">
-        <Button onClick={onAddProject} className="w-full" variant="secondary">
-          + Add Project
-        </Button>
-      </div>
-      <Separator />
-
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="p-2 space-y-1">
           {projects.length === 0 && (
@@ -180,9 +171,12 @@ export function ProjectSidebar({
                   Add a project to start working with git worktrees
                 </p>
               </div>
-              <Button onClick={onAddProject} size="sm" variant="secondary">
+              <button
+                onClick={onAddProject}
+                className="rounded px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              >
                 Add Project
-              </Button>
+              </button>
             </div>
           )}
           {projects.map(project => {
@@ -264,135 +258,131 @@ export function ProjectSidebar({
 
                 {/* Workspace list */}
                 {expanded && (
-                  <div className="ml-4 space-y-0.5">
+                  <div className="ml-4 space-y-0.5 mt-0.5">
                     {workspaces.length === 0 && (
-                      <div className="flex flex-col items-center px-2 py-3 text-center space-y-1.5">
-                        <GitBranch className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground">No workspaces</p>
-                        <button
-                          onClick={() => onCreateWorkspace(project)}
-                          className="text-xs text-primary hover:text-primary/80 transition-colors"
-                        >
-                          + New Workspace
-                        </button>
-                      </div>
-                    )}
-                    {workspaces.map(ws => (
-                      <div
-                        key={ws.id}
-                        className={`group rounded-md px-2 py-1.5 text-left transition-colors space-y-0.5 ${
-                          ws.id === selectedWorkspaceId
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                            : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
-                        }`}
+                      <button
+                        onClick={() => onCreateWorkspace(project)}
+                        className="w-full rounded px-2 py-1 text-left text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/40 transition-colors"
                       >
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => onSelectWorkspace(ws)}
-                            className="min-w-0 flex-1 text-left flex items-center gap-1.5"
-                          >
-                            <span className="min-w-0 text-sm truncate">{ws.name}</span>
+                        + New Workspace
+                      </button>
+                    )}
+                    {workspaces.map(ws => {
+                      const gitStatus = workspaceStatus[ws.id];
+                      return (
+                        <div
+                          key={ws.id}
+                          onClick={() => onSelectWorkspace(ws)}
+                          className={`group rounded-md px-2 py-1.5 cursor-pointer transition-colors ${
+                            ws.id === selectedWorkspaceId
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                              : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
+                          }`}
+                        >
+                          {/* Top row: name + icon actions + status badge */}
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span className="min-w-0 flex-1 text-sm truncate">{ws.name}</span>
                             {isWorkspaceUnread?.(ws.id) && (
                               <span
                                 data-testid={`unread-dot-${ws.id}`}
-                                className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
+                                className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
                                 aria-label="Unread activity"
                               />
                             )}
-                          </button>
-                          <WorkspaceStatusBadge status={ws.status} />
-                        </div>
-                        <div className="text-xs text-muted-foreground">
+                            {/* Hover-only icon buttons */}
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                              <button
+                                type="button"
+                                title="Copy branch name"
+                                aria-label={`Copy branch name for ${ws.name}`}
+                                className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void copyBranchName(ws.branch);
+                                  setCopiedBranchId(ws.id);
+                                  setTimeout(() => setCopiedBranchId(null), 1500);
+                                }}
+                              >
+                                {copiedBranchId === ws.id ? (
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                ) : (
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                title="Rename branch"
+                                className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  beginRename(ws);
+                                }}
+                              >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              </button>
+                            </div>
+                            <WorkspaceStatusBadge status={ws.status} />
+                          </div>
+                          {/* Bottom row: branch + rename input or git status */}
                           {editingWorkspaceId === ws.id ? (
-                            <div className="flex items-center gap-1">
+                            <div
+                              className="mt-0.5 flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <input
-                                className="h-6 min-w-0 flex-1 rounded border border-border bg-background px-2 text-xs text-foreground"
+                                className="h-5 min-w-0 flex-1 rounded border border-border bg-background px-1.5 text-[11px] text-foreground"
                                 value={editingBranch}
                                 onChange={(e) => setEditingBranch(e.target.value)}
                                 onKeyDown={(event) => {
-                                  if (event.key === 'Enter') {
-                                    commitRename(ws.id, editingBranch);
-                                  } else if (event.key === 'Escape') {
-                                    cancelRename();
-                                  }
+                                  if (event.key === 'Enter') commitRename(ws.id, editingBranch);
+                                  else if (event.key === 'Escape') cancelRename();
                                 }}
                                 onBlur={() => commitRename(ws.id, editingBranch)}
                                 autoFocus
                               />
                               <button
                                 type="button"
-                                className="rounded px-1.5 py-0.5 text-xs text-foreground border border-border hover:bg-accent transition-colors"
+                                className="rounded px-1 py-0.5 text-[10px] text-foreground border border-border hover:bg-accent transition-colors"
                                 onClick={() => commitRename(ws.id, editingBranch)}
                               >
                                 Save
                               </button>
                               <button
                                 type="button"
-                                className="rounded px-1.5 py-0.5 text-xs text-muted-foreground border border-border hover:bg-accent transition-colors"
+                                className="rounded px-1 py-0.5 text-[10px] text-muted-foreground border border-border hover:bg-accent transition-colors"
                                 onClick={cancelRename}
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">
-                                  {ws.branch}
-                                </p>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    type="button"
-                                    className="rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                                    aria-label={`Copy branch name for ${ws.name}`}
-                                    title="Copy git branch name to clipboard"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void copyBranchName(ws.branch);
-                                      setCopiedBranchId(ws.id);
-                                      setTimeout(() => setCopiedBranchId(null), 1500);
-                                    }}
-                                  >
-                                    {copiedBranchId === ws.id ? 'Copied!' : 'Copy branch'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-muted-foreground underline hover:text-foreground"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      beginRename(ws);
-                                    }}
-                                  >
-                                    Rename
-                                  </button>
-                                </div>
-                              </div>
-                              {workspaceStatus[ws.id] ? (
-                                workspaceStatus[ws.id]!.isClean ? (
-                                  <p className="truncate text-[11px] text-emerald-400">Clean</p>
+                            <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
+                              <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted-foreground">
+                                {ws.branch}
+                              </span>
+                              {gitStatus && (
+                                gitStatus.isClean ? (
+                                  <span className="shrink-0 text-[10px] text-emerald-400">Clean</span>
                                 ) : (
-                                  <div className="flex flex-wrap items-center gap-1 text-[10px]">
-                                    {workspaceStatus[ws.id]!.stagedFiles.length > 0 && (
-                                      <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-blue-300">
-                                        Committed {workspaceStatus[ws.id]!.stagedFiles.length}
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    {gitStatus.stagedFiles.length > 0 && (
+                                      <span className="rounded bg-blue-500/15 px-1 text-[9px] text-blue-300">
+                                        {gitStatus.stagedFiles.length}S
                                       </span>
                                     )}
-                                    {workspaceStatus[ws.id]!.modifiedFiles.length > 0 && (
-                                      <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-300">
-                                        Uncommitted {workspaceStatus[ws.id]!.modifiedFiles.length}
+                                    {gitStatus.modifiedFiles.length > 0 && (
+                                      <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">
+                                        {gitStatus.modifiedFiles.length}M
                                       </span>
                                     )}
                                   </div>
                                 )
-                              ) : (
-                                <p className="truncate text-[11px]">Loading status...</p>
                               )}
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
