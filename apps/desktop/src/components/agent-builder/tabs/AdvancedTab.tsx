@@ -65,6 +65,25 @@ export function AdvancedTab({ draft, onChange }: AdvancedTabProps) {
         </p>
       </div>
 
+      {/* Sort Order */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Sort Order
+        </label>
+        <Input
+          type="number"
+          value={draft.sortOrder ?? 0}
+          onChange={(e) =>
+            onChange({ sortOrder: parseInt(e.target.value, 10) || 0 })
+          }
+          placeholder="0"
+          className="w-24"
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          Controls sidebar position. Lower numbers appear first.
+        </p>
+      </div>
+
       {/* Max Turns and Max Budget side by side */}
       <div className="grid grid-cols-2 gap-4">
         {/* Max Turns */}
@@ -112,11 +131,11 @@ export function AdvancedTab({ draft, onChange }: AdvancedTabProps) {
         </div>
       </div>
 
-      {/* Agents JSON */}
+      {/* Sub-agents JSON */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className="block text-sm font-medium text-foreground">
-            Agents JSON
+            Sub-agents JSON
           </label>
           {agentsJsonValid !== null && (
             <span
