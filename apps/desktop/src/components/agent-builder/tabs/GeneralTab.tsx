@@ -54,9 +54,9 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
             Icon
           </label>
           <div className="flex items-center gap-2">
-            <span className="text-2xl" aria-hidden="true">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted border border-border text-2xl shrink-0" aria-hidden="true">
               {draft.icon || '🤖'}
-            </span>
+            </div>
             <Input
               value={draft.icon ?? ''}
               onChange={(e) => onChange({ icon: e.target.value })}

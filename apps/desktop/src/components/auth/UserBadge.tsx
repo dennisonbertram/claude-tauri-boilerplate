@@ -14,7 +14,7 @@ export function UserBadge({ email, plan }: UserBadgeProps) {
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col min-w-0">
-        <span className="text-sm font-medium truncate">{email || 'Unknown'}</span>
+        <span className="text-sm font-medium truncate">{email || 'Signed in'}</span>
         <span className="text-xs text-muted-foreground">{plan || 'Pro'} Plan</span>
       </div>
     </div>

@@ -20,7 +20,7 @@ const viewItems: { view: ActiveView; icon: typeof MessageSquare; label: string; 
   {
     view: 'workspaces',
     icon: FolderOpen,
-    label: 'Workspaces',
+    label: 'Projects',
     title: 'Workspaces — Git worktree environments with isolated branches and embedded chat',
   },
   {
@@ -41,7 +41,7 @@ export function ActivityBar({ activeView, onSelectView, onOpenSettings, email }:
   const initial = email ? email.charAt(0).toUpperCase() : null;
 
   return (
-    <div className="w-12 flex flex-col border-r bg-sidebar h-full shrink-0">
+    <div className="w-14 flex flex-col border-r bg-sidebar h-full shrink-0">
       {/* Top: view buttons */}
       <div className="flex-1 space-y-1 p-1">
         {viewItems.map(({ view, icon: Icon, label, title }) => {
@@ -53,13 +53,14 @@ export function ActivityBar({ activeView, onSelectView, onOpenSettings, email }:
               title={title}
               aria-label={label}
               onClick={() => onSelectView(view)}
-              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+              className={`w-12 flex flex-col items-center gap-0.5 px-1 py-2 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
               }`}
             >
               <Icon className="h-5 w-5" />
+              <span className="text-[10px] leading-none font-medium">{label}</span>
             </button>
           );
         })}
@@ -72,7 +73,7 @@ export function ActivityBar({ activeView, onSelectView, onOpenSettings, email }:
           title="Settings"
           aria-label="Open settings"
           onClick={onOpenSettings}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+          className="w-12 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
         >
           <Settings className="h-5 w-5" />
         </button>

@@ -1,16 +1,11 @@
 import type { UpdateAgentProfileRequest } from '@claude-tauri/shared';
 import { AVAILABLE_MODELS } from '@/lib/models';
+import { EffortSelector, EFFORT_OPTIONS } from '@/components/ui/EffortSelector';
 
 interface ModelTabProps {
   draft: UpdateAgentProfileRequest;
   onChange: (updates: Partial<UpdateAgentProfileRequest>) => void;
 }
-
-const EFFORT_OPTIONS: Array<{ value: 'low' | 'medium' | 'high'; label: string; description: string }> = [
-  { value: 'low', label: 'Low', description: 'Faster responses, uses fewer tokens. Good for simple tasks.' },
-  { value: 'medium', label: 'Medium', description: 'Balanced performance. Recommended for most tasks.' },
-  { value: 'high', label: 'High', description: 'Deep reasoning, more tokens used. Best for complex problems.' },
-];
 
 const MIN_THINKING_BUDGET = 1000;
 const MAX_THINKING_BUDGET = 100000;
@@ -49,22 +44,10 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
         <label className="block text-sm font-medium text-foreground mb-1.5">
           Effort
         </label>
-        <div className="inline-flex rounded-lg border border-border overflow-hidden">
-          {EFFORT_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange({ effort: opt.value })}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-                currentEffort === opt.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <EffortSelector
+          value={currentEffort}
+          onChange={(val) => onChange({ effort: val })}
+        />
         <p className="text-xs text-muted-foreground mt-1">
           {EFFORT_OPTIONS.find(o => o.value === currentEffort)?.description}
         </p>

@@ -47,13 +47,15 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
   const [newDirectory, setNewDirectory] = useState('');
   const [directoryFilter, setDirectoryFilter] = useState('');
   const [directoryError, setDirectoryError] = useState<string | null>(null);
+  const [branchCopied, setBranchCopied] = useState(false);
 
   // Notes state
   const [notes, setNotes] = useState('');
   const [notesLoaded, setNotesLoaded] = useState(false);
-  const [notesSavedMessage, setNotesSavedMessage] = useState(false);
+  const [notesSaveStatus, setNotesSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [notesPreviewMode, setNotesPreviewMode] = useState(false);
   const notesSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notesSavedFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setAdditionalDirectories(workspace.additionalDirectories ?? []);
@@ -86,17 +88,22 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
 
   const handleNotesChange = useCallback((value: string) => {
     setNotes(value);
+    setNotesSaveStatus('saving');
+    if (notesSavedFadeTimerRef.current) {
+      clearTimeout(notesSavedFadeTimerRef.current);
+      notesSavedFadeTimerRef.current = null;
+    }
     if (notesSaveTimerRef.current) {
       clearTimeout(notesSaveTimerRef.current);
     }
     notesSaveTimerRef.current = setTimeout(() => {
       api.saveWorkspaceNotes(workspace.id, value).then(() => {
-        setNotesSavedMessage(true);
-        setTimeout(() => setNotesSavedMessage(false), 2000);
+        setNotesSaveStatus('saved');
+        notesSavedFadeTimerRef.current = setTimeout(() => setNotesSaveStatus('idle'), 2000);
       }).catch(() => {
-        // Silently ignore save errors (transient)
+        setNotesSaveStatus('idle');
       });
-    }, 500);
+    }, 600);
   }, [workspace.id]);
 
   const handleNotesBlur = useCallback(() => {
@@ -104,11 +111,16 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
       clearTimeout(notesSaveTimerRef.current);
       notesSaveTimerRef.current = null;
     }
+    if (notesSavedFadeTimerRef.current) {
+      clearTimeout(notesSavedFadeTimerRef.current);
+      notesSavedFadeTimerRef.current = null;
+    }
+    setNotesSaveStatus('saving');
     api.saveWorkspaceNotes(workspace.id, notes).then(() => {
-      setNotesSavedMessage(true);
-      setTimeout(() => setNotesSavedMessage(false), 2000);
+      setNotesSaveStatus('saved');
+      notesSavedFadeTimerRef.current = setTimeout(() => setNotesSaveStatus('idle'), 2000);
     }).catch(() => {
-      // Silently ignore save errors
+      setNotesSaveStatus('idle');
     });
   }, [workspace.id, notes]);
 
@@ -216,11 +228,14 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
             type="button"
             className="rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             aria-label={`Copy branch name for ${workspace.name}`}
+            title="Copy git branch name to clipboard"
             onClick={() => {
               void copyTextToClipboard(workspace.branch);
+              setBranchCopied(true);
+              setTimeout(() => setBranchCopied(false), 1500);
             }}
           >
-            Copy
+            {branchCopied ? 'Copied!' : 'Copy branch'}
           </button>
           <WorkspaceStatusBadge status={workspace.status} />
           {workspace.githubIssueNumber && workspace.githubIssueTitle && (
@@ -405,8 +420,11 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {notesSavedMessage && (
-                  <span className="text-xs text-muted-foreground">Saved</span>
+                {notesSaveStatus === 'saving' && (
+                  <span className="text-xs text-muted-foreground/60">Saving...</span>
+                )}
+                {notesSaveStatus === 'saved' && (
+                  <span className="text-xs text-muted-foreground">Saved &#x2713;</span>
                 )}
                 <Button
                   variant="ghost"

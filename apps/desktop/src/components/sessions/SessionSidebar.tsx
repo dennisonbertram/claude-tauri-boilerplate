@@ -70,6 +70,19 @@ export function SessionSidebar({
   searchQuery = '',
   onSearchQueryChange,
 }: SessionSidebarProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
       {/* Section header */}
@@ -88,6 +101,7 @@ export function SessionSidebar({
       </div>
       <div className="p-3">
         <Input
+          ref={searchRef}
           data-testid="session-search-input"
           value={searchQuery}
           onChange={(event) => onSearchQueryChange?.(event.target.value)}
@@ -118,6 +132,10 @@ export function SessionSidebar({
                 ))}
               </div>
             ))
+          ) : searchQuery ? (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No sessions match &ldquo;{searchQuery}&rdquo;
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground">
               <MessageSquare className="h-8 w-8 mb-3 opacity-40" />

@@ -492,7 +492,12 @@ function HookCanvasInner({ hooksJson, hooksCanvasJson, onChange }: HookCanvasPro
         >
           <Background color="#374151" gap={16} />
           <Controls className="[&>button]:bg-neutral-800 [&>button]:border-neutral-700 [&>button]:text-white" />
-          <MiniMap className="!bg-neutral-900" />
+          <MiniMap
+            className="!bg-neutral-900"
+            nodeColor="#374151"
+            maskColor="rgba(0, 0, 0, 0.6)"
+            style={{ background: 'transparent' }}
+          />
         </ReactFlow>
       </div>
 

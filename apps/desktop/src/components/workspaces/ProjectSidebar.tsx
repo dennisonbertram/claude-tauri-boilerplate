@@ -46,6 +46,7 @@ export function ProjectSidebar({
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null);
   const [editingBranch, setEditingBranch] = useState('');
   const [workspaceStatus, setWorkspaceStatus] = useState<Record<string, GitStatus | null>>({});
+  const [copiedBranchId, setCopiedBranchId] = useState<string | null>(null);
 
   // Close confirmation if the project disappears (e.g. already deleted)
   useEffect(() => {
@@ -345,12 +346,15 @@ export function ProjectSidebar({
                                     type="button"
                                     className="rounded px-1 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                     aria-label={`Copy branch name for ${ws.name}`}
+                                    title="Copy git branch name to clipboard"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       void copyBranchName(ws.branch);
+                                      setCopiedBranchId(ws.id);
+                                      setTimeout(() => setCopiedBranchId(null), 1500);
                                     }}
                                   >
-                                    Copy
+                                    {copiedBranchId === ws.id ? 'Copied!' : 'Copy branch'}
                                   </button>
                                   <button
                                     type="button"

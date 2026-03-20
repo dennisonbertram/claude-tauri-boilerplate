@@ -18,6 +18,7 @@ import {
   type ProviderConfigFieldKey,
 } from '@claude-tauri/shared';
 import { IDE_CONFIGS, type IdeId } from '@/lib/ide-opener';
+import { EffortSelector } from '@/components/ui/EffortSelector';
 
 const MIN_THINKING_BUDGET_TOKENS = 1024;
 const MAX_THINKING_BUDGET_TOKENS = 32000;
@@ -605,21 +606,15 @@ function ModelTab({ settings, updateSettings }: TabProps) {
         label="Thinking Effort"
         description="Controls how much effort Claude puts into reasoning"
       >
-        <select
+        <EffortSelector
           data-testid="effort-select"
           value={settings.effort}
-          onChange={(e) =>
+          onChange={(val) =>
             updateSettings({
-              effort: e.target.value as AppSettings['effort'],
+              effort: val as AppSettings['effort'],
             })
           }
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="max">Max</option>
-        </select>
+        />
       </SettingField>
 
       <SettingField
@@ -825,21 +820,15 @@ function WorkflowsTab({ settings, updateSettings }: TabProps) {
         label="Code Review Effort"
         description="Thinking effort level for AI code reviews"
       >
-        <select
+        <EffortSelector
           data-testid="code-review-effort-select"
           value={settings.codeReviewEffort}
-          onChange={(e) =>
+          onChange={(val) =>
             updateSettings({
-              codeReviewEffort: e.target.value as AppSettings['codeReviewEffort'],
+              codeReviewEffort: val as AppSettings['codeReviewEffort'],
             })
           }
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="low">Low (fast, less thorough)</option>
-          <option value="medium">Medium</option>
-          <option value="high">High (slower, more thorough)</option>
-          <option value="max">Max (extended thinking)</option>
-        </select>
+        />
       </SettingField>
 
       <SettingField

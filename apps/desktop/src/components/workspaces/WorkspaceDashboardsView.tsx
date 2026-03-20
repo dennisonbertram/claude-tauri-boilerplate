@@ -417,10 +417,10 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
                 </div>
                 <div className="p-3">
                   {selected.currentRevisionId ? (
-                    <p className="text-xs text-muted-foreground italic">
+                    <p className="text-sm text-muted-foreground italic">
                       Spec stored in revision{' '}
                       <span className="font-mono">{selected.currentRevisionId.slice(0, 8)}</span>.
-                      Widget canvas rendering is coming in Phase 5.
+                      Dashboard canvas is in early preview. Spec is saved — interactive widget rendering is coming soon.
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">No spec generated yet.</p>
