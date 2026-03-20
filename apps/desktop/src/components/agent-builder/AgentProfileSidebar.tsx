@@ -23,6 +23,8 @@ export function AgentProfileSidebar({
   onDeleteProfile,
   loading,
 }: AgentProfileSidebarProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const sorted = [...profiles].sort((a, b) => {
     const orderA = a.sortOrder ?? 0;
     const orderB = b.sortOrder ?? 0;
@@ -30,11 +32,15 @@ export function AgentProfileSidebar({
     return a.name.localeCompare(b.name);
   });
 
+  const filtered = searchQuery.trim()
+    ? sorted.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : sorted;
+
   return (
     <div className="flex h-full w-[280px] shrink-0 flex-col min-h-0 overflow-hidden border-r border-border bg-sidebar">
       {/* Section header */}
       <div className="flex items-center justify-between px-3 py-2 border-b">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-xs font-semibold tracking-wide text-muted-foreground">
           Agent Profiles
         </span>
         <button
@@ -45,6 +51,17 @@ export function AgentProfileSidebar({
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
+      </div>
+
+      {/* Search input */}
+      <div className="px-2 py-1.5 border-b border-border">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search profiles..."
+          className="w-full h-7 rounded-md border border-input bg-transparent px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
       </div>
 
       {/* Profile list */}
@@ -68,12 +85,16 @@ export function AgentProfileSidebar({
                 </div>
               ))}
             </>
-          ) : sorted.length === 0 ? (
+          ) : filtered.length === 0 && searchQuery.trim() ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              No profiles match &quot;{searchQuery}&quot;
+            </p>
+          ) : filtered.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
               No agent profiles yet
             </p>
           ) : (
-            sorted.map((profile) => (
+            filtered.map((profile) => (
               <ProfileItem
                 key={profile.id}
                 profile={profile}
@@ -227,17 +248,28 @@ function ProfileItem({
           onClick={(e) => e.stopPropagation()}
         >
           {confirmDelete ? (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => handleMenuAction('confirm-delete')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleMenuAction('confirm-delete');
-              }}
-              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
-            >
-              Confirm Delete
-            </div>
+            <>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleMenuAction('confirm-delete')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleMenuAction('confirm-delete');
+                }}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
+              >
+                Confirm Delete
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => { setConfirmDelete(false); setMenuOpen(false); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { setConfirmDelete(false); setMenuOpen(false); }}}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+              >
+                Cancel
+              </div>
+            </>
           ) : (
             <>
               <div
