@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { UpdateAgentProfileRequest } from '@claude-tauri/shared';
 import { Input } from '@/components/ui/input';
 
@@ -7,6 +8,18 @@ interface GeneralTabProps {
 }
 
 export function GeneralTab({ draft, onChange }: GeneralTabProps) {
+  const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (!colorPopoverOpen) return;
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-color-popover]')) setColorPopoverOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [colorPopoverOpen]);
+
   return (
     <div className="space-y-5">
       {/* Name */}
@@ -17,7 +30,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         <Input
           value={draft.name ?? ''}
           onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="My Agent Profile"
+          placeholder="Enter profile name..."
         />
       </div>
 
@@ -62,12 +75,29 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
             Color
           </label>
           <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={draft.color || '#6b7280'}
-              onChange={(e) => onChange({ color: e.target.value })}
-              className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent"
-            />
+            <div className="relative" data-color-popover>
+              <button
+                type="button"
+                onClick={() => setColorPopoverOpen(o => !o)}
+                className="h-8 w-8 shrink-0 rounded border border-border cursor-pointer transition-transform hover:scale-105"
+                style={{ backgroundColor: draft.color || '#6b7280' }}
+                title="Choose color"
+              />
+              {colorPopoverOpen && (
+                <div className="absolute top-9 left-0 z-50 p-2 rounded-lg border border-border bg-popover shadow-lg grid grid-cols-6 gap-1">
+                  {['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#6b7280','#1e293b','#ffffff','#000000'].map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { onChange({ color: c }); setColorPopoverOpen(false); }}
+                      className="h-6 w-6 rounded cursor-pointer border border-border/50 hover:scale-110 transition-transform"
+                      style={{ backgroundColor: c }}
+                      title={c}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
             <Input
               value={draft.color ?? '#6b7280'}
               onChange={(e) => onChange({ color: e.target.value })}
@@ -76,7 +106,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Hex color for the accent bar
+            Click the swatch to choose a preset color, or enter a hex value
           </p>
         </div>
       </div>
@@ -103,24 +133,6 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         </div>
       </div>
 
-      {/* Sort Order */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">
-          Sort Order
-        </label>
-        <Input
-          type="number"
-          value={draft.sortOrder ?? 0}
-          onChange={(e) =>
-            onChange({ sortOrder: parseInt(e.target.value, 10) || 0 })
-          }
-          placeholder="0"
-          className="w-24"
-        />
-        <p className="text-xs text-muted-foreground mt-1">
-          Lower numbers appear first in the sidebar
-        </p>
-      </div>
     </div>
   );
 }
