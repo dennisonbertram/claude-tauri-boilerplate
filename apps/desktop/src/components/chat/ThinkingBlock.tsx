@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Brain } from 'lucide-react';
+import { CaretRight, CaretDown, Brain } from '@phosphor-icons/react';
 
 interface ThinkingBlockProps {
   text: string;
@@ -21,9 +21,9 @@ export function ThinkingBlock({ text, durationMs, defaultExpanded = false }: Thi
         aria-label="Thinking..."
       >
         {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <CaretDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <CaretRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         )}
         <Brain className="h-4 w-4 text-purple-400/70 shrink-0" />
         <span className="text-muted-foreground font-medium">Thinking...</span>

@@ -1,4 +1,4 @@
-import { MessageSquare, FolderOpen, Users, Bot, Settings, User } from 'lucide-react';
+import { ChatCircle, FolderOpen, UsersThree, Robot, Gear, User } from '@phosphor-icons/react';
 
 type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents';
 
@@ -10,10 +10,10 @@ interface ActivityBarProps {
   plan?: string;
 }
 
-const viewItems: { view: ActiveView; icon: typeof MessageSquare; label: string; title: string }[] = [
+const viewItems: { view: ActiveView; icon: typeof ChatCircle; label: string; title: string }[] = [
   {
     view: 'chat',
-    icon: MessageSquare,
+    icon: ChatCircle,
     label: 'Chat',
     title: 'Chat — Standalone conversations, quick questions and one-off tasks',
   },
@@ -25,13 +25,13 @@ const viewItems: { view: ActiveView; icon: typeof MessageSquare; label: string; 
   },
   {
     view: 'teams',
-    icon: Users,
+    icon: UsersThree,
     label: 'Teams',
     title: 'Teams — Multi-agent PR and team workflows',
   },
   {
     view: 'agents',
-    icon: Bot,
+    icon: Robot,
     label: 'Agents',
     title: 'Agents — Custom agent profiles and configurations',
   },
@@ -75,7 +75,7 @@ export function ActivityBar({ activeView, onSelectView, onOpenSettings, email }:
           onClick={onOpenSettings}
           className="w-12 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
         >
-          <Settings className="h-5 w-5" />
+          <Gear className="h-5 w-5" />
         </button>
         <div
           className="w-8 h-8 mx-auto rounded-full bg-muted flex items-center justify-center text-xs font-medium"

@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { Globe, Camera, Video, MousePointerClick, Type, ScrollText, TerminalSquare, FileText, CheckCircle2, Loader2, XCircle, ExternalLink } from 'lucide-react';
+import { Globe, Camera, VideoCamera, CursorClick, TextT, Scroll, TerminalWindow, FileText, CheckCircle, SpinnerGap, XCircle, ArrowSquareOut } from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   formatToolInputForDisplay,
@@ -17,9 +17,9 @@ type ConsoleEntry = { level: string; text: string };
 function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
-      return <Loader2 className="h-4 w-4 animate-spin text-blue-400" data-testid="status-running" />;
+      return <SpinnerGap className="h-4 w-4 animate-spin text-blue-400" data-testid="status-running" />;
     case 'complete':
-      return <CheckCircle2 className="h-4 w-4 text-green-400" data-testid="status-complete" />;
+      return <CheckCircle className="h-4 w-4 text-green-400" data-testid="status-complete" />;
     case 'error':
       return <XCircle className="h-4 w-4 text-red-400" data-testid="status-error" />;
   }
@@ -108,20 +108,20 @@ function getBrowserAction(name: string): {
   const lower = name.toLowerCase();
   if (lower.includes('screenshot')) return { label: 'Screenshot', Icon: Camera };
   if (lower.includes('gif') || lower.includes('video') || lower.includes('record')) {
-    return { label: 'Recording', Icon: Video };
+    return { label: 'Recording', Icon: VideoCamera };
   }
-  if (lower.includes('console')) return { label: 'Console', Icon: TerminalSquare };
+  if (lower.includes('console')) return { label: 'Console', Icon: TerminalWindow };
   if (lower.includes('page_text') || lower.includes('read_page') || lower.includes('snapshot')) {
     return { label: 'Read page', Icon: FileText };
   }
   if (lower.includes('navigate')) return { label: 'Navigate', Icon: Globe };
   if (lower.includes('click') || lower.includes('computer')) {
-    return { label: 'Interact', Icon: MousePointerClick };
+    return { label: 'Interact', Icon: CursorClick };
   }
   if (lower.includes('type') || lower.includes('fill') || lower.includes('form_input')) {
-    return { label: 'Type', Icon: Type };
+    return { label: 'Type', Icon: TextT };
   }
-  if (lower.includes('scroll')) return { label: 'Scroll', Icon: ScrollText };
+  if (lower.includes('scroll')) return { label: 'Scroll', Icon: Scroll };
   return { label: 'Browser automation', Icon: Globe };
 }
 
@@ -172,7 +172,7 @@ export function BrowserAutomationDisplay({ toolCall }: { toolCall: ToolCallState
           </span>
         )}
 
-        {inputUrl ? <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
+        {inputUrl ? <ArrowSquareOut className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
 
         <span className="ml-auto shrink-0">
           <StatusIndicator status={toolCall.status} />

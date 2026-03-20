@@ -1,4 +1,4 @@
-import { LayoutDashboard, Archive } from 'lucide-react';
+import { SquaresFour, Archive } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { Artifact } from '@claude-tauri/shared';
 
@@ -20,7 +20,7 @@ export function ArtifactBlock({ artifact, onArchive }: ArtifactBlockProps) {
       data-artifact-id={artifact.id}
     >
       <div className="mt-0.5 shrink-0 rounded-md bg-primary/10 p-1.5 text-primary">
-        <LayoutDashboard className="h-4 w-4" />
+        <SquaresFour className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

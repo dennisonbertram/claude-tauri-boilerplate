@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
   Globe,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-  ExternalLink,
-  ChevronDown,
-} from 'lucide-react';
+  ArrowSquareOut,
+  CaretDown,
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   parseToolInput,
@@ -70,14 +70,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -180,7 +180,7 @@ export function WebSearchDisplay({ toolCall }: WebSearchDisplayProps) {
                     </div>
                   )}
                 </div>
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <ArrowSquareOut className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
               </div>
             </div>
           ))}
@@ -192,7 +192,7 @@ export function WebSearchDisplay({ toolCall }: WebSearchDisplayProps) {
               onClick={() => setIsExpanded(true)}
               className="flex w-full items-center justify-center gap-1 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
-              <ChevronDown className="h-3 w-3" />
+              <CaretDown className="h-3 w-3" />
               {hiddenCount} more result{hiddenCount !== 1 ? 's' : ''}
             </button>
           )}

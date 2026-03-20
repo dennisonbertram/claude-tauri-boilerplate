@@ -24,13 +24,13 @@ import { useSettings } from '@/hooks/useSettings';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   ArrowDown,
-  Search,
-  Send,
+  MagnifyingGlass,
+  PaperPlaneRight,
   Copy,
   User,
-  Bot,
-  PanelRight,
-} from 'lucide-react';
+  Robot,
+  SidebarSimple,
+} from '@phosphor-icons/react';
 import type { ToolCallBlockProps } from './ToolCallBlock';
 
 export interface AssistantResponseMetadata {
@@ -537,7 +537,7 @@ export function MessageList({
       {searchOpen || normalizedSearchQuery ? (
         <div className="border-b border-border bg-background px-3 py-2 space-y-2">
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <MagnifyingGlass className="h-4 w-4 text-muted-foreground" />
             <Input
               ref={searchInputRef}
               data-testid="message-list-search-input"
@@ -602,7 +602,7 @@ export function MessageList({
                 onClick={() => onExportSummaryToNewChat(sessionSummary)}
                 className="h-7"
               >
-                <Send className="h-3.5 w-3.5" />
+                <PaperPlaneRight className="h-3.5 w-3.5" />
                 Export summary to new chat
               </Button>
             )}
@@ -727,7 +727,7 @@ export function MessageList({
             className="absolute right-0 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-l-sm bg-background/60 border border-r-0 border-border/40 hover:bg-muted/60 transition-colors"
             title={minimapOpen ? 'Hide outline' : 'Show outline'}
           >
-            <PanelRight className="h-3 w-3 text-muted-foreground" />
+            <SidebarSimple className="h-3 w-3 text-muted-foreground" />
           </button>
         )}
 
@@ -818,7 +818,7 @@ function MessageBubble({
       style={chatFontStyle}
     >
       <span className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
-        <Bot className="h-3 w-3" />
+        <Robot className="h-3 w-3" />
         Claude
       </span>
       <div className={chatFontClass} style={chatFontStyle}>

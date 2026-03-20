@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 
 export interface ChatError {
   type: 'api' | 'rate_limit' | 'auth' | 'network';

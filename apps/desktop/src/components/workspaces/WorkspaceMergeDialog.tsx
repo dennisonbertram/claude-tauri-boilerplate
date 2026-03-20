@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, GitMerge } from 'lucide-react';
+import { Warning, GitMerge } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 
 interface WorkspaceMergeDialogProps {
@@ -54,7 +54,7 @@ export function WorkspaceMergeDialog({ isOpen, mode, workspaceName, branch, base
           ) : (
             <>
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <Warning className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                 <p>
                   This will delete the worktree and branch for{' '}
                   <span className="font-medium text-foreground">{workspaceName}</span>.
@@ -75,7 +75,7 @@ export function WorkspaceMergeDialog({ isOpen, mode, workspaceName, branch, base
             </div>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+              <Warning className="h-4 w-4 text-amber-500 shrink-0" />
               <span>
                 Permanently discard workspace <span className="font-medium text-foreground">{workspaceName}</span> and branch <span className="font-mono text-foreground">{branch}</span>
               </span>

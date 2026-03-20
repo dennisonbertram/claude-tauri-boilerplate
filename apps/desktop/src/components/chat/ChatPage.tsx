@@ -45,7 +45,7 @@ import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import * as linearApi from '@/lib/linear-api';
 import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 import './gen-ui/defaultRenderers';
 import {
   getWorkflowPrompt,

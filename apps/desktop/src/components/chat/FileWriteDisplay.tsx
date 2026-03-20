@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
   FilePlus,
-  ChevronDown,
-  ChevronRight,
+  CaretDown,
+  CaretRight,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { detectLanguage, getDirectory } from './file-utils';
 import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
@@ -27,14 +27,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -121,7 +121,7 @@ export function FileWriteDisplay({ toolCall }: FileWriteDisplayProps) {
           className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           {copied ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+            <CheckCircle className="h-3.5 w-3.5 text-green-400" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
@@ -157,12 +157,12 @@ export function FileWriteDisplay({ toolCall }: FileWriteDisplayProps) {
             >
               {isExpanded ? (
                 <>
-                  <ChevronDown className="h-3 w-3" />
+                  <CaretDown className="h-3 w-3" />
                   Collapse
                 </>
               ) : (
                 <>
-                  <ChevronRight className="h-3 w-3" />
+                  <CaretRight className="h-3 w-3" />
                   Show all {lines.length} lines
                 </>
               )}

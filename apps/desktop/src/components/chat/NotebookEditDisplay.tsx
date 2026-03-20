@@ -1,9 +1,9 @@
 import {
   BookOpen,
-  Loader2,
-  CheckCircle2,
+  SpinnerGap,
+  CheckCircle,
   XCircle,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
 
@@ -24,14 +24,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />

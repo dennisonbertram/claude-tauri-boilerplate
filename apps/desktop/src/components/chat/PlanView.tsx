@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import {
-  ClipboardList,
+  ClipboardText,
   Check,
   X,
-  MessageSquare,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
+  ChatCircle,
+  CaretDown,
+  CaretRight,
+  SpinnerGap,
   Copy,
-  Share2,
+  ShareNetwork,
   ArrowRight,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import type { PlanState, PlanStatus } from '@/hooks/useStreamEvents';
 
@@ -97,15 +97,15 @@ export function PlanView({
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
         {isInputState ? (
-          <MessageSquare className="h-4 w-4 text-amber-400" />
+          <ChatCircle className="h-4 w-4 text-amber-400" />
         ) : plan.status === 'planning' ? (
-          <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+          <SpinnerGap className="h-4 w-4 text-blue-400 animate-spin" />
         ) : plan.status === 'approved' ? (
           <Check className="h-4 w-4 text-green-400" />
         ) : plan.status === 'rejected' ? (
           <X className="h-4 w-4 text-red-400" />
         ) : (
-          <ClipboardList className="h-4 w-4 text-purple-400" />
+          <ClipboardText className="h-4 w-4 text-purple-400" />
         )}
         <span
           data-testid="plan-status"
@@ -123,9 +123,9 @@ export function PlanView({
             aria-label={isCollapsed ? 'Expand plan' : 'Collapse plan'}
           >
             {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <CaretRight className="h-4 w-4" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <CaretDown className="h-4 w-4" />
             )}
           </button>
         )}
@@ -163,7 +163,7 @@ export function PlanView({
               Export to New Chat
             </Button>
             <Button variant="ghost" size="sm" onClick={onHandoff}>
-              <Share2 className="mr-1 h-3.5 w-3.5" />
+              <ShareNetwork className="mr-1 h-3.5 w-3.5" />
               Handoff
             </Button>
           </div>

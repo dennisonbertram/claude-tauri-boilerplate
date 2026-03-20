@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Wrench, GitBranch, Github, Loader2, FolderOpen } from 'lucide-react';
+import { Wrench, GitBranch, GithubLogo, SpinnerGap, FolderOpen } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { isTauri } from '@/lib/platform';
@@ -279,7 +279,7 @@ export function CreateWorkspaceDialog({
   const tabs: { id: Mode; label: string; icon: React.ReactNode }[] = [
     { id: 'manual', label: 'Manual', icon: <Wrench className="h-3.5 w-3.5" /> },
     { id: 'branch', label: 'Branch', icon: <GitBranch className="h-3.5 w-3.5" /> },
-    { id: 'github-issue', label: 'GitHub Issue', icon: <Github className="h-3.5 w-3.5" /> },
+    { id: 'github-issue', label: 'GitHub Issue', icon: <GithubLogo className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -338,7 +338,7 @@ export function CreateWorkspaceDialog({
                 </div>
                 {branchesLoading && (
                   <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Detecting branches...
+                    <SpinnerGap className="h-3 w-3 animate-spin" /> Detecting branches...
                   </p>
                 )}
                 {!branchesLoading && localBranches.length > 0 && (
@@ -414,7 +414,7 @@ export function CreateWorkspaceDialog({
                 <label className="text-sm font-medium text-foreground">Select Branch</label>
                 {branchLoading ? (
                   <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinnerGap className="h-4 w-4 animate-spin" />
                     Loading branches...
                   </div>
                 ) : branchError ? (
@@ -461,7 +461,7 @@ export function CreateWorkspaceDialog({
               <div className="max-h-48 overflow-auto rounded-md border border-border">
                 {issueLoading ? (
                   <div className="p-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinnerGap className="h-4 w-4 animate-spin" />
                     Loading issues...
                   </div>
                 ) : issueError ? (

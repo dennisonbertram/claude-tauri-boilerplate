@@ -8,13 +8,13 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  Terminal,
-  ChevronDown,
+  TerminalWindow,
+  CaretDown,
   Copy,
   Check,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react';
+  SpinnerGap,
+  Warning,
+} from '@phosphor-icons/react';
 import {
   parseAnsi,
   ANSI_CSS_COLORS,
@@ -220,7 +220,7 @@ export function BashDisplay({
     >
       {/* ── Header ───────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 border-b border-zinc-700">
-        <Terminal className="h-4 w-4 text-green-400 shrink-0" />
+        <TerminalWindow className="h-4 w-4 text-green-400 shrink-0" />
         <code
           data-testid="bash-command"
           className="text-sm font-mono flex-1 truncate text-zinc-100"
@@ -233,13 +233,13 @@ export function BashDisplay({
             data-testid="danger-warning"
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-red-900/50 text-red-300 border border-red-700/50"
           >
-            <AlertTriangle className="h-3 w-3" />
+            <Warning className="h-3 w-3" />
             caution
           </span>
         )}
 
         {isRunning && (
-          <Loader2
+          <SpinnerGap
             data-testid="running-spinner"
             className="h-4 w-4 animate-spin text-blue-400 shrink-0"
           />
@@ -275,7 +275,7 @@ export function BashDisplay({
           className="p-1 rounded hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-200"
           aria-label={expanded ? 'Collapse output' : 'Expand output'}
         >
-          <ChevronDown
+          <CaretDown
             className={`h-4 w-4 transition-transform ${
               expanded ? '' : '-rotate-90'
             }`}
@@ -289,7 +289,7 @@ export function BashDisplay({
           aria-label={isFullHeight ? 'Collapse output height' : 'Expand output height'}
           title={isFullHeight ? 'Collapse output height' : 'Expand output height'}
         >
-          <ChevronDown
+          <CaretDown
             className={`h-4 w-4 transition-transform ${
               isFullHeight ? 'rotate-180' : ''
             }`}
@@ -347,7 +347,7 @@ export function BashDisplay({
           {/* Background command indicator */}
           {isBackground && isRunning && (
             <div className="flex items-center gap-2 px-3 py-2 text-zinc-400">
-              <Loader2
+              <SpinnerGap
                 data-testid="background-spinner"
                 className="h-3 w-3 animate-spin"
               />

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Copy, CheckCircle2 } from 'lucide-react';
+import { Copy, CheckCircle } from '@phosphor-icons/react';
 
 export interface DiffViewerProps {
   oldString: string;
@@ -146,7 +146,7 @@ export function DiffViewer({ oldString, newString, filePath }: DiffViewerProps) 
         >
           {copied ? (
             <>
-              <CheckCircle2 className="h-3 w-3 text-green-400" />
+              <CheckCircle className="h-3 w-3 text-green-400" />
               <span>Copied!</span>
             </>
           ) : (

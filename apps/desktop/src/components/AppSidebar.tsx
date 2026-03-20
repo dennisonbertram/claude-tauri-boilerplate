@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import type { Session, Project, Workspace } from '@claude-tauri/shared';
 import {
-  MessageSquare,
+  ChatCircle,
   FolderOpen,
-  Users,
-  Bot,
+  UsersThree,
+  Robot,
   Plus,
-  Settings,
-  PanelLeft,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+  Gear,
+  SidebarSimple,
+  CaretLeft,
+  CaretRight,
+} from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 import { WorkspaceStatusBadge } from '@/components/workspaces/WorkspaceStatusBadge';
@@ -45,7 +45,7 @@ export interface AppSidebarProps {
   // User
   email?: string;
   plan?: string;
-  onOpenSettings: () => void;
+  onOpenGear: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -89,11 +89,11 @@ function groupSessionsByDate(sessions: Session[]): { bucket: DateBucket; session
 /*  Nav configuration                                                  */
 /* ------------------------------------------------------------------ */
 
-const navItems: { view: ActiveView; icon: typeof MessageSquare; label: string }[] = [
-  { view: 'chat', icon: MessageSquare, label: 'Chat' },
+const navItems: { view: ActiveView; icon: typeof ChatCircle; label: string }[] = [
+  { view: 'chat', icon: ChatCircle, label: 'Chat' },
   { view: 'workspaces', icon: FolderOpen, label: 'Projects' },
-  { view: 'teams', icon: Users, label: 'Teams' },
-  { view: 'agents', icon: Bot, label: 'Agents' },
+  { view: 'teams', icon: UsersThree, label: 'Teams' },
+  { view: 'agents', icon: Robot, label: 'Agents' },
 ];
 
 const navItemClass = (active: boolean) =>
@@ -126,7 +126,7 @@ export function AppSidebar({
   onToggleSidebar,
   email,
   plan,
-  onOpenSettings,
+  onOpenGear,
 }: AppSidebarProps) {
   const initial = email ? email.charAt(0).toUpperCase() : '?';
   const displayName = email ?? 'User';
@@ -147,7 +147,7 @@ export function AppSidebar({
           onClick={onToggleSidebar}
           className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground"
         >
-          <PanelLeft className="h-[18px] w-[18px]" />
+          <SidebarSimple className="h-[18px] w-[18px]" />
         </button>
         <button
           title="New Chat"
@@ -172,11 +172,11 @@ export function AppSidebar({
         ))}
         <div className="flex-1" />
         <button
-          title="Settings"
-          onClick={onOpenSettings}
+          title="Gear"
+          onClick={onOpenGear}
           className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground"
         >
-          <Settings className="h-[18px] w-[18px]" />
+          <Gear className="h-[18px] w-[18px]" />
         </button>
       </aside>
     );
@@ -191,14 +191,14 @@ export function AppSidebar({
           onClick={onToggleSidebar}
           className="rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors"
         >
-          <PanelLeft className="h-[18px] w-[18px]" />
+          <SidebarSimple className="h-[18px] w-[18px]" />
         </button>
         <div className="flex items-center gap-2">
           <button className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
-            <ChevronLeft className="h-4 w-4" />
+            <CaretLeft className="h-4 w-4" />
           </button>
           <button className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
-            <ChevronRight className="h-4 w-4" />
+            <CaretRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -276,7 +276,7 @@ export function AppSidebar({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 px-4 text-center text-muted-foreground">
-                  <MessageSquare className="h-6 w-6 mb-2 opacity-40" />
+                  <ChatCircle className="h-6 w-6 mb-2 opacity-40" />
                   <p className="text-sm font-medium mb-0.5">No conversations yet</p>
                   <p className="text-xs opacity-70">Start a conversation with Claude</p>
                 </div>
@@ -301,7 +301,7 @@ export function AppSidebar({
       <div className="p-3 border-t border-sidebar-border">
         <div
           className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors cursor-pointer"
-          onClick={onOpenSettings}
+          onClick={onOpenGear}
         >
           <div className="relative">
             <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center font-medium text-xs">
@@ -313,7 +313,7 @@ export function AppSidebar({
             <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate">{plan || 'Free'}</p>
           </div>
-          <Settings className="h-4 w-4 text-muted-foreground" />
+          <Gear className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
     </aside>

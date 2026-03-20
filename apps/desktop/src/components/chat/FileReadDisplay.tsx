@@ -1,14 +1,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   FileText,
-  ImageIcon,
-  ChevronDown,
-  ChevronRight,
+  Image,
+  CaretDown,
+  CaretRight,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { detectLanguage, isImageFile } from './file-utils';
 import { ImageViewer } from './ImageViewer';
@@ -32,14 +32,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -105,7 +105,7 @@ export function FileReadDisplay({ toolCall }: FileReadDisplayProps) {
     }
   }, [filePath]);
 
-  const HeaderIcon = isImage ? ImageIcon : FileText;
+  const HeaderIcon = isImage ? Image : FileText;
 
   return (
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
@@ -139,7 +139,7 @@ export function FileReadDisplay({ toolCall }: FileReadDisplayProps) {
           className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           {copied ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+            <CheckCircle className="h-3.5 w-3.5 text-green-400" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
@@ -177,12 +177,12 @@ export function FileReadDisplay({ toolCall }: FileReadDisplayProps) {
               >
                 {isExpanded ? (
                   <>
-                    <ChevronDown className="h-3 w-3" />
+                    <CaretDown className="h-3 w-3" />
                     Collapse
                   </>
                 ) : (
                   <>
-                    <ChevronRight className="h-3 w-3" />
+                    <CaretRight className="h-3 w-3" />
                     Show all {lines.length} lines
                   </>
                 )}

@@ -5,7 +5,7 @@ import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
 import { copyTextToClipboard } from '@/lib/clipboard';
 import * as api from '@/lib/workspace-api';
 import type { GitStatus } from '@claude-tauri/shared';
-import { FolderOpen, Plus } from 'lucide-react';
+import { FolderOpen, Plus } from '@phosphor-icons/react';
 import { getProjectDisplayName } from '@/lib/project-display';
 
 interface ProjectSidebarProps {

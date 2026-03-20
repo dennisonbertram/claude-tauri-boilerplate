@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, ArrowCounterClockwise } from '@phosphor-icons/react';
 
 interface ImageViewerProps {
   src: string;
@@ -81,21 +81,21 @@ export function ImageViewer({ src, alt }: ImageViewerProps) {
               aria-label="Zoom out"
               className="rounded-full bg-white/10 hover:bg-white/20 p-2 text-white transition-colors"
             >
-              <ZoomOut className="h-5 w-5" />
+              <MagnifyingGlassMinus className="h-5 w-5" />
             </button>
             <button
               onClick={resetZoom}
               aria-label="Reset zoom"
               className="rounded-full bg-white/10 hover:bg-white/20 p-2 text-white transition-colors"
             >
-              <RotateCcw className="h-5 w-5" />
+              <ArrowCounterClockwise className="h-5 w-5" />
             </button>
             <button
               onClick={zoomIn}
               aria-label="Zoom in"
               className="rounded-full bg-white/10 hover:bg-white/20 p-2 text-white transition-colors"
             >
-              <ZoomIn className="h-5 w-5" />
+              <MagnifyingGlassPlus className="h-5 w-5" />
             </button>
             <button
               onClick={close}

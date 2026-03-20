@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { AgentProfile } from '@claude-tauri/shared';
-import { Plus } from 'lucide-react';
+import { Plus } from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 

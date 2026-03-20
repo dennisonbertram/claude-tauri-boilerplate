@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import {
   Globe,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+  ArrowSquareOut,
+  CaretDown,
+  CaretUp,
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   parseToolInput,
@@ -32,14 +32,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -79,7 +79,7 @@ function CopyUrlButton({ url }: { url: string }) {
       aria-label="Copy URL"
     >
       {copied ? (
-        <CheckCircle2 className="h-3 w-3 text-green-400" />
+        <CheckCircle className="h-3 w-3 text-green-400" />
       ) : (
         <Copy className="h-3 w-3" />
       )}
@@ -127,7 +127,7 @@ export function WebFetchDisplay({ toolCall }: WebFetchDisplayProps) {
             Blocked URL
           </span>
         )}
-        <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+        <ArrowSquareOut className="h-3 w-3 text-muted-foreground shrink-0" />
         {url ? <CopyUrlButton url={url} /> : null}
 
         <span className="ml-auto shrink-0">
@@ -171,12 +171,12 @@ export function WebFetchDisplay({ toolCall }: WebFetchDisplayProps) {
             >
               {isContentExpanded ? (
                 <>
-                  <ChevronUp className="h-3 w-3" />
+                  <CaretUp className="h-3 w-3" />
                   Show less
                 </>
               ) : (
                 <>
-                  <ChevronDown className="h-3 w-3" />
+                  <CaretDown className="h-3 w-3" />
                   Show full content
                 </>
               )}

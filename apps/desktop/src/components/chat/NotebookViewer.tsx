@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
+import { CaretDown, CaretRight, BookOpen } from '@phosphor-icons/react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 // --- Jupyter notebook types ---
@@ -202,9 +202,9 @@ function NotebookCell({ cell, index }: { cell: NotebookCell; index: number }) {
         className="flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-muted/50 transition-colors bg-muted/20"
       >
         {isExpanded ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+          <CaretDown className="h-3 w-3 text-muted-foreground shrink-0" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+          <CaretRight className="h-3 w-3 text-muted-foreground shrink-0" />
         )}
 
         <span className={`text-xs font-medium ${cellTypeColor}`}>

@@ -34,7 +34,7 @@ export function AgentBuilderView() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-1 min-h-0 min-w-0">
       <AgentProfileSidebar
         profiles={profiles}
         selectedProfileId={selectedProfileId}

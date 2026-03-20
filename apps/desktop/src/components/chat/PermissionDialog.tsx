@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import {
   Shield,
-  ShieldAlert,
+  ShieldWarning,
   ShieldCheck,
-  Terminal,
-  Pencil,
+  TerminalWindow,
+  PencilSimple,
   FileText,
   Globe,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import type { StreamPermissionRequest, RiskLevel } from '@claude-tauri/shared';
 
@@ -40,7 +40,7 @@ const riskBgClass: Record<RiskLevel, string> = {
 function RiskIcon({ riskLevel }: { riskLevel: RiskLevel }) {
   switch (riskLevel) {
     case 'high':
-      return <ShieldAlert className="h-5 w-5 text-red-400" />;
+      return <ShieldWarning className="h-5 w-5 text-red-400" />;
     case 'medium':
       return <Shield className="h-5 w-5 text-yellow-400" />;
     case 'low':
@@ -52,11 +52,11 @@ function RiskIcon({ riskLevel }: { riskLevel: RiskLevel }) {
 function ToolIcon({ name }: { name: string }) {
   switch (name) {
     case 'Bash':
-      return <Terminal className="h-4 w-4" />;
+      return <TerminalWindow className="h-4 w-4" />;
     case 'Write':
     case 'Edit':
     case 'NotebookEdit':
-      return <Pencil className="h-4 w-4" />;
+      return <PencilSimple className="h-4 w-4" />;
     default:
       if (name.toLowerCase().includes('browser') || name.toLowerCase().includes('chrome')) {
         return <Globe className="h-4 w-4" />;

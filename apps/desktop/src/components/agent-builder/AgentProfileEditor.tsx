@@ -222,9 +222,10 @@ export function AgentProfileEditor({
         </div>
       )}
 
-      {/* Tab bar (horizontally scrollable) */}
+      {/* Tab bar — equal-width tabs */}
       <div
-        className="flex border-b border-border overflow-x-auto scrollbar-none"
+        className="grid border-b border-border"
+        style={{ gridTemplateColumns: `repeat(${TABS.length}, 1fr)` }}
         role="tablist"
       >
         {TABS.map((tab) => (
@@ -233,7 +234,7 @@ export function AgentProfileEditor({
             role="tab"
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`shrink-0 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`px-2 py-2 text-xs font-medium text-center transition-colors whitespace-nowrap truncate ${
               activeTab === tab.id
                 ? 'border-b-2 border-primary text-foreground'
                 : 'text-muted-foreground hover:text-foreground'

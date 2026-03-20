@@ -2,16 +2,16 @@ import { useState, useCallback } from 'react';
 import {
   FolderOpen,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
   FileText,
-  FileCode2,
-  FileJson,
-  FileType,
+  FileCode,
+  FileJs,
+  FileDoc,
   Image,
   File,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   parseToolInput,
@@ -29,7 +29,7 @@ interface GlobInput {
 }
 
 /**
- * Get a Lucide icon component based on file extension.
+ * Get a Phosphor icon component based on file extension.
  */
 function getFileIcon(filePath: string): React.ElementType {
   const ext = filePath.split('.').pop()?.toLowerCase() || '';
@@ -43,11 +43,11 @@ function getFileIcon(filePath: string): React.ElementType {
   const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp']);
   const docExtensions = new Set(['md', 'mdx', 'txt', 'rst', 'doc', 'pdf']);
 
-  if (codeExtensions.has(ext)) return FileCode2;
-  if (markupExtensions.has(ext)) return FileCode2;
-  if (dataExtensions.has(ext)) return FileJson;
+  if (codeExtensions.has(ext)) return FileCode;
+  if (markupExtensions.has(ext)) return FileCode;
+  if (dataExtensions.has(ext)) return FileJs;
   if (imageExtensions.has(ext)) return Image;
-  if (docExtensions.has(ext)) return FileType;
+  if (docExtensions.has(ext)) return FileDoc;
 
   return File;
 }
@@ -67,14 +67,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -114,7 +114,7 @@ function CopyPathButton({ path }: { path: string }) {
       aria-label="Copy file path"
     >
       {copied ? (
-        <CheckCircle2 className="h-3 w-3 text-green-400" />
+        <CheckCircle className="h-3 w-3 text-green-400" />
       ) : (
         <Copy className="h-3 w-3" />
       )}

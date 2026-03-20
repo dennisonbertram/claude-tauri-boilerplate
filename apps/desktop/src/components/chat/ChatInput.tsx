@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo, type FormEvent, type KeyboardEv
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutBadge } from '@/components/ShortcutBadge';
-import { X, FileText, Paperclip } from 'lucide-react';
+import { X, FileText, Paperclip } from '@phosphor-icons/react';
 import type { Command } from '@/hooks/useCommands';
 import { isImageFile } from './file-utils';
 import { useSettings } from '@/hooks/useSettings';

@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import {
-  Search,
+  MagnifyingGlass,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-  ChevronDown,
-  ChevronRight,
+  CaretDown,
+  CaretRight,
   FileText,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import {
   parseToolInput,
@@ -89,14 +89,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -136,7 +136,7 @@ function CopyPathButton({ path }: { path: string }) {
       aria-label="Copy file path"
     >
       {copied ? (
-        <CheckCircle2 className="h-3 w-3 text-green-400" />
+        <CheckCircle className="h-3 w-3 text-green-400" />
       ) : (
         <Copy className="h-3 w-3" />
       )}
@@ -158,7 +158,7 @@ export function GrepDisplay({ toolCall }: GrepDisplayProps) {
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <Search className="h-4 w-4 text-purple-400 shrink-0" />
+        <MagnifyingGlass className="h-4 w-4 text-purple-400 shrink-0" />
         <span className="font-medium text-foreground">Grep</span>
         <code
           data-testid="grep-pattern"
@@ -241,9 +241,9 @@ function FileGroupView({ group }: { group: FileGroup }) {
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-muted/30 transition-colors"
       >
         {isExpanded ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+          <CaretDown className="h-3 w-3 text-muted-foreground shrink-0" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+          <CaretRight className="h-3 w-3 text-muted-foreground shrink-0" />
         )}
         <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
         <span className="font-mono text-xs text-foreground/90 truncate">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users } from 'lucide-react';
+import { UsersThree } from '@phosphor-icons/react';
 import { useTeams } from '@/hooks/useTeams';
 import { TeamCreationDialog } from './TeamCreationDialog';
 import { TeamWorkspace } from './TeamWorkspace';
@@ -55,7 +55,7 @@ export function TeamsView() {
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {teams.length === 0 ? (
           <div className="flex flex-col items-center py-12 space-y-3">
-            <Users className="h-8 w-8 text-muted-foreground" />
+            <UsersThree className="h-8 w-8 text-muted-foreground" />
             <div className="space-y-1 text-center">
               <p className="text-sm font-medium text-foreground">No teams yet</p>
               <p className="text-xs text-muted-foreground">

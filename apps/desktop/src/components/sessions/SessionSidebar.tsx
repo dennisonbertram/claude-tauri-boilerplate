@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Session } from '@claude-tauri/shared';
-import { MessageSquare, Plus } from 'lucide-react';
+import { ChatCircle, Plus } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -138,7 +138,7 @@ export function SessionSidebar({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
+              <ChatCircle className="h-8 w-8 mb-3 opacity-40" />
               <p className="text-sm font-medium mb-1">No conversations yet</p>
               <p className="text-xs opacity-70">Start a conversation with Claude</p>
             </div>

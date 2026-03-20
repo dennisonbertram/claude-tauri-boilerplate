@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import {
-  ChevronRight,
-  ChevronDown,
-  Terminal,
+  CaretRight,
+  CaretDown,
+  TerminalWindow,
   FileText,
-  Pencil,
-  Search,
+  PencilSimple,
+  MagnifyingGlass,
   FolderOpen,
   Globe,
-  CheckCircle2,
+  CheckCircle,
   XCircle,
-  Loader2,
+  SpinnerGap,
   Wrench,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { getToolRenderer } from './gen-ui/registry';
 import {
@@ -29,14 +29,14 @@ export interface ToolCallBlockProps {
 
 function getToolIcon(name: string) {
   const iconMap: Record<string, React.ElementType> = {
-    Bash: Terminal,
+    Bash: TerminalWindow,
     Read: FileText,
-    Edit: Pencil,
-    Write: Pencil,
-    Grep: Search,
+    Edit: PencilSimple,
+    Write: PencilSimple,
+    Grep: MagnifyingGlass,
     Glob: FolderOpen,
     WebFetch: Globe,
-    WebSearch: Globe,
+    WebMagnifyingGlass: Globe,
   };
   if (name.toLowerCase().includes('browser') || name.toLowerCase().includes('chrome')) {
     return Globe;
@@ -48,14 +48,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -82,9 +82,9 @@ function GenericToolFallback({ toolCall }: ToolCallBlockProps) {
         aria-label={toolCall.name}
       >
         {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="font-medium text-foreground">{sanitizeDisplayText(toolCall.name)}</span>

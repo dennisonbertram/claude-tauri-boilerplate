@@ -40,6 +40,15 @@ function getDirectoryLabel(path: string): string {
 export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings, onTaskComplete }: WorkspacePanelProps) {
   const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
+
+  // Stable memoized wrapper — avoids creating a new arrow function on every
+  // render, which would cascade re-renders all the way into ChatPage.
+  const handleTaskComplete = useCallback(
+    (params: { status: 'completed' | 'failed' | 'stopped'; summary: string }) => {
+      onTaskComplete?.({ ...params, branch: workspace.branch, workspaceName: workspace.name });
+    },
+    [onTaskComplete, workspace.branch, workspace.name]
+  );
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
@@ -395,11 +404,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
               projectId={workspace.projectId}
               additionalDirectories={additionalDirectories}
               onOpenWorkspacePaths={handleOpenWorkspacePaths}
-              onTaskComplete={onTaskComplete ? (params) => onTaskComplete({
-                ...params,
-                branch: workspace.branch,
-                workspaceName: workspace.name,
-              }) : undefined}
+              onTaskComplete={handleTaskComplete}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">

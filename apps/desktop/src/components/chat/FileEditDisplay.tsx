@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import {
-  Pencil,
+  PencilSimple,
   Copy,
-  CheckCircle2,
-  Loader2,
+  CheckCircle,
+  SpinnerGap,
   XCircle,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { DiffViewer } from './DiffViewer';
 import { parseToolInput, sanitizeDisplayText } from './gen-ui/toolData';
@@ -25,14 +25,14 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
   switch (status) {
     case 'running':
       return (
-        <Loader2
+        <SpinnerGap
           className="h-4 w-4 animate-spin text-blue-400"
           data-testid="status-running"
         />
       );
     case 'complete':
       return (
-        <CheckCircle2
+        <CheckCircle
           className="h-4 w-4 text-green-400"
           data-testid="status-complete"
         />
@@ -74,7 +74,7 @@ export function FileEditDisplay({ toolCall }: FileEditDisplayProps) {
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <Pencil className="h-4 w-4 text-amber-400 shrink-0" />
+        <PencilSimple className="h-4 w-4 text-amber-400 shrink-0" />
         <span className="font-medium text-foreground">Edit</span>
         <span className="font-mono text-xs text-muted-foreground truncate">
           {filePath}
@@ -104,7 +104,7 @@ export function FileEditDisplay({ toolCall }: FileEditDisplayProps) {
           className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           {copied ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+            <CheckCircle className="h-3.5 w-3.5 text-green-400" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
