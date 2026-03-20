@@ -6,10 +6,10 @@ interface ModelTabProps {
   onChange: (updates: Partial<UpdateAgentProfileRequest>) => void;
 }
 
-const EFFORT_OPTIONS: Array<{ value: 'low' | 'medium' | 'high'; label: string }> = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
+const EFFORT_OPTIONS: Array<{ value: 'low' | 'medium' | 'high'; label: string; description: string }> = [
+  { value: 'low', label: 'Low', description: 'Faster responses, uses fewer tokens. Good for simple tasks.' },
+  { value: 'medium', label: 'Medium', description: 'Balanced performance. Recommended for most tasks.' },
+  { value: 'high', label: 'High', description: 'Deep reasoning, more tokens used. Best for complex problems.' },
 ];
 
 const MIN_THINKING_BUDGET = 1000;
@@ -31,10 +31,10 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
           onChange={(e) => onChange({ model: e.target.value })}
           className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none dark:bg-input/30"
         >
-          <option value="">Default (use session model)</option>
+          <option value="" title="Uses the session's configured model">Default</option>
           {AVAILABLE_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label} ({m.id})
+            <option key={m.id} value={m.id} title={m.id}>
+              {m.label}
             </option>
           ))}
         </select>
@@ -66,15 +66,17 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
           ))}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Controls how much effort Claude puts into responses. Higher effort
-          uses more tokens.
+          {EFFORT_OPTIONS.find(o => o.value === currentEffort)?.description}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          The Effort setting automatically adjusts the thinking budget. Override the budget manually below.
         </p>
       </div>
 
       {/* Thinking Budget Tokens */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-1.5">
-          Thinking Budget Tokens
+          Extended Thinking Budget
         </label>
         <div className="flex items-center gap-3">
           <input
@@ -88,6 +90,7 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
                 thinkingBudgetTokens: parseInt(e.target.value, 10),
               })
             }
+            aria-label="Extended thinking budget in tokens"
             className="flex-1 h-2 rounded-full accent-primary cursor-pointer"
           />
           <input
