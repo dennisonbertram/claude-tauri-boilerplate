@@ -1,12 +1,10 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { AuthStatus } from '@claude-tauri/shared';
+import { buildSubscriptionSdkEnv } from './sdk-env';
 
 const AUTH_TIMEOUT_MS = 10_000;
 
 export async function getAuthStatus(): Promise<AuthStatus> {
-  const savedKey = process.env.ANTHROPIC_API_KEY;
-  process.env.ANTHROPIC_API_KEY = '';
-
   try {
     const result = await Promise.race([
       detectAuth(),
@@ -18,15 +16,16 @@ export async function getAuthStatus(): Promise<AuthStatus> {
       authenticated: false,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
-  } finally {
-    process.env.ANTHROPIC_API_KEY = savedKey ?? '';
   }
 }
 
 async function detectAuth(): Promise<AuthStatus> {
   const stream = query({
     prompt: 'OK',
-    options: { maxTurns: 1 },
+    options: {
+      maxTurns: 1,
+      env: buildSubscriptionSdkEnv(),
+    },
   });
 
   for await (const event of stream) {

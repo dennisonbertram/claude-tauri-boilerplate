@@ -17,9 +17,10 @@ const providerEnvKeys = [
   'RUNTIME_TOKEN',
 ];
 
-function captureProviderEnv(): EnvSnapshot {
+function captureProviderEnv(source: Record<string, unknown> | undefined): EnvSnapshot {
   return providerEnvKeys.reduce((acc, key) => {
-    acc[key] = process.env[key];
+    const value = source?.[key];
+    acc[key] = typeof value === 'string' ? value : undefined;
     return acc;
   }, {} as EnvSnapshot);
 }
@@ -38,8 +39,8 @@ function resetProviderEnv() {
 let envAtQueryCall: EnvSnapshot | undefined;
 
 // Mock the claude-agent-sdk before importing anything that uses it
-const mockQuery = mock(() => {
-  envAtQueryCall = captureProviderEnv();
+const mockQuery = mock((args?: { options?: { env?: Record<string, unknown> } }) => {
+  envAtQueryCall = captureProviderEnv(args?.options?.env);
   return (async function* () {
     yield {
       type: 'system',
@@ -1054,9 +1055,9 @@ describe('Chat Route - POST /chat', () => {
   });
 
   test('passes bedrock provider config to the SDK environment', async () => {
-    mockQuery.mockImplementation(() =>
+    mockQuery.mockImplementation((args) =>
       (async function* () {
-        envAtQueryCall = captureProviderEnv();
+        envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
         yield {
           type: 'system',
           subtype: 'init',
@@ -1097,9 +1098,9 @@ describe('Chat Route - POST /chat', () => {
   });
 
   test('passes vertex provider config to the SDK environment', async () => {
-    mockQuery.mockImplementation(() =>
+    mockQuery.mockImplementation((args) =>
       (async function* () {
-        envAtQueryCall = captureProviderEnv();
+        envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
         yield {
           type: 'system',
           subtype: 'init',
@@ -1144,9 +1145,9 @@ describe('Chat Route - POST /chat', () => {
   });
 
   test('passes custom provider config to the SDK environment', async () => {
-    mockQuery.mockImplementation(() =>
+    mockQuery.mockImplementation((args) =>
       (async function* () {
-        envAtQueryCall = captureProviderEnv();
+        envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
         yield {
           type: 'system',
           subtype: 'init',
@@ -1188,9 +1189,9 @@ describe('Chat Route - POST /chat', () => {
   });
 
   test('passes runtimeEnv values to the SDK environment and does not leak default API key', async () => {
-    mockQuery.mockImplementation(() =>
+    mockQuery.mockImplementation((args) =>
       (async function* () {
-        envAtQueryCall = captureProviderEnv();
+        envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
         yield {
           type: 'system',
           subtype: 'init',
@@ -1258,9 +1259,9 @@ describe('Chat Route - POST /chat', () => {
 
   test('restores custom runtime env after each request', async () => {
     process.env.RUNTIME_TOKEN = 'initial';
-    mockQuery.mockImplementation(() =>
+    mockQuery.mockImplementation((args) =>
       (async function* () {
-        envAtQueryCall = captureProviderEnv();
+        envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
         yield {
           type: 'system',
           subtype: 'init',

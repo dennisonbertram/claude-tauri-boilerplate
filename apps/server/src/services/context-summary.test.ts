@@ -49,8 +49,8 @@ describe('generateContextSummary', () => {
   });
 
   test('clears ANTHROPIC_API_KEY during query call', async () => {
-    const queryFn = (_opts: unknown) => {
-      envAtQueryCall = process.env.ANTHROPIC_API_KEY;
+    const queryFn = (opts: any) => {
+      envAtQueryCall = opts?.options?.env?.ANTHROPIC_API_KEY;
       return (async function* () {
         yield { type: 'result', subtype: 'success', result: 'test' };
       })();
@@ -68,8 +68,9 @@ describe('generateContextSummary', () => {
   });
 
   test('restores ANTHROPIC_API_KEY even when query throws', async () => {
-    const queryFn = (_opts: unknown) =>
+    const queryFn = (opts: any) =>
       (async function* () {
+        envAtQueryCall = opts?.options?.env?.ANTHROPIC_API_KEY;
         throw new Error('SDK error');
         yield; // unreachable but needed for generator type
       })();

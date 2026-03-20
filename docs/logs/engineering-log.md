@@ -25,6 +25,14 @@ Each entry follows this format:
 **Regression Test**: Not applicable yet — implementation work is tracked per issue.
 **Related Issue**: GitHub issues `#231`, `#232`, `#233`
 
+### 2026-03-19: Runtime hardening pass implemented for env isolation, safe logging, and workspace path boundaries
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Implemented the top-three runtime hardening pass. Request-scoped Claude/provider/auth env handling now uses SDK `options.env` snapshots instead of mutating global `process.env`. Chat logging was reduced to allowlisted metadata, with raw prompt/body/context logging removed and sidecar stdout/stderr forwarding gated behind explicit redacted debug logging. Workspace file access now uses a shared documented allowlist policy: `additionalDirectories` are restricted to the project repo root and workspace worktree root, while attachment references are limited to existing files inside the workspace root, including canonical/symlink escape rejection. Also split auto-namer implementation into `auto-namer-impl.ts` so its direct tests remain stable when route-level tests mock the public service module.
+**Regression Test**: `apps/server/src/services/claude.test.ts`, `apps/server/src/routes/auth.test.ts`, `apps/server/src/services/auto-namer.test.ts`, `apps/server/src/services/context-summary.test.ts`, `apps/server/src/routes/workspaces.test.ts`, `apps/server/src/routes/chat-workspace.test.ts`, `apps/server/src/utils/paths.test.ts`
+**Related Issue**: GitHub issues `#231`, `#232`, `#233`
+
 ---
 
 ### 2026-03-19: ISSUE-007 — Slug-like project names displayed in Workspaces sidebar

@@ -13,7 +13,12 @@ import {
 import { worktreeOrchestrator } from '../services/worktree-orchestrator';
 import { worktreeService } from '../services/worktree';
 import type { WorkspaceStatus } from '@claude-tauri/shared';
-import { canonicalizePath } from '../utils/paths';
+import {
+  buildAdditionalDirectoryPathPolicy,
+  canonicalizePath,
+  canonicalizeRoots,
+  isPathWithinAnyRoot,
+} from '../utils/paths';
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
@@ -50,7 +55,9 @@ const workspaceUpdateSchema = z.object({
 
 async function normalizeAdditionalDirectories(
   input: string[] | undefined,
-  workspaceRoot: string
+  workspaceRoot: string,
+  allowedRoots: string[],
+  errorMessage: string
 ): Promise<string[] | undefined> {
   if (input === undefined) return undefined;
 
@@ -61,6 +68,9 @@ async function normalizeAdditionalDirectories(
 
     const resolved = isAbsolute(trimmed) ? trimmed : resolve(workspaceRoot, trimmed);
     const canonical = await canonicalizePath(resolved);
+    if (!isPathWithinAnyRoot(canonical, allowedRoots)) {
+      throw new Error(errorMessage);
+    }
     normalized.add(canonical);
   }
 
@@ -111,11 +121,24 @@ export function createWorkspaceRouter(db: Database) {
 
     let additionalDirectories: string[] = [];
     try {
+      const pathPolicy = buildAdditionalDirectoryPathPolicy(project.repoPathCanonical);
+      const allowedRoots = await canonicalizeRoots(pathPolicy.allowedRoots);
       additionalDirectories =
-        (await normalizeAdditionalDirectories(parsed.data.additionalDirectories, project.repoPathCanonical)) ?? [];
-    } catch {
+        (await normalizeAdditionalDirectories(
+          parsed.data.additionalDirectories,
+          project.repoPathCanonical,
+          allowedRoots,
+          pathPolicy.errorMessage
+        )) ?? [];
+    } catch (error) {
       return c.json(
-        { error: 'Invalid additionalDirectories payload', code: 'VALIDATION_ERROR' },
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Invalid additionalDirectories payload',
+          code: 'VALIDATION_ERROR',
+        },
         400
       );
     }
@@ -204,14 +227,35 @@ export function createFlatWorkspaceRouter(db: Database) {
 
     return withWorkspaceOperationLock(id, async () => {
       let additionalDirectories: string[] | undefined;
+      const project = getProject(db, workspace.projectId);
+      if (!project) {
+        return c.json(
+          { error: 'Project not found', code: 'NOT_FOUND' },
+          404
+        );
+      }
+
       try {
+        const pathPolicy = buildAdditionalDirectoryPathPolicy(
+          project.repoPathCanonical,
+          workspace.worktreePathCanonical
+        );
+        const allowedRoots = await canonicalizeRoots(pathPolicy.allowedRoots);
         additionalDirectories = await normalizeAdditionalDirectories(
           parsed.data.additionalDirectories,
-          workspace.worktreePath
+          workspace.worktreePath,
+          allowedRoots,
+          pathPolicy.errorMessage
         );
-      } catch {
+      } catch (error) {
         return c.json(
-          { error: 'Invalid additionalDirectories payload', code: 'VALIDATION_ERROR' },
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Invalid additionalDirectories payload',
+            code: 'VALIDATION_ERROR',
+          },
           400
         );
       }

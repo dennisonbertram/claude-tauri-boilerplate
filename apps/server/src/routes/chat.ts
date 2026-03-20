@@ -23,6 +23,7 @@ import {
   createSession,
   getSession,
   getMessages,
+  getProject,
   getWorkspace,
   getSessionForWorkspace,
   getAgentProfile,
@@ -34,6 +35,13 @@ import {
   setSessionLinearIssue,
 } from '../db';
 import type { ChatRequest, StreamEvent, StreamError } from '@claude-tauri/shared';
+import {
+  buildAdditionalDirectoryPathPolicy,
+  buildWorkspaceAttachmentPathPolicy,
+  canonicalizePath,
+  canonicalizeRoots,
+  isPathWithinAnyRoot,
+} from '../utils/paths';
 
 const providerConfigShape = Object.fromEntries(
   PROVIDER_CONFIG_FIELD_KEYS.map((key) => [key, z.string().optional()])
@@ -96,6 +104,88 @@ const CLIENT_SLASH_COMMANDS = new Set([
   'add-dir',
 ]);
 
+/**
+ * Logging policy: default chat logs only include allowlisted metadata.
+ * Prompt text, injected context, attachment refs, runtime env values,
+ * provider config values, workspace notes, and instruction contents never
+ * get logged in plaintext.
+ */
+const CHAT_DEBUG_LOGS_ENABLED = process.env.CLAUDE_TAURI_DEBUG_LOGS === '1';
+
+function logChat(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  fields?: Record<string, unknown>
+) {
+  const prefix = `[chat] ${message}`;
+
+  if (level === 'warn') {
+    if (fields) {
+      console.warn(prefix, fields);
+      return;
+    }
+    console.warn(prefix);
+    return;
+  }
+
+  if (level === 'error') {
+    if (fields) {
+      console.error(prefix, fields);
+      return;
+    }
+    console.error(prefix);
+    return;
+  }
+
+  if (fields) {
+    console.log(prefix, fields);
+    return;
+  }
+
+  console.log(prefix);
+}
+
+function logChatDebug(message: string, fields?: Record<string, unknown>) {
+  if (!CHAT_DEBUG_LOGS_ENABLED) {
+    return;
+  }
+
+  logChat('info', message, fields);
+}
+
+function countConfiguredProviderValues(
+  config: ChatRequest['providerConfig']
+): number {
+  return Object.values(config ?? {}).filter((value) => Boolean(value?.trim())).length;
+}
+
+function summarizeStreamEvent(event: StreamEvent): Record<string, unknown> {
+  if (event.type === 'text:delta') {
+    return {
+      type: event.type,
+      blockIndex: event.blockIndex,
+      textLength: event.text.length,
+    };
+  }
+
+  if (event.type === 'session:init') {
+    return {
+      type: event.type,
+      sessionId: event.sessionId,
+      model: event.model,
+    };
+  }
+
+  if (event.type === 'error') {
+    return {
+      type: event.type,
+      errorType: event.errorType,
+    };
+  }
+
+  return { type: event.type };
+}
+
 function parseSlashCommand(prompt: string): string | null {
   if (!prompt.startsWith('/')) return null;
   const command = prompt.slice(1).trim().split(/\s+/)[0];
@@ -103,25 +193,64 @@ function parseSlashCommand(prompt: string): string | null {
   return command.toLowerCase();
 }
 
-function sanitizeAttachmentReference(reference: string, workspaceCwd: string): string {
+async function sanitizeAttachmentReference(
+  reference: string,
+  workspaceCwd: string,
+  allowedRoots: string[],
+  errorMessage: string
+): Promise<string> {
   const noPrefix = reference.replace(/^@/, '');
   if (isAbsolute(noPrefix)) {
-    throw new Error(`Invalid attachment reference: ${reference}`);
+    throw new Error(errorMessage);
   }
   const normalized = normalize(noPrefix);
   if (normalized === '..' || /(?:^|[\\/])\.\.(?:$|[\\/])/.test(normalized)) {
-    throw new Error(`Invalid attachment reference: ${reference}`);
+    throw new Error(errorMessage);
   }
   const absolutePath = resolve(workspaceCwd, normalized);
-  const normalizedWorkspaceCwd = resolve(workspaceCwd);
-  if (!absolutePath.startsWith(normalizedWorkspaceCwd + '/')) {
-    throw new Error(`Invalid attachment reference: ${reference}`);
+  const canonicalPath = await canonicalizePath(absolutePath);
+  if (!isPathWithinAnyRoot(canonicalPath, allowedRoots)) {
+    throw new Error(errorMessage);
   }
   return normalized;
 }
 
-function resolveWorkspaceAttachments(attachments: string[], workspaceCwd: string): string[] {
-  return attachments.map((attachment) => sanitizeAttachmentReference(attachment, workspaceCwd));
+async function resolveWorkspaceAttachments(
+  attachments: string[],
+  workspaceCwd: string,
+  allowedRoots: string[],
+  errorMessage: string
+): Promise<string[]> {
+  return Promise.all(
+    attachments.map((attachment) =>
+      sanitizeAttachmentReference(attachment, workspaceCwd, allowedRoots, errorMessage)
+    )
+  );
+}
+
+async function normalizeWorkspaceAdditionalDirectories(
+  input: string[],
+  workspaceRoot: string,
+  allowedRoots: string[],
+  errorMessage: string
+): Promise<string[]> {
+  const normalized = new Set<string>();
+
+  for (const rawEntry of input) {
+    const trimmed = rawEntry.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const resolved = isAbsolute(trimmed) ? trimmed : resolve(workspaceRoot, trimmed);
+    const canonical = await canonicalizePath(resolved);
+    if (!isPathWithinAnyRoot(canonical, allowedRoots)) {
+      throw new Error(errorMessage);
+    }
+    normalized.add(canonical);
+  }
+
+  return [...normalized];
 }
 
 function appendAttachmentsToPrompt(prompt: string, attachments: string[]): string {
@@ -282,7 +411,6 @@ export function createChatRouter(db: Database) {
   });
 
   router.post('/', async (c) => {
-    console.log('[chat] === NEW CHAT REQUEST ===');
     let bodyRaw: unknown;
     try {
       bodyRaw = await c.req.json();
@@ -297,6 +425,19 @@ export function createChatRouter(db: Database) {
       );
     }
     const body = parsed.data as ChatRequest;
+    logChat('info', 'request started', {
+      sessionId: body.sessionId ?? null,
+      workspaceId: body.workspaceId ?? null,
+      profileId: body.profileId ?? null,
+      messageCount: body.messages.length,
+      provider: body.provider ?? 'anthropic',
+      providerConfigCount: countConfiguredProviderValues(body.providerConfig),
+      runtimeEnvCount: Object.keys(body.runtimeEnv ?? {}).length,
+      additionalDirectoryCount: body.additionalDirectories?.length ?? 0,
+      attachmentCount: body.attachments?.length ?? 0,
+      hasSystemPrompt: Boolean(body.systemPrompt?.trim()),
+      hasLinearIssue: Boolean(body.linearIssue),
+    });
 
     const parsedLinearIssue =
       body.linearIssue === undefined
@@ -312,8 +453,6 @@ export function createChatRouter(db: Database) {
         400
       );
     }
-
-    console.log('[chat] body:', JSON.stringify(body, null, 2));
     const messages = body.messages;
     let sessionId = body.sessionId;
     const model = body.model;
@@ -379,7 +518,10 @@ export function createChatRouter(db: Database) {
       .filter((m: any) => m.role === 'user')
       .pop() as any;
     if (!lastUserMessage) {
-      console.log('[chat] ERROR: No user message found');
+      logChat('warn', 'request missing user message', {
+        sessionId,
+        workspaceId,
+      });
       return c.json({ error: 'No user message provided' }, 400);
     }
 
@@ -393,10 +535,15 @@ export function createChatRouter(db: Database) {
       '';
     let workspaceLinearIssue: ChatRequest['linearIssue'] | undefined;
     let workspaceGithubIssuePrompt: string | undefined;
-    console.log('[chat] Extracted prompt:', prompt);
-    console.log('[chat] sessionId:', sessionId);
 
     const slashCommand = parseSlashCommand(prompt);
+    logChatDebug('request metadata', {
+      providerConfigKeys: Object.entries(body.providerConfig ?? {})
+        .filter(([, value]) => Boolean(value?.trim()))
+        .map(([key]) => key),
+      runtimeEnvKeys: Object.keys(body.runtimeEnv ?? {}),
+      slashCommand: slashCommand ?? undefined,
+    });
     if (slashCommand) {
       if (CLIENT_SLASH_COMMANDS.has(slashCommand)) {
         return c.json(
@@ -418,6 +565,10 @@ export function createChatRouter(db: Database) {
       if (!workspace) {
         return c.json({ error: 'Workspace not found' }, 404);
       }
+      const project = getProject(db, workspace.projectId);
+      if (!project) {
+        return c.json({ error: 'Project not found', code: 'NOT_FOUND' }, 404);
+      }
       const terminalStatuses = ['error', 'merged', 'archived'];
       if (terminalStatuses.includes(workspace.status)) {
         return c.json(
@@ -427,8 +578,39 @@ export function createChatRouter(db: Database) {
       }
       workspaceCwd = workspace.worktreePath;
       workspaceClaudeSessionId = workspace.claudeSessionId ?? undefined;
-      if (additionalDirectories.length === 0 && workspace.additionalDirectories.length > 0) {
-        additionalDirectories = workspace.additionalDirectories;
+      const additionalDirectoryPolicy = buildAdditionalDirectoryPathPolicy(
+        project.repoPathCanonical,
+        workspace.worktreePathCanonical
+      );
+      const additionalDirectoryRoots = await canonicalizeRoots(
+        additionalDirectoryPolicy.allowedRoots
+      );
+      const effectiveAdditionalDirectories =
+        additionalDirectories.length === 0 && workspace.additionalDirectories.length > 0
+          ? workspace.additionalDirectories
+          : additionalDirectories;
+      if (effectiveAdditionalDirectories.length > 0) {
+        try {
+          additionalDirectories = await normalizeWorkspaceAdditionalDirectories(
+            effectiveAdditionalDirectories,
+            workspaceCwd,
+            additionalDirectoryRoots,
+            additionalDirectoryPolicy.errorMessage
+          );
+        } catch (error) {
+          return c.json(
+            {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : additionalDirectoryPolicy.errorMessage,
+              code: 'VALIDATION_ERROR',
+            },
+            400
+          );
+        }
+      } else {
+        additionalDirectories = [];
       }
       if (workspace.linearIssueId && workspace.linearIssueTitle) {
         workspaceLinearIssue = {
@@ -450,14 +632,31 @@ export function createChatRouter(db: Database) {
           .filter((line): line is string => line !== undefined)
           .join('\n');
       }
-      console.log('[chat] workspace cwd:', workspaceCwd, 'claudeSessionId:', workspaceClaudeSessionId);
+      logChat('info', 'workspace context loaded', {
+        workspaceId,
+        hasStoredAdditionalDirectories: workspace.additionalDirectories.length > 0,
+        hasWorkspaceLinearIssue: Boolean(workspaceLinearIssue),
+        hasWorkspaceGithubIssue: Boolean(workspaceGithubIssuePrompt),
+      });
       if (attachmentRefs.length > 0) {
         try {
-          resolvedAttachmentRefs = resolveWorkspaceAttachments(attachmentRefs, workspaceCwd);
-        } catch {
+          const attachmentPolicy = buildWorkspaceAttachmentPathPolicy(
+            workspace.worktreePathCanonical
+          );
+          const attachmentRoots = await canonicalizeRoots(attachmentPolicy.allowedRoots);
+          resolvedAttachmentRefs = await resolveWorkspaceAttachments(
+            attachmentRefs,
+            workspaceCwd,
+            attachmentRoots,
+            attachmentPolicy.errorMessage
+          );
+        } catch (error) {
           return c.json(
             {
-              error: 'Invalid attachment reference',
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Invalid attachment reference',
               code: 'INVALID_ATTACHMENT_REFERENCE',
             },
             400
@@ -513,7 +712,6 @@ export function createChatRouter(db: Database) {
       promptWithContext,
       resolvedAttachmentRefs
     );
-    console.log('[chat] Extracted prompt with attachments:', promptWithContextAndAttachments);
 
     // Look up an existing session (if provided) so we can resume
     // the Claude conversation. Session creation is deferred until
@@ -638,7 +836,7 @@ export function createChatRouter(db: Database) {
             // Lazily create the session on first successful event
             ensureSession();
 
-            console.log('[chat] SDK event:', JSON.stringify(event).slice(0, 200));
+            logChatDebug('sdk event', summarizeStreamEvent(event));
 
             // text:delta events: send AI SDK protocol events FIRST, then data channel
             // This ensures start/text-start arrive before the data event.
@@ -646,7 +844,7 @@ export function createChatRouter(db: Database) {
             // to avoid creating multiple assistant messages in useChat.
             if (event.type === 'text:delta') {
               if (!startSent) {
-                console.log('[chat] Sending start + text-start');
+                logChatDebug('opened assistant text stream');
                 writer.write({ type: 'start' });
                 writer.write({
                   type: 'text-start',
@@ -674,7 +872,11 @@ export function createChatRouter(db: Database) {
               // Handle protocol-relevant events
               if (event.type === 'session:init') {
                 claudeSessionId = event.sessionId;
-                console.log('[chat] Got session:init, claudeSessionId:', claudeSessionId);
+                logChat('info', 'claude session initialized', {
+                  claudeSessionId,
+                  appSessionId: appSessionId ?? callerSessionId ?? null,
+                  workspaceId: workspaceId ?? null,
+                });
               }
             }
           }
@@ -701,7 +903,9 @@ export function createChatRouter(db: Database) {
             if (sessionToClear) {
               clearClaudeSessionId(db, sessionToClear);
             }
-            console.warn('[chat] Stale session ID detected, retrying without resume');
+            logChat('warn', 'stale session ID detected, retrying without resume', {
+              sessionId: currentResumeId,
+            });
             continue;
           }
 
@@ -756,7 +960,10 @@ export function createChatRouter(db: Database) {
         }
 
         // Send sessionId as message metadata in the finish event
-        console.log('[chat] Sending finish event. startSent:', startSent, 'fullResponse length:', fullResponse.length);
+        logChatDebug('sending finish event', {
+          startSent,
+          responseLength: fullResponse.length,
+        });
         writer.write({
           type: 'finish',
           finishReason: 'stop',

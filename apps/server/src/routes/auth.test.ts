@@ -1,8 +1,11 @@
-import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, mock, beforeEach } from 'bun:test';
 import type { AuthStatus } from '@claude-tauri/shared';
 
+let envAtQueryCall: string | undefined;
+
 // We mock the claude-agent-sdk module before importing the auth service
-const mockQuery = mock(() => {
+const mockQuery = mock((args?: { options?: { env?: Record<string, string | undefined> } }) => {
+  envAtQueryCall = args?.options?.env?.ANTHROPIC_API_KEY;
   // Default: returns an async generator that yields an init event
   return (async function* () {
     yield {
@@ -26,19 +29,22 @@ const { Hono } = await import('hono');
 describe('Auth Service - getAuthStatus()', () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    envAtQueryCall = undefined;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-fake-key-for-testing';
   });
 
   test('returns authenticated with email and plan for valid subscription', async () => {
-    mockQuery.mockImplementation(() =>
-      (async function* () {
+    mockQuery.mockImplementation((args) => {
+      envAtQueryCall = (args as any)?.options?.env?.ANTHROPIC_API_KEY;
+      return (async function* () {
         yield {
           type: 'system',
           subtype: 'init',
           session_id: 'test-session-123',
           accountInfo: { email: 'user@example.com', plan: 'pro' },
         };
-      })()
-    );
+      })();
+    });
 
     const result = await getAuthStatus();
 
@@ -46,6 +52,8 @@ describe('Auth Service - getAuthStatus()', () => {
     expect(result.email).toBe('user@example.com');
     expect(result.plan).toBe('pro');
     expect(result.error).toBeUndefined();
+    expect(envAtQueryCall).toBe('');
+    expect(process.env.ANTHROPIC_API_KEY).toBe('sk-ant-fake-key-for-testing');
   });
 
   test('returns unauthenticated with error when query throws', async () => {

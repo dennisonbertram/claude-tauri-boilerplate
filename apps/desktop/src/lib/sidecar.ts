@@ -1,6 +1,18 @@
 import { Command, type Child } from '@tauri-apps/plugin-shell';
 
 let sidecarProcess: Child | null = null;
+const SIDECAR_DEBUG_LOGS_ENABLED =
+  import.meta.env.DEV && import.meta.env.VITE_DEBUG_SIDECAR_LOGS === '1';
+
+function redactSidecarLogLine(line: string): string {
+  return line
+    .replace(/sk-[A-Za-z0-9_-]+/g, '[REDACTED_API_KEY]')
+    .replace(/\bBearer\s+[A-Za-z0-9._-]+\b/g, 'Bearer [REDACTED]')
+    .replace(
+      /\b([A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*)=([^\s]+)/g,
+      '$1=[REDACTED]'
+    );
+}
 
 export async function startSidecar(): Promise<void> {
   if (sidecarProcess) return;
@@ -16,13 +28,17 @@ export async function startSidecar(): Promise<void> {
     sidecarProcess = null;
   });
 
-  command.stdout.on('data', (line) => {
-    console.log('[server]', line);
-  });
+  // Default desktop logging keeps only lifecycle events. Raw sidecar output is
+  // opt-in and redacted so prompt/config payloads do not leak to devtools.
+  if (SIDECAR_DEBUG_LOGS_ENABLED) {
+    command.stdout.on('data', (line) => {
+      console.log('[server]', redactSidecarLogLine(String(line)));
+    });
 
-  command.stderr.on('data', (line) => {
-    console.error('[server]', line);
-  });
+    command.stderr.on('data', (line) => {
+      console.error('[server]', redactSidecarLogLine(String(line)));
+    });
+  }
 
   sidecarProcess = await command.spawn();
 }

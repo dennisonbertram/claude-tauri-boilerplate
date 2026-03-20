@@ -1,8 +1,15 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  symlinkSync,
+  realpathSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
 
 // Mock the claude-agent-sdk before importing anything that uses it
@@ -121,18 +128,15 @@ function createTestWorkspace(
     };
   }
 ) {
-  const workspacePath = opts?.workspacePath ?? '/tmp/worktrees/test';
-  const projectPath = opts?.projectPath ?? '/tmp/repo';
+  const workspacePath =
+    opts?.workspacePath ?? mkdtempSync(join(tmpdir(), 'chat-workspace-worktree-'));
+  const projectPath =
+    opts?.projectPath ?? mkdtempSync(join(tmpdir(), 'chat-workspace-project-'));
 
-  if (opts?.workspacePath) {
-    tempPaths.add(workspacePath);
-    mkdirSync(workspacePath, { recursive: true });
-  }
-
-  if (opts?.projectPath) {
-    tempPaths.add(projectPath);
-    mkdirSync(projectPath, { recursive: true });
-  }
+  tempPaths.add(workspacePath);
+  tempPaths.add(projectPath);
+  mkdirSync(workspacePath, { recursive: true });
+  mkdirSync(projectPath, { recursive: true });
 
   const projectId = `proj-${crypto.randomUUID().slice(0, 8)}`;
   createProject(db, projectId, 'Test Project', projectPath, projectPath, 'main');
@@ -156,7 +160,7 @@ function createTestWorkspace(
     updateWorkspaceStatus(db, workspaceId, targetStatus as any);
   }
 
-  return { projectId, workspaceId };
+  return { projectId, workspaceId, workspacePath, projectPath };
 }
 
 function cleanupTempPaths() {
@@ -311,7 +315,7 @@ describe('Chat Route - Workspace Integration', () => {
 
   test('passes cwd to streamClaude when workspaceId is provided', async () => {
     setupStandardMock('ws-claude-session', 'Workspace reply');
-    const { workspaceId } = createTestWorkspace(db);
+    const { workspaceId, workspacePath } = createTestWorkspace(db);
 
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'Do something in the workspace' }],
@@ -332,15 +336,19 @@ describe('Chat Route - Workspace Integration', () => {
     // Verify cwd was passed to the SDK query
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const callArgs = mockQuery.mock.calls[0][0] as any;
-    expect(callArgs.options.cwd).toBe('/tmp/worktrees/test');
+    expect(callArgs.options.cwd).toBe(workspacePath);
   });
 
   test('passes additional directories to streamClaude when workspace stores them', async () => {
     setupStandardMock('ws-claude-session-dirs', 'Workspace reply');
-    const { workspaceId } = createTestWorkspace(db);
+    const { workspaceId, workspacePath, projectPath } = createTestWorkspace(db);
+    const repoDir = join(projectPath, 'packages', 'shared');
+    const workspaceDir = join(workspacePath, '.context');
+    mkdirSync(repoDir, { recursive: true });
+    mkdirSync(workspaceDir, { recursive: true });
     const { updateWorkspace } = await import('../db');
     updateWorkspace(db, workspaceId, {
-      additionalDirectories: ['/repo-a', '/repo-b'],
+      additionalDirectories: [repoDir, workspaceDir],
     });
 
     const body: ChatRequest = {
@@ -359,7 +367,37 @@ describe('Chat Route - Workspace Integration', () => {
     expect(res.status).toBe(200);
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const callArgs = mockQuery.mock.calls[0][0] as any;
-    expect(callArgs.options.additionalDirectories).toEqual(['/repo-a', '/repo-b']);
+    expect(callArgs.options.additionalDirectories).toEqual([
+      realpathSync(repoDir),
+      realpathSync(workspaceDir),
+    ]);
+  });
+
+  test('rejects stored additional directories outside the project and workspace roots', async () => {
+    setupStandardMock('ws-bad-dir-session', 'Should not be called');
+    const { workspaceId } = createTestWorkspace(db);
+    const outsideDir = mkdtempSync(join(tmpdir(), 'chat-workspace-outside-'));
+    tempPaths.add(outsideDir);
+    const { updateWorkspace } = await import('../db');
+    updateWorkspace(db, workspaceId, {
+      additionalDirectories: [outsideDir],
+    });
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Use the stored path' }],
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe('VALIDATION_ERROR');
+    expect(json.error).toContain('project repository or workspace worktree');
   });
 
   test('does not pass cwd when no workspaceId is provided', async () => {
@@ -544,7 +582,12 @@ describe('Chat Route - Workspace Integration', () => {
 
   test('accepts workspace attachment references and adds them to the prompt', async () => {
     setupStandardMock('ws-attachment-session', 'Reply with attachments');
-    const { workspaceId } = createTestWorkspace(db);
+    const { workspaceId, workspacePath } = createTestWorkspace(db);
+    mkdirSync(join(workspacePath, 'src'), { recursive: true });
+    mkdirSync(join(workspacePath, 'notes'), { recursive: true });
+    writeFileSync(join(workspacePath, 'README.md'), '# Workspace');
+    writeFileSync(join(workspacePath, 'src', 'index.ts'), 'export const value = 1;');
+    writeFileSync(join(workspacePath, 'notes', 'todo.txt'), 'check me');
 
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'Inspect these files' }],
@@ -571,11 +614,39 @@ describe('Chat Route - Workspace Integration', () => {
 
   test('rejects attachment references that escape workspace path', async () => {
     setupStandardMock('ws-escape-session', 'Should not be called');
-    const { workspaceId } = createTestWorkspace(db);
+    const { workspaceId, workspacePath } = createTestWorkspace(db);
+    const escapedPath = resolve(workspacePath, '..', '..', 'secrets.txt');
+    mkdirSync(dirname(escapedPath), { recursive: true });
+    writeFileSync(escapedPath, 'top secret');
 
     const body: ChatRequest = {
       messages: [{ role: 'user', content: 'Inspect this file' }],
       attachments: ['../../secrets.txt'],
+      workspaceId,
+    };
+
+    const res = await testApp.request('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe('INVALID_ATTACHMENT_REFERENCE');
+  });
+
+  test('rejects attachment references that symlink outside the workspace', async () => {
+    setupStandardMock('ws-symlink-session', 'Should not be called');
+    const { workspaceId, workspacePath } = createTestWorkspace(db);
+    const outsideDir = mkdtempSync(join(tmpdir(), 'chat-workspace-symlink-outside-'));
+    tempPaths.add(outsideDir);
+    writeFileSync(join(outsideDir, 'secrets.txt'), 'secret');
+    symlinkSync(join(outsideDir, 'secrets.txt'), join(workspacePath, 'linked-secret.txt'));
+
+    const body: ChatRequest = {
+      messages: [{ role: 'user', content: 'Inspect this file' }],
+      attachments: ['linked-secret.txt'],
       workspaceId,
     };
 

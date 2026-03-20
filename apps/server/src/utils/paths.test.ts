@@ -1,7 +1,11 @@
 import { describe, test, expect } from 'bun:test';
 import {
+  buildAdditionalDirectoryPathPolicy,
+  buildWorkspaceAttachmentPathPolicy,
+  canonicalizeRoots,
   canonicalizePath,
   isPathSafe,
+  isPathWithinAnyRoot,
   getWorktreeBaseDir,
   getProjectWorktreeDir,
   getWorkspaceWorktreeDir,
@@ -45,6 +49,53 @@ describe('isPathSafe', () => {
   test('returns false for prefix that is a substring but not a directory boundary', () => {
     // /home/user/projects-evil should NOT match /home/user/projects
     expect(isPathSafe('/home/user/projects-evil/foo', '/home/user/projects')).toBe(false);
+  });
+});
+
+describe('isPathWithinAnyRoot', () => {
+  test('returns true when target is inside one of the allowed roots', () => {
+    expect(
+      isPathWithinAnyRoot('/home/user/worktrees/ws-a/src', [
+        '/home/user/projects/repo',
+        '/home/user/worktrees/ws-a',
+      ])
+    ).toBe(true);
+  });
+
+  test('returns false when target is outside every allowed root', () => {
+    expect(
+      isPathWithinAnyRoot('/home/user/other/place', [
+        '/home/user/projects/repo',
+        '/home/user/worktrees/ws-a',
+      ])
+    ).toBe(false);
+  });
+});
+
+describe('canonicalizeRoots', () => {
+  test('deduplicates canonical roots', async () => {
+    const roots = await canonicalizeRoots(['/tmp', '/private/tmp']);
+    expect(roots).toHaveLength(1);
+  });
+});
+
+describe('workspace path policies', () => {
+  test('allows additional directories inside repo and workspace roots', () => {
+    expect(
+      buildAdditionalDirectoryPathPolicy('/repo/root', '/worktrees/ws-1')
+    ).toEqual({
+      allowedRoots: ['/repo/root', '/worktrees/ws-1'],
+      errorMessage:
+        'additionalDirectories must stay within the project repository or workspace worktree',
+    });
+  });
+
+  test('limits workspace attachments to the workspace root', () => {
+    expect(buildWorkspaceAttachmentPathPolicy('/worktrees/ws-1')).toEqual({
+      allowedRoots: ['/worktrees/ws-1'],
+      errorMessage:
+        'Attachment references must stay within the workspace worktree and point to existing files',
+    });
   });
 });
 

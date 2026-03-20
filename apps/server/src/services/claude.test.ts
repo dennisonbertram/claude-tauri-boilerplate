@@ -2,7 +2,6 @@ import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 
 type EnvSnapshot = Record<string, string | undefined>;
 
-// Capture the env values at the moment query() is called
 let envAtQueryCall: EnvSnapshot | undefined;
 
 const FAKE_KEY = 'sk-ant-fake-key-for-testing';
@@ -18,9 +17,10 @@ const providerEnvKeys = [
   'CUSTOM_RUNTIME_TOKEN',
 ];
 
-function captureProviderEnv(): EnvSnapshot {
+function captureProviderEnv(source: Record<string, unknown> | undefined): EnvSnapshot {
   return providerEnvKeys.reduce((acc, key) => {
-    acc[key] = process.env[key];
+    const value = source?.[key];
+    acc[key] = typeof value === 'string' ? value : undefined;
     return acc;
   }, {} as EnvSnapshot);
 }
@@ -49,8 +49,8 @@ function snapshotMatches(expected: EnvSnapshot) {
   expect(envAtQueryCall).toMatchObject(expected);
 }
 
-const mockQuery = mock(() => {
-  envAtQueryCall = captureProviderEnv();
+const mockQuery = mock((args?: { options?: { env?: Record<string, unknown> } }) => {
+  envAtQueryCall = captureProviderEnv(args?.options?.env);
   return (async function* () {
     yield {
       type: 'system',
@@ -86,7 +86,7 @@ describe('streamClaude - subscription auth regression', () => {
     // Re-set the capture logic after reset
     mockQuery.mockImplementation((args) => {
       queryArgsAtCall = args;
-      envAtQueryCall = captureProviderEnv();
+      envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
       return (async function* () {
         yield {
           type: 'system',
@@ -130,8 +130,8 @@ describe('streamClaude - subscription auth regression', () => {
 
   test('restores ANTHROPIC_API_KEY even when stream throws', async () => {
     process.env.CLAUDE_CODE_USE_BEDROCK = '1';
-    mockQuery.mockImplementation(() => {
-      envAtQueryCall = captureProviderEnv();
+    mockQuery.mockImplementation((args) => {
+      envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
       return (async function* () {
         throw new Error('SDK error');
       })();
@@ -291,8 +291,8 @@ describe('streamClaude - subscription auth regression', () => {
   test('restores runtimeEnv variables when stream fails', async () => {
     process.env.RUNTIME_TOKEN = 'original-runtime-token';
     process.env.CUSTOM_RUNTIME_TOKEN = 'original-custom-runtime';
-    mockQuery.mockImplementation(() => {
-      envAtQueryCall = captureProviderEnv();
+    mockQuery.mockImplementation((args) => {
+      envAtQueryCall = captureProviderEnv((args as any)?.options?.env);
       return (async function* () {
         yield {
           type: 'system',
@@ -331,6 +331,72 @@ describe('streamClaude - subscription auth regression', () => {
 
     expect(process.env.RUNTIME_TOKEN).toBe('original-runtime-token');
     expect(process.env.CUSTOM_RUNTIME_TOKEN).toBe('original-custom-runtime');
+  });
+
+  test('keeps concurrent request env isolated per query call', async () => {
+    const envSnapshots: EnvSnapshot[] = [];
+    mockQuery.mockImplementation((args) => {
+      envSnapshots.push(captureProviderEnv((args as any)?.options?.env));
+      return (async function* () {
+        await Bun.sleep(5);
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'test-session',
+          model: 'claude-sonnet-4-6',
+          tools: [],
+          mcp_servers: [],
+          claude_code_version: '1.0.0',
+          cwd: '/tmp',
+          permissionMode: 'default',
+          apiKeySource: 'claude_ai',
+          slash_commands: [],
+          output_style: 'text',
+          skills: [],
+          plugins: [],
+        };
+      })();
+    });
+
+    await Promise.all([
+      (async () => {
+        for await (const _ of streamClaude({
+          prompt: 'first',
+          provider: 'bedrock',
+          runtimeEnv: { RUNTIME_TOKEN: 'bedrock-token' },
+        })) {
+          // drain
+        }
+      })(),
+      (async () => {
+        for await (const _ of streamClaude({
+          prompt: 'second',
+          provider: 'vertex',
+          runtimeEnv: { RUNTIME_TOKEN: 'vertex-token' },
+          providerConfig: { vertexProjectId: 'vertex-project' },
+        })) {
+          // drain
+        }
+      })(),
+    ]);
+
+    expect(envSnapshots).toHaveLength(2);
+    expect(envSnapshots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          CLAUDE_CODE_USE_BEDROCK: '1',
+          CLAUDE_CODE_USE_VERTEX: undefined,
+          RUNTIME_TOKEN: 'bedrock-token',
+        }),
+        expect.objectContaining({
+          CLAUDE_CODE_USE_BEDROCK: undefined,
+          CLAUDE_CODE_USE_VERTEX: '1',
+          ANTHROPIC_VERTEX_PROJECT_ID: 'vertex-project',
+          RUNTIME_TOKEN: 'vertex-token',
+        }),
+      ])
+    );
+    expect(process.env.RUNTIME_TOKEN).toBeUndefined();
   });
 
   test('overwrites ANTHROPIC_API_KEY with runtime env value when explicitly provided', async () => {

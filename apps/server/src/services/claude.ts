@@ -1,7 +1,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { mapSdkEvent } from './event-mapper';
+import { buildSdkRequestEnv } from './sdk-env';
 import {
-  getProviderCapability,
   type AgentProfile,
   type PermissionMode,
   type ProviderConfig,
@@ -22,65 +22,6 @@ export interface ClaudeStreamOptions {
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
   agentProfile?: AgentProfile | null;
-}
-
-type EnvSnapshot = Record<string, string | undefined>;
-
-type EnvKey = string;
-
-function setProviderEnv(
-  env: EnvSnapshot,
-  key: EnvKey,
-  value: string | undefined,
-) {
-  env[key] = process.env[key];
-  if (value === undefined) {
-    delete process.env[key];
-  } else {
-    process.env[key] = value;
-  }
-}
-
-function applyProviderEnv(
-  provider: ProviderType | undefined,
-  config: ProviderConfig = {},
-  runtimeEnv: Record<string, string> = {},
-): EnvSnapshot {
-  const original: EnvSnapshot = {};
-  const capability = getProviderCapability(provider);
-
-  for (const [envKey, binding] of Object.entries(capability.env)) {
-    if (binding.type === 'literal') {
-      setProviderEnv(original, envKey, binding.value);
-      continue;
-    }
-
-    if (binding.type === 'config') {
-      setProviderEnv(original, envKey, config[binding.key]);
-      continue;
-    }
-
-    if (binding.type === 'clear') {
-      setProviderEnv(original, envKey, undefined);
-    }
-  }
-
-  for (const [key, value] of Object.entries(runtimeEnv)) {
-    setProviderEnv(original, key, value);
-  }
-
-  return original;
-}
-
-function restoreProviderEnv(original: EnvSnapshot) {
-  for (const key in original) {
-    const value = original[key];
-    if (value === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = value;
-    }
-  }
 }
 
 function buildProfileQueryOptions(profile: AgentProfile): Record<string, unknown> {
@@ -205,7 +146,7 @@ export async function* streamClaude(
     Object.assign(queryOptions, profileOpts);
   }
 
-  const originalEnv = applyProviderEnv(
+  queryOptions.env = buildSdkRequestEnv(
     options.provider,
     options.providerConfig,
     options.runtimeEnv ?? {}
@@ -216,14 +157,10 @@ export async function* streamClaude(
     options: queryOptions,
   });
 
-  try {
-    for await (const event of stream) {
-      const mapped = mapSdkEvent(event);
-      for (const streamEvent of mapped) {
-        yield streamEvent;
-      }
+  for await (const event of stream) {
+    const mapped = mapSdkEvent(event);
+    for (const streamEvent of mapped) {
+      yield streamEvent;
     }
-  } finally {
-    restoreProviderEnv(originalEnv);
   }
 }

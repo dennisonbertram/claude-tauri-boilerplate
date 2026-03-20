@@ -29,6 +29,57 @@ export function isPathSafe(target: string, allowedPrefix: string): boolean {
   );
 }
 
+export function isPathWithinAnyRoot(target: string, allowedRoots: string[]): boolean {
+  return allowedRoots.some((allowedRoot) => isPathSafe(target, allowedRoot));
+}
+
+export async function canonicalizeRoots(roots: string[]): Promise<string[]> {
+  const canonicalRoots = await Promise.all(
+    [...new Set(roots.map((root) => resolve(root)))].map((root) => canonicalizePath(root))
+  );
+
+  return [...new Set(canonicalRoots)];
+}
+
+export interface PathAccessPolicy {
+  allowedRoots: string[];
+  errorMessage: string;
+}
+
+/**
+ * Shared workspace file-access policy:
+ * - `additionalDirectories` may stay within the project repo root and, once a
+ *   workspace exists, that workspace worktree root.
+ * - Attachment references must stay inside the active workspace root.
+ */
+export function buildAdditionalDirectoryPathPolicy(
+  projectRepoRoot: string,
+  workspaceRoot?: string
+): PathAccessPolicy {
+  if (workspaceRoot) {
+    return {
+      allowedRoots: [projectRepoRoot, workspaceRoot],
+      errorMessage:
+        'additionalDirectories must stay within the project repository or workspace worktree',
+    };
+  }
+
+  return {
+    allowedRoots: [projectRepoRoot],
+    errorMessage: 'additionalDirectories must stay within the project repository',
+  };
+}
+
+export function buildWorkspaceAttachmentPathPolicy(
+  workspaceRoot: string
+): PathAccessPolicy {
+  return {
+    allowedRoots: [workspaceRoot],
+    errorMessage:
+      'Attachment references must stay within the workspace worktree and point to existing files',
+  };
+}
+
 /** Base directory for all worktrees: ~/.claude-tauri/worktrees/ */
 export function getWorktreeBaseDir(): string {
   return resolveWorktreeBaseDir();
