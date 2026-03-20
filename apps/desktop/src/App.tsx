@@ -3,15 +3,13 @@ import { Toaster } from 'sonner';
 import { isTauri } from './lib/platform';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
-import { SessionSidebar } from '@/components/sessions/SessionSidebar';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
 import { AgentBuilderView } from '@/components/agent-builder';
-import { ActivityBar } from '@/components/ActivityBar';
-import { ProjectSidebar } from '@/components/workspaces/ProjectSidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
 import { AddProjectDialog } from '@/components/workspaces/AddProjectDialog';
 import { CreateWorkspaceDialog } from '@/components/workspaces/CreateWorkspaceDialog';
@@ -60,8 +58,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setActiveSessionId,
     createSession,
     deleteSession,
-    renameSession,
-    forkSession,
     exportSession,
     autoNameSession,
   } = useSessions(sessionSearchQuery);
@@ -88,7 +84,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }, [handleOpenSettings]);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
-  const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
+  const [, setActiveSessionHasMessages] = useState(false);
   const selectedSessionHasMessages = (session?: (typeof sessions)[number]) => {
     if (!session) return false;
     return session.claudeSessionId != null || (session.messageCount ?? 0) > 0;
@@ -99,7 +95,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // Workspace state
-  const { projects, addProject, removeProject } = useProjects();
+  const { projects, addProject } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
@@ -107,7 +103,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const { settings } = useSettings();
 
   // Unread workspace tracking
-  const { markAsUnread, markAsRead, isUnread } = useUnread();
+  const { markAsUnread, markAsRead } = useUnread();
 
   // Track active subagent count for quit confirmation
   const subagentActiveCountRef = useRef(0);
@@ -150,6 +146,20 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     [settings.notificationsEnabled, settings.notificationSound, settings.notificationsWorkspaceUnread, markAsUnread]
   );
 
+  // Stable workspace-scoped task-complete handler — avoids re-creating an
+  // inline arrow on every render which would cause cascading re-renders.
+  const handleWorkspaceTaskComplete = useCallback(
+    (params: {
+      status: 'completed' | 'failed' | 'stopped';
+      summary: string;
+      branch?: string;
+      workspaceName?: string;
+    }) => {
+      handleTaskComplete({ ...params, workspaceId: selectedWorkspace?.id });
+    },
+    [handleTaskComplete, selectedWorkspace?.id]
+  );
+
   // Quit confirmation when agents are running
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -166,7 +176,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     workspaces,
     addWorkspace,
     refresh: refreshWorkspaces,
-    renameWorkspace,
   } = useWorkspaces(selectedProjectId);
 
   // Build workspaces-by-project map for all projects
@@ -247,13 +256,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setSelectedWorkspace(updated?.find((ws) => ws.id === selectedWorkspace.id) ?? null);
   }, [refreshWorkspaces, selectedWorkspace]);
 
-  const handleRenameWorkspace = useCallback(async (id: string, branch: string) => {
-    const updatedWorkspace = await renameWorkspace(id, { branch });
-    if (selectedWorkspace && selectedWorkspace.id === id) {
-      setSelectedWorkspace(updatedWorkspace ?? selectedWorkspace);
-    }
-  }, [renameWorkspace, selectedWorkspace]);
-
   const handleOpenSessions = useCallback(() => {
     setActiveView('chat');
     setSidebarOpen(true);
@@ -262,14 +264,6 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const handleOpenPullRequests = useCallback(() => {
     setActiveView('teams');
   }, []);
-
-  const handleDeleteProject = useCallback(async (projectId: string) => {
-    await removeProject(projectId);
-    if (selectedProjectId === projectId) {
-      setSelectedProjectId(null);
-      setSelectedWorkspace(null);
-    }
-  }, [removeProject, selectedProjectId]);
 
   // Auto-select first project when workspaces view is active and projects finish loading
   useEffect(() => {
@@ -286,61 +280,35 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     }
   }, [selectedProjectId, projects]);
 
-  // Track when a project is clicked in the sidebar (expand + load workspaces)
-  const handleProjectClick = useCallback((projectId: string) => {
-    setSelectedProjectId(projectId);
-  }, []);
-
   return (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 min-h-0">
-        <ActivityBar
+        <AppSidebar
           activeView={activeView}
           onSelectView={handleSwitchView}
-          onOpenSettings={() => handleOpenSettings()}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          searchQuery={sessionSearchQuery}
+          onSearchQueryChange={setSessionSearchQuery}
+          onSelectSession={(id) => {
+            setActiveView('chat');
+            setActiveSessionId(id);
+            const session = sessions.find(s => s.id === id);
+            setActiveSessionHasMessages(selectedSessionHasMessages(session));
+          }}
+          onNewChat={handleNewChat}
+          onDeleteSession={deleteSession}
+          projects={projects}
+          workspacesByProject={workspacesByProject}
+          selectedWorkspaceId={selectedWorkspace?.id ?? null}
+          onSelectWorkspace={handleSelectWorkspace}
+          onAddProject={() => setAddProjectOpen(true)}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
           email={email}
           plan={plan}
+          onOpenSettings={handleOpenSettings}
         />
-        {activeView === 'chat' && sidebarOpen && (
-          <SessionSidebar
-            sessions={sessions}
-            activeSessionId={activeSessionId}
-            email={email}
-            plan={plan}
-            searchQuery={sessionSearchQuery}
-            onSearchQueryChange={setSessionSearchQuery}
-            onSelectSession={(id) => {
-              setActiveView('chat');
-              setActiveSessionId(id);
-              const session = sessions.find(s => s.id === id);
-              setActiveSessionHasMessages(selectedSessionHasMessages(session));
-            }}
-            onNewChat={handleNewChat}
-            onDeleteSession={deleteSession}
-            onRenameSession={renameSession}
-            onForkSession={forkSession}
-            onExportSession={exportSession}
-            onOpenSettings={handleOpenSettings}
-          />
-        )}
-        {activeView === 'workspaces' && (
-          <ProjectSidebar
-            projects={projects}
-            workspacesByProject={workspacesByProject}
-            selectedWorkspaceId={selectedWorkspace?.id ?? null}
-            selectedProjectId={selectedProjectId}
-            onSelectWorkspace={handleSelectWorkspace}
-            onProjectClick={handleProjectClick}
-            onAddProject={() => setAddProjectOpen(true)}
-            onCreateWorkspace={(project) => {
-              handleProjectClick(project.id);
-              setCreateWorkspaceProject(project);
-            }}
-            onRenameWorkspace={handleRenameWorkspace}
-            onDeleteProject={handleDeleteProject}
-            isWorkspaceUnread={isUnread}
-          />
-        )}
         {activeView === 'chat' ? (
           activeSessionId ? (
             <ChatPage
@@ -373,10 +341,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onStatusChange={handleStatusChange}
               onWorkspaceUpdate={handleWorkspaceUpdate}
               onOpenSettings={handleOpenSettings}
-              onTaskComplete={(params) => handleTaskComplete({
-                ...params,
-                workspaceId: selectedWorkspace.id,
-              })}
+              onTaskComplete={handleWorkspaceTaskComplete}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
