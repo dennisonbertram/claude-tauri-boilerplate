@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAgentProfiles } from '@/hooks/useAgentProfiles';
 import { AgentProfileSidebar } from './AgentProfileSidebar';
 import { AgentProfileEditor } from './AgentProfileEditor';
+import { Button } from '@/components/ui/button';
 
 export function AgentBuilderView() {
   const {
@@ -13,26 +14,41 @@ export function AgentBuilderView() {
     duplicateProfile,
   } = useAgentProfiles();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [editorIsDirty, setEditorIsDirty] = useState(false);
 
   const selectedProfile = profiles.find((p) => p.id === selectedProfileId) ?? null;
+
+  const handleCreateProfile = async () => {
+    if (editorIsDirty) {
+      if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+    }
+    const profile = await addProfile({ name: 'New Agent Profile' });
+    setSelectedProfileId(profile.id);
+    setEditorIsDirty(false);
+  };
 
   return (
     <div className="flex h-full">
       <AgentProfileSidebar
         profiles={profiles}
         selectedProfileId={selectedProfileId}
-        onSelectProfile={setSelectedProfileId}
-        onCreateProfile={async () => {
-          const profile = await addProfile({ name: 'New Agent Profile' });
-          setSelectedProfileId(profile.id);
+        onSelectProfile={(id) => {
+          if (editorIsDirty && selectedProfileId !== id) {
+            if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+          }
+          setSelectedProfileId(id);
+          setEditorIsDirty(false);
         }}
+        onCreateProfile={handleCreateProfile}
         onDuplicateProfile={async (id) => {
           const dup = await duplicateProfile(id);
           setSelectedProfileId(dup.id);
+          setEditorIsDirty(false);
         }}
         onDeleteProfile={async (id) => {
           await removeProfile(id);
           if (selectedProfileId === id) setSelectedProfileId(null);
+          setEditorIsDirty(false);
         }}
         loading={loading}
       />
@@ -44,7 +60,9 @@ export function AgentBuilderView() {
             onDelete={async () => {
               await removeProfile(selectedProfile.id);
               setSelectedProfileId(null);
+              setEditorIsDirty(false);
             }}
+            onDirtyChange={setEditorIsDirty}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -73,6 +91,9 @@ export function AgentBuilderView() {
               <p className="text-sm mt-1">
                 Select a profile from the sidebar or create a new one
               </p>
+              <Button className="mt-4" onClick={handleCreateProfile}>
+                Create New Profile
+              </Button>
             </div>
           </div>
         )}
