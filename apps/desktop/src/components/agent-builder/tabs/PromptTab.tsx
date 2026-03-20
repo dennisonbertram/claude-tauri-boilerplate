@@ -31,10 +31,14 @@ export function PromptTab({ draft, onChange }: PromptTabProps) {
           placeholder="You are a helpful assistant..."
           className="w-full min-h-[200px] resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none dark:bg-input/30"
         />
-        <p className="text-xs text-muted-foreground mt-1">
-          The system prompt sent at the beginning of every conversation with this
-          agent profile.
-        </p>
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-muted-foreground">
+            The system prompt sent at the beginning of every conversation with this agent profile.
+          </p>
+          <span className="text-xs text-muted-foreground shrink-0 ml-2">
+            {(draft.systemPrompt ?? '').length} chars
+          </span>
+        </div>
       </div>
 
       {/* Use Claude Code Prompt */}
@@ -56,8 +60,7 @@ export function PromptTab({ draft, onChange }: PromptTabProps) {
             Include Claude Code system prompt
           </label>
           <p className="text-xs text-muted-foreground">
-            When enabled, the built-in Claude Code system prompt is prepended to
-            your custom system prompt.
+            Includes Claude's built-in coding assistant instructions before your custom prompt above.
           </p>
         </div>
       </div>
@@ -72,25 +75,28 @@ export function PromptTab({ draft, onChange }: PromptTabProps) {
         </p>
         <div className="space-y-2">
           {[
-            { id: 'project', label: 'Project settings (.claude/)' },
-            { id: 'user', label: 'User settings (~/.claude/)' },
-            { id: 'global', label: 'Global settings' },
-            { id: 'managed', label: 'Managed settings' },
+            { id: 'project', label: 'Project settings', description: 'Local to this project (.claude/ folder)' },
+            { id: 'user', label: 'Personal settings', description: 'Your user defaults (~/.claude/ folder)' },
+            { id: 'global', label: 'Global settings', description: 'System-wide configuration' },
+            { id: 'managed', label: 'Organization settings', description: 'Admin-managed policies' },
           ].map((source) => (
-            <div key={source.id} className="flex items-center gap-2">
+            <div key={source.id} className="flex items-start gap-2">
               <input
                 type="checkbox"
                 id={`setting-source-${source.id}`}
                 checked={settingSources.includes(source.id)}
                 onChange={() => handleSettingSourceToggle(source.id)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-ring mt-0.5 shrink-0"
               />
-              <label
-                htmlFor={`setting-source-${source.id}`}
-                className="text-sm text-foreground cursor-pointer"
-              >
-                {source.label}
-              </label>
+              <div>
+                <label
+                  htmlFor={`setting-source-${source.id}`}
+                  className="text-sm text-foreground cursor-pointer"
+                >
+                  {source.label}
+                </label>
+                <p className="text-xs text-muted-foreground">{source.description}</p>
+              </div>
             </div>
           ))}
         </div>
