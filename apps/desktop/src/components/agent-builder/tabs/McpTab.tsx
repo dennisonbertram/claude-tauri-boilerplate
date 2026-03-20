@@ -21,10 +21,17 @@ export function McpTab({ draft, onChange }: McpTabProps) {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg bg-muted/40 border border-border p-3 mb-1">
+        <p className="text-sm font-medium text-foreground mb-1">Model Context Protocol (MCP) Servers</p>
+        <p className="text-xs text-muted-foreground">
+          MCP servers extend your agent with additional capabilities like web search, database access, or custom tools.
+          Each server runs as a local process your agent can call during a session.
+        </p>
+      </div>
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className="block text-sm font-medium text-foreground">
-            MCP Servers JSON
+            Server Configuration
           </label>
           {jsonValid !== null && (
             <span
@@ -54,8 +61,7 @@ export function McpTab({ draft, onChange }: McpTabProps) {
           className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none dark:bg-input/30"
         />
         <p className="text-xs text-muted-foreground mt-1">
-          Configure MCP (Model Context Protocol) servers that this agent profile
-          can connect to. Each server provides additional tools and context.
+          Configure MCP servers available to this agent. Each key is a server name with its command and environment settings.
         </p>
       </div>
     </div>

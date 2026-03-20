@@ -29,7 +29,7 @@ interface HooksTabProps {
 }
 
 export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
-  const [view, setView] = useState<'json' | 'canvas'>('json');
+  const [view, setView] = useState<'json' | 'canvas'>('canvas');
   const [unsupportedConfirmed, setUnsupportedConfirmed] = useState(false);
   const hooksJson = draft.hooksJson ?? '';
 
@@ -173,6 +173,11 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
 
   return (
     <div className="space-y-4">
+      <div className="text-sm text-muted-foreground mb-1">
+        <strong className="text-foreground">Automations</strong> run custom commands before or after agent actions,
+        at session start/end, or when the agent stops. Use Canvas for a visual editor, or JSON for advanced configuration.
+      </div>
+
       {/* Dangerous hooks warning */}
       {hasDangerousHooks && (
         <div className="px-4 py-2 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-xs text-yellow-300 flex items-center gap-2">
@@ -268,6 +273,7 @@ export function HooksTab({ draft, onChange, profileId }: HooksTabProps) {
               size="sm"
               onClick={handleExport}
               disabled={!hooksJson.trim()}
+              title={!hooksJson.trim() ? "Add hooks configuration to export" : "Download hooks as JSON file"}
             >
               Export JSON
             </Button>
