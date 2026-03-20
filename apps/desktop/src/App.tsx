@@ -309,6 +309,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           plan={plan}
           onOpenSettings={handleOpenSettings}
         />
+        <div className="relative flex-1 min-h-0 flex flex-col">
+          <div className="absolute inset-0 bg-grid-pattern pointer-events-none z-0 opacity-40" />
+          <div className="relative z-10 flex-1 min-h-0 flex flex-col">
         {activeView === 'chat' ? (
           activeSessionId ? (
             <ChatPage
@@ -363,6 +366,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         ) : (
           <TeamsView />
         )}
+          </div>
+        </div>
         <SettingsPanel
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}

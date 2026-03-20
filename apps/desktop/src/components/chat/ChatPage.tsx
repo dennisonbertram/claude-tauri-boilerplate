@@ -1371,23 +1371,26 @@ export function ChatPage({
           </button>
         </div>
       )}
-      <ChatInput
-        input={input}
-        onInputChange={handleInputChange}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        showPalette={paletteOpen}
-        paletteFilter={paletteFilter}
-        paletteCommands={filteredCommands}
-        onCommandSelect={handleCommandSelectAndClear}
-        onPaletteClose={handlePaletteClose}
-        images={attachments}
-        onImagesChange={setAttachments}
-        availableFiles={suggestedFiles}
-        ghostText={undefined}
-        onAcceptSuggestion={handleAcceptGhostText}
-        contextSummary={isLoading ? undefined : contextSummary}
-      />
+      {/* Footer composer */}
+      <div className="border-t border-border bg-background/95 backdrop-blur-sm z-20 px-8 py-4 flex items-center justify-center">
+        <ChatInput
+          input={input}
+          onInputChange={handleInputChange}
+          onSubmit={handleSubmit}
+          isLoading={isLoading}
+          showPalette={paletteOpen}
+          paletteFilter={paletteFilter}
+          paletteCommands={filteredCommands}
+          onCommandSelect={handleCommandSelectAndClear}
+          onPaletteClose={handlePaletteClose}
+          images={attachments}
+          onImagesChange={setAttachments}
+          availableFiles={suggestedFiles}
+          ghostText={undefined}
+          onAcceptSuggestion={handleAcceptGhostText}
+          contextSummary={isLoading ? undefined : contextSummary}
+        />
+      </div>
       <ShortcutHelpModal
         isOpen={helpOpen}
         onClose={() => setHelpOpen(false)}

@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useMemo, type FormEvent, type KeyboardEvent, type ClipboardEvent, type DragEvent, type ChangeEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { CommandPalette } from './CommandPalette';
-import { ShortcutBadge } from '@/components/ShortcutBadge';
 import { X, FileText, Paperclip } from '@phosphor-icons/react';
 import type { Command } from '@/hooks/useCommands';
 import { isImageFile } from './file-utils';
@@ -56,21 +54,6 @@ function isImageMatchVisible(file: AttachedImage): boolean {
   return typeof file.dataUrl === 'string' && file.dataUrl.length > 0;
 }
 
-function getChatWidthClass(width: 'standard' | 'wide' | 'full'): string {
-  switch (width) {
-    case 'wide':
-      return 'max-w-5xl';
-    case 'full':
-      return 'max-w-none';
-    case 'standard':
-    default:
-      return 'max-w-3xl';
-  }
-}
-
-function getChatDensityClass(density: 'comfortable' | 'compact'): string {
-  return density === 'compact' ? 'p-3' : 'p-4';
-}
 
 function fuzzyMatchScore(candidate: string, query: string): number {
   if (!query) return 0;
@@ -454,8 +437,6 @@ export function ChatInput({
     [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion, isMentionOpen, mentionCandidates, selectedMentionIndex, handleMentionSelect, closeMentionPalette, paletteCommands]
   );
 
-  const chatWidthClass = getChatWidthClass(settings.chatWidth);
-  const densityClass = getChatDensityClass(settings.chatDensity);
   const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
   const chatFontStyle =
     settings.chatFont === 'mono'
@@ -467,13 +448,13 @@ export function ChatInput({
     <form
       onSubmit={onSubmit}
       data-testid="chat-input-form"
-      className={`border-t border-border ${densityClass} ${isDragOver ? 'bg-accent/20' : ''}`}
+      className={`${isDragOver ? 'bg-accent/20' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div
-        className={`relative mx-auto flex items-end gap-2 ${chatWidthClass}`}
+        className="relative mx-auto w-full max-w-4xl"
         data-testid="chat-input-shell"
       >
         {showPalette && (
@@ -487,140 +468,141 @@ export function ChatInput({
           </div>
         )}
 
-        <div className="relative flex-1">
-          {images.length > 0 && (
-            <div data-testid="image-thumbnails" className="mb-2 flex flex-wrap gap-2">
-              {images.map((img) => {
-                const isImage = isImageMatchVisible(img);
-                return (
-                  <div
-                    key={img.id}
-                    data-testid={isImage ? 'image-thumbnail' : 'file-attachment-item'}
-                    className="group relative border rounded-md border-border bg-muted/40"
+        {isMentionOpen && (
+          <div
+            className="absolute bottom-full left-0 right-0 z-10 mb-1 rounded-lg border border-border bg-popover shadow-lg"
+            data-testid="file-mention-palette"
+          >
+            {mentionCandidates.length === 0 && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                No matching files
+              </div>
+            )}
+            {mentionCandidates.length > 0 && (
+              <ul>
+                {mentionCandidates.map((filePath, index) => (
+                  <li
+                    key={filePath}
+                    data-testid="file-mention-item"
+                    data-selected={selectedMentionIndex === index ? 'true' : 'false'}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleMentionSelect(filePath)}
+                    onMouseEnter={() => setSelectedMentionIndex(index)}
+                    className={`cursor-pointer px-3 py-2 text-sm ${
+                      selectedMentionIndex === index
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-popover-foreground'
+                    }`}
                   >
-                    {isImage ? (
-                      <img
-                        src={img.dataUrl}
-                        alt={img.name}
-                        className="h-16 w-16 rounded-md object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-16 w-40 items-center gap-2 px-2 py-1.5 text-sm">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate max-w-28">{img.name}</span>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      aria-label="Remove attachment"
-                      onClick={() => removeImage(img.id)}
-                      className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    {filePath}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
-          {isMentionOpen && (
-            <div
-              className="absolute bottom-full left-0 right-0 z-10 mb-1 rounded-lg border border-border bg-popover shadow-lg"
-              data-testid="file-mention-palette"
-            >
-              {mentionCandidates.length === 0 && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  No matching files
+        {/* Attachment thumbnails above the pill */}
+        {images.length > 0 && (
+          <div data-testid="image-thumbnails" className="mb-2 flex flex-wrap gap-2 px-2">
+            {images.map((img) => {
+              const isImage = isImageMatchVisible(img);
+              return (
+                <div
+                  key={img.id}
+                  data-testid={isImage ? 'image-thumbnail' : 'file-attachment-item'}
+                  className="group relative border rounded-md border-border bg-muted/40"
+                >
+                  {isImage ? (
+                    <img
+                      src={img.dataUrl}
+                      alt={img.name}
+                      className="h-16 w-16 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-40 items-center gap-2 px-2 py-1.5 text-sm">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate max-w-28">{img.name}</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Remove attachment"
+                    onClick={() => removeImage(img.id)}
+                    className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
-              )}
-              {mentionCandidates.length > 0 && (
-                <ul>
-                  {mentionCandidates.map((filePath, index) => (
-                    <li
-                      key={filePath}
-                      data-testid="file-mention-item"
-                      data-selected={selectedMentionIndex === index ? 'true' : 'false'}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleMentionSelect(filePath)}
-                      onMouseEnter={() => setSelectedMentionIndex(index)}
-                      className={`cursor-pointer px-3 py-2 text-sm ${
-                        selectedMentionIndex === index
-                          ? 'bg-accent text-accent-foreground'
-                          : 'text-popover-foreground'
-                      }`}
-                    >
-                      {filePath}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+              );
+            })}
+          </div>
+        )}
 
-          <textarea
-            value={input}
-            onChange={(e) => {
-              const target = e.currentTarget;
-              const cursor = target.selectionStart ?? target.value.length;
-              updateInputValue(e.target.value, cursor);
-            }}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            placeholder="Message Claude..."
-            disabled={isLoading}
-            rows={1}
-            className={`w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 ${chatFontClass}`}
-            style={{
-              maxHeight: '120px',
-              minHeight: '40px',
-              ...chatFontStyle,
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-            }}
-          />
-          {showGhost && (
-            <div
-              data-testid="ghost-text"
-              className="pointer-events-none absolute left-0 top-0 px-3 py-2 text-sm text-muted-foreground/50"
-              aria-hidden="true"
-            >
-              {ghostText}
-            </div>
-          )}
-        </div>
-
-        <input
-          ref={pickerRef}
-          type="file"
-          data-testid="file-input"
-          multiple
-          className="sr-only"
-          onChange={handlePickFilesChange}
-        />
-
-        <div className="flex items-center gap-1.5">
-          <Button
+        {/* Pill-shaped input container */}
+        <div className="w-full bg-white rounded-full shadow-soft border border-border p-1.5 flex items-center gap-1">
+          {/* Attach button (left) */}
+          <button
             type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            title="Open command palette (/)"
+            onClick={handlePickFilesClick}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+            title="Attach files"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+
+          {/* Command palette trigger */}
+          <button
+            type="button"
             onClick={() => onInputChange('/')}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+            title="Open command palette (/)"
           >
             <span className="text-sm font-mono leading-none">/</span>
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={handlePickFilesClick}>
-            <Paperclip className="h-4 w-4 mr-1.5" />
-            Attach
-          </Button>
-          <Button
+          </button>
+
+          {/* Text input */}
+          <div className="relative flex-1 min-w-0">
+            <textarea
+              value={input}
+              onChange={(e) => {
+                const target = e.currentTarget;
+                const cursor = target.selectionStart ?? target.value.length;
+                updateInputValue(e.target.value, cursor);
+              }}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              placeholder="Message Claude..."
+              disabled={isLoading}
+              rows={1}
+              className={`flex-1 w-full bg-transparent border-none focus:ring-0 px-3 text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none ${chatFontClass}`}
+              style={{
+                maxHeight: '120px',
+                minHeight: '36px',
+                ...chatFontStyle,
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+              }}
+            />
+            {showGhost && (
+              <div
+                data-testid="ghost-text"
+                className="pointer-events-none absolute left-0 top-0 px-3 py-2 text-[15px] text-muted-foreground/50"
+                aria-hidden="true"
+              >
+                {ghostText}
+              </div>
+            )}
+          </div>
+
+          {/* Send button (right) */}
+          <button
             type="submit"
-            size="sm"
             disabled={!input.trim() || isLoading}
+            className="px-5 py-2 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors text-sm font-medium flex items-center gap-2 shrink-0 disabled:opacity-50"
           >
             <svg
               width="16"
@@ -635,9 +617,18 @@ export function ChatInput({
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-          </Button>
-          <ShortcutBadge shortcut={{ key: 'Enter' }} />
+            Send
+          </button>
         </div>
+
+        <input
+          ref={pickerRef}
+          type="file"
+          data-testid="file-input"
+          multiple
+          className="sr-only"
+          onChange={handlePickFilesChange}
+        />
       </div>
     </form>
     {contextSummary && (

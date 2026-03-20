@@ -196,6 +196,17 @@
     linear-gradient(to bottom, rgba(26,24,22,0.03) 1px, transparent 1px);
 }
 
+/* Shadow utilities using design sprint tokens */
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+.shadow-modal {
+  box-shadow: var(--shadow-modal);
+}
+.shadow-inner-soft {
+  box-shadow: var(--shadow-inner);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
