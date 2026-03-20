@@ -25,8 +25,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'prompt', label: 'Prompt' },
   { id: 'model', label: 'Model' },
   { id: 'tools', label: 'Tools' },
-  { id: 'hooks', label: 'Hooks' },
-  { id: 'mcp', label: 'MCP' },
+  { id: 'hooks', label: 'Automations' },
+  { id: 'mcp', label: 'Integrations' },
   { id: 'sandbox', label: 'Sandbox' },
   { id: 'advanced', label: 'Advanced' },
 ];
@@ -35,6 +35,7 @@ interface AgentProfileEditorProps {
   profile: AgentProfile;
   onSave: (updates: UpdateAgentProfileRequest) => Promise<AgentProfile>;
   onDelete: () => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /** Build a draft from a profile, extracting only editable fields. */
@@ -70,6 +71,7 @@ export function AgentProfileEditor({
   profile,
   onSave,
   onDelete,
+  onDirtyChange,
 }: AgentProfileEditorProps) {
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [draft, setDraft] = useState<UpdateAgentProfileRequest>(() =>
@@ -77,11 +79,13 @@ export function AgentProfileEditor({
   );
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [notification, setNotification] = useState<{type: 'success' | 'error'; message: string} | null>(null);
 
   // Reset draft when the profile changes (different profile selected)
   useEffect(() => {
     setDraft(profileToDraft(profile));
     setConfirmDelete(false);
+    setActiveTab('general');
   }, [profile.id]);
 
   // Check for unsaved changes
@@ -89,6 +93,35 @@ export function AgentProfileEditor({
     const original = profileToDraft(profile);
     return JSON.stringify(draft) !== JSON.stringify(original);
   }, [draft, profile]);
+
+  // Notify parent of dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(hasChanges);
+  }, [hasChanges, onDirtyChange]);
+
+  // Auto-dismiss confirmDelete after 3 seconds
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const timer = setTimeout(() => setConfirmDelete(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete]);
+
+  // Escape key dismisses confirmDelete
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setConfirmDelete(false);
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Auto-dismiss notification
+  useEffect(() => {
+    if (!notification) return;
+    const delay = notification.type === 'success' ? 2500 : 4000;
+    const timer = setTimeout(() => setNotification(null), delay);
+    return () => clearTimeout(timer);
+  }, [notification]);
 
   const handleChange = useCallback(
     (updates: Partial<UpdateAgentProfileRequest>) => {
@@ -101,9 +134,10 @@ export function AgentProfileEditor({
     try {
       setSaving(true);
       await onSave(draft);
+      setNotification({ type: 'success', message: 'Profile saved' });
     } catch (err) {
-      // Error handling is managed by the parent
       console.error('Failed to save profile:', err);
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'Failed to save profile' });
     } finally {
       setSaving(false);
     }
@@ -117,6 +151,18 @@ export function AgentProfileEditor({
     await onDelete();
     setConfirmDelete(false);
   }, [confirmDelete, onDelete]);
+
+  // Cmd+S / Ctrl+S shortcut to save
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (hasChanges && draft.name?.trim() && !saving) handleSave();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [hasChanges, draft.name, saving, handleSave]);
 
   return (
     <div className="flex h-full flex-col min-h-0">
@@ -141,10 +187,20 @@ export function AgentProfileEditor({
             variant="outline"
             size="sm"
             onClick={handleSave}
-            disabled={saving || !hasChanges}
+            disabled={saving || !hasChanges || !draft.name?.trim()}
+            title={!draft.name?.trim() ? 'Name is required' : !hasChanges ? 'No unsaved changes' : undefined}
           >
             {saving ? 'Saving...' : 'Save'}
           </Button>
+          {confirmDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             variant="destructive"
             size="sm"
@@ -154,6 +210,17 @@ export function AgentProfileEditor({
           </Button>
         </div>
       </div>
+
+      {/* Notification banner */}
+      {notification && (
+        <div className={`px-4 py-1.5 text-xs font-medium ${
+          notification.type === 'success'
+            ? 'bg-green-900/40 text-green-300 border-b border-green-800/50'
+            : 'bg-red-900/40 text-red-300 border-b border-red-800/50'
+        }`}>
+          {notification.message}
+        </div>
+      )}
 
       {/* Tab bar (horizontally scrollable) */}
       <div
