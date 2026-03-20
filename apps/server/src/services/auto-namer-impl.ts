@@ -28,11 +28,31 @@ export async function generateSessionTitle(
     }
   }
 
-  title = title.trim();
+  title = stripMarkdown(title.trim());
 
   if (!title) {
     return 'Chat Session';
   }
 
   return title.slice(0, 60); // cap at 60 chars
+}
+
+/** Remove common markdown syntax from a plain-text title. */
+function stripMarkdown(text: string): string {
+  return text
+    // [text](url) links → just the text
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    // **bold** / __bold__
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    // *italic* / _italic_
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    // `code`
+    .replace(/`([^`]+)`/g, '$1')
+    // # headers (leading hashes + optional space)
+    .replace(/^#{1,6}\s*/gm, '')
+    // > blockquotes
+    .replace(/^>\s?/gm, '')
+    .trim();
 }

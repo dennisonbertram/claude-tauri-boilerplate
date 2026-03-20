@@ -7,6 +7,39 @@ import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 
+const DATE_BUCKETS = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older'] as const;
+type DateBucket = (typeof DATE_BUCKETS)[number];
+
+function getDateBucket(date: Date): DateBucket {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (d >= today) return 'Today';
+  if (d >= yesterday) return 'Yesterday';
+  if (d >= weekAgo) return 'This Week';
+  if (d >= monthStart) return 'This Month';
+  return 'Older';
+}
+
+function groupSessionsByDate(sessions: Session[]): { bucket: DateBucket; sessions: Session[] }[] {
+  const groups = new Map<DateBucket, Session[]>();
+  for (const session of sessions) {
+    const bucket = getDateBucket(new Date(session.createdAt));
+    if (!groups.has(bucket)) groups.set(bucket, []);
+    groups.get(bucket)!.push(session);
+  }
+  return DATE_BUCKETS
+    .filter((b) => groups.has(b))
+    .map((b) => ({ bucket: b, sessions: groups.get(b)! }));
+}
+
 interface SessionSidebarProps {
   sessions: Session[];
   activeSessionId: string | null;
@@ -65,19 +98,27 @@ export function SessionSidebar({
       <Separator />
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="p-2 space-y-1">
-          {sessions.map(session => (
-            <SessionItem
-              key={session.id}
-              session={session}
-              isActive={session.id === activeSessionId}
-              onSelect={() => onSelectSession(session.id)}
-              onDelete={() => onDeleteSession(session.id)}
-              onRename={(title) => onRenameSession(session.id, title)}
-              onFork={() => onForkSession(session.id)}
-              onExport={(format) => onExportSession(session.id, format)}
-            />
-          ))}
-          {sessions.length === 0 && (
+          {sessions.length > 0 ? (
+            groupSessionsByDate(sessions).map(({ bucket, sessions: groupSessions }) => (
+              <div key={bucket}>
+                <div className="px-2 pt-3 pb-1 text-xs font-semibold text-muted-foreground/60 uppercase tracking-wide">
+                  {bucket}
+                </div>
+                {groupSessions.map(session => (
+                  <SessionItem
+                    key={session.id}
+                    session={session}
+                    isActive={session.id === activeSessionId}
+                    onSelect={() => onSelectSession(session.id)}
+                    onDelete={() => onDeleteSession(session.id)}
+                    onRename={(title) => onRenameSession(session.id, title)}
+                    onFork={() => onForkSession(session.id)}
+                    onExport={(format) => onExportSession(session.id, format)}
+                  />
+                ))}
+              </div>
+            ))
+          ) : (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground">
               <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
               <p className="text-sm font-medium mb-1">No conversations yet</p>
