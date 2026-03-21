@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -210,6 +210,7 @@ export function createDb(path?: string): Database {
   migrateWorkspaceProvenance(db);
   migrateWorkspaceEvents(db);
   migrateWorkspaceReview(db);
+  migrateWorkspaceProviders(db);
   return db;
 }
 
@@ -1743,4 +1744,257 @@ export function computeMergeReadiness(
   if (hasUnreviewed) return 'needs_review';
 
   return 'ready';
+}
+
+// ─── Workspace Providers ────────────────────────────────────────────────────────
+
+export interface WorkspaceProviderRow {
+  id: string;
+  project_id: string | null;
+  name: string;
+  type: string;
+  command: string;
+  args_json: string;
+  working_dir: string | null;
+  timeout_ms: number;
+  enabled: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapWorkspaceProvider(row: WorkspaceProviderRow) {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    name: row.name,
+    type: row.type as 'script',
+    command: row.command,
+    argsJson: JSON.parse(row.args_json) as string[],
+    workingDir: row.working_dir,
+    timeoutMs: row.timeout_ms,
+    enabled: row.enabled === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function createWorkspaceProvider(
+  db: Database,
+  data: {
+    id: string;
+    projectId?: string | null;
+    name: string;
+    command: string;
+    args?: string[];
+    workingDir?: string | null;
+    timeoutMs?: number;
+    enabled?: boolean;
+  }
+) {
+  const stmt = db.prepare(
+    `INSERT INTO workspace_providers (id, project_id, name, command, args_json, working_dir, timeout_ms, enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(
+    data.id,
+    data.projectId ?? null,
+    data.name,
+    data.command,
+    JSON.stringify(data.args ?? []),
+    data.workingDir ?? null,
+    data.timeoutMs ?? 1800000,
+    data.enabled !== false ? 1 : 0
+  ) as WorkspaceProviderRow;
+  return mapWorkspaceProvider(row);
+}
+
+export function listWorkspaceProviders(db: Database, projectId?: string) {
+  if (projectId !== undefined) {
+    const stmt = db.prepare(`SELECT * FROM workspace_providers WHERE project_id = ? ORDER BY created_at DESC`);
+    const rows = stmt.all(projectId) as WorkspaceProviderRow[];
+    return rows.map(mapWorkspaceProvider);
+  }
+  const stmt = db.prepare(`SELECT * FROM workspace_providers ORDER BY created_at DESC`);
+  const rows = stmt.all() as WorkspaceProviderRow[];
+  return rows.map(mapWorkspaceProvider);
+}
+
+export function getWorkspaceProvider(db: Database, id: string) {
+  const stmt = db.prepare(`SELECT * FROM workspace_providers WHERE id = ?`);
+  const row = stmt.get(id) as WorkspaceProviderRow | null;
+  return row ? mapWorkspaceProvider(row) : undefined;
+}
+
+export function updateWorkspaceProvider(
+  db: Database,
+  id: string,
+  patch: {
+    name?: string;
+    command?: string;
+    args?: string[];
+    workingDir?: string | null;
+    timeoutMs?: number;
+    enabled?: boolean;
+  }
+) {
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+
+  if (patch.name !== undefined) {
+    setClauses.push('name = ?');
+    values.push(patch.name);
+  }
+  if (patch.command !== undefined) {
+    setClauses.push('command = ?');
+    values.push(patch.command);
+  }
+  if (patch.args !== undefined) {
+    setClauses.push('args_json = ?');
+    values.push(JSON.stringify(patch.args));
+  }
+  if (patch.workingDir !== undefined) {
+    setClauses.push('working_dir = ?');
+    values.push(patch.workingDir);
+  }
+  if (patch.timeoutMs !== undefined) {
+    setClauses.push('timeout_ms = ?');
+    values.push(patch.timeoutMs);
+  }
+  if (patch.enabled !== undefined) {
+    setClauses.push('enabled = ?');
+    values.push(patch.enabled ? 1 : 0);
+  }
+
+  if (setClauses.length === 0) return;
+
+  setClauses.push("updated_at = datetime('now')");
+  values.push(id);
+
+  const stmt = db.prepare(
+    `UPDATE workspace_providers SET ${setClauses.join(', ')} WHERE id = ?`
+  );
+  stmt.run(...values);
+}
+
+export function deleteWorkspaceProvider(db: Database, id: string) {
+  const activeCheck = db.prepare(
+    `SELECT COUNT(*) as count FROM workspace_provisioning_runs WHERE provider_id = ? AND status IN ('pending','running')`
+  );
+  const result = activeCheck.get(id) as { count: number };
+  if (result.count > 0) {
+    const err = new Error('Cannot delete provider with active provisioning runs');
+    (err as any).status = 409;
+    (err as any).code = 'ACTIVE_RUNS_EXIST';
+    throw err;
+  }
+  const stmt = db.prepare(`DELETE FROM workspace_providers WHERE id = ?`);
+  stmt.run(id);
+}
+
+// ─── Workspace Provisioning Runs ─────────────────────────────────────────────
+
+export interface WorkspaceProvisioningRunRow {
+  id: string;
+  workspace_id: string;
+  provider_id: string;
+  status: string;
+  request_json: string;
+  response_json: string;
+  logs_redacted: string;
+  cleanup_owner: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapProvisioningRun(row: WorkspaceProvisioningRunRow) {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    providerId: row.provider_id,
+    status: row.status as import('@claude-tauri/shared').ProvisioningRunStatus,
+    requestJson: JSON.parse(row.request_json) as Record<string, unknown>,
+    responseJson: JSON.parse(row.response_json) as Record<string, unknown>,
+    logsRedacted: row.logs_redacted,
+    cleanupOwner: row.cleanup_owner,
+    startedAt: row.started_at,
+    finishedAt: row.finished_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function createProvisioningRun(
+  db: Database,
+  workspaceId: string,
+  providerId: string,
+  requestJson: Record<string, unknown> = {}
+) {
+  const id = crypto.randomUUID();
+  const stmt = db.prepare(
+    `INSERT INTO workspace_provisioning_runs (id, workspace_id, provider_id, request_json)
+     VALUES (?, ?, ?, ?) RETURNING *`
+  );
+  const row = stmt.get(id, workspaceId, providerId, JSON.stringify(requestJson)) as WorkspaceProvisioningRunRow;
+  return mapProvisioningRun(row);
+}
+
+export function listProvisioningRuns(db: Database, workspaceId: string) {
+  const stmt = db.prepare(
+    `SELECT * FROM workspace_provisioning_runs WHERE workspace_id = ? ORDER BY created_at DESC`
+  );
+  const rows = stmt.all(workspaceId) as WorkspaceProvisioningRunRow[];
+  return rows.map(mapProvisioningRun);
+}
+
+export function getProvisioningRun(db: Database, runId: string) {
+  const stmt = db.prepare(`SELECT * FROM workspace_provisioning_runs WHERE id = ?`);
+  const row = stmt.get(runId) as WorkspaceProvisioningRunRow | null;
+  return row ? mapProvisioningRun(row) : undefined;
+}
+
+export function updateProvisioningRunStatus(
+  db: Database,
+  runId: string,
+  status: import('@claude-tauri/shared').ProvisioningRunStatus,
+  patch?: {
+    responseJson?: Record<string, unknown>;
+    logsRedacted?: string;
+    cleanupOwner?: string | null;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+  }
+) {
+  const setClauses: string[] = ['status = ?'];
+  const values: unknown[] = [status];
+
+  if (patch?.responseJson !== undefined) {
+    setClauses.push('response_json = ?');
+    values.push(JSON.stringify(patch.responseJson));
+  }
+  if (patch?.logsRedacted !== undefined) {
+    setClauses.push('logs_redacted = ?');
+    values.push(patch.logsRedacted);
+  }
+  if (patch?.cleanupOwner !== undefined) {
+    setClauses.push('cleanup_owner = ?');
+    values.push(patch.cleanupOwner);
+  }
+  if (patch?.startedAt !== undefined) {
+    setClauses.push('started_at = ?');
+    values.push(patch.startedAt);
+  }
+  if (patch?.finishedAt !== undefined) {
+    setClauses.push('finished_at = ?');
+    values.push(patch.finishedAt);
+  }
+
+  setClauses.push("updated_at = datetime('now')");
+  values.push(runId);
+
+  const stmt = db.prepare(
+    `UPDATE workspace_provisioning_runs SET ${setClauses.join(', ')} WHERE id = ?`
+  );
+  stmt.run(...values);
 }

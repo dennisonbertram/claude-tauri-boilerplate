@@ -434,3 +434,51 @@ export function migrateWorkspaceReview(db: import('bun:sqlite').Database): void 
     // index already exists
   }
 }
+
+export function migrateWorkspaceProviders(db: import('bun:sqlite').Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_providers (
+        id TEXT PRIMARY KEY,
+        project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'script' CHECK(type IN ('script')),
+        command TEXT NOT NULL,
+        args_json TEXT NOT NULL DEFAULT '[]',
+        working_dir TEXT,
+        timeout_ms INTEGER NOT NULL DEFAULT 1800000,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(project_id, name)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_workspace_providers_project_id ON workspace_providers(project_id)');
+  } catch (_err) {
+    // Table already exists — idempotent
+  }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_provisioning_runs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        provider_id TEXT NOT NULL REFERENCES workspace_providers(id) ON DELETE RESTRICT,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK(status IN ('pending','running','succeeded','failed','teardown_running','torn_down','teardown_failed')),
+        request_json TEXT NOT NULL DEFAULT '{}',
+        response_json TEXT NOT NULL DEFAULT '{}',
+        logs_redacted TEXT NOT NULL DEFAULT '',
+        cleanup_owner TEXT,
+        started_at TEXT,
+        finished_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_provisioning_runs_workspace_id ON workspace_provisioning_runs(workspace_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_provisioning_runs_status ON workspace_provisioning_runs(status)');
+  } catch (_err) {
+    // Table already exists — idempotent
+  }
+}
