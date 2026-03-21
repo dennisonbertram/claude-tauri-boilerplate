@@ -11,8 +11,15 @@ export interface AppError {
  * Catches all unhandled errors and returns consistent JSON responses.
  */
 export const errorHandler: ErrorHandler = (err, c) => {
-  // Log the full error to stderr for debugging
-  console.error('[error-handler]', err);
+  // Log the full error to stderr for debugging (only in debug mode)
+  const DEBUG_LOGS_ENABLED = process.env.CLAUDE_TAURI_DEBUG_LOGS === '1';
+  if (DEBUG_LOGS_ENABLED) {
+    console.error('[error-handler]', err);
+  } else {
+    const status = (err as any).status ?? 500;
+    const msg = err instanceof Error ? err.message.split('\n')[0] : 'Internal error';
+    console.error(`[error-handler] ${status} ${msg}`);
+  }
 
   // Determine if this is actually an Error object
   if (!(err instanceof Error)) {

@@ -16,6 +16,8 @@ import { generateRandomName } from '../services/name-generator';
 import { generateSessionTitle } from '../services/auto-namer';
 import { generateContextSummary } from '../services/context-summary';
 
+const DEBUG_LOGS_ENABLED = process.env.CLAUDE_TAURI_DEBUG_LOGS === '1';
+
 const createSessionSchema = z.object({
   title: z.string().max(500).optional(),
   model: z.string().max(200).optional(),
@@ -268,7 +270,11 @@ export function createSessionsRouter(db: Database) {
       const summary = await generateContextSummary(messages);
       return c.json({ summary });
     } catch (err) {
-      console.error('[summary] Failed to generate summary:', err);
+      if (DEBUG_LOGS_ENABLED) {
+        console.error('[summary] Failed to generate summary:', err);
+      } else {
+        console.error('[summary] Failed to generate summary:', err instanceof Error ? err.message.split('\n')[0] : 'unknown error');
+      }
       return c.json(
         { error: 'Failed to generate summary', code: 'GENERATION_ERROR' },
         500
@@ -311,7 +317,11 @@ export function createSessionsRouter(db: Database) {
       updateSessionTitle(db, id, title);
       return c.json({ title });
     } catch (err) {
-      console.error('[auto-name] Failed to generate title:', err);
+      if (DEBUG_LOGS_ENABLED) {
+        console.error('[auto-name] Failed to generate title:', err);
+      } else {
+        console.error('[auto-name] Failed to generate title:', err instanceof Error ? err.message.split('\n')[0] : 'unknown error');
+      }
       return c.json(
         { error: 'Failed to generate title', code: 'GENERATION_ERROR' },
         500
