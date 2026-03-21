@@ -92,12 +92,27 @@ async function writeMcpJson(data: McpJsonFile): Promise<void> {
   await Bun.write(getMcpJsonPath(), JSON.stringify(data, null, 2) + '\n');
 }
 
-function toServerConfig(name: string, entry: McpJsonEntry): McpServerConfig {
+/** Names or commands that identify internal/infrastructure MCP servers. */
+const INTERNAL_SERVER_NAMES = new Set(['claude-code', 'claude', 'claude-code-mcp']);
+const INTERNAL_COMMANDS = new Set(['claude', 'claude-code']);
+
+function isInternalServer(name: string, entry: McpJsonEntry): boolean {
+  if (INTERNAL_SERVER_NAMES.has(name.toLowerCase())) return true;
+  if (entry.command && INTERNAL_COMMANDS.has(entry.command.toLowerCase())) return true;
+  return false;
+}
+
+interface McpServerConfigWithMeta extends McpServerConfig {
+  isInternal?: boolean;
+}
+
+function toServerConfig(name: string, entry: McpJsonEntry): McpServerConfigWithMeta {
   const serverType = entry.type || 'stdio';
-  const config: McpServerConfig = {
+  const config: McpServerConfigWithMeta = {
     name,
     type: serverType,
     enabled: !entry.disabled,
+    isInternal: isInternalServer(name, entry),
   };
 
   if (serverType === 'stdio') {

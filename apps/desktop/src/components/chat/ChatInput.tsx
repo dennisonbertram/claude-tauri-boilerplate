@@ -6,6 +6,7 @@ import { X, FileText, Paperclip } from 'lucide-react';
 import type { Command } from '@/hooks/useCommands';
 import { isImageFile } from './file-utils';
 import { useSettings } from '@/hooks/useSettings';
+import { McpStatusPill } from './McpStatusPill';
 
 export interface AttachedImage {
   id: string;
@@ -36,6 +37,8 @@ interface ChatInputProps {
   onAcceptSuggestion?: () => void;
   /** Haiku-generated one-line summary of what the conversation is about */
   contextSummary?: string | null;
+  /** Names of enabled non-internal MCP servers to show in the toolbar */
+  mcpServerNames?: string[];
 }
 
 let imageIdCounter = 0;
@@ -171,6 +174,7 @@ export function ChatInput({
   ghostText,
   onAcceptSuggestion,
   contextSummary,
+  mcpServerNames,
 }: ChatInputProps) {
   const { settings } = useSettings();
   const paletteRef = useRef<HTMLDivElement>(null);
@@ -603,6 +607,9 @@ export function ChatInput({
         />
 
         <div className="flex items-center gap-1.5">
+          {mcpServerNames && mcpServerNames.length > 0 && (
+            <McpStatusPill serverNames={mcpServerNames} />
+          )}
           <Button
             type="button"
             size="icon"
