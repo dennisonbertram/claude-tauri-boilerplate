@@ -686,6 +686,14 @@ export interface Workspace {
   githubIssueTitle?: string | null;
   githubIssueUrl?: string | null;
   githubIssueRepo?: string | null;
+  // Provenance fields (Phase 1)
+  sourceBranch?: string | null;
+  sourceRefSha?: string | null;
+  baseRefSha?: string | null;
+  parentWorkspaceId?: string | null;
+  archivedAt?: string | null;
+  lastReconciledAt?: string | null;
+  recoveryStatus?: 'healthy' | 'stale' | 'recoverable' | 'broken';
   createdAt: string;
   updatedAt: string;
 }

@@ -277,3 +277,53 @@ export function migrateSessionModelColumn(db: import('bun:sqlite').Database): vo
   }
   db.exec("UPDATE sessions SET model = 'claude-sonnet-4-6' WHERE model IS NULL OR trim(model) = ''");
 }
+
+/**
+ * Add workspace provenance and lifecycle tracking columns to workspaces table.
+ * SQLite does not support ALTER TABLE ADD COLUMN IF NOT EXISTS, so we check first.
+ */
+export function migrateWorkspaceProvenance(db: import('bun:sqlite').Database): void {
+  const columns = db.prepare("PRAGMA table_info(workspaces)").all() as Array<{ name: string }>;
+  const has = (name: string) => columns.some(c => c.name === name);
+
+  if (!has('source_branch')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN source_branch TEXT');
+  }
+  if (!has('source_ref_sha')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN source_ref_sha TEXT');
+  }
+  if (!has('base_ref_sha')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN base_ref_sha TEXT');
+  }
+  if (!has('parent_workspace_id')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN parent_workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL');
+  }
+  if (!has('archived_at')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN archived_at TEXT');
+  }
+  if (!has('last_reconciled_at')) {
+    db.exec('ALTER TABLE workspaces ADD COLUMN last_reconciled_at TEXT');
+  }
+  if (!has('recovery_status')) {
+    db.exec("ALTER TABLE workspaces ADD COLUMN recovery_status TEXT NOT NULL DEFAULT 'healthy'");
+  }
+}
+
+/**
+ * Create workspace_events audit trail table.
+ * Idempotent — uses CREATE TABLE IF NOT EXISTS.
+ */
+export function migrateWorkspaceEvents(db: import('bun:sqlite').Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_events (
+      id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      payload_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_workspace_events_workspace_id ON workspace_events(workspace_id)'
+  );
+}
