@@ -60,6 +60,9 @@ export interface AppSettings {
   // Privacy
   privacyMode: boolean;
 
+  // Integrations
+  githubToken: string;
+
   // IDE
   preferredIde: IdeId;
   customIdeUrl: string;
@@ -119,6 +122,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
   // Privacy
   privacyMode: false,
+
+  // Integrations
+  githubToken: '',
 
   // IDE
   preferredIde: 'vscode',
