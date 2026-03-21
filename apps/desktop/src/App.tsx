@@ -11,6 +11,7 @@ import { TeamsView } from '@/components/teams/TeamsView';
 import { AgentBuilderView } from '@/components/agent-builder';
 import { AppSidebar } from '@/components/AppSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
+import { ProjectsGridView } from '@/components/workspaces/ProjectsGridView';
 import { AddProjectDialog } from '@/components/workspaces/AddProjectDialog';
 import { CreateWorkspaceDialog } from '@/components/workspaces/CreateWorkspaceDialog';
 import { StatusBar } from '@/components/StatusBar';
@@ -311,7 +312,31 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
         />
         <div className="relative flex-1 min-h-0 flex flex-col">
           <div className="absolute inset-0 bg-grid-pattern pointer-events-none z-0 opacity-40" />
-          <div className="relative z-10 flex-1 min-h-0 flex flex-col">
+          {activeView === 'chat' && (
+            <header className="h-14 flex items-center justify-center w-full absolute top-0 z-20 pointer-events-none">
+              <div className="bg-sidebar/80 backdrop-blur-md border border-border rounded-full p-1 flex items-center gap-1 shadow-sm pointer-events-auto">
+                <button
+                  onClick={() => handleSwitchView('chat')}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-white shadow-sm border border-black/5 text-foreground"
+                >
+                  Chat
+                </button>
+                <button
+                  onClick={() => handleSwitchView('workspaces')}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Code
+                </button>
+                <button
+                  onClick={() => handleSwitchView('teams')}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cowork
+                </button>
+              </div>
+            </header>
+          )}
+          <div className={`relative z-10 flex-1 min-h-0 flex flex-col ${activeView === 'chat' ? 'pt-14' : ''}`}>
         {activeView === 'chat' ? (
           activeSessionId ? (
             <ChatPage
@@ -347,19 +372,12 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               onTaskComplete={handleWorkspaceTaskComplete}
             />
           ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <div className="text-center space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Select a workspace or create one to get started
-                </p>
-                <button
-                  onClick={() => setAddProjectOpen(true)}
-                  className="h-8 rounded-lg bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  Add Project
-                </button>
-              </div>
-            </div>
+            <ProjectsGridView
+              projects={projects}
+              workspacesByProject={workspacesByProject}
+              onAddProject={() => setAddProjectOpen(true)}
+              onSelectWorkspace={handleSelectWorkspace}
+            />
           )
         ) : activeView === 'agents' ? (
           <AgentBuilderView />

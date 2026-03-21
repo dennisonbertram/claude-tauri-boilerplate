@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Session, Project, Workspace } from '@claude-tauri/shared';
 import {
   ChatCircle,
@@ -10,6 +10,7 @@ import {
   SidebarSimple,
   CaretLeft,
   CaretRight,
+  MagnifyingGlass,
 } from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
@@ -45,7 +46,7 @@ export interface AppSidebarProps {
   // User
   email?: string;
   plan?: string;
-  onOpenGear: () => void;
+  onOpenSettings: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -90,10 +91,9 @@ function groupSessionsByDate(sessions: Session[]): { bucket: DateBucket; session
 /* ------------------------------------------------------------------ */
 
 const navItems: { view: ActiveView; icon: typeof ChatCircle; label: string }[] = [
-  { view: 'chat', icon: ChatCircle, label: 'Chat' },
   { view: 'workspaces', icon: FolderOpen, label: 'Projects' },
+  { view: 'agents', icon: Robot, label: 'Agent Profiles' },
   { view: 'teams', icon: UsersThree, label: 'Teams' },
-  { view: 'agents', icon: Robot, label: 'Agents' },
 ];
 
 const navItemClass = (active: boolean) =>
@@ -126,8 +126,14 @@ export function AppSidebar({
   onToggleSidebar,
   email,
   plan,
-  onOpenGear,
+  onOpenSettings,
 }: AppSidebarProps) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = () => {
+    onSelectView('chat');
+    setTimeout(() => searchInputRef.current?.focus(), 50);
+  };
   const initial = email ? email.charAt(0).toUpperCase() : '?';
   const displayName = email ?? 'User';
 
@@ -152,9 +158,16 @@ export function AppSidebar({
         <button
           title="New Chat"
           onClick={onNewChat}
-          className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground"
+          className="rounded-md p-2 bg-white shadow-sm border border-black/5 text-foreground transition-colors"
         >
           <Plus className="h-[18px] w-[18px]" />
+        </button>
+        <button
+          title="Search"
+          onClick={handleSearch}
+          className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground"
+        >
+          <MagnifyingGlass className="h-[18px] w-[18px]" />
         </button>
         {navItems.map((item) => (
           <button
@@ -172,8 +185,8 @@ export function AppSidebar({
         ))}
         <div className="flex-1" />
         <button
-          title="Gear"
-          onClick={onOpenGear}
+          title="Settings"
+          onClick={onOpenSettings}
           className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground"
         >
           <Gear className="h-[18px] w-[18px]" />
@@ -208,9 +221,16 @@ export function AppSidebar({
         <div className="py-2 flex flex-col gap-6 px-3">
           {/* Primary nav links */}
           <nav className="flex flex-col gap-0.5">
-            {/* New Chat action button */}
-            <button onClick={onNewChat} className={navItemClass(false)}>
+            {/* New Chat — always styled as primary action */}
+            <button
+              onClick={onNewChat}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white shadow-sm border border-black/5 font-medium text-foreground w-full text-left transition-colors hover:shadow"
+            >
               <Plus className="h-[18px] w-[18px]" /> New Chat
+            </button>
+            {/* Search */}
+            <button onClick={handleSearch} className={navItemClass(false)}>
+              <MagnifyingGlass className="h-[18px] w-[18px]" /> Search
             </button>
             {/* View nav items */}
             {navItems.map((item) => (
@@ -235,6 +255,7 @@ export function AppSidebar({
               {/* Inline search */}
               <div className="px-2">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchQueryChange(e.target.value)}
@@ -301,7 +322,7 @@ export function AppSidebar({
       <div className="p-3 border-t border-sidebar-border">
         <div
           className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors cursor-pointer"
-          onClick={onOpenGear}
+          onClick={onOpenSettings}
         >
           <div className="relative">
             <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center font-medium text-xs">
@@ -313,7 +334,9 @@ export function AppSidebar({
             <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate">{plan || 'Free'}</p>
           </div>
-          <Gear className="h-4 w-4 text-muted-foreground" />
+          <button onClick={onOpenSettings} className="rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
+            <Gear className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       </div>
     </aside>

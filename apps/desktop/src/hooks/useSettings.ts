@@ -92,7 +92,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   workflowPrompts: { ...DEFAULT_WORKFLOW_PROMPTS },
 
   // Appearance
-  theme: 'dark',
+  theme: 'light',
   accentColor: 'slate',
   fontSize: 14,
   chatFont: 'proportional',

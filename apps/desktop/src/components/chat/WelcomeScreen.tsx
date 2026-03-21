@@ -1,5 +1,5 @@
-import { Sparkle, SquaresFour, Plugs, MagicWand } from '@phosphor-icons/react';
-import type { AgentProfile } from '@claude-tauri/shared';
+import { useState } from 'react';
+import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Microphone, ArrowUpRight } from '@phosphor-icons/react';
 
 const TEMPLATES = [
   { title: 'Generate a dashboard layout', subtitle: 'With sidebar navigation and data grid', Icon: SquaresFour },
@@ -9,17 +9,16 @@ const TEMPLATES = [
 
 interface WelcomeScreenProps {
   onNewChat: () => void;
-  agentProfiles?: AgentProfile[];
+  agentProfiles?: unknown[];
   selectedProfileId?: string | null;
   onSelectProfile?: (id: string | null) => void;
 }
 
 export function WelcomeScreen({
   onNewChat,
-  agentProfiles,
-  selectedProfileId,
-  onSelectProfile,
 }: WelcomeScreenProps) {
+  const [inputValue, setInputValue] = useState('');
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto relative bg-background">
       {/* Subtle grid bg */}
@@ -31,7 +30,7 @@ export function WelcomeScreen({
         {/* Hero section */}
         <div className="w-full max-w-3xl flex flex-col items-center text-center mb-10">
           {/* AI Logo */}
-          <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 mb-6 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.02)]">
+          <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 mb-6 shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
             <Sparkle size={24} weight="fill" />
           </div>
           <h1 className="font-serif text-5xl tracking-tight text-foreground mb-3">
@@ -48,33 +47,46 @@ export function WelcomeScreen({
           </p>
         </div>
 
-        {/* Agent profile selector */}
-        {agentProfiles && agentProfiles.length > 0 && onSelectProfile && (
-          <div className="flex items-center gap-2 mb-6 flex-wrap justify-center">
-            {agentProfiles.map(profile => (
-              <button
-                key={profile.id}
-                onClick={() => onSelectProfile(profile.id)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  selectedProfileId === profile.id
-                    ? 'bg-foreground text-background border-foreground'
-                    : 'bg-white text-muted-foreground border-border hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                {profile.icon && <span className="mr-1.5">{profile.icon}</span>}
-                {profile.name}
+        {/* Large card composer */}
+        <div className="w-full max-w-3xl bg-white rounded-[28px] shadow-[0_8px_30px_-6px_rgba(0,0,0,0.04),0_4px_12px_-4px_rgba(0,0,0,0.02)] border border-border p-3 flex flex-col mb-16 transition-all duration-300 focus-within:shadow-[0_8px_40px_-6px_rgba(0,0,0,0.08),0_4px_12px_-4px_rgba(0,0,0,0.04)] focus-within:border-border/80">
+          <textarea
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onNewChat(); }}}
+            placeholder="How can I help you build today?"
+            className="px-4 py-3 min-h-[120px] max-h-[300px] text-lg text-foreground bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
+          />
+          <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/0 px-2">
+            {/* Left toolbar */}
+            <div className="flex items-center gap-2">
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors border border-transparent hover:border-border">
+                <FolderSimple size={18} />
+                <span className="font-medium">Select project</span>
+                <CaretDown size={12} className="opacity-50" />
               </button>
-            ))}
+              <div className="w-px h-4 bg-border mx-1" />
+              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                <Plus size={18} />
+              </button>
+            </div>
+            {/* Right toolbar */}
+            <div className="flex items-center gap-2">
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors">
+                <span className="font-medium">Claude Sonnet</span>
+                <CaretDown size={12} className="opacity-50" />
+              </button>
+              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                <Microphone size={18} />
+              </button>
+              <button
+                onClick={onNewChat}
+                className="w-8 h-8 rounded-lg flex items-center justify-center bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors ml-1 shadow-sm"
+              >
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
           </div>
-        )}
-
-        {/* New Conversation button */}
-        <button
-          onClick={onNewChat}
-          className="px-8 py-3 rounded-full bg-foreground text-background text-sm font-medium hover:bg-[var(--app-cta)] transition-colors shadow-sm mb-16"
-        >
-          New Conversation
-        </button>
+        </div>
 
         {/* Template suggestions */}
         <div className="w-full max-w-3xl">
@@ -88,7 +100,7 @@ export function WelcomeScreen({
                   onClick={() => onNewChat()}
                   className="group flex items-center gap-4 p-3 rounded-2xl hover:bg-white border border-transparent hover:border-border hover:shadow-sm transition-all text-left w-full"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-white border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.02)]">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
                     <template.Icon size={20} />
                   </div>
                   <div className="flex-1">
