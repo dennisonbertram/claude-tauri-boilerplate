@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { isValidTransition, type WorkspaceStatus } from '@claude-tauri/shared';
@@ -77,6 +77,22 @@ interface WorkspaceRow {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+  // Provenance fields (Phase 1 — may be absent in older rows)
+  source_branch: string | null;
+  source_ref_sha: string | null;
+  base_ref_sha: string | null;
+  parent_workspace_id: string | null;
+  archived_at: string | null;
+  last_reconciled_at: string | null;
+  recovery_status: string | null;
+}
+
+interface WorkspaceEventRow {
+  id: string;
+  workspace_id: string;
+  event_type: string;
+  payload_json: string | null;
+  created_at: string;
 }
 
 function mapSession(row: SessionRow) {
@@ -165,6 +181,13 @@ function mapWorkspace(row: WorkspaceRow) {
     githubIssueRepo: row.github_issue_repo,
     setupPid: row.setup_pid,
     errorMessage: row.error_message,
+    sourceBranch: row.source_branch ?? null,
+    sourceRefSha: row.source_ref_sha ?? null,
+    baseRefSha: row.base_ref_sha ?? null,
+    parentWorkspaceId: row.parent_workspace_id ?? null,
+    archivedAt: row.archived_at ?? null,
+    lastReconciledAt: row.last_reconciled_at ?? null,
+    recoveryStatus: (row.recovery_status ?? 'healthy') as 'healthy' | 'stale' | 'recoverable' | 'broken',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -184,6 +207,8 @@ export function createDb(path?: string): Database {
   migrateWorkspaceAdditionalDirectories(db);
   migrateGithubIssueColumns(db);
   migrateSessionsProfileId(db);
+  migrateWorkspaceProvenance(db);
+  migrateWorkspaceEvents(db);
   return db;
 }
 
@@ -719,6 +744,69 @@ export function linkSessionToWorkspace(db: Database, sessionId: string, workspac
     `UPDATE sessions SET workspace_id = ?, updated_at = datetime('now') WHERE id = ?`
   );
   return stmt.run(workspaceId, sessionId);
+}
+
+// ─── Workspace Events (Phase 1) ────────────────────────────────────────────────
+
+export function recordWorkspaceEvent(
+  db: Database,
+  workspaceId: string,
+  eventType: string,
+  payload?: Record<string, unknown>
+): void {
+  const id = crypto.randomUUID();
+  db.prepare(
+    `INSERT INTO workspace_events (id, workspace_id, event_type, payload_json, created_at)
+     VALUES (?, ?, ?, ?, datetime('now'))`
+  ).run(id, workspaceId, eventType, payload ? JSON.stringify(payload) : null);
+}
+
+export function getWorkspaceEvents(
+  db: Database,
+  workspaceId: string,
+  limit = 20
+): Array<{ id: string; workspaceId: string; eventType: string; payload?: Record<string, unknown>; createdAt: string }> {
+  const rows = db.prepare(
+    `SELECT id, workspace_id, event_type, payload_json, created_at
+     FROM workspace_events
+     WHERE workspace_id = ?
+     ORDER BY created_at DESC
+     LIMIT ?`
+  ).all(workspaceId, limit) as WorkspaceEventRow[];
+
+  return rows.map(r => ({
+    id: r.id,
+    workspaceId: r.workspace_id,
+    eventType: r.event_type,
+    payload: r.payload_json ? JSON.parse(r.payload_json) as Record<string, unknown> : undefined,
+    createdAt: r.created_at,
+  }));
+}
+
+export function updateWorkspaceRecoveryStatus(
+  db: Database,
+  workspaceId: string,
+  status: 'healthy' | 'stale' | 'recoverable' | 'broken'
+): void {
+  db.prepare(
+    `UPDATE workspaces SET recovery_status = ?, last_reconciled_at = datetime('now') WHERE id = ?`
+  ).run(status, workspaceId);
+}
+
+export function updateWorkspaceProvenance(
+  db: Database,
+  workspaceId: string,
+  data: { sourceBranch?: string; sourceRefSha?: string; baseRefSha?: string; parentWorkspaceId?: string }
+): void {
+  const parts: string[] = [];
+  const vals: unknown[] = [];
+  if (data.sourceBranch !== undefined) { parts.push('source_branch = ?'); vals.push(data.sourceBranch); }
+  if (data.sourceRefSha !== undefined) { parts.push('source_ref_sha = ?'); vals.push(data.sourceRefSha); }
+  if (data.baseRefSha !== undefined) { parts.push('base_ref_sha = ?'); vals.push(data.baseRefSha); }
+  if (data.parentWorkspaceId !== undefined) { parts.push('parent_workspace_id = ?'); vals.push(data.parentWorkspaceId); }
+  if (parts.length === 0) return;
+  vals.push(workspaceId);
+  db.prepare(`UPDATE workspaces SET ${parts.join(', ')} WHERE id = ?`).run(...vals);
 }
 
 // ─── Linear OAuth ──────────────────────────────────────────────────────────────

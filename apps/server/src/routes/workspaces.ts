@@ -9,9 +9,12 @@ import {
   transitionWorkspaceStatus,
   deleteWorkspace as dbDeleteWorkspace,
   getSessionForWorkspace,
+  getWorkspaceEvents,
+  updateWorkspaceRecoveryStatus,
 } from '../db';
 import { worktreeOrchestrator } from '../services/worktree-orchestrator';
 import { worktreeService } from '../services/worktree';
+import { reconcileProjectWorkspaces } from '../services/workspace-reconciler';
 import type { WorkspaceStatus } from '@claude-tauri/shared';
 import {
   buildAdditionalDirectoryPathPolicy,
@@ -157,6 +160,31 @@ export function createWorkspaceRouter(db: Database) {
     return c.json(workspace, 201);
   });
 
+  // POST /api/projects/:projectId/workspaces/reconcile — Reconcile workspace state
+  router.post('/:projectId/workspaces/reconcile', async (c) => {
+    const projectId = c.req.param('projectId');
+    const project = getProject(db, projectId);
+    if (!project) {
+      return c.json({ error: 'Project not found', code: 'NOT_FOUND' }, 404);
+    }
+
+    const workspaces = listWorkspaces(db, projectId);
+    const result = await reconcileProjectWorkspaces(
+      db,
+      projectId,
+      project.repoPathCanonical,
+      workspaces.map(ws => ({
+        id: ws.id,
+        branch: ws.branch,
+        worktreePath: ws.worktreePath,
+        status: ws.status,
+        errorMessage: ws.errorMessage ?? null,
+      }))
+    );
+
+    return c.json(result);
+  });
+
   return router;
 }
 
@@ -188,6 +216,33 @@ export function createFlatWorkspaceRouter(db: Database) {
     }
     const session = getSessionForWorkspace(db, id);
     return c.json(session ?? null);
+  });
+
+  // GET /api/workspaces/:id/events — Get lifecycle events for a workspace
+  router.get('/:id/events', (c) => {
+    const id = c.req.param('id');
+    const workspace = getWorkspace(db, id);
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
+    }
+    const limitParam = c.req.query('limit');
+    const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10) || 20), 100) : 20;
+    const events = getWorkspaceEvents(db, id, limit);
+    return c.json({ workspaceId: id, events });
+  });
+
+  // GET /api/workspaces/:id/recovery-status — Get recovery status for a workspace
+  router.get('/:id/recovery-status', (c) => {
+    const id = c.req.param('id');
+    const workspace = getWorkspace(db, id);
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
+    }
+    return c.json({
+      workspaceId: id,
+      recoveryStatus: workspace.recoveryStatus ?? 'healthy',
+      lastReconciledAt: workspace.lastReconciledAt ?? null,
+    });
   });
 
   // DELETE /api/workspaces/:id — Delete a workspace

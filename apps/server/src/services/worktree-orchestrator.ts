@@ -11,6 +11,7 @@ import {
   deleteWorkspace as dbDeleteWorkspace,
   updateWorkspace,
   listWorkspaces,
+  recordWorkspaceEvent,
 } from '../db';
 import {
   getWorkspaceWorktreeDir,
@@ -190,6 +191,13 @@ export class WorktreeOrchestrator {
       throw err;
     }
 
+    // Record creation event
+    recordWorkspaceEvent(db, workspaceId, 'created', {
+      sourceBranch: sourceBranch ?? undefined,
+      baseBranch: effectiveBaseBranch,
+      branch: branchName,
+    });
+
     // 6. Create git worktree + branch
     try {
       await this.wt.createWorktree(
@@ -202,6 +210,7 @@ export class WorktreeOrchestrator {
       // Cleanup: set error status
       const msg = err instanceof Error ? err.message : String(err);
       setWorkspaceError(db, workspaceId, `Worktree creation failed: ${msg}`);
+      recordWorkspaceEvent(db, workspaceId, 'error', { message: `Worktree creation failed: ${msg}` });
       throw Object.assign(
         new Error(`Failed to create worktree: ${msg}`),
         { status: 500, code: 'GIT_ERROR' }
@@ -260,6 +269,7 @@ export class WorktreeOrchestrator {
 
     if (effectiveSetupCommand) {
       transitionWorkspaceStatus(db, workspaceId, 'setup_running');
+      recordWorkspaceEvent(db, workspaceId, 'setup_started', { command: effectiveSetupCommand });
 
       // Merge repo env overlay into process environment for the setup command
       const envOverlay = repoConfig?.env ?? {};
@@ -269,6 +279,7 @@ export class WorktreeOrchestrator {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         setWorkspaceError(db, workspaceId, `Setup command failed: ${msg}`);
+        recordWorkspaceEvent(db, workspaceId, 'error', { message: `Setup command failed: ${msg}` });
         // Return the workspace in error state — don't throw, the workspace exists
         return getWorkspace(db, workspaceId)!;
       }
