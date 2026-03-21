@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
+import { ChatTabsBar } from '@/components/chat/ChatTabsBar';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
@@ -59,6 +60,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setActiveSessionId,
     createSession,
     deleteSession,
+    renameSession,
     exportSession,
     autoNameSession,
   } = useSessions(sessionSearchQuery);
@@ -66,15 +68,45 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
 
   const handleOpenSettings = useCallback((tab?: string) => {
     setSettingsInitialTab(tab);
     setSettingsOpen(true);
   }, []);
 
+  const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
+  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
+  const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
+
   // Global keyboard shortcuts (work from any view)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 't') {
+        if (activeView !== 'chat') return;
+        e.preventDefault();
+        void createSession();
+        setActiveSessionHasMessages(false);
+        return;
+      }
+
+      if (e.ctrlKey && e.key === 'Tab') {
+        if (activeView !== 'chat') return;
+        if (openSessionIds.length < 2) return;
+        e.preventDefault();
+        const currentIndex = activeSessionId
+          ? openSessionIds.indexOf(activeSessionId)
+          : -1;
+        const nextIndex = e.shiftKey
+          ? (currentIndex - 1 + openSessionIds.length) % openSessionIds.length
+          : (currentIndex + 1) % openSessionIds.length;
+        const nextId = openSessionIds[nextIndex];
+        if (nextId) {
+          setActiveSessionId(nextId);
+        }
+        return;
+      }
+
       if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         handleOpenSettings();
@@ -82,10 +114,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [handleOpenSettings]);
-  const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
-  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
-  const [, setActiveSessionHasMessages] = useState(false);
+  }, [handleOpenSettings, activeView, openSessionIds, activeSessionId, setActiveSessionId, createSession]);
   const selectedSessionHasMessages = (session?: (typeof sessions)[number]) => {
     if (!session) return false;
     return session.claudeSessionId != null || (session.messageCount ?? 0) > 0;
@@ -96,7 +125,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // Workspace state
-  const { projects, addProject } = useProjects();
+  const { projects, addProject, removeProject } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
@@ -266,6 +295,53 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     setActiveView('teams');
   }, []);
 
+  // Keep the active session in the open tab list.
+  useEffect(() => {
+    if (!activeSessionId) return;
+    setOpenSessionIds((prev) =>
+      prev.includes(activeSessionId) ? prev : [...prev, activeSessionId]
+    );
+  }, [activeSessionId]);
+
+  // If a session is deleted, drop it from open tabs.
+  useEffect(() => {
+    setOpenSessionIds((prev) =>
+      prev.filter((id) => sessions.some((s) => s.id === id))
+    );
+  }, [sessions]);
+
+  const handleActivateTab = useCallback(
+    (id: string) => {
+      setActiveView('chat');
+      setActiveSessionId(id);
+      const session = sessions.find((s) => s.id === id);
+      setActiveSessionHasMessages(selectedSessionHasMessages(session));
+    },
+    [setActiveSessionId, sessions]
+  );
+
+  const handleCloseTab = useCallback(
+    (id: string) => {
+      setOpenSessionIds((prev) => {
+        const next = prev.filter((x) => x !== id);
+        if (id === activeSessionId) {
+          const nextActive = next[next.length - 1] ?? null;
+          setActiveSessionId(nextActive);
+        }
+        return next;
+      });
+    },
+    [activeSessionId, setActiveSessionId]
+  );
+
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    await removeProject(projectId);
+    if (selectedProjectId === projectId) {
+      setSelectedProjectId(null);
+      setSelectedWorkspace(null);
+    }
+  }, [removeProject, selectedProjectId]);
+
   // Auto-select first project when workspaces view is active and projects finish loading
   useEffect(() => {
     if (activeView === 'workspaces' && !selectedProjectId && projects.length > 0) {
@@ -338,30 +414,44 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           )}
           <div className={`relative z-10 flex-1 min-h-0 flex flex-col ${activeView === 'chat' ? 'pt-14' : ''}`}>
         {activeView === 'chat' ? (
-          activeSessionId ? (
-            <ChatPage
-              sessionId={activeSessionId}
-              onCreateSession={handleNewChat}
-              onExportSession={() => exportSession(activeSessionId, 'json')}
-              onStatusChange={handleStatusChange}
-              onAutoName={autoNameSession}
-              onToggleSidebar={() => setSidebarOpen((open) => !open)}
-              onOpenSettings={handleOpenSettings}
-              onOpenSessions={handleOpenSessions}
-              onOpenPullRequests={handleOpenPullRequests}
-              onTaskComplete={(params) => handleTaskComplete(params)}
-              profileId={selectedProfileId}
-              agentProfiles={agentProfiles}
-              onSelectProfile={setSelectedProfileId}
-            />
-          ) : (
-            <WelcomeScreen
-              onNewChat={handleNewChat}
-              agentProfiles={agentProfiles}
-              selectedProfileId={selectedProfileId}
-              onSelectProfile={setSelectedProfileId}
-            />
-          )
+          <div className="flex flex-1 flex-col min-w-0 min-h-0">
+            {openSessionIds.length > 0 && (
+              <ChatTabsBar
+                sessions={sessions}
+                openSessionIds={openSessionIds}
+                activeSessionId={activeSessionId}
+                onActivate={handleActivateTab}
+                onClose={handleCloseTab}
+                onRename={renameSession}
+                onNewTab={handleNewChat}
+              />
+            )}
+
+            {activeSessionId ? (
+              <ChatPage
+                sessionId={activeSessionId}
+                onCreateSession={handleNewChat}
+                onExportSession={() => exportSession(activeSessionId, 'json')}
+                onStatusChange={handleStatusChange}
+                onAutoName={autoNameSession}
+                onToggleSidebar={() => setSidebarOpen((open) => !open)}
+                onOpenSettings={handleOpenSettings}
+                onOpenSessions={handleOpenSessions}
+                onOpenPullRequests={handleOpenPullRequests}
+                onTaskComplete={(params) => handleTaskComplete(params)}
+                profileId={selectedProfileId}
+                agentProfiles={agentProfiles}
+                onSelectProfile={setSelectedProfileId}
+              />
+            ) : (
+              <WelcomeScreen
+                onNewChat={handleNewChat}
+                agentProfiles={agentProfiles}
+                selectedProfileId={selectedProfileId}
+                onSelectProfile={setSelectedProfileId}
+              />
+            )}
+          </div>
         ) : activeView === 'workspaces' ? (
           selectedWorkspace ? (
             <WorkspacePanel
