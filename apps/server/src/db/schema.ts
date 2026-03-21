@@ -482,3 +482,33 @@ export function migrateWorkspaceProviders(db: import('bun:sqlite').Database): vo
     // Table already exists — idempotent
   }
 }
+
+export function migrateWorkspaceDeploymentsTable(db: import('bun:sqlite').Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_deployments (
+      id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL UNIQUE REFERENCES workspaces(id) ON DELETE CASCADE,
+      railway_project_id TEXT NOT NULL,
+      railway_service_id TEXT NOT NULL,
+      railway_environment_id TEXT NOT NULL,
+      last_deployment_status TEXT,
+      last_deployment_id TEXT,
+      last_deployment_created_at TEXT,
+      last_checked_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_workspace_deployments_workspace_id ON workspace_deployments(workspace_id)`);
+}
+
+export function migrateDeploymentSettingsTable(db: import('bun:sqlite').Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS deployment_settings (
+      id INTEGER PRIMARY KEY CHECK(id = 1),
+      railway_api_token TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+}

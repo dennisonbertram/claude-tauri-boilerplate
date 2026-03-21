@@ -1060,3 +1060,19 @@ export interface WorkspaceProvisioningRun {
   createdAt: string;
   updatedAt: string;
 }
+
+// --- Workspace Deployments ---
+
+export interface WorkspaceDeployment {
+  id: string;
+  workspaceId: string;
+  railwayProjectId: string;
+  railwayServiceId: string;
+  railwayEnvironmentId: string;
+  lastDeploymentStatus: 'success' | 'failed' | 'building' | 'deploying' | null;
+  lastDeploymentId: string | null;
+  lastDeploymentCreatedAt: string | null;
+  lastCheckedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
