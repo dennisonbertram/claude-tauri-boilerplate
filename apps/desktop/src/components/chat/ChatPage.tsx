@@ -29,6 +29,7 @@ import { CostDisplay } from './CostDisplay';
 import { useCostTracking } from '@/hooks/useCostTracking';
 import { useSuggestions } from '@/hooks/useSuggestions';
 import { useContextSummary } from '@/hooks/useContextSummary';
+import { useMcpServers } from '@/hooks/useMcpServers';
 import { useCheckpoints } from '@/hooks/useCheckpoints';
 import { SuggestionChips } from './SuggestionChips';
 import { useSettings } from '@/hooks/useSettings';
@@ -440,6 +441,8 @@ export function ChatPage({
   } = useSuggestions(messages, { onAccept: handleSuggestionAccept });
 
   const { summary: contextSummary } = useContextSummary(sessionId, messages, isLoading);
+
+  const { visibleEnabledServers: mcpServers } = useMcpServers();
 
   const handleAcceptGhostText = useCallback(() => {
     if (currentSuggestion) {
@@ -1389,6 +1392,7 @@ export function ChatPage({
           ghostText={undefined}
           onAcceptSuggestion={handleAcceptGhostText}
           contextSummary={isLoading ? undefined : contextSummary}
+          mcpServerNames={mcpServers.map((s) => s.name)}
         />
       </div>
       <ShortcutHelpModal

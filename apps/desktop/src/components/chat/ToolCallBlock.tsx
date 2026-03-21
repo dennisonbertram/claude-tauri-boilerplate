@@ -22,6 +22,19 @@ import {
 } from './gen-ui/toolData';
 import { BrowserAutomationDisplay, isBrowserAutomationTool } from './BrowserAutomationDisplay';
 
+/**
+ * MCP tools use the naming convention `mcp__<server>__<tool>`.
+ * Returns parsed parts when it matches, otherwise null.
+ */
+function parseMcpTool(toolName: string): { serverName: string; toolName: string } | null {
+  const match = toolName.match(/^mcp__([^_]+(?:_[^_]+)*)__(.+)$/);
+  if (!match) return null;
+  return {
+    serverName: match[1].replace(/_/g, '-'),
+    toolName: match[2],
+  };
+}
+
 export interface ToolCallBlockProps {
   toolCall: ToolCallState;
   onFixErrors?: (toolCall: ToolCallState) => void;
@@ -72,7 +85,9 @@ function StatusIndicator({ status }: { status: ToolCallState['status'] }) {
 
 function GenericToolFallback({ toolCall }: ToolCallBlockProps) {
   const [isExpanded, setIsExpanded] = useState(toolCall.status === 'running');
+  const mcpParts = parseMcpTool(toolCall.name);
   const Icon = getToolIcon(toolCall.name);
+  const displayName = mcpParts ? mcpParts.toolName : toolCall.name;
 
   return (
     <div className="my-2 rounded-lg border border-border bg-muted/30 text-sm overflow-hidden">
@@ -87,7 +102,15 @@ function GenericToolFallback({ toolCall }: ToolCallBlockProps) {
           <CaretRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="font-medium text-foreground">{sanitizeDisplayText(toolCall.name)}</span>
+        {mcpParts && (
+          <span
+            data-testid="mcp-server-badge"
+            className="rounded bg-blue-500/15 px-1 py-0.5 text-xs font-medium text-blue-400"
+          >
+            {mcpParts.serverName}
+          </span>
+        )}
+        <span className="font-medium text-foreground">{sanitizeDisplayText(displayName)}</span>
 
         {toolCall.summary && !isExpanded ? (
           <span className="ml-1 truncate text-xs text-muted-foreground">
