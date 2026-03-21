@@ -277,3 +277,110 @@ export function migrateSessionModelColumn(db: import('bun:sqlite').Database): vo
   }
   db.exec("UPDATE sessions SET model = 'claude-sonnet-4-6' WHERE model IS NULL OR trim(model) = ''");
 }
+
+export function migrateWorkspaceReview(db: import('bun:sqlite').Database): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_reviews (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL UNIQUE REFERENCES workspaces(id) ON DELETE CASCADE,
+        selected_from_ref TEXT,
+        selected_to_ref TEXT,
+        filter_mode TEXT NOT NULL DEFAULT 'all' CHECK(filter_mode IN ('all','reviewed','unreviewed')),
+        view_mode TEXT NOT NULL DEFAULT 'unified' CHECK(view_mode IN ('unified','side-by-side')),
+        pr_number INTEGER,
+        pr_url TEXT,
+        pr_head_sha TEXT,
+        pr_base_sha TEXT,
+        pr_title TEXT,
+        pr_body TEXT,
+        checks_json TEXT NOT NULL DEFAULT '[]',
+        deployments_json TEXT NOT NULL DEFAULT '[]',
+        summary_json TEXT NOT NULL DEFAULT '{}',
+        freshness_checked_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch {
+    // table already exists
+  }
+
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_workspace_reviews_workspace_id ON workspace_reviews(workspace_id)`);
+  } catch {
+    // index already exists
+  }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_review_files (
+        id TEXT PRIMARY KEY,
+        review_id TEXT NOT NULL REFERENCES workspace_reviews(id) ON DELETE CASCADE,
+        file_path TEXT NOT NULL,
+        review_state TEXT NOT NULL DEFAULT 'unreviewed' CHECK(review_state IN ('unreviewed','reviewed','ignored')),
+        reviewed_at TEXT,
+        last_seen_status TEXT,
+        UNIQUE(review_id, file_path)
+      )
+    `);
+  } catch {
+    // table already exists
+  }
+
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_review_files_review_id ON workspace_review_files(review_id)`);
+  } catch {
+    // index already exists
+  }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_review_comments (
+        id TEXT PRIMARY KEY,
+        review_id TEXT NOT NULL REFERENCES workspace_reviews(id) ON DELETE CASCADE,
+        file_path TEXT NOT NULL,
+        diff_line_key TEXT,
+        old_line INTEGER,
+        new_line INTEGER,
+        markdown TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','resolved','outdated')),
+        sync_state TEXT NOT NULL DEFAULT 'local_only' CHECK(sync_state IN ('local_only','pending_sync','synced','failed')),
+        github_comment_id TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch {
+    // table already exists
+  }
+
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_review_comments_review_id ON workspace_review_comments(review_id)`);
+  } catch {
+    // index already exists
+  }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workspace_review_todos (
+        id TEXT PRIMARY KEY,
+        review_id TEXT NOT NULL REFERENCES workspace_reviews(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','done')),
+        source TEXT NOT NULL DEFAULT 'local' CHECK(source IN ('local','check','agent')),
+        file_path TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch {
+    // table already exists
+  }
+
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_review_todos_review_id ON workspace_review_todos(review_id)`);
+  } catch {
+    // index already exists
+  }
+}

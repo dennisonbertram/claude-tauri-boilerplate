@@ -952,3 +952,63 @@ export interface AgentProfileSummary {
   icon: string | null;
   color: string | null;
 }
+
+// --- Workspace Review Types (Phase 1 — local persistence) ---
+
+export type MergeReadiness = 'ready' | 'needs_review' | 'blocked' | 'stale';
+
+export interface WorkspaceReview {
+  id: string;
+  workspaceId: string;
+  selectedFromRef: string | null;
+  selectedToRef: string | null;
+  filterMode: 'all' | 'reviewed' | 'unreviewed';
+  viewMode: 'unified' | 'side-by-side';
+  prNumber: number | null;
+  prUrl: string | null;
+  prHeadSha: string | null;
+  prBaseSha: string | null;
+  prTitle: string | null;
+  prBody: string | null;
+  checksJson: string;
+  deploymentsJson: string;
+  summaryJson: string;
+  freshnessCheckedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceReviewFile {
+  id: string;
+  reviewId: string;
+  filePath: string;
+  reviewState: 'unreviewed' | 'reviewed' | 'ignored';
+  reviewedAt: string | null;
+  lastSeenStatus: string | null;
+}
+
+export interface WorkspaceReviewComment {
+  id: string;
+  reviewId: string;
+  filePath: string;
+  diffLineKey: string | null;
+  oldLine: number | null;
+  newLine: number | null;
+  markdown: string;
+  status: 'open' | 'resolved' | 'outdated';
+  syncState: 'local_only' | 'pending_sync' | 'synced' | 'failed';
+  githubCommentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceReviewTodo {
+  id: string;
+  reviewId: string;
+  body: string;
+  status: 'open' | 'done';
+  source: 'local' | 'check' | 'agent';
+  filePath: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
