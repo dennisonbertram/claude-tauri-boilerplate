@@ -952,3 +952,43 @@ export interface AgentProfileSummary {
   icon: string | null;
   color: string | null;
 }
+
+// --- Workspace Providers ---
+
+export interface WorkspaceProvider {
+  id: string;
+  projectId: string | null;
+  name: string;
+  type: 'script';
+  command: string;
+  argsJson: string[];
+  workingDir: string | null;
+  timeoutMs: number;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ProvisioningRunStatus =
+  | 'pending'
+  | 'running'
+  | 'succeeded'
+  | 'failed'
+  | 'teardown_running'
+  | 'torn_down'
+  | 'teardown_failed';
+
+export interface WorkspaceProvisioningRun {
+  id: string;
+  workspaceId: string;
+  providerId: string;
+  status: ProvisioningRunStatus;
+  requestJson: Record<string, unknown>;
+  responseJson: Record<string, unknown>;
+  logsRedacted: string;
+  cleanupOwner: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

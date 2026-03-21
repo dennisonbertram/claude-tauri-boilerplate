@@ -24,6 +24,8 @@ import { createGithubIssuesRouter } from './routes/github-issues';
 import { createAgentProfilesRouter } from './routes/agent-profiles';
 import { createSystemRouter } from './routes/system';
 import { createRuntimeCapabilitiesRouter } from './routes/runtime-capabilities';
+import { createWorkspaceProvidersRouter } from './routes/workspace-providers';
+import { createWorkspaceProvisioningRouter } from './routes/workspace-provisioning';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 
@@ -70,6 +72,8 @@ app.route('/api/projects', createProjectArtifactsRouter(db));
 app.route('/api/sessions', createSessionThreadRouter(db));
 app.route('/api/system', createSystemRouter());
 app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
+app.route('/api/workspace-providers', createWorkspaceProvidersRouter(db));
+app.route('/api/workspaces', createWorkspaceProvisioningRouter(db));
 
 // Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
 // We mount a sub-router that receives sessionId as a param.
