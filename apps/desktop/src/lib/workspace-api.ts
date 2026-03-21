@@ -539,3 +539,71 @@ export async function updateReviewTodo(
   }
   return res.json();
 }
+
+// --- GitHub integration ---
+
+export interface GithubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  url: string;
+  owner: { login: string; avatar_url: string };
+  private: boolean;
+  default_branch: string;
+}
+
+export interface GithubReposResult {
+  items: GithubRepo[];
+  total_count: number;
+}
+
+export async function searchGithubRepos(
+  query: string,
+  token: string
+): Promise<GithubReposResult> {
+  const params = new URLSearchParams({ q: query });
+  const res = await fetch(`${API_BASE}/api/github/repos?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`GitHub search failed: ${res.status}`);
+  return res.json();
+}
+
+export async function listGithubRepos(
+  token: string
+): Promise<GithubReposResult> {
+  const res = await fetch(`${API_BASE}/api/github/repos`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`GitHub repos list failed: ${res.status}`);
+  return res.json();
+}
+
+export async function testGithubToken(
+  token: string
+): Promise<{ ok: boolean; user?: { login: string; name: string | null }; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/github/test`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+  return res.json();
+}
+
+export async function createProjectFromGithub(
+  owner: string,
+  repo: string,
+  options?: { localPath?: string; token?: string }
+): Promise<import('@claude-tauri/shared').Project> {
+  const res = await fetch(`${API_BASE}/api/projects/from-github`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ owner, repo, path: options?.localPath, token: options?.token }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as any;
+    throw new Error(err.error ?? `Failed to import repo: ${res.status}`);
+  }
+  return res.json();
+}
