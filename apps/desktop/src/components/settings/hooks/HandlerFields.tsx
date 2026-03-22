@@ -80,6 +80,7 @@ export function HandlerFields({
     );
   }
 
+  // prompt
   return (
     <div className="space-y-1">
       <label className="text-xs text-muted-foreground">Prompt</label>
