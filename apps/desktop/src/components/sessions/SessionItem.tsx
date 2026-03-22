@@ -102,7 +102,6 @@ export function SessionItem({
         onExport('md');
         break;
       case 'delete':
-        // Close the dropdown and show inline confirmation within the row
         setMenuOpen(false);
         setConfirmDelete(true);
         break;
@@ -135,7 +134,6 @@ export function SessionItem({
       }`}
     >
       {confirmDelete ? (
-        /* Inline delete confirmation — contained within the session row */
         <div
           data-testid="inline-delete-confirmation"
           className="flex items-center justify-between w-full gap-2"
@@ -216,7 +214,6 @@ export function SessionItem({
             {session.profile && <ProfileBadge profile={session.profile} />}
           </div>
 
-          {/* Context menu dropdown */}
           {menuOpen && (
             <div
               ref={menuRef}
