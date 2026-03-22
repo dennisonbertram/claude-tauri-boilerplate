@@ -26,6 +26,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Agentation } from 'agentation';
 import type { Project, Workspace } from '@claude-tauri/shared';
 import { useSettings } from './hooks/useSettings';
+import { getModelDisplay } from './lib/models';
 import { useUnread } from './hooks/useUnread';
 import {
   requestNotificationPermission,
@@ -54,6 +55,7 @@ const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['se
   },
   sessionTotalCost: 0,
   subagentActiveCount: 0,
+  checkpoints: [] as import('@claude-tauri/shared').Checkpoint[],
   sessionInfo: null,
 };
 
@@ -250,7 +252,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       setActiveSessionHasMessages(true);
     }
     subagentActiveCountRef.current = data.subagentActiveCount;
-    setStatusData(data);
+    setStatusData({ ...data, checkpoints: data.checkpoints ?? [] });
   }, []);
 
   const handleSelectWorkspace = useCallback((ws: Workspace) => {
@@ -462,6 +464,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
                 agentProfiles={agentProfiles}
                 selectedProfileId={selectedProfileId}
                 onSelectProfile={setSelectedProfileId}
+                modelDisplay={getModelDisplay(settings.model)}
               />
             )}
           </div>

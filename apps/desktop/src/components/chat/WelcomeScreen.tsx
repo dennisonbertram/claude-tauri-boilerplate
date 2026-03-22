@@ -13,11 +13,13 @@ interface WelcomeScreenProps {
   agentProfiles?: unknown[];
   selectedProfileId?: string | null;
   onSelectProfile?: (id: string | null) => void;
+  modelDisplay?: string;
 }
 
 export function WelcomeScreen({
   onNewChat,
   onSubmit,
+  modelDisplay = 'Claude',
 }: WelcomeScreenProps) {
   const [inputValue, setInputValue] = useState('');
 
@@ -84,7 +86,7 @@ export function WelcomeScreen({
             {/* Right toolbar */}
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors">
-                <span className="font-medium">Claude Sonnet</span>
+                <span className="font-medium">{modelDisplay}</span>
                 <CaretDown size={12} className="opacity-50" />
               </button>
               <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
