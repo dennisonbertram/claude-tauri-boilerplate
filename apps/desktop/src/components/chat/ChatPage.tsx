@@ -343,11 +343,10 @@ export function ChatPage({
     };
   }, []);
 
-  // Stable chat ID: starts as sessionId (or a random fallback) and only
-  // updates to a new sessionId when the hook is NOT actively streaming.
-  // This prevents the SDK from recreating its internal Chat object mid-stream
-  // when the parent assigns a session id after the first message round-trip.
-  const [chatId, setChatId] = useState<string>(
+  // Stable chat ID: never changes after mount. The SDK uses this as an
+  // internal store key — changing it recreates the Chat object and drops state.
+  // We pass sessionId to the server via transport.body instead.
+  const [chatId] = useState<string>(
     () => sessionId ?? (typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -370,12 +369,10 @@ export function ChatPage({
       onData: handleDataPart as any,
     });
 
-  // Lock in the real session id once it arrives, but only when not streaming.
-  useEffect(() => {
-    if (sessionId && chatId !== sessionId && status !== 'submitted' && status !== 'streaming') {
-      setChatId(sessionId);
-    }
-  }, [sessionId, status, chatId]);
+  // Note: chatId is stable for the lifetime of this mount. The real sessionId
+  // is passed to the server via transport.body.sessionId, so server-side
+  // session association works correctly even though the SDK's internal key
+  // is different from the server session ID.
 
   useEffect(() => {
     if (usage && usage !== lastRecordedUsageRef.current) {
@@ -1246,8 +1243,8 @@ export function ChatPage({
           (sessionInfo?.slashCommands ?? []).map((command) => command.toLowerCase())
         );
         if (!pluginCommands.has(commandToken)) {
-          setMessages([
-            ...messages,
+          setMessages(prev => [
+            ...prev,
             {
               id: `invalid-slash-${Date.now()}`,
               role: 'assistant',
