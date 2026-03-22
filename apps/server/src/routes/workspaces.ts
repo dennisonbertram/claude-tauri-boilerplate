@@ -34,6 +34,7 @@ import {
   canonicalizeRoots,
   isPathWithinAnyRoot,
 } from '../utils/paths';
+import { validateBody } from '../utils/validate-body.js';
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
@@ -609,20 +610,17 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const reviewUpdateSchema = z.object({
       selected_from_ref: z.string().optional().nullable(),
       selected_to_ref: z.string().optional().nullable(),
       filter_mode: z.enum(['all', 'reviewed', 'unreviewed']).optional(),
       view_mode: z.enum(['unified', 'side-by-side']).optional(),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, reviewUpdateSchema);
+    if (data instanceof Response) return data;
 
     const review = getOrCreateWorkspaceReview(db, id);
-    updateWorkspaceReview(db, review.id, parsed.data as Parameters<typeof updateWorkspaceReview>[2]);
+    updateWorkspaceReview(db, review.id, data as Parameters<typeof updateWorkspaceReview>[2]);
     const updated = getOrCreateWorkspaceReview(db, id);
     const files = getReviewFiles(db, review.id);
     const comments = getReviewComments(db, review.id);
@@ -639,18 +637,15 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const fileReviewSchema = z.object({
       file_path: z.string().min(1),
       review_state: z.enum(['unreviewed', 'reviewed', 'ignored']),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, fileReviewSchema);
+    if (data instanceof Response) return data;
 
     const review = getOrCreateWorkspaceReview(db, id);
-    const file = upsertReviewFile(db, review.id, parsed.data.file_path, parsed.data.review_state);
+    const file = upsertReviewFile(db, review.id, data.file_path, data.review_state);
     return c.json(file);
   });
 
@@ -674,21 +669,18 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const commentSchema = z.object({
       file_path: z.string().min(1),
       diff_line_key: z.string().optional().nullable(),
       old_line: z.number().int().optional().nullable(),
       new_line: z.number().int().optional().nullable(),
       markdown: z.string().min(1),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, commentSchema);
+    if (data instanceof Response) return data;
 
     const review = getOrCreateWorkspaceReview(db, id);
-    const comment = createReviewComment(db, review.id, parsed.data);
+    const comment = createReviewComment(db, review.id, data);
     return c.json(comment, 201);
   });
 
@@ -701,17 +693,14 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const commentUpdateSchema = z.object({
       markdown: z.string().min(1).optional(),
       status: z.enum(['open', 'resolved', 'outdated']).optional(),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, commentUpdateSchema);
+    if (data instanceof Response) return data;
 
-    updateReviewComment(db, commentId, parsed.data);
+    updateReviewComment(db, commentId, data);
     const review = getOrCreateWorkspaceReview(db, id);
     const comments = getReviewComments(db, review.id);
     const comment = comments.find((c) => c.id === commentId);
@@ -756,19 +745,16 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const todoSchema = z.object({
       body: z.string().min(1),
       source: z.enum(['local', 'check', 'agent']).optional(),
       file_path: z.string().optional().nullable(),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, todoSchema);
+    if (data instanceof Response) return data;
 
     const review = getOrCreateWorkspaceReview(db, id);
-    const todo = createReviewTodo(db, review.id, parsed.data);
+    const todo = createReviewTodo(db, review.id, data);
     return c.json(todo, 201);
   });
 
@@ -781,17 +767,14 @@ export function createFlatWorkspaceRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const schema = z.object({
+    const todoUpdateSchema = z.object({
       status: z.enum(['open', 'done']).optional(),
       body: z.string().min(1).optional(),
     });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return c.json({ error: 'Invalid payload', code: 'VALIDATION_ERROR', details: parsed.error.flatten() }, 400);
-    }
+    const data = await validateBody(c, todoUpdateSchema);
+    if (data instanceof Response) return data;
 
-    updateReviewTodo(db, todoId, parsed.data);
+    updateReviewTodo(db, todoId, data);
     const review = getOrCreateWorkspaceReview(db, id);
     const todos = getReviewTodos(db, review.id);
     const todo = todos.find((t) => t.id === todoId);

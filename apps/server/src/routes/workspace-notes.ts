@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { join } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { getWorkspace } from '../db';
+import { validateBody } from '../utils/validate-body.js';
 
 const CONTEXT_DIR = '.context';
 const NOTES_FILE = 'notes.md';
@@ -43,20 +44,14 @@ export function createWorkspaceNotesRouter(db: Database) {
       return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const parsed = putNotesSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        { error: 'Invalid request: content field is required', code: 'VALIDATION_ERROR' },
-        400
-      );
-    }
+    const data = await validateBody(c, putNotesSchema);
+    if (data instanceof Response) return data;
 
     const contextDir = join(workspace.worktreePath, CONTEXT_DIR);
     mkdirSync(contextDir, { recursive: true });
 
     const notesPath = join(contextDir, NOTES_FILE);
-    await Bun.write(notesPath, parsed.data.content);
+    await Bun.write(notesPath, data.content);
 
     return c.json({ ok: true });
   });
