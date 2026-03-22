@@ -441,6 +441,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
 
             {activeSessionId ? (
               <ChatPage
+                key={activeSessionId}
                 sessionId={activeSessionId}
                 onCreateSession={handleNewChat}
                 onExportSession={() => exportSession(activeSessionId, 'json')}
