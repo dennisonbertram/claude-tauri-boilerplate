@@ -40,31 +40,10 @@ interface McpPreset {
 
 const MCP_PRESETS: McpPreset[] = [
   {
-    id: 'playwright',
-    title: 'Playwright Browser',
-    description:
-      'Launch headed Chrome for testing, screenshots, console inspection, and saved recordings.',
-    config: {
-      name: 'playwright',
-      type: 'stdio',
-      command: 'npx',
-      args: [
-        '-y',
-        '@playwright/mcp@latest',
-        '--browser',
-        'chrome',
-        '--output-dir',
-        '.claude/browser-artifacts',
-        '--save-session',
-        '--save-video=1280x720',
-      ],
-    },
-  },
-  {
     id: 'agentation',
     title: 'Agentation Visual Feedback',
     description:
-      'Supplement browser runs with visual annotations and interaction feedback tooling.',
+      'Optional MCP companion for visual annotations and interaction feedback. Separate from the agent-browser CLI workflow.',
     config: {
       name: 'agentation',
       type: 'stdio',
@@ -328,7 +307,8 @@ export function McpPanel() {
         <div>
           <h4 className="text-sm font-medium text-foreground">Recommended presets</h4>
           <p className="mt-1 text-xs text-muted-foreground">
-            Install browser automation servers with the tested defaults used by the app workflow prompts.
+            Install optional MCP companions here. Browser testing now uses the `agent-browser`
+            CLI, while `agentation` remains a separate visual-feedback tool.
           </p>
         </div>
 

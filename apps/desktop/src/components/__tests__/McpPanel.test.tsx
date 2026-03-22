@@ -464,15 +464,13 @@ describe('McpPanel', () => {
       expect(screen.getByTestId('mcp-panel')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('mcp-preset-playwright')).toHaveTextContent(
-      'Playwright Browser'
-    );
     expect(screen.getByTestId('mcp-preset-agentation')).toHaveTextContent(
       'Agentation Visual Feedback'
     );
+    expect(screen.getByText(/agent-browser cli/i)).toBeInTheDocument();
   });
 
-  it('installs the Playwright browser preset with chrome launch and video capture', async () => {
+  it('installs the agentation preset as a separate visual feedback tool', async () => {
     render(<McpPanel />);
 
     await waitFor(() => {
@@ -499,7 +497,7 @@ describe('McpPanel', () => {
       return Promise.resolve({ ok: false });
     });
 
-    fireEvent.click(screen.getByTestId('mcp-install-preset-playwright'));
+    fireEvent.click(screen.getByTestId('mcp-install-preset-agentation'));
 
     await waitFor(() => {
       const postCall = mockFetch.mock.calls.find(
@@ -508,20 +506,11 @@ describe('McpPanel', () => {
       expect(postCall).toBeDefined();
       const body = JSON.parse((postCall![1] as RequestInit).body as string);
       expect(body).toMatchObject({
-        name: 'playwright',
+        name: 'agentation',
         type: 'stdio',
         command: 'npx',
       });
-      expect(body.args).toEqual([
-        '-y',
-        '@playwright/mcp@latest',
-        '--browser',
-        'chrome',
-        '--output-dir',
-        '.claude/browser-artifacts',
-        '--save-session',
-        '--save-video=1280x720',
-      ]);
+      expect(body.args).toEqual(['-y', 'agentation-mcp', 'server']);
     });
   });
 });

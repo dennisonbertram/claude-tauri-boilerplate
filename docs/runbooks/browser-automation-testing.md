@@ -2,22 +2,30 @@
 
 ## Default Setup
 
-The repo now includes a default Playwright MCP server in `.mcp.json`:
+The default browser testing workflow now uses the `agent-browser` CLI.
 
-- command: `npx`
-- args: `-y @playwright/mcp@latest --browser chrome --output-dir .claude/browser-artifacts --save-session --save-video=1280x720`
+First-time setup:
 
-Artifacts are written under `.claude/browser-artifacts/`.
+1. Install the CLI if needed: `npm i -g agent-browser`, `brew install agent-browser`, or `cargo install agent-browser`
+2. Install Chrome for the CLI once: `agent-browser install`
+3. Write artifacts under `.claude/browser-artifacts/agent-browser/`
+
+`agentation` is a different tool. It remains an optional MCP companion for visual annotations and interaction feedback, but it does not replace `agent-browser`.
 
 ## In-App Flow
 
-1. Open Settings > MCP.
-2. Confirm `Playwright Browser` is installed, or install it from the preset card.
-3. Use `/browser` in chat for the test flow.
-4. Ask Claude to navigate, click, type, scroll, read page text, inspect console messages, take screenshots, and save a recording for multi-step flows.
-5. Review the structured tool-call output in chat for screenshots, page text, console output, and recordings.
+1. Use `/browser` in chat for the browser-testing prompt template.
+2. Run the suggested `agent-browser` commands from Bash.
+3. Open the target URL: `agent-browser open http://localhost:1420`
+4. Wait for the page to settle: `agent-browser wait --load networkidle`
+5. Capture refs before interacting: `agent-browser snapshot -i`
+6. Interact with `click`, `fill`, `press`, `scroll`, then re-run `snapshot -i` whenever the page changes.
+7. Save artifacts with explicit paths under `.claude/browser-artifacts/agent-browser/`.
 
 ## Notes
 
-- The browser server records video artifacts directly. If a strict GIF file is needed, convert the saved recording with Bash after the run.
-- If the app server is launched from `apps/server`, the MCP API now resolves the repo-root `.mcp.json` automatically.
+- Recommended loop:
+  `agent-browser open <url> && agent-browser wait --load networkidle && agent-browser snapshot -i`
+- Use `agent-browser console` and `agent-browser errors` before finishing a test pass.
+- For multi-step flows, use `agent-browser record start .claude/browser-artifacts/agent-browser/<name>.webm` and `agent-browser record stop`.
+- Re-snapshot after navigation, form submission, modal open/close, or any DOM change that invalidates refs.

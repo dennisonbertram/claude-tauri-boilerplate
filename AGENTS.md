@@ -162,21 +162,23 @@ curl -N -X POST http://localhost:3131/api/chat \
 
 Verify: correct status codes, response shapes match shared types, error cases return proper error JSON, and streaming endpoints actually stream (not buffer).
 
-#### Manual Frontend Testing with Chrome Browser Tool
+#### Manual Frontend Testing with agent-browser
 
-Every frontend change MUST be manually verified using the `mcp__claude-in-chrome__*` browser automation tools. This catches visual bugs, layout issues, and interaction problems that unit tests miss.
+Every frontend change MUST be manually verified using the `agent-browser` CLI. This catches visual bugs, layout issues, and interaction problems that unit tests miss.
 
 **Setup:**
 1. Start the dev environment: `pnpm dev:all`
-2. Use `mcp__claude-in-chrome__tabs_context_mcp` to check current browser state
-3. Navigate to `http://localhost:1420` using `mcp__claude-in-chrome__navigate` (or create a new tab with `mcp__claude-in-chrome__tabs_create_mcp`)
+2. Install the browser once if needed: `agent-browser install`
+3. Navigate to `http://localhost:1420` using `agent-browser open http://localhost:1420`
+4. Wait for the page to settle: `agent-browser wait --load networkidle`
 
 **Testing workflow:**
-1. **Take a screenshot** with `mcp__claude-in-chrome__get_screenshot` to verify the current UI state
-2. **Interact with the page** using `mcp__claude-in-chrome__computer` (click, type, scroll) to test user flows
-3. **Read page content** with `mcp__claude-in-chrome__read_page` or `mcp__claude-in-chrome__get_page_text` to verify rendered text
-4. **Check for console errors** with `mcp__claude-in-chrome__read_console_messages` -- there should be zero errors
-5. **Take a final screenshot** to confirm the feature looks correct after interaction
+1. **Take a snapshot** with `agent-browser snapshot -i` to get fresh element refs
+2. **Take a screenshot** with `agent-browser screenshot .claude/browser-artifacts/agent-browser/<name>.png` to verify the current UI state
+3. **Interact with the page** using `agent-browser click`, `fill`, `press`, and `scroll`
+4. **Read page state** with `agent-browser snapshot -i`, `agent-browser get text <selector>`, or `agent-browser get url`
+5. **Check for console errors** with `agent-browser console` and `agent-browser errors` -- there should be zero unexpected errors
+6. **Take a final screenshot** to confirm the feature looks correct after interaction
 
 **What to verify for each frontend change:**
 - Component renders without console errors
@@ -187,7 +189,7 @@ Every frontend change MUST be manually verified using the `mcp__claude-in-chrome
 - Responsive behavior is reasonable
 
 **Recording multi-step interactions:**
-Use `mcp__claude-in-chrome__gif_creator` to record complex user flows (e.g., creating a session, sending a message, receiving a streamed response). Name the GIF descriptively (e.g., `chat-flow-test.gif`).
+Use `agent-browser record start .claude/browser-artifacts/agent-browser/<name>.webm` and `agent-browser record stop` to capture complex user flows. If a GIF is explicitly needed, convert the saved video afterward. `agentation` is separate from `agent-browser` and should only be used when you specifically want its visual-feedback MCP features.
 
 ### Building
 
@@ -269,7 +271,7 @@ Test-Driven Development is mandatory. Manual verification is mandatory. No excep
 Automated tests alone are not sufficient. Every change must also be manually verified:
 
 5. **Backend changes: test with curl.** Hit every new or modified endpoint with curl. Verify status codes, response shapes, error cases, and streaming behavior. See §3 "Manual API Testing with curl" for examples.
-6. **Frontend changes: test with the Chrome browser tool.** Use the `mcp__claude-in-chrome__*` tools to navigate to the app, take screenshots, interact with the UI, and check for console errors. See §3 "Manual Frontend Testing with Chrome Browser Tool" for the full workflow.
+6. **Frontend changes: test with `agent-browser`.** Use the `agent-browser` CLI to navigate to the app, take screenshots, interact with the UI, and check console/page errors. See §3 "Manual Frontend Testing with agent-browser" for the full workflow.
 7. **Both layers changed? Test both.** If a feature touches backend and frontend, do curl testing first (confirm the API works), then Chrome testing (confirm the UI works end-to-end).
 
 ### Bug Fix Protocol

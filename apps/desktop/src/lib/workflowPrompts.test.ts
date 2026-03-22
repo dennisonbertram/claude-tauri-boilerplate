@@ -33,10 +33,11 @@ describe('workflowPrompts', () => {
       expect(prompt).toBe(custom);
     });
 
-    it('includes browser MCP setup guidance in the default browser prompt', () => {
-      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('@playwright/mcp@latest');
-      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('.claude/browser-artifacts');
-      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('gif');
+    it('includes agent-browser setup guidance in the default browser prompt', () => {
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('agent-browser');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('agent-browser install');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('.claude/browser-artifacts/agent-browser');
+      expect(DEFAULT_WORKFLOW_PROMPTS.browser).toContain('agentation');
     });
   });
 

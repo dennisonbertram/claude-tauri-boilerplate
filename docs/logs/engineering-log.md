@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-22: Browser testing process moved to agent-browser
+
+**Type**: Technical Decision
+**Impact**: Medium
+**Description**: Updated the project's default browser testing process to use the `agent-browser` CLI instead of the Playwright MCP preset. The `/browser` workflow prompt, browser-testing runbook, repo MCP defaults, and agent instructions now point to `agent-browser` commands and artifact paths under `.claude/browser-artifacts/agent-browser`. The Settings > MCP presets were also narrowed so `agentation` remains available as a separate visual-feedback MCP tool rather than being conflated with `agent-browser`.
+**Regression Test**: `apps/desktop/src/lib/workflowPrompts.test.ts`, `apps/desktop/src/components/__tests__/McpPanel.test.tsx`
+**Related Issue**: N/A
+
+---
+
 ### 2026-03-19: Hardening review converted into top-three implementation tickets
 
 **Type**: Technical Decision
