@@ -70,6 +70,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     createSession,
     deleteSession,
     renameSession,
+    forkSession,
     exportSession,
     autoNameSession,
   } = useSessions(sessionSearchQuery);
@@ -381,6 +382,9 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           }}
           onNewChat={handleNewChat}
           onDeleteSession={deleteSession}
+          onRenameSession={renameSession}
+          onForkSession={forkSession}
+          onExportSession={exportSession}
           projects={projects}
           workspacesByProject={workspacesByProject}
           selectedWorkspaceId={selectedWorkspace?.id ?? null}
