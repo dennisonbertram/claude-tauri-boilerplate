@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { Session, Message } from '@claude-tauri/shared';
 import { useSettings } from './useSettings';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 export function useSessions(initialSearchQuery: string = '') {
   const { settings } = useSettings();
@@ -15,10 +14,10 @@ export function useSessions(initialSearchQuery: string = '') {
     const query = trimmedQuery
       ? `?q=${encodeURIComponent(trimmedQuery)}`
       : '';
-    const url = `${API_BASE}/api/sessions${query}`;
+    const url = `/api/sessions${query}`;
 
     try {
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       setSessions(data);
     } catch {
@@ -27,7 +26,7 @@ export function useSessions(initialSearchQuery: string = '') {
   }, []);
 
   const createSession = useCallback(async (title?: string) => {
-    const res = await fetch(`${API_BASE}/api/sessions`, {
+    const res = await apiFetch(`/api/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, model: settings.model }),
@@ -39,13 +38,13 @@ export function useSessions(initialSearchQuery: string = '') {
   }, [settings.model]);
 
   const deleteSession = useCallback(async (id: string) => {
-    await fetch(`${API_BASE}/api/sessions/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/sessions/${id}`, { method: 'DELETE' });
     setSessions(prev => prev.filter(s => s.id !== id));
     if (activeSessionId === id) setActiveSessionId(null);
   }, [activeSessionId]);
 
   const renameSession = useCallback(async (id: string, title: string) => {
-    const res = await fetch(`${API_BASE}/api/sessions/${id}`, {
+    const res = await apiFetch(`/api/sessions/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
@@ -58,7 +57,7 @@ export function useSessions(initialSearchQuery: string = '') {
   }, []);
 
   const forkSession = useCallback(async (id: string) => {
-    const res = await fetch(`${API_BASE}/api/sessions/${id}/fork`, {
+    const res = await apiFetch(`/api/sessions/${id}/fork`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
@@ -71,7 +70,7 @@ export function useSessions(initialSearchQuery: string = '') {
 
   const exportSession = useCallback(async (id: string, format: 'json' | 'md') => {
     try {
-      const res = await fetch(`${API_BASE}/api/sessions/${id}/export?format=${format}`);
+      const res = await apiFetch(`/api/sessions/${id}/export?format=${format}`);
       if (!res.ok) {
         toast.error('Export failed', { description: `Server returned ${res.status}` });
         return;
@@ -103,13 +102,13 @@ export function useSessions(initialSearchQuery: string = '') {
   }, []);
 
   const fetchMessages = useCallback(async (sessionId: string): Promise<Message[]> => {
-    const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`);
+    const res = await apiFetch(`/api/sessions/${sessionId}/messages`);
     return res.json();
   }, []);
 
   const autoNameSession = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/sessions/${id}/auto-name`, {
+      const res = await apiFetch(`/api/sessions/${id}/auto-name`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: settings.prReviewModel, privacyMode: settings.privacyMode }),

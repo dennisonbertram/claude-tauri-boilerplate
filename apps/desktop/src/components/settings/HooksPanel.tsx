@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { HookConfig, HookEventMeta, HookHandler } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 
 const HANDLER_TYPE_STYLES: Record<HookHandler['type'], { label: string; className: string }> = {
   command: { label: 'command', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
@@ -60,8 +59,8 @@ export function HooksPanel() {
     setError(null);
     try {
       const [hooksRes, eventsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/hooks`),
-        fetch(`${API_BASE}/api/hooks/events`),
+        apiFetch(`/api/hooks`),
+        apiFetch(`/api/hooks/events`),
       ]);
 
       if (!hooksRes.ok) throw new Error('Failed to fetch hooks');
@@ -132,7 +131,7 @@ export function HooksPanel() {
         payload.matcher = form.matcher.trim();
       }
 
-      const res = await fetch(`${API_BASE}/api/hooks`, {
+      const res = await apiFetch(`/api/hooks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -156,7 +155,7 @@ export function HooksPanel() {
   const handleToggle = async (id: string, enabled: boolean) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(id)}/toggle`, {
+      const res = await apiFetch(`/api/hooks/${encodeURIComponent(id)}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled }),
@@ -176,7 +175,7 @@ export function HooksPanel() {
   const handleDelete = async (id: string) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(id)}`, {
+      const res = await apiFetch(`/api/hooks/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 

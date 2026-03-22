@@ -17,19 +17,18 @@ import type {
   WorkspaceProvisioningRun,
   WorkspaceDeployment,
 } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from './api-config';
 
 // --- Projects ---
 
 export async function fetchProjects(): Promise<Project[]> {
-  const res = await fetch(`${API_BASE}/api/projects`);
+  const res = await apiFetch(`/api/projects`);
   if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
   return res.json();
 }
 
 export async function createProject(repoPath: string): Promise<Project> {
-  const res = await fetch(`${API_BASE}/api/projects`, {
+  const res = await apiFetch(`/api/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ repoPath } satisfies CreateProjectRequest),
@@ -42,7 +41,7 @@ export async function createProject(repoPath: string): Promise<Project> {
 }
 
 export async function updateProject(id: string, updates: Partial<Pick<Project, 'name' | 'defaultBranch' | 'setupCommand'>>): Promise<Project> {
-  const res = await fetch(`${API_BASE}/api/projects/${id}`, {
+  const res = await apiFetch(`/api/projects/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
@@ -55,7 +54,7 @@ export async function updateProject(id: string, updates: Partial<Pick<Project, '
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/projects/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/api/projects/${id}`, { method: 'DELETE' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to delete project: ${res.status}`);
@@ -65,7 +64,7 @@ export async function deleteProject(id: string): Promise<void> {
 // --- Workspaces ---
 
 export async function fetchWorkspaces(projectId: string): Promise<Workspace[]> {
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/workspaces`);
+  const res = await apiFetch(`/api/projects/${projectId}/workspaces`);
   if (!res.ok) throw new Error(`Failed to fetch workspaces: ${res.status}`);
   return res.json();
 }
@@ -86,7 +85,7 @@ export async function createWorkspace(
   if (linearIssue) body.linearIssue = linearIssue;
   if (githubIssue) body.githubIssue = githubIssue;
 
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/workspaces`, {
+  const res = await apiFetch(`/api/projects/${projectId}/workspaces`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -100,13 +99,13 @@ export async function createWorkspace(
 
 export async function fetchWorkspaceStatus(worktreePath: string): Promise<GitStatus> {
   const encodedPath = encodeURIComponent(worktreePath);
-  const res = await fetch(`${API_BASE}/api/git/status?cwd=${encodedPath}`);
+  const res = await apiFetch(`/api/git/status?cwd=${encodedPath}`);
   if (!res.ok) throw new Error(`Failed to fetch workspace status: ${res.status}`);
   return res.json();
 }
 
 export async function renameWorkspace(id: string, updates: WorkspaceRenameRequest): Promise<Workspace> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}`, {
+  const res = await apiFetch(`/api/workspaces/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
@@ -119,8 +118,8 @@ export async function renameWorkspace(id: string, updates: WorkspaceRenameReques
 }
 
 export async function deleteWorkspace(id: string, force?: boolean): Promise<void> {
-  const url = force ? `${API_BASE}/api/workspaces/${id}?force=true` : `${API_BASE}/api/workspaces/${id}`;
-  const res = await fetch(url, { method: 'DELETE' });
+  const path = force ? `/api/workspaces/${id}?force=true` : `/api/workspaces/${id}`;
+  const res = await apiFetch(path, { method: 'DELETE' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to delete workspace: ${res.status}`);
@@ -153,20 +152,20 @@ function toQueryString(range?: WorkspaceDiffRange): string {
 
 export async function fetchWorkspaceDiff(id: string, range?: WorkspaceDiffRange): Promise<{ diff: string; workspaceId: string }> {
   const query = toQueryString(range);
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}/diff${query}`);
+  const res = await apiFetch(`/api/workspaces/${id}/diff${query}`);
   if (!res.ok) throw new Error(`Failed to fetch diff: ${res.status}`);
   return res.json();
 }
 
 export async function fetchChangedFiles(id: string, range?: WorkspaceDiffRange): Promise<{ files: Array<{ path: string; status: string }>; workspaceId: string }> {
   const query = toQueryString(range);
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}/changed-files${query}`);
+  const res = await apiFetch(`/api/workspaces/${id}/changed-files${query}`);
   if (!res.ok) throw new Error(`Failed to fetch changed files: ${res.status}`);
   return res.json();
 }
 
 export async function mergeWorkspace(id: string): Promise<{ success: boolean; message?: string }> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}/merge`, { method: 'POST' });
+  const res = await apiFetch(`/api/workspaces/${id}/merge`, { method: 'POST' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to merge workspace: ${res.status}`);
@@ -175,7 +174,7 @@ export async function mergeWorkspace(id: string): Promise<{ success: boolean; me
 }
 
 export async function fetchWorkspaceRevisions(id: string): Promise<{ workspaceId: string; revisions: WorkspaceRevision[] }> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}/revisions`);
+  const res = await apiFetch(`/api/workspaces/${id}/revisions`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch workspace revisions: ${res.status}`);
@@ -184,7 +183,7 @@ export async function fetchWorkspaceRevisions(id: string): Promise<{ workspaceId
 }
 
 export async function discardWorkspace(id: string): Promise<{ success: boolean }> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${id}/discard`, { method: 'POST' });
+  const res = await apiFetch(`/api/workspaces/${id}/discard`, { method: 'POST' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to discard workspace: ${res.status}`);
@@ -193,7 +192,7 @@ export async function discardWorkspace(id: string): Promise<{ success: boolean }
 }
 
 export async function getWorkspaceSession(workspaceId: string): Promise<{ id: string } | null> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/session`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/session`);
   if (!res.ok) return null;
   return res.json();
 }
@@ -201,7 +200,7 @@ export async function getWorkspaceSession(workspaceId: string): Promise<{ id: st
 // --- Diff Comments ---
 
 export async function fetchDiffComments(workspaceId: string): Promise<DiffComment[]> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/diff-comments`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/diff-comments`);
   if (!res.ok) throw new Error(`Failed to fetch diff comments: ${res.status}`);
   return res.json();
 }
@@ -210,7 +209,7 @@ export async function createDiffComment(
   workspaceId: string,
   request: CreateDiffCommentRequest
 ): Promise<DiffComment> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/diff-comments`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/diff-comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -223,7 +222,7 @@ export async function createDiffComment(
 }
 
 export async function deleteDiffComment(workspaceId: string, commentId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/diff-comments/${commentId}`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/diff-comments/${commentId}`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -235,7 +234,7 @@ export async function deleteDiffComment(workspaceId: string, commentId: string):
 // --- Notes ---
 
 export async function fetchWorkspaceNotes(workspaceId: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/notes`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/notes`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch workspace notes: ${res.status}`);
@@ -245,7 +244,7 @@ export async function fetchWorkspaceNotes(workspaceId: string): Promise<string> 
 }
 
 export async function saveWorkspaceNotes(workspaceId: string, content: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/notes`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/notes`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
@@ -266,7 +265,7 @@ export async function fetchCodeReview(
   workspaceId: string,
   request: CodeReviewRequest = {}
 ): Promise<CodeReviewResult> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/code-review`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/code-review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -295,7 +294,7 @@ export interface GithubBranch {
 
 export async function fetchGithubIssues(projectId: string, query?: string): Promise<GithubIssue[]> {
   const params = query ? `?q=${encodeURIComponent(query)}` : '';
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/github-issues${params}`);
+  const res = await apiFetch(`/api/projects/${projectId}/github-issues${params}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch GitHub issues: ${res.status}`);
@@ -304,7 +303,7 @@ export async function fetchGithubIssues(projectId: string, query?: string): Prom
 }
 
 export async function fetchProjectBranches(projectId: string): Promise<GithubBranch[]> {
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/branches`);
+  const res = await apiFetch(`/api/projects/${projectId}/branches`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch branches: ${res.status}`);
@@ -314,7 +313,7 @@ export async function fetchProjectBranches(projectId: string): Promise<GithubBra
 
 export async function fetchGitBranchesFromPath(path: string): Promise<{ name: string }[]> {
   const encodedPath = encodeURIComponent(path);
-  const res = await fetch(`${API_BASE}/api/git/branches?path=${encodedPath}`);
+  const res = await apiFetch(`/api/git/branches?path=${encodedPath}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch branches: ${res.status}`);
@@ -325,7 +324,7 @@ export async function fetchGitBranchesFromPath(path: string): Promise<{ name: st
 // --- Artifacts ---
 
 export async function fetchSessionThread(sessionId: string): Promise<import('@claude-tauri/shared').ThreadMessage[]> {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/thread`);
+  const res = await apiFetch(`/api/sessions/${sessionId}/thread`);
   if (!res.ok) throw new Error(`Failed to fetch thread: ${res.status}`);
   return res.json();
 }
@@ -337,7 +336,7 @@ export async function generateArtifact(projectId: string, params: {
   sessionId?: string;
   model?: string;
 }): Promise<{ artifact: import('@claude-tauri/shared').Artifact; revision: import('@claude-tauri/shared').ArtifactRevision }> {
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/artifacts/generate`, {
+  const res = await apiFetch(`/api/projects/${projectId}/artifacts/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -350,19 +349,19 @@ export async function generateArtifact(projectId: string, params: {
 }
 
 export async function fetchProjectArtifacts(projectId: string): Promise<import('@claude-tauri/shared').Artifact[]> {
-  const res = await fetch(`${API_BASE}/api/projects/${projectId}/artifacts`);
+  const res = await apiFetch(`/api/projects/${projectId}/artifacts`);
   if (!res.ok) throw new Error(`Failed to fetch artifacts: ${res.status}`);
   return res.json();
 }
 
 export async function archiveArtifact(artifactId: string): Promise<import('@claude-tauri/shared').Artifact> {
-  const res = await fetch(`${API_BASE}/api/artifacts/${artifactId}/archive`, { method: 'PATCH' });
+  const res = await apiFetch(`/api/artifacts/${artifactId}/archive`, { method: 'PATCH' });
   if (!res.ok) throw new Error(`Failed to archive artifact: ${res.status}`);
   return res.json();
 }
 
 export async function renameArtifact(artifactId: string, title: string): Promise<import('@claude-tauri/shared').Artifact> {
-  const res = await fetch(`${API_BASE}/api/artifacts/${artifactId}`, {
+  const res = await apiFetch(`/api/artifacts/${artifactId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
@@ -375,7 +374,7 @@ export async function renameArtifact(artifactId: string, title: string): Promise
 }
 
 export async function regenerateArtifact(artifactId: string, params: { prompt: string; model?: string }): Promise<{ artifact: import('@claude-tauri/shared').Artifact; revision: import('@claude-tauri/shared').ArtifactRevision }> {
-  const res = await fetch(`${API_BASE}/api/artifacts/${artifactId}/regenerate`, {
+  const res = await apiFetch(`/api/artifacts/${artifactId}/regenerate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -397,7 +396,7 @@ export interface WorkspaceReviewResponse extends WorkspaceReview {
 }
 
 export async function fetchWorkspaceReview(workspaceId: string): Promise<WorkspaceReviewResponse> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch workspace review: ${res.status}`);
@@ -408,7 +407,7 @@ export async function fetchWorkspaceReview(workspaceId: string): Promise<Workspa
 // --- Workspace Deployments ---
 
 export async function getWorkspaceDeployment(workspaceId: string): Promise<{ deployment: WorkspaceDeployment | null; isConfigured: boolean }> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/deployment`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to get workspace deployment: ${res.status}`);
@@ -425,7 +424,7 @@ export async function updateWorkspaceReview(
     view_mode?: 'unified' | 'side-by-side';
   }
 ): Promise<WorkspaceReviewResponse> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -442,7 +441,7 @@ export async function upsertReviewFile(
   filePath: string,
   reviewState: 'unreviewed' | 'reviewed' | 'ignored'
 ): Promise<WorkspaceReviewFile> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/files`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/files`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ file_path: filePath, review_state: reviewState }),
@@ -460,7 +459,7 @@ export async function linkWorkspaceDeployment(
   railwayServiceId: string,
   railwayEnvironmentId: string
 ): Promise<WorkspaceDeployment> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/deployment`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ railwayProjectId, railwayServiceId, railwayEnvironmentId }),
@@ -474,7 +473,7 @@ export async function linkWorkspaceDeployment(
 }
 
 export async function refreshWorkspaceDeploymentStatus(workspaceId: string): Promise<{ deployment: WorkspaceDeployment }> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment/refresh`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/deployment/refresh`, {
     method: 'POST',
   });
   if (!res.ok) {
@@ -485,7 +484,7 @@ export async function refreshWorkspaceDeploymentStatus(workspaceId: string): Pro
 }
 
 export async function fetchReviewComments(workspaceId: string): Promise<WorkspaceReviewComment[]> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/comments`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/comments`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch review comments: ${res.status}`);
@@ -503,7 +502,7 @@ export async function createReviewComment(
     markdown: string;
   }
 ): Promise<WorkspaceReviewComment> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/comments`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -520,7 +519,7 @@ export async function getWorkspaceDeploymentLogs(
   limit?: number
 ): Promise<{ logs: Array<{ timestamp: string; level: string; message: string }>; deploymentId: string | null; total: number }> {
   const params = limit ? `?limit=${limit}` : '';
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment/logs${params}`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/deployment/logs${params}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch deployment logs: ${res.status}`);
@@ -533,7 +532,7 @@ export async function updateReviewComment(
   commentId: string,
   patch: { markdown?: string; status?: 'open' | 'resolved' | 'outdated' }
 ): Promise<WorkspaceReviewComment> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/comments/${commentId}`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/comments/${commentId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -546,7 +545,7 @@ export async function updateReviewComment(
 }
 
 export async function deleteReviewComment(workspaceId: string, commentId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/comments/${commentId}`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/comments/${commentId}`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -556,7 +555,7 @@ export async function deleteReviewComment(workspaceId: string, commentId: string
 }
 
 export async function unlinkWorkspaceDeployment(workspaceId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/deployment`, {
     method: 'DELETE',
   });
   if (!res.ok) {
@@ -566,7 +565,7 @@ export async function unlinkWorkspaceDeployment(workspaceId: string): Promise<vo
 }
 
 export async function fetchReviewTodos(workspaceId: string): Promise<WorkspaceReviewTodo[]> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/todos`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/todos`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch review todos: ${res.status}`);
@@ -578,7 +577,7 @@ export async function createReviewTodo(
   workspaceId: string,
   data: { body: string; source?: 'local' | 'check' | 'agent'; file_path?: string | null }
 ): Promise<WorkspaceReviewTodo> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/todos`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/todos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -595,7 +594,7 @@ export async function updateReviewTodo(
   todoId: string,
   patch: { status?: 'open' | 'done'; body?: string }
 ): Promise<WorkspaceReviewTodo> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/review/todos/${todoId}`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/review/todos/${todoId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -630,7 +629,7 @@ export async function searchGithubRepos(
   token: string
 ): Promise<GithubReposResult> {
   const params = new URLSearchParams({ q: query });
-  const res = await fetch(`${API_BASE}/api/github/repos?${params}`, {
+  const res = await apiFetch(`/api/github/repos?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`GitHub search failed: ${res.status}`);
@@ -640,7 +639,7 @@ export async function searchGithubRepos(
 export async function listGithubRepos(
   token: string
 ): Promise<GithubReposResult> {
-  const res = await fetch(`${API_BASE}/api/github/repos`, {
+  const res = await apiFetch(`/api/github/repos`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`GitHub repos list failed: ${res.status}`);
@@ -650,7 +649,7 @@ export async function listGithubRepos(
 export async function testGithubToken(
   token: string
 ): Promise<{ ok: boolean; user?: { login: string; name: string | null }; error?: string }> {
-  const res = await fetch(`${API_BASE}/api/github/test`, {
+  const res = await apiFetch(`/api/github/test`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -663,7 +662,7 @@ export async function createProjectFromGithub(
   repo: string,
   options?: { localPath?: string; token?: string }
 ): Promise<import('@claude-tauri/shared').Project> {
-  const res = await fetch(`${API_BASE}/api/projects/from-github`, {
+  const res = await apiFetch(`/api/projects/from-github`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ owner, repo, path: options?.localPath, token: options?.token }),
@@ -679,7 +678,7 @@ export async function createProjectFromGithub(
 
 export async function listWorkspaceProviders(projectId?: string): Promise<WorkspaceProvider[]> {
   const params = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
-  const res = await fetch(`${API_BASE}/api/workspace-providers${params}`);
+  const res = await apiFetch(`/api/workspace-providers${params}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as any).error || `Failed to list workspace providers: ${res.status}`);
@@ -696,7 +695,7 @@ export async function createWorkspaceProvider(data: {
   timeoutMs?: number;
   enabled?: boolean;
 }): Promise<WorkspaceProvider> {
-  const res = await fetch(`${API_BASE}/api/workspace-providers`, {
+  const res = await apiFetch(`/api/workspace-providers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -719,7 +718,7 @@ export async function updateWorkspaceProvider(
     enabled?: boolean;
   }
 ): Promise<WorkspaceProvider> {
-  const res = await fetch(`${API_BASE}/api/workspace-providers/${id}`, {
+  const res = await apiFetch(`/api/workspace-providers/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -732,7 +731,7 @@ export async function updateWorkspaceProvider(
 }
 
 export async function deleteWorkspaceProvider(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/workspace-providers/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/api/workspace-providers/${id}`, { method: 'DELETE' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as any).error || `Failed to delete workspace provider: ${res.status}`);
@@ -742,7 +741,7 @@ export async function deleteWorkspaceProvider(id: string): Promise<void> {
 // --- Workspace Provisioning Runs ---
 
 export async function listProvisioningRuns(workspaceId: string): Promise<WorkspaceProvisioningRun[]> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/provisioning-runs`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/provisioning-runs`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as any).error || `Failed to list provisioning runs: ${res.status}`);
@@ -755,7 +754,7 @@ export async function createProvisioningRun(
   providerId: string,
   requestJson: Record<string, unknown> = {}
 ): Promise<WorkspaceProvisioningRun> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/provisioning-runs`, {
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/provisioning-runs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ providerId, requestJson }),
@@ -771,7 +770,7 @@ export async function getProvisioningRun(
   workspaceId: string,
   runId: string
 ): Promise<WorkspaceProvisioningRun> {
-  const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/provisioning-runs/${runId}`);
+  const res = await apiFetch(`/api/workspaces/${workspaceId}/provisioning-runs/${runId}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as any).error || `Failed to get provisioning run: ${res.status}`);
@@ -780,7 +779,7 @@ export async function getProvisioningRun(
 }
 
 export async function setDeploymentToken(token: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/deployment-settings/token`, {
+  const res = await apiFetch(`/api/deployment-settings/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),

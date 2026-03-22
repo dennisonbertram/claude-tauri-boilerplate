@@ -55,8 +55,7 @@ import {
   buildBranchNameWorkflowMessage,
   buildBrowserWorkflowMessage,
 } from '@/lib/workflowPrompts';
-
-const API_BASE = 'http://localhost:3131';
+import { getApiBase, getAuthHeaders, apiFetch } from '@/lib/api-config';
 const PLAN_EXPORT_DRAFT_KEY = 'claude-tauri-plan-export-draft';
 
 export interface ChatPageStatusData {
@@ -279,7 +278,8 @@ export function ChatPage({
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: `${API_BASE}/api/chat`,
+        api: `${getApiBase()}/api/chat`,
+        headers: getAuthHeaders(),
         body: {
           sessionId,
           model: settings.model,
@@ -915,7 +915,7 @@ export function ChatPage({
       resolvePermission(result.requestId);
 
       try {
-        await fetch(`${API_BASE}/api/chat/permission`, {
+        await apiFetch(`/api/chat/permission`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -938,7 +938,7 @@ export function ChatPage({
     approvePlan(plan.planId);
 
     try {
-      await fetch(`${API_BASE}/api/chat/plan`, {
+      await apiFetch(`/api/chat/plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -974,7 +974,7 @@ export function ChatPage({
       rejectPlan(plan.planId, feedback);
 
       try {
-        await fetch(`${API_BASE}/api/chat/plan`, {
+        await apiFetch(`/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1015,7 +1015,7 @@ export function ChatPage({
       approvePlan(plan.planId);
 
       try {
-        await fetch(`${API_BASE}/api/chat/plan`, {
+        await apiFetch(`/api/chat/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1097,7 +1097,7 @@ export function ChatPage({
 
     let cancelled = false;
 
-    void fetch(`${API_BASE}/api/chat/plan/archive`, {
+    void apiFetch(`/api/chat/plan/archive`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1180,7 +1180,7 @@ export function ChatPage({
       const ok = await executeRewind(rewindTarget.id, mode);
       if (ok && sessionId) {
         try {
-          const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/messages`);
+          const res = await apiFetch(`/api/sessions/${sessionId}/messages`);
           if (res.ok) {
             const saved: Message[] = await res.json();
             setMessages(saved.map(toUIMessage));

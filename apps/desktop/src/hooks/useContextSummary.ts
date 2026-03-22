@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 const DEBOUNCE_MS = 2000;
 
@@ -66,7 +65,7 @@ export function useContextSummary(
 
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/summary`);
+        const res = await apiFetch(`/api/sessions/${sessionId}/summary`);
         if (!res.ok) return;
         const data = await res.json() as { summary: string | null };
         setSummary(data.summary ?? null);

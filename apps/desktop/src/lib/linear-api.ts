@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from './api-config';
 
 export type LinearStatus = {
   connected: boolean;
@@ -25,34 +25,34 @@ async function expectOk(res: Response): Promise<void> {
 }
 
 export async function getStatus(): Promise<LinearStatus> {
-  const res = await fetch(`${API_BASE}/api/linear/status`);
+  const res = await apiFetch(`/api/linear/status`);
   await expectOk(res);
   return (await res.json()) as LinearStatus;
 }
 
 export async function getAuthorizeUrl(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/linear/oauth/authorize-url`);
+  const res = await apiFetch(`/api/linear/oauth/authorize-url`);
   await expectOk(res);
   const body = (await res.json()) as { url: string };
   return body.url;
 }
 
 export async function disconnect(): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/linear/disconnect`, { method: 'POST' });
+  const res = await apiFetch(`/api/linear/disconnect`, { method: 'POST' });
   await expectOk(res);
 }
 
 export async function listIssues(query?: string): Promise<LinearIssue[]> {
   const params = new URLSearchParams();
   if (query && query.trim()) params.set('q', query.trim());
-  const res = await fetch(`${API_BASE}/api/linear/issues?${params.toString()}`);
+  const res = await apiFetch(`/api/linear/issues?${params.toString()}`);
   await expectOk(res);
   const body = (await res.json()) as { issues: LinearIssue[] };
   return body.issues ?? [];
 }
 
 export async function getIssue(identifier: string): Promise<LinearIssue> {
-  const res = await fetch(`${API_BASE}/api/linear/issues/${encodeURIComponent(identifier)}`);
+  const res = await apiFetch(`/api/linear/issues/${encodeURIComponent(identifier)}`);
   await expectOk(res);
   return (await res.json()) as LinearIssue;
 }
