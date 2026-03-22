@@ -33,7 +33,7 @@ export function useSessions(initialSearchQuery: string = '') {
       body: JSON.stringify({ title, model: settings.model }),
     });
     const session = await res.json();
-    setSessions(prev => [session, ...prev]);
+    setSessions(prev => [{ ...session, messageCount: 0 }, ...prev]);
     setActiveSessionId(session.id);
     return session as Session;
   }, [settings.model]);
