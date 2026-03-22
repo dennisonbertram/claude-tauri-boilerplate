@@ -1,7 +1,6 @@
 import { Database } from 'bun:sqlite';
-import { existsSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import type { Workspace, WorkspaceStatus, SetupContract } from '@claude-tauri/shared';
+import { existsSync, mkdirSync } from 'node:fs';
+import type { Workspace, WorkspaceStatus } from '@claude-tauri/shared';
 import {
   createWorkspace as dbCreateWorkspace,
   getWorkspace,
@@ -10,24 +9,24 @@ import {
   setWorkspaceError,
   deleteWorkspace as dbDeleteWorkspace,
   updateWorkspace,
-  listWorkspaces,
   recordWorkspaceEvent,
 } from '../db';
 import {
   getWorkspaceWorktreeDir,
-  sanitizeWorkspaceName,
   canonicalizePath,
 } from '../utils/paths';
 import { WorktreeService, worktreeService } from './worktree';
 import { loadWorkspaceConfig } from './workspace-config';
+import { initContextDirectory, copyPreserveFiles, runSetupCommand } from './worktree-setup-helpers';
 import {
-  validateSetupContract,
-  resolveCommand,
-  legacyCommandToContract,
-} from './setup-contract';
-import { validateSetupCommand } from './setup-validator';
-
-const SETUP_TIMEOUT_MS = 30_000;
+  validateProjectForWorkspace,
+  validateWorkspaceName,
+  deriveBranchName,
+  checkNameConflict,
+  checkBranchConflict,
+  validateSourceBranch,
+  validateRenameFields,
+} from './worktree-validation';
 
 /**
  * Orchestrates multi-step workspace creation and deletion.
@@ -36,20 +35,6 @@ const SETUP_TIMEOUT_MS = 30_000;
 export class WorktreeOrchestrator {
   constructor(private wt: WorktreeService = worktreeService) {}
 
-  /**
-   * Create a new workspace for a project.
-   *
-   * Steps:
-   * 1. Validate name, look up project
-   * 2. Determine branch name (workspace/<slug>)
-   * 3. Check branch doesn't already exist
-   * 4. Compute worktree path, ensure parent dir exists
-   * 5. Insert DB row with status 'creating'
-   * 6. Create git worktree + branch
-   * 7. If setup_command exists, run it with timeout
-   * 8. Update status to 'ready'
-   * 9. On failure: set error status, best-effort cleanup
-   */
   async createWorkspace(
     db: Database,
     projectId: string,
@@ -57,114 +42,35 @@ export class WorktreeOrchestrator {
     baseBranch?: string,
     sourceBranch?: string,
     branchPrefix?: string,
-    linearIssue?: {
-      id: string;
-      title: string;
-      summary?: string;
-      url?: string;
-    },
+    linearIssue?: { id: string; title: string; summary?: string; url?: string },
     additionalDirectories: string[] = [],
-    githubIssue?: {
-      number: number;
-      title: string;
-      url?: string;
-      repo?: string;
-    }
+    githubIssue?: { number: number; title: string; url?: string; repo?: string }
   ): Promise<Workspace> {
-    // 1. Validate workspace name
-    const sanitized = sanitizeWorkspaceName(name);
-    if (!sanitized) {
-      throw Object.assign(new Error('Invalid workspace name'), {
-        status: 400,
-        code: 'VALIDATION_ERROR',
-      });
-    }
+    // 1. Validate inputs
+    const sanitized = validateWorkspaceName(name);
+    const project = validateProjectForWorkspace(db, projectId);
 
-    // Look up project
-    const project = getProject(db, projectId);
-    if (!project) {
-      throw Object.assign(new Error('Project not found'), {
-        status: 404,
-        code: 'NOT_FOUND',
-      });
-    }
-
-    if (project.isDeleted) {
-      throw Object.assign(new Error('Project has been deleted'), {
-        status: 400,
-        code: 'VALIDATION_ERROR',
-      });
-    }
-
-    // Verify repo is healthy
-    if (!existsSync(project.repoPathCanonical)) {
-      throw Object.assign(new Error('Project repository path does not exist'), {
-        status: 400,
-        code: 'VALIDATION_ERROR',
-      });
-    }
-
-    // 2. Determine branch name
-    const rawPrefix = (branchPrefix || 'workspace').trim() || 'workspace';
-    const safePrefix = rawPrefix
-      .toLowerCase()
-      .replace(/[^a-z0-9_\/\-.]/g, '-')
-      .replace(/\/+/, '/')
-      .replace(/-+/g, '-')
-      .replace(/(^[\/-]|[\/-]$)/g, '');
-
-    const branchName = `${safePrefix}/${sanitized}`;
+    // 2. Determine branch name and validate
+    const branchName = deriveBranchName(branchPrefix, sanitized);
     const effectiveBaseBranch = sourceBranch || baseBranch || project.defaultBranch;
 
     if (sourceBranch) {
-      const sourceExists = await this.wt.branchExists(
-        project.repoPathCanonical,
-        sourceBranch
-      );
-      if (!sourceExists) {
-        throw Object.assign(
-          new Error(`Source branch '${sourceBranch}' does not exist`),
-          { status: 400, code: 'VALIDATION_ERROR' }
-        );
-      }
+      await validateSourceBranch(this.wt, project.repoPathCanonical, sourceBranch);
     }
 
-    // 3. Check for duplicate workspace name in project first (friendly error)
-    const existingWorkspaces = listWorkspaces(db, projectId);
-    const nameConflict = existingWorkspaces.find(
-      (ws) => sanitizeWorkspaceName(ws.name) === sanitized
-    );
-    if (nameConflict) {
-      throw Object.assign(
-        new Error(`A workspace named '${name}' already exists in this project`),
-        { status: 409, code: 'CONFLICT' }
-      );
-    }
-
-    // Check branch doesn't already exist
-    const branchAlreadyExists = await this.wt.branchExists(
-      project.repoPathCanonical,
-      branchName
-    );
-    if (branchAlreadyExists) {
-      throw Object.assign(
-        new Error(`A workspace named '${name}' already exists in this project`),
-        { status: 409, code: 'CONFLICT' }
-      );
-    }
+    // 3. Check for conflicts
+    checkNameConflict(db, projectId, name, sanitized);
+    await checkBranchConflict(this.wt, project.repoPathCanonical, branchName, name);
 
     // 4. Compute worktree path
     const workspaceId = crypto.randomUUID();
     const worktreePath = getWorkspaceWorktreeDir(projectId, workspaceId);
-
-    // Ensure parent directory exists
     const parentDir = getWorkspaceWorktreeDir(projectId, '').replace(/\/$/, '');
     mkdirSync(parentDir, { recursive: true });
 
     // 5. Insert DB row with status 'creating'
     let worktreePathCanonical: string;
     try {
-      // worktreePath doesn't exist yet so we canonicalize the parent and append
       const parentCanonical = await canonicalizePath(parentDir);
       worktreePathCanonical = `${parentCanonical}/${workspaceId}`;
     } catch {
@@ -174,30 +80,21 @@ export class WorktreeOrchestrator {
     let workspace: Workspace;
     try {
       workspace = dbCreateWorkspace(
-        db,
-        workspaceId,
-        projectId,
-        name,
-        branchName,
-        worktreePath,
-        worktreePathCanonical,
-        effectiveBaseBranch,
-        linearIssue,
-        additionalDirectories,
-        githubIssue
+        db, workspaceId, projectId, name, branchName, worktreePath,
+        worktreePathCanonical, effectiveBaseBranch, linearIssue,
+        additionalDirectories, githubIssue
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('UNIQUE constraint')) {
         throw Object.assign(
-          new Error(`Workspace name or branch conflicts with an existing workspace`),
+          new Error('Workspace name or branch conflicts with an existing workspace'),
           { status: 409, code: 'CONFLICT' }
         );
       }
       throw err;
     }
 
-    // Record creation event
     recordWorkspaceEvent(db, workspaceId, 'created', {
       sourceBranch: sourceBranch ?? undefined,
       baseBranch: effectiveBaseBranch,
@@ -207,132 +104,40 @@ export class WorktreeOrchestrator {
     // 6. Create git worktree + branch
     try {
       await this.wt.createWorktree(
-        project.repoPathCanonical,
-        worktreePath,
-        branchName,
-        effectiveBaseBranch
+        project.repoPathCanonical, worktreePath, branchName, effectiveBaseBranch
       );
     } catch (err: unknown) {
-      // Cleanup: set error status
       const msg = err instanceof Error ? err.message : String(err);
       setWorkspaceError(db, workspaceId, `Worktree creation failed: ${msg}`);
       recordWorkspaceEvent(db, workspaceId, 'error', { message: `Worktree creation failed: ${msg}` });
-      throw Object.assign(
-        new Error(`Failed to create worktree: ${msg}`),
-        { status: 500, code: 'GIT_ERROR' }
-      );
+      throw Object.assign(new Error(`Failed to create worktree: ${msg}`), { status: 500, code: 'GIT_ERROR' });
     }
 
-    // 6b. Create .context directory and empty notes file,
-    //     and exclude .context from git tracking via repo's .git/info/exclude
-    try {
-      const contextDir = join(worktreePath, '.context');
-      mkdirSync(contextDir, { recursive: true });
-      const notesPath = join(contextDir, 'notes.md');
-      writeFileSync(notesPath, '');
-
-      // Add .context to the repo's git info/exclude so it never appears
-      // in diffs/status across all worktrees
-      const gitInfoDir = join(project.repoPathCanonical, '.git', 'info');
-      const excludePath = join(gitInfoDir, 'exclude');
-      try {
-        mkdirSync(gitInfoDir, { recursive: true });
-        const existing = await Bun.file(excludePath).text().catch(() => '');
-        if (!existing.includes('.context')) {
-          writeFileSync(excludePath, `${existing.trimEnd()}\n.context\n`.trimStart());
-        }
-      } catch {
-        // Best-effort exclude setup
-      }
-    } catch {
-      // Best-effort — don't fail workspace creation if .context setup fails
-    }
+    // 6b. Create .context directory
+    await initContextDirectory(worktreePath, project.repoPathCanonical);
 
     // 7. Load repo config and apply it
     const repoConfig = await loadWorkspaceConfig(project.repoPathCanonical).catch(() => null);
 
-    // 7a. Copy preserve_files into new worktree
     if (repoConfig?.preserve?.files?.length) {
-      for (const relPath of repoConfig.preserve.files) {
-        const srcFile = join(project.repoPathCanonical, relPath);
-        const destFile = join(worktreePath, relPath);
-        if (existsSync(srcFile)) {
-          try {
-            mkdirSync(dirname(destFile), { recursive: true });
-            copyFileSync(srcFile, destFile);
-          } catch {
-            // Best-effort — don't fail workspace creation for a missing preserve file
-          }
-        }
-      }
+      copyPreserveFiles(project.repoPathCanonical, worktreePath, repoConfig.preserve.files);
     }
 
-    // 7b. Determine effective setup contract:
-    //   - project.setupCommand (DB override) converts to legacy contract
-    //   - repoConfig.lifecycle.setupContract (structured) beats legacy string
-    //   - repoConfig.lifecycle.setup (legacy string) converts to contract
-    let effectiveContract: SetupContract | null = null;
+    // 7b. Run setup command if configured
+    const effectiveSetupCommand = project.setupCommand ?? repoConfig?.lifecycle?.setup ?? null;
 
-    if (project.setupCommand) {
-      effectiveContract = legacyCommandToContract(project.setupCommand);
-    } else if (repoConfig?.lifecycle?.setupContract) {
-      effectiveContract = repoConfig.lifecycle.setupContract;
-    } else if (repoConfig?.lifecycle?.setup) {
-      effectiveContract = legacyCommandToContract(repoConfig.lifecycle.setup);
-    }
-
-    if (effectiveContract && effectiveContract.steps.length > 0) {
-      // Validate the entire contract before running any step
-      const validation = validateSetupContract(effectiveContract);
-
-      for (const w of validation.warnings) {
-        console.warn(`[workspace-setup] ${w}`);
-      }
-
-      if (!validation.valid) {
-        const errMsg = `Setup contract validation failed: ${validation.errors.join('; ')}`;
-        setWorkspaceError(db, workspaceId, errMsg);
-        recordWorkspaceEvent(db, workspaceId, 'error', { message: errMsg });
-        return getWorkspace(db, workspaceId)!;
-      }
-
+    if (effectiveSetupCommand) {
       transitionWorkspaceStatus(db, workspaceId, 'setup_running');
+      recordWorkspaceEvent(db, workspaceId, 'setup_started', { command: effectiveSetupCommand });
       const envOverlay = repoConfig?.env ?? {};
 
-      for (let i = 0; i < effectiveContract.steps.length; i++) {
-        const step = effectiveContract.steps[i];
-        const cmd = resolveCommand(step);
-        const label = step.label ?? `${step.type} (step ${i + 1})`;
-
-        // Per-command validation via setup-validator (shell injection, dangerous patterns)
-        const cmdValidation = validateSetupCommand(cmd);
-        if (!cmdValidation.valid) {
-          const errMsg = `Setup step ${i + 1} (${label}) blocked: ${cmdValidation.reason}`;
-          setWorkspaceError(db, workspaceId, errMsg);
-          recordWorkspaceEvent(db, workspaceId, 'error', { message: errMsg });
-          return getWorkspace(db, workspaceId)!;
-        }
-
-        recordWorkspaceEvent(db, workspaceId, 'setup_started', {
-          command: cmd,
-          label,
-          step: i + 1,
-        });
-
-        try {
-          await this.runSetupCommand(cmd, worktreePath, envOverlay);
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          setWorkspaceError(
-            db,
-            workspaceId,
-            `Setup step ${i + 1} (${label}) failed: ${msg}`
-          );
-          recordWorkspaceEvent(db, workspaceId, 'error', {
-            message: `Setup step ${i + 1} (${label}) failed: ${msg}`,
-          });
-          return getWorkspace(db, workspaceId)!;
-        }
+      try {
+        await runSetupCommand(effectiveSetupCommand, worktreePath, envOverlay);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setWorkspaceError(db, workspaceId, `Setup command failed: ${msg}`);
+        recordWorkspaceEvent(db, workspaceId, 'error', { message: `Setup command failed: ${msg}` });
+        return getWorkspace(db, workspaceId)!;
       }
     }
 
@@ -344,78 +149,19 @@ export class WorktreeOrchestrator {
   async renameWorkspace(
     db: Database,
     workspaceId: string,
-    updates: {
-      name?: string;
-      branch?: string;
-      additionalDirectories?: string[];
-    }
+    updates: { name?: string; branch?: string; additionalDirectories?: string[] }
   ): Promise<Workspace> {
     const workspace = getWorkspace(db, workspaceId);
     if (!workspace) {
-      throw Object.assign(new Error('Workspace not found'), {
-        status: 404,
-        code: 'NOT_FOUND',
-      });
+      throw Object.assign(new Error('Workspace not found'), { status: 404, code: 'NOT_FOUND' });
     }
 
     const project = getProject(db, workspace.projectId);
     if (!project) {
-      throw Object.assign(new Error('Project not found'), {
-        status: 404,
-        code: 'NOT_FOUND',
-      });
+      throw Object.assign(new Error('Project not found'), { status: 404, code: 'NOT_FOUND' });
     }
 
-    if (updates.name !== undefined) {
-      const sanitized = sanitizeWorkspaceName(updates.name);
-      if (!sanitized) {
-        throw Object.assign(new Error('Invalid workspace name'), {
-          status: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-    }
-
-    if (updates.branch !== undefined) {
-      const branch = updates.branch.trim();
-      if (!branch) {
-        throw Object.assign(new Error('Workspace branch is required'), {
-          status: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
-      if (branch.includes(' ')) {
-        throw Object.assign(new Error('Workspace branch cannot contain spaces'), {
-          status: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
-      const exists = await this.wt.branchExists(project.repoPathCanonical, branch);
-      if (exists && branch !== workspace.branch) {
-        throw Object.assign(new Error('Workspace branch already exists'), {
-          status: 409,
-          code: 'CONFLICT',
-        });
-      }
-
-      if (branch !== workspace.branch) {
-        try {
-          await this.wt.renameBranch(
-            project.repoPathCanonical,
-            workspace.branch,
-            branch
-          );
-        } catch (err) {
-          // Best-effort fallback: if git fails because branch is current and checked out,
-          // we can still keep DB unchanged only by bubbling error.
-          throw err;
-        }
-      }
-
-      // keep only when changed
-    }
+    await validateRenameFields(this.wt, workspace, project, updates);
 
     if (updates.name !== undefined || updates.branch !== undefined || updates.additionalDirectories !== undefined) {
       updateWorkspace(db, workspaceId, {
@@ -428,18 +174,6 @@ export class WorktreeOrchestrator {
     return getWorkspace(db, workspaceId)!;
   }
 
-  /**
-   * Delete a workspace.
-   *
-   * Steps:
-   * 1. Look up workspace, verify it exists
-   * 2. Guard against deleting workspaces in certain states (unless force)
-   * 3. Update status to 'discarding'
-   * 4. Remove worktree (force if workspace was in error state)
-   * 5. Optionally delete the branch
-   * 6. Delete DB row
-   * 7. On failure: set error status
-   */
   async deleteWorkspace(
     db: Database,
     workspaceId: string,
@@ -448,123 +182,56 @@ export class WorktreeOrchestrator {
     const force = options?.force ?? false;
     const shouldDeleteBranch = options?.deleteBranch ?? true;
 
-    // 1. Look up workspace
     const workspace = getWorkspace(db, workspaceId);
     if (!workspace) {
-      throw Object.assign(new Error('Workspace not found'), {
-        status: 404,
-        code: 'NOT_FOUND',
-      });
+      throw Object.assign(new Error('Workspace not found'), { status: 404, code: 'NOT_FOUND' });
     }
 
-    // 2. Guard against deleting active/merging/discarding workspaces
+    // Guard against deleting active/merging/discarding workspaces
     const guardedStatuses: WorkspaceStatus[] = ['active', 'merging', 'discarding'];
     if (!force && guardedStatuses.includes(workspace.status)) {
       throw Object.assign(
-        new Error(
-          `Cannot delete workspace in '${workspace.status}' state. Use force=true to override.`
-        ),
+        new Error(`Cannot delete workspace in '${workspace.status}' state. Use force=true to override.`),
         { status: 423, code: 'LOCKED' }
       );
     }
 
-    // 3. Update status to 'discarding'
     if (workspace.status === 'ready' || workspace.status === 'active') {
       transitionWorkspaceStatus(db, workspaceId, 'discarding');
     }
 
-    // Look up the project for repo path
     const project = getProject(db, workspace.projectId);
 
-    // 4. Remove worktree (best-effort)
+    // Remove worktree (best-effort)
     if (project && existsSync(workspace.worktreePath)) {
       try {
         const forceRemove = force || workspace.status === 'error';
-        await this.wt.removeWorktree(
-          project.repoPathCanonical,
-          workspace.worktreePath,
-          forceRemove
-        );
+        await this.wt.removeWorktree(project.repoPathCanonical, workspace.worktreePath, forceRemove);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (!force) {
           const currentWorkspace = getWorkspace(db, workspaceId);
           if (currentWorkspace?.status === 'discarding') {
-            setWorkspaceError(
-              db,
-              workspaceId,
-              `Failed to remove worktree: ${msg}`
-            );
+            setWorkspaceError(db, workspaceId, `Failed to remove worktree: ${msg}`);
           }
-          throw Object.assign(
-            new Error(`Failed to remove worktree: ${msg}`),
-            { status: 500, code: 'GIT_ERROR' }
-          );
+          throw Object.assign(new Error(`Failed to remove worktree: ${msg}`), { status: 500, code: 'GIT_ERROR' });
         }
-        // If force, continue despite error
       }
     }
 
-    // 5. Optionally delete the branch
+    // Optionally delete the branch
     if (shouldDeleteBranch && project) {
       try {
-        const branchExists = await this.wt.branchExists(
-          project.repoPathCanonical,
-          workspace.branch
-        );
+        const branchExists = await this.wt.branchExists(project.repoPathCanonical, workspace.branch);
         if (branchExists) {
-          await this.wt.deleteBranch(
-            project.repoPathCanonical,
-            workspace.branch,
-            force
-          );
+          await this.wt.deleteBranch(project.repoPathCanonical, workspace.branch, force);
         }
       } catch {
-        // Best-effort branch deletion — don't fail the delete
+        // Best-effort branch deletion
       }
     }
 
-    // 6. Delete DB row
     dbDeleteWorkspace(db, workspaceId);
-  }
-
-  /**
-   * Run a setup command in the worktree directory with timeout.
-   * Optional envOverlay merges additional env vars into the process environment.
-   */
-  private async runSetupCommand(
-    command: string,
-    cwd: string,
-    envOverlay: Record<string, string> = {}
-  ): Promise<void> {
-    const parts = command.split(/\s+/);
-    const [cmd, ...args] = parts;
-
-    const proc = Bun.spawn([cmd, ...args], {
-      cwd,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: { ...process.env, ...envOverlay },
-    });
-
-    const timer = setTimeout(() => {
-      proc.kill();
-    }, SETUP_TIMEOUT_MS);
-
-    try {
-      const exitCode = await proc.exited;
-      clearTimeout(timer);
-
-      if (exitCode !== 0) {
-        const stderrBuf = await new Response(proc.stderr).text();
-        throw new Error(
-          `Setup command exited with code ${exitCode}: ${stderrBuf.slice(0, 500)}`
-        );
-      }
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
-    }
   }
 }
 
