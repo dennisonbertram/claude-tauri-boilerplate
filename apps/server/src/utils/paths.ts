@@ -109,3 +109,73 @@ export function sanitizeWorkspaceName(name: string): string {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 }
+
+// ---------------------------------------------------------------------------
+// GitHub clone security utilities
+// ---------------------------------------------------------------------------
+
+/** Pattern for valid GitHub owner or repo names */
+const GITHUB_NAME_RE = /^[a-zA-Z0-9._-]+$/;
+
+/**
+ * Validate a GitHub owner or repo name.
+ * Allowed characters: alphanumeric, hyphens, underscores, dots.
+ */
+export function isValidGitHubName(name: string): boolean {
+  if (!name || name.length > 100) return false;
+  return GITHUB_NAME_RE.test(name);
+}
+
+/**
+ * Validate that a URL is a well-formed GitHub HTTPS clone URL.
+ * Accepts `https://github.com/owner/repo` with optional `.git` suffix.
+ */
+export function isValidGitHubUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return false;
+    if (parsed.hostname !== 'github.com') return false;
+    // Reject credentials embedded in the URL
+    if (parsed.username || parsed.password) return false;
+    const segments = parsed.pathname.replace(/^\//, '').replace(/\.git$/, '').split('/');
+    if (segments.length !== 2) return false;
+    return isValidGitHubName(segments[0]) && isValidGitHubName(segments[1]);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sanitize and validate a clone destination path.
+ *
+ * Rules:
+ * - `requestedPath` must resolve to a location under `basePath`
+ * - Path must not contain `..` segments
+ * - Path must not contain null bytes or other suspicious characters
+ *
+ * Returns the resolved absolute path or throws an error.
+ */
+export function sanitizeClonePath(basePath: string, requestedPath: string): string {
+  if (!requestedPath || typeof requestedPath !== 'string') {
+    throw new Error('Clone path is required');
+  }
+
+  // Reject null bytes
+  if (requestedPath.includes('\0')) {
+    throw new Error('Clone path contains invalid characters');
+  }
+
+  // Reject explicit traversal segments
+  const segments = requestedPath.split(/[/\\]/);
+  if (segments.includes('..')) {
+    throw new Error('Clone path must not contain ".." segments');
+  }
+
+  // Resolve to absolute and verify it falls under the base
+  const resolved = resolve(basePath, requestedPath);
+  if (!isPathSafe(resolved, basePath)) {
+    throw new Error('Clone path must be within the allowed base directory');
+  }
+
+  return resolved;
+}
