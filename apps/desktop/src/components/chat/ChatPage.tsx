@@ -1182,8 +1182,7 @@ export function ChatPage({
     [workspaceId]
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
 
@@ -1233,17 +1232,13 @@ export function ChatPage({
 
     // Track turn info for checkpoints
     const payload = composePromptWithAttachments(text, attachments);
-    const attachmentRefs = attachments.map((file) => file.name).filter(Boolean);
     lastUserPromptRef.current = text;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
 
     setInput('');
     resetStreamEvents();
     setAttachments([]);
-    await sendMessage({
-      text: payload,
-      attachments: attachmentRefs,
-    } as any);
+    await sendMessage({ text: payload });
   };
 
   return (

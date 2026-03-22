@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, type FormEvent, type KeyboardEvent, type ClipboardEvent, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useCallback, useMemo, type KeyboardEvent, type ClipboardEvent, type DragEvent, type ChangeEvent } from 'react';
 import { CommandPalette } from './CommandPalette';
 import { X, FileText, Paperclip } from '@phosphor-icons/react';
 import type { Command } from '@/hooks/useCommands';
@@ -16,7 +16,7 @@ export interface AttachedImage {
 interface ChatInputProps {
   input: string;
   onInputChange: (value: string) => void;
-  onSubmit: (e: FormEvent) => void;
+  onSubmit: () => void;
   isLoading: boolean;
   showPalette: boolean;
   paletteFilter: string;
@@ -434,7 +434,7 @@ export function ChatInput({
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (input.trim() && !isLoading) {
-          onSubmit(e as unknown as FormEvent);
+          onSubmit();
         }
       }
     },
@@ -450,7 +450,7 @@ export function ChatInput({
   return (
     <>
     <form
-      onSubmit={onSubmit}
+      onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
       data-testid="chat-input-form"
       className={`${isDragOver ? 'bg-accent/20' : ''}`}
       onDragOver={handleDragOver}
