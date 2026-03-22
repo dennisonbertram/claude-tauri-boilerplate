@@ -10,7 +10,7 @@ vi.mock('./lib/platform', () => ({
 }));
 
 vi.mock('./hooks/useTheme', () => ({
-  useTheme: vi.fn(),
+  useTheme: vi.fn(() => ({ effectiveTheme: 'light' })),
 }));
 
 vi.mock('./hooks/useSessions', () => ({
@@ -51,12 +51,19 @@ vi.mock('@/contexts/SettingsContext', () => ({
   })),
 }));
 
-vi.mock('@/components/sessions/SessionSidebar', () => ({
-  SessionSidebar: ({ sessions, onNewChat, onSelectSession, activeSessionId }: {
+vi.mock('@/components/AppSidebar', () => ({
+  AppSidebar: ({
+    sessions,
+    activeSessionId,
+    onNewChat,
+    onSelectSession,
+    onOpenSettings,
+  }: {
     sessions: Session[];
+    activeSessionId: string | null;
     onNewChat: () => void;
     onSelectSession: (id: string) => void;
-    activeSessionId: string | null;
+    onOpenSettings: () => void;
   }) => (
     <div>
       <button onClick={onNewChat}>New Chat</button>
@@ -65,17 +72,47 @@ vi.mock('@/components/sessions/SessionSidebar', () => ({
           Select {session.id}
         </button>
       ))}
+      <button onClick={onOpenSettings}>Open Settings</button>
       <div data-testid="active-session-id">{activeSessionId ?? 'null'}</div>
     </div>
   ),
 }));
 
+let latestChatPageProps: Record<string, unknown> | null = null;
 vi.mock('@/components/chat/ChatPage', () => ({
-  ChatPage: () => <div data-testid="chat-page-placeholder" />,
+  ChatPage: (props: Record<string, unknown>) => {
+    latestChatPageProps = props;
+    return (
+      <div>
+        <div data-testid="chat-page-placeholder" />
+        <button
+          type="button"
+          onClick={() => props.onSessionInitialized?.('session-from-stream')}
+        >
+          session init
+        </button>
+        <button
+          type="button"
+          onClick={() => props.onInitialMessageConsumed?.()}
+        >
+          initial consumed
+        </button>
+      </div>
+    );
+  },
 }));
 
+let latestWelcomeSubmit: ((message: string) => void) | null = null;
 vi.mock('@/components/chat/WelcomeScreen', () => ({
-  WelcomeScreen: () => <div data-testid="welcome-screen-placeholder" />,
+  WelcomeScreen: ({ onSubmit, onNewChat }: { onSubmit?: (message: string) => void; onNewChat: () => void }) => {
+    latestWelcomeSubmit = onSubmit ?? null;
+    return (
+      <div>
+        <button type="button" onClick={onNewChat}>new chat</button>
+        <button type="button" data-testid="welcome-submit" onClick={() => onSubmit?.('Build an app')}>Submit</button>
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/settings/SettingsPanel', () => ({
@@ -119,6 +156,7 @@ const makeUseSessionsMock = () => {
   const setActiveSessionId = vi.fn((nextId: string | null) => {
     activeSessionId = nextId;
   });
+  const fetchSessions = vi.fn().mockResolvedValue(undefined);
   const createSession = vi.fn().mockResolvedValue({
     id: 'new-session',
     title: 'New Chat',
@@ -144,8 +182,10 @@ const makeUseSessionsMock = () => {
       forkSession: vi.fn(),
       exportSession: vi.fn(),
       autoNameSession: vi.fn(),
+      fetchSessions,
     }),
     createSession,
+    fetchSessions,
   };
 };
 
@@ -159,71 +199,43 @@ describe('App', () => {
     useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
   });
 
-  it('keeps New Chat as a no-op after selecting an empty session', async () => {
+  it('does not create a new session when submitting from the welcome screen', async () => {
+    latestChatPageProps = null;
+    latestWelcomeSubmit = null;
     mockSessions.setSessions([
       {
-        id: 'existing-with-messages',
-        title: 'Existing Chat',
-        claudeSessionId: undefined,
-        messageCount: 3,
-        createdAt: '2026-03-16T10:00:00.000Z',
-        updatedAt: '2026-03-16T10:00:00.000Z',
-      },
-      {
-        id: 'empty-session',
-        title: 'Empty Chat',
+        id: 'starter',
+        title: 'Starter Chat',
         claudeSessionId: undefined,
         messageCount: 0,
         createdAt: '2026-03-16T10:00:00.000Z',
         updatedAt: '2026-03-16T10:00:00.000Z',
       },
     ]);
-    mockSessions.setActiveSessionIdValue('existing-with-messages');
+    mockSessions.setActiveSessionIdValue(null);
     useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
 
-    const { rerender } = render(<App />);
-    expect(screen.getByTestId('active-session-id')).toHaveTextContent('existing-with-messages');
+    render(<App />);
+    expect(latestWelcomeSubmit).toBeInstanceOf(Function);
+    fireEvent.click(screen.getByTestId('welcome-submit'));
 
-    fireEvent.click(screen.getByText('Select empty-session'));
-    mockSessions.setActiveSessionIdValue('empty-session');
-    useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
-    rerender(<App />);
-
-    fireEvent.click(screen.getByText('New Chat'));
     expect(mockSessions.createSession).not.toHaveBeenCalled();
+    expect(screen.getByTestId('chat-page-placeholder')).toBeInTheDocument();
+    expect(latestChatPageProps?.initialMessage).toBe('Build an app');
   });
 
-  it('creates a new session when selecting a session with messages', async () => {
-    mockSessions.setSessions([
-      {
-        id: 'session-with-messages',
-        title: 'Has Messages',
-        claudeSessionId: undefined,
-        messageCount: 1,
-        createdAt: '2026-03-16T10:00:00.000Z',
-        updatedAt: '2026-03-16T10:00:00.000Z',
-      },
-      {
-        id: 'empty-session',
-        title: 'Empty Chat',
-        claudeSessionId: undefined,
-        messageCount: 0,
-        createdAt: '2026-03-16T10:00:00.000Z',
-        updatedAt: '2026-03-16T10:00:00.000Z',
-      },
-    ]);
-    mockSessions.setActiveSessionIdValue('empty-session');
+  it('activates the first session id received from session:init after welcome submit', () => {
+    mockSessions.setSessions([]);
+    mockSessions.setActiveSessionIdValue(null);
     useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
 
-    const { rerender } = render(<App />);
-    expect(screen.getByTestId('active-session-id')).toHaveTextContent('empty-session');
+    render(<App />);
+    fireEvent.click(screen.getByTestId('welcome-submit'));
+    fireEvent.click(screen.getByText('session init'));
+    fireEvent.click(screen.getByText('initial consumed'));
 
-    fireEvent.click(screen.getByText('Select session-with-messages'));
-    mockSessions.setActiveSessionIdValue('session-with-messages');
-    useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
-    rerender(<App />);
-
-    fireEvent.click(screen.getByText('New Chat'));
-    expect(mockSessions.createSession).toHaveBeenCalledTimes(1);
+    expect(mockSessions.createSession).not.toHaveBeenCalled();
+    expect(mockSessions.setActiveSessionId).toHaveBeenCalledWith('session-from-stream');
+    expect(mockSessions.fetchSessions).toHaveBeenCalledTimes(1);
   });
 });

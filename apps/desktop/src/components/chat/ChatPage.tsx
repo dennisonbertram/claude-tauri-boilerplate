@@ -107,6 +107,8 @@ interface ChatPageProps {
   initialMessage?: string | null;
   /** Called after the initial message has been consumed */
   onInitialMessageConsumed?: () => void;
+  /** Called when backend initializes the app session ID */
+  onSessionInitialized?: (sessionId: string) => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -166,6 +168,7 @@ export function ChatPage({
   onSelectProfile: _onSelectProfile,
   initialMessage,
   onInitialMessageConsumed,
+  onSessionInitialized,
 }: ChatPageProps) {
   const { settings, updateSettings } = useSettings();
   const [input, setInput] = useState('');
@@ -356,10 +359,16 @@ export function ChatPage({
   const handleDataPart = useCallback(
     (part: { type: string; data?: unknown }) => {
       if (part.type === 'data-stream-event' && part.data && typeof part.data === 'object' && 'type' in part.data) {
+        if ((part.data as { type: string }).type === 'session:init') {
+          const event = part.data as { type: 'session:init'; sessionId?: string };
+          if (typeof event.sessionId === 'string' && event.sessionId.trim().length > 0) {
+            onSessionInitialized?.(event.sessionId);
+          }
+        }
         processEvent(part.data as import('@claude-tauri/shared').StreamEvent);
       }
     },
-    [processEvent]
+    [processEvent, onSessionInitialized]
   );
 
   const { messages, sendMessage, status, setMessages, error, clearError } =
@@ -1274,7 +1283,7 @@ export function ChatPage({
 
   // Auto-send initial message from WelcomeScreen
   useEffect(() => {
-    if (initialMessage && sessionId) {
+    if (initialMessage) {
       onInitialMessageConsumed?.();
       resetStreamEvents();
       lastUserPromptRef.current = initialMessage;
