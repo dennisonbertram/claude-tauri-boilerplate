@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+  desktop-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: pnpm --filter @claude-tauri/desktop test -- --run
+
+  server-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: cd apps/server && bun test
+
+  typecheck:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Desktop uses its own tsconfig with noEmit already set
+      - run: pnpm --filter @claude-tauri/desktop exec tsc --noEmit
+
+      # Server tsconfig uses bun-types; install bun so tsc can resolve them
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm --filter @claude-tauri/server exec tsc --noEmit
+
+  build:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: oven-sh/setup-bun@v2
+
+      # Server build (bun compile)
+      - run: pnpm --filter @claude-tauri/server build
+
+      # NOTE: Desktop (Tauri) build requires Rust toolchain + system libs
+      # (webkit2gtk, etc.) and is not included in CI to keep it fast and simple.
+      # A separate workflow can be added for release builds if needed.
