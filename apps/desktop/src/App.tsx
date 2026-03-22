@@ -33,6 +33,15 @@ import {
   playNotificationSound,
 } from './lib/notifications';
 
+/**
+ * Wrapper around Toaster that reads the user's theme preference
+ * so toast notifications match the active theme.
+ */
+function ThemedToaster() {
+  const { effectiveTheme } = useTheme();
+  return <Toaster position="top-right" theme={effectiveTheme} />;
+}
+
 const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
   isStreaming: false,
@@ -581,8 +590,8 @@ function App() {
           {(auth) => <AppLayout email={auth.email} plan={auth.plan} />}
         </AuthGate>
         {import.meta.env.DEV && <Agentation />}
+        <ThemedToaster />
       </SettingsProvider>
-      <Toaster position="top-right" theme="dark" />
     </ErrorBoundary>
   );
 }
