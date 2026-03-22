@@ -189,6 +189,21 @@ describe('Sessions Routes', () => {
       expect(body.title.length).toBeGreaterThan(0);
     });
 
+    test('replaces placeholder title with a generated name', async () => {
+      const res = await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'New Conversation' }),
+      });
+
+      expect(res.status).toBe(201);
+
+      const body = await res.json();
+      expect(body.title).not.toBe('New Conversation');
+      expect(body.title).toEqual(expect.any(String));
+      expect(body.title.length).toBeGreaterThan(0);
+    });
+
     test('handles request with no JSON body gracefully', async () => {
       const res = await app.request('/api/sessions', {
         method: 'POST',
