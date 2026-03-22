@@ -103,6 +103,10 @@ interface ChatPageProps {
   agentProfiles?: import('@claude-tauri/shared').AgentProfile[];
   /** Callback when user selects a different profile */
   onSelectProfile?: (id: string | null) => void;
+  /** Initial message to auto-send when the page mounts */
+  initialMessage?: string | null;
+  /** Called after the initial message has been consumed */
+  onInitialMessageConsumed?: () => void;
 }
 
 function extractCommandFromToolInput(input: string): string | undefined {
@@ -160,6 +164,8 @@ export function ChatPage({
   profileId,
   agentProfiles: _agentProfiles,
   onSelectProfile: _onSelectProfile,
+  initialMessage,
+  onInitialMessageConsumed,
 }: ChatPageProps) {
   const { settings, updateSettings } = useSettings();
   const [input, setInput] = useState('');
@@ -1245,6 +1251,18 @@ export function ChatPage({
       attachments: attachmentRefs,
     } as any);
   };
+
+  // Auto-send initial message from WelcomeScreen
+  useEffect(() => {
+    if (initialMessage && sessionId) {
+      onInitialMessageConsumed?.();
+      resetStreamEvents();
+      lastUserPromptRef.current = initialMessage;
+      lastUserMessageIdRef.current = `user-${Date.now()}`;
+      void sendMessage({ text: initialMessage } as any);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage, sessionId]);
 
   return (
     <div className="flex flex-1 flex-col min-w-0 min-h-0">

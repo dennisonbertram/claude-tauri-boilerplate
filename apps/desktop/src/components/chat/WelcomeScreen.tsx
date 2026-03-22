@@ -9,6 +9,7 @@ const TEMPLATES = [
 
 interface WelcomeScreenProps {
   onNewChat: () => void;
+  onSubmit?: (message: string) => void;
   agentProfiles?: unknown[];
   selectedProfileId?: string | null;
   onSelectProfile?: (id: string | null) => void;
@@ -16,8 +17,19 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({
   onNewChat,
+  onSubmit,
 }: WelcomeScreenProps) {
   const [inputValue, setInputValue] = useState('');
+
+  const handleSubmit = () => {
+    const text = inputValue.trim();
+    if (!text) return;
+    if (onSubmit) {
+      onSubmit(text);
+    } else {
+      onNewChat();
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto relative bg-background">
@@ -52,7 +64,7 @@ export function WelcomeScreen({
           <textarea
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onNewChat(); }}}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}}
             placeholder="How can I help you build today?"
             className="px-4 py-3 min-h-[120px] max-h-[300px] text-lg text-foreground bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
           />
@@ -79,7 +91,7 @@ export function WelcomeScreen({
                 <Microphone size={18} />
               </button>
               <button
-                onClick={onNewChat}
+                onClick={handleSubmit}
                 className="w-8 h-8 rounded-lg flex items-center justify-center bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors ml-1 shadow-sm"
               >
                 <ArrowUpRight size={18} />
@@ -97,7 +109,13 @@ export function WelcomeScreen({
             {TEMPLATES.map((template, i) => (
               <div key={template.title}>
                 <button
-                  onClick={() => onNewChat()}
+                  onClick={() => {
+                    if (onSubmit) {
+                      onSubmit(template.title);
+                    } else {
+                      onNewChat();
+                    }
+                  }}
                   className="group flex items-center gap-4 p-3 rounded-2xl hover:bg-card border border-transparent hover:border-border hover:shadow-sm transition-all text-left w-full"
                 >
                   <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">

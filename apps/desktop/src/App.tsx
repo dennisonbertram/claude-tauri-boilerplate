@@ -78,6 +78,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   // Global keyboard shortcuts (work from any view)
   useEffect(() => {
@@ -85,7 +86,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 't') {
         if (activeView !== 'chat') return;
         e.preventDefault();
-        void createSession();
+        setActiveSessionId(null);
         setActiveSessionHasMessages(false);
         return;
       }
@@ -219,24 +220,19 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }, [selectedProjectId, workspaces]);
 
   const handleNewChat = async (profileId?: string) => {
-    // If there's already a truly empty session active, don't create another.
-    // Use messageCount (from the server) as the reliable signal — timestamp
-    // comparison is unreliable due to SQLite second-level precision.
-    const activeSession = sessions.find(s => s.id === activeSessionId);
-    const hasActiveSessionMessages = activeSession ? selectedSessionHasMessages(activeSession) : false;
-    if (activeSessionId !== null && !hasActiveSessionMessages) {
-      // If a profile was selected, update the selected profile even for existing empty session
-      if (profileId !== undefined) {
-        setSelectedProfileId(profileId);
-      }
-      return;
-    }
     if (profileId !== undefined) {
       setSelectedProfileId(profileId);
     }
+    setActiveSessionId(null);
+    setActiveView('chat');
+    setActiveSessionHasMessages(false);
+  };
+
+  const handleWelcomeSubmit = async (message: string) => {
     await createSession();
     setActiveSessionHasMessages(false);
     setActiveView('chat');
+    setPendingMessage(message);
   };
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
@@ -443,10 +439,13 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
                 profileId={selectedProfileId}
                 agentProfiles={agentProfiles}
                 onSelectProfile={setSelectedProfileId}
+                initialMessage={pendingMessage}
+                onInitialMessageConsumed={() => setPendingMessage(null)}
               />
             ) : (
               <WelcomeScreen
                 onNewChat={handleNewChat}
+                onSubmit={handleWelcomeSubmit}
                 agentProfiles={agentProfiles}
                 selectedProfileId={selectedProfileId}
                 onSelectProfile={setSelectedProfileId}
