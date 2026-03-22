@@ -822,8 +822,27 @@ export function ChatPage({
   const chatError: ChatError | null = useMemo(() => {
     if (!error) return null;
 
-    const msg = error.message || 'An unexpected error occurred';
-    const lowerMsg = msg.toLowerCase();
+    const rawMsg = error.message || 'An unexpected error occurred';
+    const lowerMsg = rawMsg.toLowerCase();
+
+    // Log the full technical error for debugging
+    console.error('[ChatPage] Error details:', rawMsg);
+
+    // Sanitize technical/internal errors into user-friendly messages
+    const isTechnicalError =
+      lowerMsg.includes('circular structure') ||
+      lowerMsg.includes('fibernode') ||
+      lowerMsg.includes('htmlelement') ||
+      lowerMsg.includes('converting circular') ||
+      lowerMsg.includes('stack trace') ||
+      lowerMsg.includes('typeerror') ||
+      lowerMsg.includes('referenceerror') ||
+      lowerMsg.includes('syntaxerror') ||
+      lowerMsg.includes('cannot read propert');
+
+    const msg = isTechnicalError
+      ? 'Something went wrong sending your message. Please try again.'
+      : rawMsg;
 
     if (lowerMsg.includes('rate limit') || lowerMsg.includes('429')) {
       return { type: 'rate_limit', message: msg, retryable: true };
