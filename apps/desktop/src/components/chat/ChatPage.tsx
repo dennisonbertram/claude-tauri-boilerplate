@@ -233,6 +233,7 @@ export function ChatPage({
   // Checkpoint tracking state
   const lastUserPromptRef = useRef('');
   const lastUserMessageIdRef = useRef('');
+  const initialMessageSentRef = useRef(false);
   const [rewindTarget, setRewindTarget] = useState<Checkpoint | null>(null);
   const [rewindPreview, setRewindPreview] = useState<RewindPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -1283,15 +1284,22 @@ export function ChatPage({
 
   // Auto-send initial message from WelcomeScreen
   useEffect(() => {
-    if (initialMessage) {
-      onInitialMessageConsumed?.();
-      resetStreamEvents();
-      lastUserPromptRef.current = initialMessage;
-      lastUserMessageIdRef.current = `user-${Date.now()}`;
-      void sendMessage({ text: initialMessage } as any);
+    if (!initialMessage) {
+      initialMessageSentRef.current = false;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMessage, sessionId]);
+
+    if (initialMessageSentRef.current) {
+      return;
+    }
+
+    initialMessageSentRef.current = true;
+    onInitialMessageConsumed?.();
+    resetStreamEvents();
+    lastUserPromptRef.current = initialMessage;
+    lastUserMessageIdRef.current = `user-${Date.now()}`;
+    void sendMessage({ text: initialMessage } as any);
+  }, [initialMessage, onInitialMessageConsumed, resetStreamEvents, sendMessage]);
 
   return (
     <div className="flex flex-1 flex-col min-w-0 min-h-0">
