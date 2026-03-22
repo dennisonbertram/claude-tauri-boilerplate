@@ -129,6 +129,7 @@ describe('AppSidebar', () => {
       makeSession({ id: 'today', title: 'Today note', createdAt: '2026-03-22T10:00:00.000Z' }),
       makeSession({ id: 'yesterday', title: 'Yesterday note', createdAt: '2026-03-21T10:00:00.000Z' }),
       makeSession({ id: 'week', title: 'Week note', createdAt: '2026-03-18T10:00:00.000Z' }),
+      makeSession({ id: 'lastWeek', title: 'Last week note', createdAt: '2026-03-12T10:00:00.000Z' }),
       makeSession({ id: 'older', title: 'Archive note', createdAt: '2026-02-10T10:00:00.000Z' }),
     ];
 
@@ -147,6 +148,24 @@ describe('AppSidebar', () => {
     );
 
     expect(screen.getByText('No sessions match “missing”')).toBeInTheDocument();
+  });
+
+  it('groups sessions into Last Week and month buckets', () => {
+    const sessions = [
+      makeSession({ id: 'marchThisMonth', title: 'March summary', createdAt: '2026-03-01T09:00:00.000Z' }),
+      makeSession({ id: 'dec2025', title: 'December summary', createdAt: '2025-12-10T09:00:00.000Z' }),
+      makeSession({ id: 'nov2025', title: 'November summary', createdAt: '2025-11-20T09:00:00.000Z' }),
+      makeSession({ id: 'jan2026', title: 'January summary', createdAt: '2026-01-20T09:00:00.000Z' }),
+      makeSession({ id: 'lastWeek', title: 'Last week summary', createdAt: '2026-03-12T09:00:00.000Z' }),
+    ];
+
+    renderSidebar({ sessions });
+
+    expect(screen.getByText('Last Week')).toBeInTheDocument();
+    expect(screen.getByText('This Month')).toBeInTheDocument();
+    expect(screen.getByText('November 2025')).toBeInTheDocument();
+    expect(screen.getByText('December 2025')).toBeInTheDocument();
+    expect(screen.getByText('March summary')).toBeInTheDocument();
   });
 
   it('switches to chat search', () => {
