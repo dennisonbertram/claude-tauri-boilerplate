@@ -33,10 +33,13 @@ export function HooksPanel() {
         fetch(`${API_BASE}/api/hooks`),
         fetch(`${API_BASE}/api/hooks/events`),
       ]);
+
       if (!hooksRes.ok) throw new Error('Failed to fetch hooks');
       if (!eventsRes.ok) throw new Error('Failed to fetch hook events');
+
       const hooksData = (await hooksRes.json()) as { hooks: HookConfig[] };
       const eventsData = (await eventsRes.json()) as { events: HookEventMeta[] };
+
       setHooks(hooksData.hooks);
       setEvents(eventsData.events);
     } catch (err) {
@@ -46,7 +49,9 @@ export function HooksPanel() {
     }
   }, []);
 
-  useEffect(() => { fetchHooks(); }, [fetchHooks]);
+  useEffect(() => {
+    fetchHooks();
+  }, [fetchHooks]);
 
   const buildHandler = (f: AddHookForm): Record<string, unknown> => {
     const handler: Record<string, unknown> = { type: f.handlerType };
@@ -76,44 +81,74 @@ export function HooksPanel() {
     if (form.handlerType === 'command' && !form.command.trim()) { setError('Command is required'); return; }
     if (form.handlerType === 'http' && !form.url.trim()) { setError('URL is required for http handler'); return; }
     if (form.handlerType === 'prompt' && !form.prompt.trim()) { setError('Prompt is required for prompt handler'); return; }
+
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/hooks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildPayload(form)) });
-      if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error || 'Failed to add hook'); }
+      const res = await fetch(`${API_BASE}/api/hooks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload(form)),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || 'Failed to add hook');
+      }
       setAdding(false);
       setForm({ ...EMPTY_FORM });
       await fetchHooks();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add hook');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleToggle = async (id: string, enabled: boolean) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(id)}/toggle`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
-      if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error || 'Toggle failed'); }
+      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(id)}/toggle`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || 'Toggle failed');
+      }
       await fetchHooks();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Toggle failed'); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Toggle failed');
+    }
   };
 
   const handleDelete = async (id: string) => {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error || 'Delete failed'); }
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || 'Delete failed');
+      }
       setDeleteConfirm(null);
       await fetchHooks();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Delete failed'); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
   };
 
   const handleEditStart = (hook: HookConfig) => {
     setEditingHook(hook.id);
     setEditForm({
-      event: hook.event, matcher: hook.matcher || '', handlerType: hook.handler.type,
-      command: hook.handler.command || '', timeout: String(hook.handler.timeout || 30),
-      url: hook.handler.url || '', method: hook.handler.method || 'POST',
-      headers: hook.handler.headers ? Object.entries(hook.handler.headers).map(([k, v]) => `${k}=${v}`).join(', ') : '',
+      event: hook.event,
+      matcher: hook.matcher || '',
+      handlerType: hook.handler.type,
+      command: hook.handler.command || '',
+      timeout: String(hook.handler.timeout || 30),
+      url: hook.handler.url || '',
+      method: hook.handler.method || 'POST',
+      headers: hook.handler.headers
+        ? Object.entries(hook.handler.headers).map(([k, v]) => `${k}=${v}`).join(', ')
+        : '',
       prompt: hook.handler.prompt || '',
     });
   };
@@ -123,28 +158,68 @@ export function HooksPanel() {
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(editingHook)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildPayload(editForm)) });
-      if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error || 'Update failed'); }
+      const res = await fetch(`${API_BASE}/api/hooks/${encodeURIComponent(editingHook)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload(editForm)),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || 'Update failed');
+      }
       setEditingHook(null);
       await fetchHooks();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Update failed'); }
-    finally { setSaving(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const hooksByEvent = hooks.reduce<Record<string, HookConfig[]>>((acc, hook) => { if (!acc[hook.event]) acc[hook.event] = []; acc[hook.event].push(hook); return acc; }, {});
-  const eventMetaMap = events.reduce<Record<string, HookEventMeta>>((acc, e) => { acc[e.event] = e; return acc; }, {});
+  // Group hooks by event
+  const hooksByEvent = hooks.reduce<Record<string, HookConfig[]>>((acc, hook) => {
+    if (!acc[hook.event]) acc[hook.event] = [];
+    acc[hook.event].push(hook);
+    return acc;
+  }, {});
+
+  const eventMetaMap = events.reduce<Record<string, HookEventMeta>>((acc, e) => {
+    acc[e.event] = e;
+    return acc;
+  }, {});
 
   if (loading) {
-    return (<div data-testid="hooks-loading" className="flex items-center justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /><span className="ml-2 text-sm text-muted-foreground">Loading hooks...</span></div>);
+    return (
+      <div data-testid="hooks-loading" className="flex items-center justify-center py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading hooks...</span>
+      </div>
+    );
   }
 
   return (
     <div data-testid="hooks-panel" className="space-y-6">
-      {error && (<div data-testid="hooks-error" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</div>)}
+      {error && (
+        <div data-testid="hooks-error" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">Hooks</h3>
-        {!adding && (<button data-testid="hooks-add-btn" onClick={() => { setAdding(true); setForm({ ...EMPTY_FORM, event: events[0]?.event || '' }); }} className="rounded-lg border border-input px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">+ Add Hook</button>)}
+        {!adding && (
+          <button
+            data-testid="hooks-add-btn"
+            onClick={() => { setAdding(true); setForm({ ...EMPTY_FORM, event: events[0]?.event || '' }); }}
+            className="rounded-lg border border-input px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            + Add Hook
+          </button>
+        )}
       </div>
+
+      {/* Hook List grouped by event */}
       <div data-testid="hooks-list" className="space-y-4">
         {Object.keys(hooksByEvent).length === 0 && !adding ? (
           <div className="text-xs text-muted-foreground py-4 text-center">No hooks configured.</div>
@@ -153,13 +228,29 @@ export function HooksPanel() {
             <div key={event} data-testid={`hooks-group-${event}`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-medium text-foreground">{event}</span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{eventHooks.length} {eventHooks.length === 1 ? 'hook' : 'hooks'}</span>
-                {eventMetaMap[event]?.canBlock && (<span data-testid={`hooks-can-block-${event}`} className="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 text-xs">Can Block</span>)}
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  {eventHooks.length} {eventHooks.length === 1 ? 'hook' : 'hooks'}
+                </span>
+                {eventMetaMap[event]?.canBlock && (
+                  <span data-testid={`hooks-can-block-${event}`} className="rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 text-xs">
+                    Can Block
+                  </span>
+                )}
               </div>
               <div className="space-y-2 pl-2">
                 {eventHooks.map((hook) => (
                   <div key={hook.id}>
-                    <HookCard hook={hook} isDeleteConfirm={deleteConfirm === hook.id} isEditing={editingHook === hook.id} onToggle={(enabled) => handleToggle(hook.id, enabled)} onDeleteRequest={() => setDeleteConfirm(hook.id)} onDeleteConfirm={() => handleDelete(hook.id)} onDeleteCancel={() => setDeleteConfirm(null)} onEditStart={() => handleEditStart(hook)} onEditCancel={() => setEditingHook(null)} />
+                    <HookCard
+                      hook={hook}
+                      isDeleteConfirm={deleteConfirm === hook.id}
+                      isEditing={editingHook === hook.id}
+                      onToggle={(enabled) => handleToggle(hook.id, enabled)}
+                      onDeleteRequest={() => setDeleteConfirm(hook.id)}
+                      onDeleteConfirm={() => handleDelete(hook.id)}
+                      onDeleteCancel={() => setDeleteConfirm(null)}
+                      onEditStart={() => handleEditStart(hook)}
+                      onEditCancel={() => setEditingHook(null)}
+                    />
                     {editingHook === hook.id && (
                       <div data-testid={`hooks-edit-form-${hook.id}`} className="mt-2 space-y-3 rounded-lg border border-border bg-muted/20 p-3">
                         <HookFormFields form={editForm} setForm={setEditForm} events={events} eventMetaMap={eventMetaMap} isEdit />
@@ -176,6 +267,8 @@ export function HooksPanel() {
           ))
         )}
       </div>
+
+      {/* Add Hook Form */}
       {adding && (
         <div data-testid="hooks-add-form" className="space-y-3 rounded-lg border border-border p-3">
           <h3 className="text-sm font-medium text-foreground">Add Hook</h3>
@@ -186,6 +279,7 @@ export function HooksPanel() {
           </div>
         </div>
       )}
+
       <HookEventReference events={events} />
       <HookExecutionLog logs={executionLogs} />
     </div>
