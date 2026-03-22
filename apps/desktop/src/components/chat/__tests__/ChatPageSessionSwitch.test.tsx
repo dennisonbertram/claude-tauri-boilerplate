@@ -169,6 +169,10 @@ vi.mock('@/components/chat/SuggestionChips', () => ({
   SuggestionChips: () => null,
 }));
 
+vi.mock('@phosphor-icons/react', () => ({
+  X: () => <div data-testid="icon-x" />,
+}));
+
 vi.mock('@/components/ShortcutHelpModal', () => ({
   ShortcutHelpModal: () => null,
 }));
@@ -254,5 +258,15 @@ describe('ChatPage session switch clear behavior', () => {
     await waitFor(() =>
       expect(mockSetMessages).toHaveBeenLastCalledWith([])
     );
+  });
+
+  it('sends a welcome initialMessage exactly once across sessionId changes', async () => {
+    const { rerender } = render(<ChatPage sessionId={null} initialMessage="Build an app" />);
+
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(1));
+
+    rerender(<ChatPage sessionId="new-session-1" initialMessage="Build an app" />);
+
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(1));
   });
 });

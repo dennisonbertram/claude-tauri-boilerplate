@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-22: Welcome message should auto-send only once
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: `ChatPage` now tracks when an initial welcome message has already been auto-sent, preventing duplicate sends when `sessionId` changes while the same `initialMessage` remains present during a short render window. This keeps first-message flow from creating duplicate prompt submissions during session bootstrap.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/ChatPageSessionSwitch.test.tsx`
+**Related Issue**: GitHub issue `#297`
+
+---
+
 ### 2026-03-22: Browser testing process moved to agent-browser
 
 **Type**: Technical Decision
