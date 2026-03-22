@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { GitStatus } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 const POLL_INTERVAL_MS = 10_000; // Poll every 10 seconds
 
 export function GitStatusBar() {
@@ -13,7 +12,7 @@ export function GitStatusBar() {
 
     async function fetchStatus() {
       try {
-        const res = await fetch(`${API_BASE}/api/git/status`);
+        const res = await apiFetch('/api/git/status');
         if (!res.ok) throw new Error('Failed to fetch git status');
         const data: GitStatus = await res.json();
         if (!cancelled) {

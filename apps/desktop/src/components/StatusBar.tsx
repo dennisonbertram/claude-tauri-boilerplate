@@ -3,8 +3,7 @@ import { formatCost } from '@/lib/pricing';
 import { AVAILABLE_MODELS, getModelDisplay } from '@/lib/models';
 import { useSettings } from '@/hooks/useSettings';
 import type { ToolCallState, CumulativeUsage } from '@/hooks/useStreamEvents';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 const MAX_CONTEXT_TOKENS = 200_000;
 
 // --- Public Props ---
@@ -83,7 +82,7 @@ function ResourceUsageSegment() {
 
     async function fetchResourceUsage() {
       try {
-        const res = await fetch(`${API_BASE}/api/system/diagnostics`);
+        const res = await apiFetch(`/api/system/diagnostics`);
         if (!res.ok) return;
         const data = (await res.json()) as ResourceUsage;
         if (!cancelled) {
@@ -431,7 +430,7 @@ function GitBranchSegment() {
 
     async function fetchGitStatus() {
       try {
-        const res = await fetch(`${API_BASE}/api/git/status`);
+        const res = await apiFetch(`/api/git/status`);
         if (!res.ok) throw new Error('Failed');
         const data = await res.json();
         if (!cancelled && data.branch) {
@@ -489,7 +488,7 @@ function ConnectionIndicator({ isStreaming }: { isStreaming: boolean }) {
 
     async function checkHealth() {
       try {
-        const res = await fetch(`${API_BASE}/api/health`);
+        const res = await apiFetch(`/api/health`);
         if (!cancelled) setConnected(res.ok);
       } catch {
         if (!cancelled) setConnected(false);
