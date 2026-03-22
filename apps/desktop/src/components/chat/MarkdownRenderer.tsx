@@ -1,4 +1,4 @@
-import { useState, useCallback, isValidElement, type ReactNode } from 'react';
+import { isValidElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -8,33 +8,10 @@ import 'katex/dist/katex.min.css';
 import type { Components } from 'react-markdown';
 import { ImageViewer } from './ImageViewer';
 import { MermaidDiagram } from './MermaidDiagram';
+import { CopyButton } from '@/components/shared/CopyButton';
 
 interface MarkdownRendererProps {
   content: string;
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for environments without clipboard API
-    }
-  }, [text]);
-
-  return (
-    <button
-      onClick={handleCopy}
-      aria-label="Copy code"
-      className="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors text-muted-foreground"
-    >
-      {copied ? 'Copied!' : 'Copy'}
-    </button>
-  );
 }
 
 /**
@@ -104,7 +81,7 @@ const components: Components = {
             >
               {language}
             </span>
-            <CopyButton text={codeText} />
+            <CopyButton text={codeText} variant="text" />
           </div>
           {showLineNumbers ? (
             <div className="relative">
