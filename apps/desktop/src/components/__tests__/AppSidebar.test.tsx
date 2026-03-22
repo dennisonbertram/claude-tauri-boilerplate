@@ -124,7 +124,7 @@ describe('AppSidebar', () => {
     vi.setSystemTime(new Date('2026-03-22T12:00:00.000Z'));
   });
 
-  it('groups recent sessions by date bucket and supports filtering', async () => {
+  it('groups recent sessions by date bucket', async () => {
     const sessions = [
       makeSession({ id: 'today', title: 'Today note', createdAt: '2026-03-22T10:00:00.000Z' }),
       makeSession({ id: 'yesterday', title: 'Yesterday note', createdAt: '2026-03-21T10:00:00.000Z' }),
@@ -133,19 +133,27 @@ describe('AppSidebar', () => {
       makeSession({ id: 'older', title: 'Archive note', createdAt: '2026-02-10T10:00:00.000Z' }),
     ];
 
-    const { rerender, props } = renderSidebar({ sessions, searchQuery: 'today' });
+    renderSidebar({ sessions });
 
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.getByText('Today note')).toBeInTheDocument();
-    expect(screen.queryByText('Yesterday')).not.toBeInTheDocument();
+    expect(screen.getByText('Yesterday')).toBeInTheDocument();
+  });
 
-    rerender(
-      <AppSidebar
-        {...props}
-        sessions={sessions}
-        searchQuery="missing"
-      />,
-    );
+  it('does not do client-side title-only filtering for search queries', () => {
+    const sessions = [
+      makeSession({ id: 'backendFiltered', title: 'Server matched session', createdAt: '2026-03-22T10:00:00.000Z' }),
+      makeSession({ id: 'other', title: 'Database notes', createdAt: '2026-03-21T10:00:00.000Z' }),
+    ];
+
+    renderSidebar({ sessions, searchQuery: 'react' });
+
+    expect(screen.getByText('Server matched session')).toBeInTheDocument();
+    expect(screen.getByText('Database notes')).toBeInTheDocument();
+  });
+
+  it('shows empty state when backend returns no matches', () => {
+    renderSidebar({ sessions: [], searchQuery: 'missing' });
 
     expect(screen.getByText('No sessions match “missing”')).toBeInTheDocument();
   });

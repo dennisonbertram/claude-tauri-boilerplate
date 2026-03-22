@@ -202,12 +202,9 @@ export function AppSidebar({
   const initial = email ? email.charAt(0).toUpperCase() : '?';
   const displayName = email ?? 'User';
 
-  // Filter sessions by search query
-  const filteredSessions = searchQuery
-    ? sessions.filter((s) =>
-        (s.title || 'New Chat').toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : sessions;
+  // Session results are already filtered by the backend query (`/api/sessions?q=...`),
+  // so we render them directly here to preserve content-based matches from messages.
+  const filteredSessions = sessions;
 
   // Collapsed strip — icon-only nav
   if (!sidebarOpen) {
