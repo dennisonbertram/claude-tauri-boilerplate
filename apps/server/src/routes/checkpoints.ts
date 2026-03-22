@@ -13,6 +13,7 @@ import {
   trimSessionMessagesToCount,
 } from '../db';
 import { gitCommand } from '../services/git-command';
+import { validateBody } from '../utils/validate-body.js';
 
 const fileChangeSchema = z.object({
   path: z.string().min(1),
@@ -108,21 +109,11 @@ export function createCheckpointsRouter(db: Database) {
       );
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const parsed = createCheckpointSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        {
-          error: 'Invalid checkpoint data',
-          code: 'VALIDATION_ERROR',
-          details: parsed.error.flatten(),
-        },
-        400
-      );
-    }
+    const data = await validateBody(c, createCheckpointSchema);
+    if (data instanceof Response) return data;
 
     const checkpoints = listSessionCheckpoints(db, sessionId);
-    const turnIndex = parsed.data.turnIndex ?? checkpoints.length;
+    const turnIndex = data.turnIndex ?? checkpoints.length;
     const messageCount = getSessionMessageCount(db, sessionId);
 
     let gitCommit: string | null = null;
@@ -145,9 +136,9 @@ export function createCheckpointsRouter(db: Database) {
 
     const checkpoint: Checkpoint = createCheckpointRecord(db, {
       sessionId,
-      userMessageId: parsed.data.userMessageId,
-      promptPreview: parsed.data.promptPreview.slice(0, 50),
-      filesChanged: parsed.data.filesChanged,
+      userMessageId: data.userMessageId,
+      promptPreview: data.promptPreview.slice(0, 50),
+      filesChanged: data.filesChanged,
       turnIndex,
       gitCommit,
       messageCount,
@@ -208,21 +199,11 @@ export function createCheckpointsRouter(db: Database) {
       return c.json({ error: 'Checkpoint not found', code: 'NOT_FOUND' }, 404);
     }
 
-    const body = await c.req.json().catch(() => ({}));
-    const parsed = rewindSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        {
-          error: 'Invalid rewind mode',
-          code: 'VALIDATION_ERROR',
-          details: parsed.error.flatten(),
-        },
-        400
-      );
-    }
+    const rewindData = await validateBody(c, rewindSchema);
+    if (rewindData instanceof Response) return rewindData;
 
-    const shouldRestoreCode = parsed.data.mode !== 'conversation_only';
-    const shouldRestoreConversation = parsed.data.mode !== 'code_only';
+    const shouldRestoreCode = rewindData.mode !== 'conversation_only';
+    const shouldRestoreConversation = rewindData.mode !== 'code_only';
     let restoredWorktreePath: string | null = null;
 
     if (shouldRestoreCode) {
@@ -273,7 +254,7 @@ export function createCheckpointsRouter(db: Database) {
 
     return c.json({
       success: true,
-      message: `${modeLabels[parsed.data.mode]} to turn ${checkpoint.turnIndex}`,
+      message: `${modeLabels[rewindData.mode]} to turn ${checkpoint.turnIndex}`,
       restoredWorktreePath,
     });
   });

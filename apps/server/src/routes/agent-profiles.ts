@@ -9,6 +9,7 @@ import {
   deleteAgentProfile,
   duplicateAgentProfile,
 } from '../db/index.js';
+import { validateBody } from '../utils/validate-body.js';
 
 const createProfileSchema = z.object({
   name: z.string().min(1, 'name is required'),
@@ -50,18 +51,11 @@ export function createAgentProfilesRouter(db: Database) {
 
   // POST / — Create a new agent profile
   router.post('/', async (c) => {
-    const body = await c.req.json().catch(() => ({}));
-
-    const parsed = createProfileSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        { error: 'Validation failed', code: 'VALIDATION_ERROR', details: parsed.error.flatten() },
-        400
-      );
-    }
+    const data = await validateBody(c, createProfileSchema);
+    if (data instanceof Response) return data;
 
     const id = crypto.randomUUID();
-    const profile = createAgentProfile(db, id, parsed.data);
+    const profile = createAgentProfile(db, id, data);
     return c.json(profile, 201);
   });
 
@@ -91,17 +85,10 @@ export function createAgentProfilesRouter(db: Database) {
       );
     }
 
-    const body = await c.req.json().catch(() => ({}));
+    const data = await validateBody(c, updateProfileSchema);
+    if (data instanceof Response) return data;
 
-    const parsed = updateProfileSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        { error: 'Validation failed', code: 'VALIDATION_ERROR', details: parsed.error.flatten() },
-        400
-      );
-    }
-
-    updateAgentProfile(db, id, parsed.data);
+    updateAgentProfile(db, id, data);
 
     // Return the updated profile
     const updated = getAgentProfile(db, id);
