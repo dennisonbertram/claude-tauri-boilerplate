@@ -121,8 +121,8 @@ export function useSessions(initialSearchQuery: string = '') {
           prev.map(s => (s.id === id ? { ...s, title: data.title } : s))
         );
       }
-    } catch {
-      // Auto-naming is best-effort; don't throw on failure
+    } catch (err) {
+      console.error('[autoNameSession] Failed to auto-name session:', id, err);
     }
   }, [settings.prReviewModel, settings.privacyMode]);
 

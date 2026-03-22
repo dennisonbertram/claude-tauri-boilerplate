@@ -795,7 +795,7 @@ export function ChatPage({
 
       userMsgCountRef.current += 1;
       if (
-        userMsgCountRef.current >= 2 &&
+        userMsgCountRef.current >= 1 &&
         !autoNameCalledRef.current &&
         sessionId &&
         onAutoName
