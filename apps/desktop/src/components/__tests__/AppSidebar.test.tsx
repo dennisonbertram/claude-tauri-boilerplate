@@ -1,0 +1,246 @@
+import { useState } from 'react';
+import type { ComponentProps } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { Project, Session, Workspace } from '@claude-tauri/shared';
+import { AppSidebar } from '../AppSidebar';
+
+vi.mock('@phosphor-icons/react', () => {
+  const Icon = (props: Record<string, unknown>) => <svg data-testid="icon" {...props} />;
+  return {
+    ChatCircle: Icon,
+    FolderOpen: Icon,
+    UsersThree: Icon,
+    Robot: Icon,
+    Plus: Icon,
+    Gear: Icon,
+    SidebarSimple: Icon,
+    CaretLeft: Icon,
+    CaretRight: Icon,
+    MagnifyingGlass: Icon,
+  };
+});
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: 'session-1',
+    title: 'Daily standup',
+    createdAt: '2026-03-22T12:00:00.000Z',
+    updatedAt: '2026-03-22T12:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function makeProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: 'project-1',
+    name: 'Agent Wallet',
+    repoPath: '/tmp/agent-wallet',
+    repoPathCanonical: '/tmp/agent-wallet',
+    defaultBranch: 'main',
+    isDeleted: false,
+    createdAt: '2026-03-22T12:00:00.000Z',
+    updatedAt: '2026-03-22T12:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
+  return {
+    id: 'workspace-1',
+    projectId: 'project-1',
+    name: 'feature-auth',
+    branch: 'workspace/feature-auth',
+    worktreePath: '/tmp/workspace-1',
+    worktreePathCanonical: '/tmp/workspace-1',
+    baseBranch: 'main',
+    status: 'ready',
+    additionalDirectories: [],
+    createdAt: '2026-03-22T12:00:00.000Z',
+    updatedAt: '2026-03-22T12:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function renderSidebar(overrides: Partial<ComponentProps<typeof AppSidebar>> = {}) {
+  const props: ComponentProps<typeof AppSidebar> = {
+    activeView: 'chat',
+    onSelectView: vi.fn(),
+    sessions: [],
+    activeSessionId: null,
+    searchQuery: '',
+    onSearchQueryChange: vi.fn(),
+    onSelectSession: vi.fn(),
+    onNewChat: vi.fn(),
+    projects: [],
+    workspacesByProject: {},
+    selectedWorkspaceId: null,
+    onSelectWorkspace: vi.fn(),
+    onAddProject: vi.fn(),
+    sidebarOpen: true,
+    onToggleSidebar: vi.fn(),
+    email: 'qa@example.com',
+    plan: 'pro',
+    onOpenSettings: vi.fn(),
+    ...overrides,
+  };
+
+  return { ...render(<AppSidebar {...props} />), props };
+}
+
+function renderSidebarWithControlledView() {
+  function ControlledSidebar() {
+    const [activeView, setActiveView] = useState<'chat' | 'workspaces' | 'teams' | 'agents'>('workspaces');
+    return (
+      <AppSidebar
+        activeView={activeView}
+        onSelectView={setActiveView}
+        sessions={[]}
+        activeSessionId={null}
+        searchQuery=""
+        onSearchQueryChange={vi.fn()}
+        onSelectSession={vi.fn()}
+        onNewChat={vi.fn()}
+        projects={[]}
+        workspacesByProject={{}}
+        selectedWorkspaceId={null}
+        onSelectWorkspace={vi.fn()}
+        onAddProject={vi.fn()}
+        sidebarOpen
+        onToggleSidebar={vi.fn()}
+        email="qa@example.com"
+        plan="pro"
+        onOpenSettings={vi.fn()}
+      />
+    );
+  }
+
+  return render(<ControlledSidebar />);
+}
+
+describe('AppSidebar', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+    vi.setSystemTime(new Date('2026-03-22T12:00:00.000Z'));
+  });
+
+  it('groups recent sessions by date bucket and supports filtering', async () => {
+    const sessions = [
+      makeSession({ id: 'today', title: 'Today note', createdAt: '2026-03-22T10:00:00.000Z' }),
+      makeSession({ id: 'yesterday', title: 'Yesterday note', createdAt: '2026-03-21T10:00:00.000Z' }),
+      makeSession({ id: 'week', title: 'Week note', createdAt: '2026-03-18T10:00:00.000Z' }),
+      makeSession({ id: 'older', title: 'Archive note', createdAt: '2026-02-10T10:00:00.000Z' }),
+    ];
+
+    const { rerender, props } = renderSidebar({ sessions, searchQuery: 'today' });
+
+    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.getByText('Today note')).toBeInTheDocument();
+    expect(screen.queryByText('Yesterday')).not.toBeInTheDocument();
+
+    rerender(
+      <AppSidebar
+        {...props}
+        sessions={sessions}
+        searchQuery="missing"
+      />,
+    );
+
+    expect(screen.getByText('No sessions match “missing”')).toBeInTheDocument();
+  });
+
+  it('switches to chat search', () => {
+    const onSelectView = vi.fn();
+    renderSidebar({ onSelectView, activeView: 'workspaces' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(onSelectView).toHaveBeenCalledWith('chat');
+  });
+
+  it('renders the collapsed strip and forwards actions', () => {
+    const onNewChat = vi.fn();
+    const onToggleSidebar = vi.fn();
+    const onOpenSettings = vi.fn();
+    const onSelectView = vi.fn();
+
+    renderSidebar({
+      sidebarOpen: false,
+      onNewChat,
+      onToggleSidebar,
+      onOpenSettings,
+      onSelectView,
+      activeView: 'agents',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New Chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }));
+
+    expect(onToggleSidebar).toHaveBeenCalled();
+    expect(onNewChat).toHaveBeenCalled();
+    expect(onOpenSettings).toHaveBeenCalled();
+    expect(onSelectView).toHaveBeenCalledWith('workspaces');
+  });
+
+  it('renders workspace projects, toggles expansion, and selects a workspace', () => {
+    const project = makeProject();
+    const workspace = makeWorkspace();
+    const onAddProject = vi.fn();
+    const onSelectWorkspace = vi.fn();
+
+    renderSidebar({
+      activeView: 'workspaces',
+      projects: [project],
+      workspacesByProject: { [project.id]: [workspace] },
+      selectedWorkspaceId: workspace.id,
+      onAddProject,
+      onSelectWorkspace,
+    });
+
+    expect(screen.getAllByText('Projects').length).toBeGreaterThan(0);
+    expect(screen.getByText('feature-auth')).toBeInTheDocument();
+    expect(screen.getByText('workspace/feature-auth')).toBeInTheDocument();
+    expect(screen.getByText('Ready')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    expect(onAddProject).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Agent Wallet'));
+    expect(screen.queryByText('feature-auth')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Agent Wallet'));
+    fireEvent.click(screen.getByRole('button', { name: /feature-auth/i }));
+    expect(onSelectWorkspace).toHaveBeenCalledWith(workspace);
+  });
+
+  it('renders the empty project state and settings footer', () => {
+    const onAddProject = vi.fn();
+    const onOpenSettings = vi.fn();
+
+    renderSidebar({
+      activeView: 'workspaces',
+      projects: [],
+      onAddProject,
+      onOpenSettings,
+      email: 'owner@example.com',
+    });
+
+    expect(screen.getByText('No projects yet')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add Project' }));
+    expect(onAddProject).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('owner@example.com'));
+    expect(onOpenSettings).toHaveBeenCalled();
+  });
+
+  it('focuses session search with Cmd+K shortcut', async () => {
+    renderSidebarWithControlledView();
+
+    fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Filter conversations...')).toHaveFocus();
+    });
+  });
+});

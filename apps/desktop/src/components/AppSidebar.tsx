@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Session, Project, Workspace } from '@claude-tauri/shared';
 import {
   ChatCircle,
@@ -136,10 +136,30 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = () => {
-    onSelectView('chat');
+  const focusSessionSearch = useCallback(() => {
     setTimeout(() => searchInputRef.current?.focus(), 50);
-  };
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    onSelectView('chat');
+    focusSessionSearch();
+  }, [onSelectView, focusSessionSearch]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k')) {
+        return;
+      }
+
+      if (event.defaultPrevented) return;
+
+      event.preventDefault();
+      handleSearch();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleSearch]);
   const initial = email ? email.charAt(0).toUpperCase() : '?';
   const displayName = email ?? 'User';
 
