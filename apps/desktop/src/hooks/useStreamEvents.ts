@@ -1,5 +1,11 @@
 import { useReducer, useCallback } from 'react';
 import type { StreamEvent } from '@claude-tauri/shared';
+import {
+  handleToolEvent,
+  handleMessageEvent,
+  handleSystemEvent,
+  handlePermissionPlanEvent,
+} from './streamEventHandlers';
 
 // --- State Types ---
 
@@ -73,17 +79,11 @@ export interface StreamEventsState {
     claudeCodeVersion: string;
     slashCommands: string[];
   } | null;
-  /** Maps blockIndex -> toolUseId for correlating deltas to tool calls */
   blockIndexToToolId: Map<number, string>;
-  /** Pending permission requests awaiting user decision */
   pendingPermissions: Map<string, PendingPermission>;
-  /** Denied permission records for display in chat */
   deniedPermissions: DeniedPermission[];
-  /** Current plan state */
   plan: PlanState | null;
-  /** Cumulative token usage across the entire session */
   cumulativeUsage: CumulativeUsage;
-  /** Whether the SDK is currently compacting context */
   isCompacting: boolean;
 }
 
@@ -124,24 +124,7 @@ export function streamEventsReducer(
   action: StreamEventsAction
 ): StreamEventsState {
   if (action.type === 'RESET') {
-    return {
-      toolCalls: new Map(),
-      thinkingBlocks: new Map(),
-      errors: [],
-      usage: null,
-      sessionInfo: null,
-      blockIndexToToolId: new Map(),
-      pendingPermissions: new Map(),
-      deniedPermissions: [],
-      plan: null,
-      cumulativeUsage: {
-        inputTokens: 0,
-        outputTokens: 0,
-        cacheReadTokens: 0,
-        cacheCreationTokens: 0,
-      },
-      isCompacting: false,
-    };
+    return { ...initialStreamEventsState, toolCalls: new Map(), thinkingBlocks: new Map(), blockIndexToToolId: new Map(), pendingPermissions: new Map(), deniedPermissions: [], errors: [], cumulativeUsage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 } };
   }
 
   if (action.type === 'RESOLVE_PERMISSION') {
@@ -152,324 +135,29 @@ export function streamEventsReducer(
 
   if (action.type === 'APPROVE_PLAN') {
     if (!state.plan) return state;
-    return {
-      ...state,
-      plan: { ...state.plan, status: 'approved' },
-    };
+    return { ...state, plan: { ...state.plan, status: 'approved' } };
   }
 
   if (action.type === 'REJECT_PLAN') {
     if (!state.plan) return state;
-    return {
-      ...state,
-      plan: {
-        ...state.plan,
-        status: 'rejected',
-        feedback: action.feedback,
-      },
-    };
+    return { ...state, plan: { ...state.plan, status: 'rejected', feedback: action.feedback } };
   }
 
+  // Delegate to specialized handlers; first non-null result wins
   const event = action.event;
-
-  switch (event.type) {
-    case 'session:init': {
-      return {
-        ...state,
-        sessionInfo: {
-          sessionId: event.sessionId,
-          model: event.model,
-          tools: event.tools ?? [],
-          mcpServers: event.mcpServers ?? [],
-          claudeCodeVersion: event.claudeCodeVersion ?? '',
-          slashCommands: event.slashCommands ?? [],
-        },
-      };
-    }
-
-    case 'block:start': {
-      if (event.blockType === 'tool_use' && event.toolUseId && event.toolName) {
-        const newToolCalls = new Map(state.toolCalls);
-        newToolCalls.set(event.toolUseId, {
-          toolUseId: event.toolUseId,
-          name: event.toolName,
-          status: 'running',
-          input: '',
-        });
-        const newBlockIndex = new Map(state.blockIndexToToolId);
-        newBlockIndex.set(event.blockIndex, event.toolUseId);
-        return {
-          ...state,
-          toolCalls: newToolCalls,
-          blockIndexToToolId: newBlockIndex,
-        };
-      }
-      if (event.blockType === 'thinking') {
-        const newThinking = new Map(state.thinkingBlocks);
-        newThinking.set(`block-${event.blockIndex}`, '');
-        return { ...state, thinkingBlocks: newThinking };
-      }
-      return state;
-    }
-
-    case 'tool-input:delta': {
-      const toolId = state.blockIndexToToolId.get(event.blockIndex);
-      if (!toolId) return state;
-      const existing = state.toolCalls.get(toolId);
-      if (!existing) return state;
-      const newToolCalls = new Map(state.toolCalls);
-      newToolCalls.set(toolId, {
-        ...existing,
-        input: existing.input + event.partialJson,
-      });
-      return { ...state, toolCalls: newToolCalls };
-    }
-
-    case 'tool:result': {
-      const existing = state.toolCalls.get(event.toolUseId);
-      if (!existing) return state;
-      const ciFailures =
-        existing.name === 'Bash'
-          ? extractCiFailuresFromToolResult(event.result)
-          : undefined;
-      const newToolCalls = new Map(state.toolCalls);
-      newToolCalls.set(event.toolUseId, {
-        ...existing,
-        status: 'complete',
-        result: event.result,
-        ciFailures: ciFailures ?? existing.ciFailures,
-      });
-      return { ...state, toolCalls: newToolCalls };
-    }
-
-    case 'tool:progress': {
-      const existing = state.toolCalls.get(event.toolUseId);
-      if (!existing) return state;
-      const newToolCalls = new Map(state.toolCalls);
-      newToolCalls.set(event.toolUseId, {
-        ...existing,
-        elapsedSeconds: event.elapsedSeconds,
-      });
-      return { ...state, toolCalls: newToolCalls };
-    }
-
-    case 'tool:summary': {
-      const existing = state.toolCalls.get(event.toolUseId);
-      if (!existing) return state;
-      const newToolCalls = new Map(state.toolCalls);
-      newToolCalls.set(event.toolUseId, {
-        ...existing,
-        summary: event.summary,
-      });
-      return { ...state, toolCalls: newToolCalls };
-    }
-
-    case 'thinking:delta': {
-      const key = `block-${event.blockIndex}`;
-      const existing = state.thinkingBlocks.get(key);
-      if (existing === undefined) return state;
-      const newThinking = new Map(state.thinkingBlocks);
-      newThinking.set(key, existing + event.thinking);
-      return { ...state, thinkingBlocks: newThinking };
-    }
-
-    case 'error': {
-      return {
-        ...state,
-        errors: [
-          ...state.errors,
-          { errorType: event.errorType, message: event.message },
-        ],
-      };
-    }
-
-    case 'session:result': {
-      return {
-        ...state,
-        usage: {
-          inputTokens: event.usage.inputTokens,
-          outputTokens: event.usage.outputTokens,
-          cacheReadTokens: event.usage.cacheReadTokens,
-          cacheCreationTokens: event.usage.cacheCreationTokens,
-          costUsd: event.costUsd,
-          durationMs: event.durationMs,
-        },
-        cumulativeUsage: {
-          inputTokens: state.cumulativeUsage.inputTokens + event.usage.inputTokens,
-          outputTokens: state.cumulativeUsage.outputTokens + event.usage.outputTokens,
-          cacheReadTokens: state.cumulativeUsage.cacheReadTokens + event.usage.cacheReadTokens,
-          cacheCreationTokens: state.cumulativeUsage.cacheCreationTokens + event.usage.cacheCreationTokens,
-        },
-      };
-    }
-
-    case 'status': {
-      return {
-        ...state,
-        isCompacting: event.status === 'compacting',
-      };
-    }
-
-    case 'compact-boundary': {
-      return {
-        ...state,
-        isCompacting: false,
-      };
-    }
-
-    case 'permission:request': {
-      const newPending = new Map(state.pendingPermissions);
-      newPending.set(event.requestId, {
-        requestId: event.requestId,
-        toolName: event.toolName,
-        toolInput: event.toolInput,
-        riskLevel: event.riskLevel,
-      });
-      return { ...state, pendingPermissions: newPending };
-    }
-
-    case 'permission:denied': {
-      const newPending = new Map(state.pendingPermissions);
-      newPending.delete(event.requestId);
-      return {
-        ...state,
-        pendingPermissions: newPending,
-        deniedPermissions: [
-          ...state.deniedPermissions,
-          { requestId: event.requestId, toolName: event.toolName },
-        ],
-      };
-    }
-
-    case 'plan:start': {
-      return {
-        ...state,
-        plan: {
-          planId: event.planId,
-          status: 'planning',
-          content: '',
-        },
-      };
-    }
-
-    case 'plan:content': {
-      if (!state.plan) return state;
-      return {
-        ...state,
-        plan: {
-          ...state.plan,
-          content: state.plan.content + event.text,
-        },
-      };
-    }
-
-    case 'plan:complete': {
-      if (!state.plan) return state;
-      return {
-        ...state,
-        plan: {
-          ...state.plan,
-          status: 'review',
-        },
-      };
-    }
-
-    case 'plan:approved': {
-      if (!state.plan) return state;
-      return {
-        ...state,
-        plan: {
-          ...state.plan,
-          status: 'approved',
-        },
-      };
-    }
-
-    case 'plan:rejected': {
-      if (!state.plan) return state;
-      return {
-        ...state,
-        plan: {
-          ...state.plan,
-          status: 'rejected',
-          feedback: event.feedback,
-        },
-      };
-    }
-
-    default:
-      return state;
-  }
-}
-
-function extractCiFailuresFromToolResult(result: unknown): {
-  summary: string;
-  checks: string[];
-  rawOutput: string;
-} | null {
-  const rawOutput = stringifyToolResult(result);
-  if (!rawOutput || rawOutput.length < 8) return null;
-
-  const normalizedOutput = rawOutput.replace(/\u001b\[[0-9;]*m/g, '');
-  const hasFailureSignal =
-    /\b(fail(?:ed|ing)?|timed out|exit code|errored|error|❌|✗)\b/i.test(
-      normalizedOutput
-    );
-  if (!hasFailureSignal) return null;
-
-  const checks = normalizedOutput
-    .split('\n')
-    .map((line) => line.trim())
-    .map((line) =>
-      line
-        .replace(/^[\-*+•]\s*/, '')
-        .replace(/^\*+\s*/, '')
-        .trim()
-    )
-    .filter((line) => {
-      if (!line) return false;
-      const failed = /\b(fail(?:ed|ing)?|timed out|exit code|errored|error)\b/i.test(
-        line
-      );
-      const failedSymbol = /[❌✗]\s/.test(line) || /\s[❌✗]$/.test(line);
-      const hasCiContext =
-        /\b(check|checks|workflow|workflows|action|actions|job|jobs|pipeline|pipelines|test|lint|build|deploy|publish|pull request)\b/i.test(
-          line
-        ) || /\bCI\b/.test(line);
-      const isProcessResult = /process completed with exit code/i.test(line);
-      return failed || failedSymbol || isProcessResult ? failedSymbol || hasCiContext || isProcessResult : false;
-    });
-
-  if (checks.length === 0) return null;
-
-  return {
-    summary: `${checks.length} failing CI checks detected`,
-    checks,
-    rawOutput,
-  };
-}
-
-function stringifyToolResult(result: unknown): string {
-  if (typeof result === 'string') return result;
-  if (typeof result === 'number' || typeof result === 'boolean') {
-    return String(result);
-  }
-  if (result == null) return '';
-
-  try {
-    return JSON.stringify(result, null, 2);
-  } catch {
-    return String(result);
-  }
+  return (
+    handleToolEvent(state, event) ??
+    handleMessageEvent(state, event) ??
+    handleSystemEvent(state, event) ??
+    handlePermissionPlanEvent(state, event) ??
+    state
+  );
 }
 
 // --- Hook ---
 
 export function useStreamEvents() {
-  const [state, dispatch] = useReducer(
-    streamEventsReducer,
-    initialStreamEventsState
-  );
+  const [state, dispatch] = useReducer(streamEventsReducer, initialStreamEventsState);
 
   const processEvent = useCallback((event: StreamEvent) => {
     dispatch({ type: 'PROCESS_EVENT', event });
@@ -491,10 +179,6 @@ export function useStreamEvents() {
     dispatch({ type: 'REJECT_PLAN', planId, feedback });
   }, []);
 
-  /**
-   * onData callback compatible with useChat's data channel.
-   * Parses incoming data items and dispatches them as stream events.
-   */
   const onData = useCallback(
     (data: unknown[]) => {
       for (const item of data) {
