@@ -6,9 +6,17 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "shell:allow-spawn",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/server",
+          "sidecar": true,
+          "args": ["--port", { "validator": "^\\d{4,5}$" }]
+        }
+      ]
+    },
     "shell:allow-kill",
-    "shell:allow-stdin-write",
     "dialog:allow-open"
   ]
 }
