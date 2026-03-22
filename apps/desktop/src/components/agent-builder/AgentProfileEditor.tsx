@@ -62,8 +62,8 @@ function profileToDraft(profile: AgentProfile): UpdateAgentProfileRequest {
     agentsJson: profile.agentsJson ?? '',
     cwd: profile.cwd ?? '',
     additionalDirectories: profile.additionalDirectories ?? [],
-    maxTurns: profile.maxTurns ?? 0,
-    maxBudgetUsd: profile.maxBudgetUsd ?? 0,
+    maxTurns: profile.maxTurns ?? undefined,
+    maxBudgetUsd: profile.maxBudgetUsd ?? undefined,
   };
 }
 
