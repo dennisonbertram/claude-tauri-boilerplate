@@ -604,9 +604,26 @@ export interface CreateDiffCommentRequest {
 
 // --- Workspace Repo Config Types ---
 
+export type SetupStepType = 'npm_install' | 'git_submodules' | 'env_file' | 'custom';
+
+export interface SetupStep {
+  type: SetupStepType;
+  /** Shell command. Required for `custom`; optional for well-known types (defaults applied). */
+  command?: string;
+  /** Human-readable label for logs / UI. */
+  label?: string;
+}
+
+export interface SetupContract {
+  steps: SetupStep[];
+}
+
 export interface WorkspaceRepoConfig {
   lifecycle?: {
+    /** Legacy: free-form shell command string. */
     setup?: string;
+    /** Structured setup contract (takes priority over `setup` string). */
+    setupContract?: SetupContract;
     teardown?: string;
   };
   env?: Record<string, string>;

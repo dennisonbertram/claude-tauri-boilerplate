@@ -1,8 +1,27 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { WorkspaceRepoConfig } from '@claude-tauri/shared';
+import type { WorkspaceRepoConfig, SetupStep, SetupStepType } from '@claude-tauri/shared';
 
 const CONFIG_PATH = '.claude/workspace.toml';
+
+const VALID_STEP_TYPES: SetupStepType[] = ['npm_install', 'git_submodules', 'env_file', 'custom'];
+
+/**
+ * Parse a single raw TOML setup-step object into a typed SetupStep.
+ * Returns null if the object is malformed.
+ */
+function parseSetupStep(raw: unknown): SetupStep | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const obj = raw as Record<string, unknown>;
+
+  const type = obj.type;
+  if (typeof type !== 'string' || !VALID_STEP_TYPES.includes(type as SetupStepType)) return null;
+
+  const step: SetupStep = { type: type as SetupStepType };
+  if (typeof obj.command === 'string') step.command = obj.command;
+  if (typeof obj.label === 'string') step.label = obj.label;
+  return step;
+}
 
 /**
  * Load workspace repo config from .claude/workspace.toml in the given repo root.
@@ -42,6 +61,18 @@ export async function loadWorkspaceConfig(repoPath: string): Promise<WorkspaceRe
     }
     if (typeof lc.teardown === 'string') {
       config.lifecycle.teardown = lc.teardown;
+    }
+
+    // Parse [[lifecycle.setup_steps]] — structured setup contract
+    if (Array.isArray(lc.setup_steps)) {
+      const steps: SetupStep[] = [];
+      for (const entry of lc.setup_steps) {
+        const step = parseSetupStep(entry);
+        if (step) steps.push(step);
+      }
+      if (steps.length > 0) {
+        config.lifecycle.setupContract = { steps };
+      }
     }
   }
 
