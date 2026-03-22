@@ -4,6 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { SessionSidebar } from './SessionSidebar';
 import type { Session } from '@claude-tauri/shared';
 
+vi.mock('@phosphor-icons/react', () => {
+  const Icon = (props: Record<string, unknown>) => <svg data-testid="icon" {...props} />;
+  return {
+    ChatCircle: Icon,
+    Plus: Icon,
+  };
+});
+
 const mockSessions: Session[] = [
   {
     id: 'session-1',
@@ -47,7 +55,7 @@ describe('SessionSidebar', () => {
   test('renders New Chat button', () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    expect(screen.getByText('New Chat')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New chat' })).toBeTruthy();
   });
 
   test('shows empty state when no sessions', () => {
@@ -422,8 +430,8 @@ describe('SessionSidebar', () => {
   test('New Chat button below header still works', () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    // The "New Chat" Button component (not the + icon button)
-    const newChatButton = screen.getByText('New Chat');
+    // The icon-only "New chat" header button.
+    const newChatButton = screen.getByRole('button', { name: 'New chat' });
     fireEvent.click(newChatButton);
 
     expect(defaultProps.onNewChat).toHaveBeenCalled();
@@ -442,5 +450,35 @@ describe('SessionSidebar', () => {
 
     expect(screen.getByText('Conversations')).toBeTruthy();
     expect(screen.getByText('No conversations yet')).toBeTruthy();
+  });
+
+  test('focuses session search with Cmd+K shortcut', async () => {
+    render(<SessionSidebar {...defaultProps} />);
+
+    fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search sessions')).toHaveFocus();
+    });
+  });
+
+  test('prevents global handlers from consuming Cmd+K for session search', async () => {
+    const interceptedWindowShortcut = vi.fn();
+    const intercept = () => interceptedWindowShortcut();
+    window.addEventListener('keydown', intercept);
+
+    try {
+      render(<SessionSidebar {...defaultProps} />);
+
+      fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Search sessions')).toHaveFocus();
+      });
+
+      expect(interceptedWindowShortcut).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('keydown', intercept);
+    }
   });
 });

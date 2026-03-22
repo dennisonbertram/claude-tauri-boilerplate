@@ -270,4 +270,27 @@ describe('AppSidebar', () => {
       expect(screen.getByPlaceholderText('Filter conversations...')).toHaveFocus();
     });
   });
+
+  it('prevents window-level shortcuts from handling Cmd+K', async () => {
+    const interceptedWindowShortcut = vi.fn();
+    const intercept = (event: KeyboardEvent) => {
+      interceptedWindowShortcut();
+      event.preventDefault();
+    };
+    window.addEventListener('keydown', intercept);
+
+    try {
+      renderSidebarWithControlledView();
+
+      fireEvent.keyDown(document, { key: 'k', metaKey: true });
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Filter conversations...')).toHaveFocus();
+      });
+
+      expect(interceptedWindowShortcut).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('keydown', intercept);
+    }
+  });
 });
