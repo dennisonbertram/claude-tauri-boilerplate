@@ -451,7 +451,7 @@ export function ChatInput({
   return (
     <>
     <form
-      onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
+      onSubmit={(e) => { e.preventDefault(); if (input.trim() && !isLoading) onSubmit(); }}
       data-testid="chat-input-form"
       className={`${isDragOver ? 'bg-accent/20' : ''}`}
       onDragOver={handleDragOver}

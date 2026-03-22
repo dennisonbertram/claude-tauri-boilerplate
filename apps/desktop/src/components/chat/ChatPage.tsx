@@ -350,9 +350,15 @@ export function ChatPage({
   // which prevents the SDK from recreating the internal Chat object
   // mid-stream when the parent assigns a session id after the first
   // message round-trip.
-  const stableChatIdRef = useRef<string>(sessionId ?? crypto.randomUUID());
-  if (sessionId && stableChatIdRef.current !== sessionId) {
-    // Lock in the real session id once it arrives
+  const stableChatIdRef = useRef<string>(
+    sessionId ?? (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  );
+  // Only lock in the real session id when NOT actively streaming,
+  // to prevent the SDK from recreating the Chat object mid-stream.
+  const isStreaming = typeof status === 'string' && (status === 'submitted' || status === 'streaming');
+  if (sessionId && stableChatIdRef.current !== sessionId && !isStreaming) {
     stableChatIdRef.current = sessionId;
   }
 
