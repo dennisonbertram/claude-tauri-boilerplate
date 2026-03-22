@@ -278,24 +278,6 @@ export function AppSidebar({
                     {groupSessions.map((session) => (
                       <SessionItem
                         key={session.id}
-<<<<<<< HEAD
-                        onClick={() => onSelectSession(session.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm w-full text-left transition-colors truncate ${
-                          session.id === activeSessionId
-                            ? 'bg-card shadow-sm border border-border font-medium text-foreground'
-                            : 'text-muted-foreground hover:bg-sidebar-accent/50'
-                        }`}
-                      >
-                        <span className="truncate block">
-                          {session.title || 'New Chat'}
-                        </span>
-                        {session.profile && (
-                          <div className="mt-0.5">
-                            <ProfileBadge profile={session.profile} />
-                          </div>
-                        )}
-                      </button>
-=======
                         session={session}
                         isActive={session.id === activeSessionId}
                         onSelect={() => onSelectSession(session.id)}
@@ -304,7 +286,6 @@ export function AppSidebar({
                         onFork={onForkSession ? () => onForkSession(session.id) : undefined}
                         onExport={onExportSession ? (format) => onExportSession(session.id, format) : undefined}
                       />
->>>>>>> 31cdc55 (fix(sidebar): restore session context menu (rename, fork, export, delete))
                     ))}
                   </div>
                 ))
@@ -336,20 +317,19 @@ export function AppSidebar({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="p-2 border-t border-sidebar-border">
         <div
-          className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-sidebar-accent/50 transition-colors cursor-pointer"
+          className="flex items-center gap-3 px-2 py-1 rounded-xl hover:bg-sidebar-accent/50 transition-colors cursor-pointer"
           onClick={onOpenSettings}
         >
           <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center font-medium text-xs">
+            <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-medium text-xs">
               {initial}
             </div>
-            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-500 border-2 border-sidebar rounded-full" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 bg-blue-500 border-2 border-sidebar rounded-full" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
-            <p className="text-xs text-muted-foreground truncate">{plan || 'Free'}</p>
+            <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
           </div>
           <button onClick={onOpenSettings} className="rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
             <Gear className="h-4 w-4 text-muted-foreground" />
