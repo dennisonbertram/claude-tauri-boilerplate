@@ -1,0 +1,34 @@
+import type { Command } from '@/hooks/useCommands';
+
+export interface AttachedImage {
+  id: string;
+  dataUrl?: string;
+  name: string;
+  fileType?: string;
+}
+
+export interface ChatInputProps {
+  input: string;
+  onInputChange: (value: string) => void;
+  onSubmit: () => void;
+  isLoading: boolean;
+  showPalette: boolean;
+  paletteFilter: string;
+  paletteCommands: Command[];
+  onCommandSelect: (cmd: Command) => void;
+  onPaletteClose: () => void;
+  /** Attached files for sending with the message */
+  images?: AttachedImage[];
+  /** Called when attached files change (add/remove) */
+  onImagesChange?: (images: AttachedImage[]) => void;
+  /** Files available for @-mention suggestions */
+  availableFiles?: string[];
+  /** Ghost text suggestion shown when input is empty */
+  ghostText?: string | null;
+  /** Called when the user accepts the ghost text suggestion */
+  onAcceptSuggestion?: () => void;
+  /** Haiku-generated one-line summary of what the conversation is about */
+  contextSummary?: string | null;
+  /** Names of enabled non-internal MCP servers to show in the toolbar */
+  mcpServerNames?: string[];
+}
