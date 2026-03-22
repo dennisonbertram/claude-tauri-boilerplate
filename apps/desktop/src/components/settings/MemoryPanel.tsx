@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { MemoryFile, MemorySearchResult } from '@claude-tauri/shared';
 import { consumeMemoryUpdateDraft } from '@/lib/memoryUpdatePrompt';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 
 export function MemoryPanel() {
   const [files, setFiles] = useState<MemoryFile[]>([]);
@@ -26,7 +25,7 @@ export function MemoryPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/memory`);
+      const res = await apiFetch(`/api/memory`);
       if (!res.ok) throw new Error('Failed to fetch memory files');
 
       const data = (await res.json()) as {
@@ -75,7 +74,7 @@ export function MemoryPanel() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/memory/${filename}`, {
+      const res = await apiFetch(`/api/memory/${filename}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
@@ -106,7 +105,7 @@ export function MemoryPanel() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/memory`, {
+      const res = await apiFetch(`/api/memory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, content: createContent }),
@@ -131,7 +130,7 @@ export function MemoryPanel() {
   const handleDelete = async (filename: string) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/memory/${filename}`, {
+      const res = await apiFetch(`/api/memory/${filename}`, {
         method: 'DELETE',
       });
 

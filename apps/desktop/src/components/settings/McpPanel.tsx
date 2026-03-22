@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { McpServerConfig } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 
 const TYPE_STYLES: Record<McpServerConfig['type'], { label: string; className: string }> = {
   stdio: { label: 'stdio', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
@@ -69,7 +68,7 @@ export function McpPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/mcp/servers`);
+      const res = await apiFetch(`/api/mcp/servers`);
       if (!res.ok) throw new Error('Failed to fetch MCP servers');
 
       const data = (await res.json()) as { servers: McpServerConfig[] };
@@ -124,7 +123,7 @@ export function McpPanel() {
         }
       }
 
-      const res = await fetch(`${API_BASE}/api/mcp/servers`, {
+      const res = await apiFetch(`/api/mcp/servers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -150,7 +149,7 @@ export function McpPanel() {
     setInstallingPresetId(preset.id);
 
     try {
-      const res = await fetch(`${API_BASE}/api/mcp/servers`, {
+      const res = await apiFetch(`/api/mcp/servers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +174,7 @@ export function McpPanel() {
   const handleToggle = async (name: string, enabled: boolean) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/mcp/servers/${encodeURIComponent(name)}/toggle`, {
+      const res = await apiFetch(`/api/mcp/servers/${encodeURIComponent(name)}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled }),
@@ -195,7 +194,7 @@ export function McpPanel() {
   const handleDelete = async (name: string) => {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/mcp/servers/${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/mcp/servers/${encodeURIComponent(name)}`, {
         method: 'DELETE',
       });
 

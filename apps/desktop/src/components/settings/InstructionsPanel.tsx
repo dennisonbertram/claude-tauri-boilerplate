@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { InstructionFile, RuleFile } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '@/lib/api-config';
 
 const LEVEL_STYLES: Record<
   InstructionFile['level'],
@@ -30,8 +29,8 @@ export function InstructionsPanel() {
     setError(null);
     try {
       const [filesRes, rulesRes] = await Promise.all([
-        fetch(`${API_BASE}/api/instructions`),
-        fetch(`${API_BASE}/api/instructions/rules`),
+        apiFetch(`/api/instructions`),
+        apiFetch(`/api/instructions/rules`),
       ]);
 
       if (!filesRes.ok) throw new Error('Failed to fetch instruction files');
@@ -58,7 +57,7 @@ export function InstructionsPanel() {
     setError(null);
     try {
       const encoded = btoa(filePath);
-      const res = await fetch(`${API_BASE}/api/instructions/${encoded}`, {
+      const res = await apiFetch(`/api/instructions/${encoded}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
@@ -82,7 +81,7 @@ export function InstructionsPanel() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/instructions/create`, {
+      const res = await apiFetch(`/api/instructions/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: createContent }),
