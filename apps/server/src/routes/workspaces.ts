@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { z } from 'zod';
-import { isAbsolute, resolve } from 'node:path';
 import {
   getProject,
   listWorkspaces,
@@ -10,31 +9,20 @@ import {
   deleteWorkspace as dbDeleteWorkspace,
   getSessionForWorkspace,
   getWorkspaceEvents,
-  updateWorkspaceRecoveryStatus,
-  getOrCreateWorkspaceReview,
-  updateWorkspaceReview,
-  upsertReviewFile,
-  getReviewFiles,
-  createReviewComment,
-  updateReviewComment,
-  deleteReviewComment,
-  getReviewComments,
-  createReviewTodo,
-  updateReviewTodo,
-  getReviewTodos,
-  computeMergeReadiness,
 } from '../db';
 import { worktreeOrchestrator } from '../services/worktree-orchestrator';
-import { worktreeService } from '../services/worktree';
+import { worktreeService, autoCommitWorktree } from '../services/worktree';
 import { reconcileProjectWorkspaces } from '../services/workspace-reconciler';
 import type { WorkspaceStatus } from '@claude-tauri/shared';
 import {
   buildAdditionalDirectoryPathPolicy,
-  canonicalizePath,
   canonicalizeRoots,
-  isPathWithinAnyRoot,
+  normalizeAdditionalDirectories,
 } from '../utils/paths';
-import { validateBody } from '../utils/validate-body.js';
+import { withWorkspaceOperationLock } from '../utils/operation-lock';
+import { createWorkspaceReviewRouter } from './workspace-reviews';
+
+// ── Validation schemas ────────────────────────────────────────────────────────
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'name is required').max(100),
@@ -69,31 +57,7 @@ const workspaceUpdateSchema = z.object({
   { message: 'Either name, branch, or additionalDirectories must be provided', path: ['name'] }
 );
 
-async function normalizeAdditionalDirectories(
-  input: string[] | undefined,
-  workspaceRoot: string,
-  allowedRoots: string[],
-  errorMessage: string
-): Promise<string[] | undefined> {
-  if (input === undefined) return undefined;
-
-  const normalized = new Set<string>();
-  for (const rawEntry of input) {
-    const trimmed = rawEntry.trim();
-    if (!trimmed) continue;
-
-    const resolved = isAbsolute(trimmed) ? trimmed : resolve(workspaceRoot, trimmed);
-    const canonical = await canonicalizePath(resolved);
-    if (!isPathWithinAnyRoot(canonical, allowedRoots)) {
-      throw new Error(errorMessage);
-    }
-    normalized.add(canonical);
-  }
-
-  return [...normalized];
-}
-
-const workspaceOperationLocks = new Map<string, Promise<unknown>>();
+// ── Project-scoped workspace routes (/api/projects/:projectId/workspaces) ─────
 
 export function createWorkspaceRouter(db: Database) {
   const router = new Hono();
@@ -201,11 +165,14 @@ export function createWorkspaceRouter(db: Database) {
   return router;
 }
 
-/**
- * Flat workspace routes for /api/workspaces/:id
- */
+// ── Flat workspace routes (/api/workspaces/:id) ───────────────────────────────
+
 export function createFlatWorkspaceRouter(db: Database) {
   const router = new Hono();
+
+  // Mount review sub-router (all /:id/review/* routes)
+  const reviewRouter = createWorkspaceReviewRouter(db);
+  router.route('/', reviewRouter);
 
   // GET /api/workspaces/:id — Get workspace details
   router.get('/:id', (c) => {
@@ -585,258 +552,5 @@ export function createFlatWorkspaceRouter(db: Database) {
     });
   });
 
-  // ─── Review Cockpit Routes ────────────────────────────────────────────────────
-
-  // GET /api/workspaces/:id/review — Get (or lazy-create) review state + readiness
-  router.get('/:id/review', (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-    const review = getOrCreateWorkspaceReview(db, id);
-    const files = getReviewFiles(db, review.id);
-    const comments = getReviewComments(db, review.id);
-    const todos = getReviewTodos(db, review.id);
-    const merge_readiness = computeMergeReadiness(review, files, todos);
-    return c.json({ ...review, files, comments, todos, merge_readiness });
-  });
-
-  // PUT /api/workspaces/:id/review — Update review settings
-  router.put('/:id/review', async (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const reviewUpdateSchema = z.object({
-      selected_from_ref: z.string().optional().nullable(),
-      selected_to_ref: z.string().optional().nullable(),
-      filter_mode: z.enum(['all', 'reviewed', 'unreviewed']).optional(),
-      view_mode: z.enum(['unified', 'side-by-side']).optional(),
-    });
-    const data = await validateBody(c, reviewUpdateSchema);
-    if (data instanceof Response) return data;
-
-    const review = getOrCreateWorkspaceReview(db, id);
-    updateWorkspaceReview(db, review.id, data as Parameters<typeof updateWorkspaceReview>[2]);
-    const updated = getOrCreateWorkspaceReview(db, id);
-    const files = getReviewFiles(db, review.id);
-    const comments = getReviewComments(db, review.id);
-    const todos = getReviewTodos(db, review.id);
-    const merge_readiness = computeMergeReadiness(updated, files, todos);
-    return c.json({ ...updated, files, comments, todos, merge_readiness });
-  });
-
-  // POST /api/workspaces/:id/review/files — Upsert file review state
-  router.post('/:id/review/files', async (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const fileReviewSchema = z.object({
-      file_path: z.string().min(1),
-      review_state: z.enum(['unreviewed', 'reviewed', 'ignored']),
-    });
-    const data = await validateBody(c, fileReviewSchema);
-    if (data instanceof Response) return data;
-
-    const review = getOrCreateWorkspaceReview(db, id);
-    const file = upsertReviewFile(db, review.id, data.file_path, data.review_state);
-    return c.json(file);
-  });
-
-  // GET /api/workspaces/:id/review/comments — List review comments
-  router.get('/:id/review/comments', (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-    const review = getOrCreateWorkspaceReview(db, id);
-    const comments = getReviewComments(db, review.id);
-    return c.json(comments);
-  });
-
-  // POST /api/workspaces/:id/review/comments — Create review comment
-  router.post('/:id/review/comments', async (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const commentSchema = z.object({
-      file_path: z.string().min(1),
-      diff_line_key: z.string().optional().nullable(),
-      old_line: z.number().int().optional().nullable(),
-      new_line: z.number().int().optional().nullable(),
-      markdown: z.string().min(1),
-    });
-    const data = await validateBody(c, commentSchema);
-    if (data instanceof Response) return data;
-
-    const review = getOrCreateWorkspaceReview(db, id);
-    const comment = createReviewComment(db, review.id, data);
-    return c.json(comment, 201);
-  });
-
-  // PATCH /api/workspaces/:id/review/comments/:commentId — Update review comment
-  router.patch('/:id/review/comments/:commentId', async (c) => {
-    const id = c.req.param('id');
-    const commentId = c.req.param('commentId');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const commentUpdateSchema = z.object({
-      markdown: z.string().min(1).optional(),
-      status: z.enum(['open', 'resolved', 'outdated']).optional(),
-    });
-    const data = await validateBody(c, commentUpdateSchema);
-    if (data instanceof Response) return data;
-
-    updateReviewComment(db, commentId, data);
-    const review = getOrCreateWorkspaceReview(db, id);
-    const comments = getReviewComments(db, review.id);
-    const comment = comments.find((c) => c.id === commentId);
-    if (!comment) {
-      return c.json({ error: 'Comment not found', code: 'NOT_FOUND' }, 404);
-    }
-    return c.json(comment);
-  });
-
-  // DELETE /api/workspaces/:id/review/comments/:commentId — Delete review comment
-  router.delete('/:id/review/comments/:commentId', (c) => {
-    const id = c.req.param('id');
-    const commentId = c.req.param('commentId');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-    const deleted = deleteReviewComment(db, commentId);
-    if (!deleted) {
-      return c.json({ error: 'Comment not found', code: 'NOT_FOUND' }, 404);
-    }
-    return c.json({ ok: true });
-  });
-
-  // GET /api/workspaces/:id/review/todos — List review todos
-  router.get('/:id/review/todos', (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-    const review = getOrCreateWorkspaceReview(db, id);
-    const todos = getReviewTodos(db, review.id);
-    return c.json(todos);
-  });
-
-  // POST /api/workspaces/:id/review/todos — Create review todo
-  router.post('/:id/review/todos', async (c) => {
-    const id = c.req.param('id');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const todoSchema = z.object({
-      body: z.string().min(1),
-      source: z.enum(['local', 'check', 'agent']).optional(),
-      file_path: z.string().optional().nullable(),
-    });
-    const data = await validateBody(c, todoSchema);
-    if (data instanceof Response) return data;
-
-    const review = getOrCreateWorkspaceReview(db, id);
-    const todo = createReviewTodo(db, review.id, data);
-    return c.json(todo, 201);
-  });
-
-  // PATCH /api/workspaces/:id/review/todos/:todoId — Update review todo
-  router.patch('/:id/review/todos/:todoId', async (c) => {
-    const id = c.req.param('id');
-    const todoId = c.req.param('todoId');
-    const workspace = getWorkspace(db, id);
-    if (!workspace) {
-      return c.json({ error: 'Workspace not found', code: 'NOT_FOUND' }, 404);
-    }
-
-    const todoUpdateSchema = z.object({
-      status: z.enum(['open', 'done']).optional(),
-      body: z.string().min(1).optional(),
-    });
-    const data = await validateBody(c, todoUpdateSchema);
-    if (data instanceof Response) return data;
-
-    updateReviewTodo(db, todoId, data);
-    const review = getOrCreateWorkspaceReview(db, id);
-    const todos = getReviewTodos(db, review.id);
-    const todo = todos.find((t) => t.id === todoId);
-    if (!todo) {
-      return c.json({ error: 'Todo not found', code: 'NOT_FOUND' }, 404);
-    }
-    return c.json(todo);
-  });
-
   return router;
-}
-
-/**
- * Auto-commit any uncommitted changes in a worktree before merge.
- */
-async function autoCommitWorktree(worktreePath: string): Promise<void> {
-  const { gitCommand } = await import('../services/git-command');
-
-  // Stage all changes
-  const addResult = await gitCommand.run(['add', '-A'], { cwd: worktreePath });
-  if (addResult.exitCode !== 0) {
-    // Non-zero from `git add -A` means a real failure (permissions, disk full, etc.)
-    throw new Error(`git add failed in worktree ${worktreePath}: ${addResult.stderr}`);
-  }
-
-  // Check if there are staged changes
-  const statusResult = await gitCommand.run(
-    ['diff', '--cached', '--quiet'],
-    { cwd: worktreePath }
-  );
-
-  // exitCode 0 means no diff (nothing staged), exitCode 1 means there are changes
-  if (statusResult.exitCode === 1) {
-    const commitResult = await gitCommand.run(
-      ['commit', '-m', 'WIP: auto-commit before merge'],
-      { cwd: worktreePath }
-    );
-    if (commitResult.exitCode !== 0) {
-      throw new Error(`git commit failed in worktree ${worktreePath}: ${commitResult.stderr}`);
-    }
-  }
-}
-
-async function withWorkspaceOperationLock<T>(
-  workspaceId: string,
-  operation: () => Promise<T>
-): Promise<T> {
-  if (workspaceOperationLocks.has(workspaceId)) {
-    throw Object.assign(
-      new Error(`Workspace '${workspaceId}' is already being operated on`),
-      { status: 423, code: 'LOCKED' }
-    );
-  }
-
-  const pending = operation();
-  workspaceOperationLocks.set(workspaceId, pending);
-
-  try {
-    return await pending;
-  } finally {
-    if (workspaceOperationLocks.get(workspaceId) === pending) {
-      workspaceOperationLocks.delete(workspaceId);
-    }
-  }
 }
