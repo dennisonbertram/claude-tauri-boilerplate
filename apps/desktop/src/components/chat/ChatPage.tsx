@@ -343,30 +343,17 @@ export function ChatPage({
     };
   }, []);
 
-  // Stable chat ID that persists for the lifetime of this mount.
-  // Once a real sessionId arrives we lock it in; until then we use a
-  // random fallback so the SDK never sees an undefined/null id.
-  // Crucially this ref only ever transitions once (fallback → real)
-  // which prevents the SDK from recreating the internal Chat object
-  // mid-stream when the parent assigns a session id after the first
-  // message round-trip.
-  const stableChatIdRef = useRef<string>(
-    sessionId ?? (typeof crypto !== 'undefined' && crypto.randomUUID
+  // Stable chat ID: starts as sessionId (or a random fallback) and only
+  // updates to a new sessionId when the hook is NOT actively streaming.
+  // This prevents the SDK from recreating its internal Chat object mid-stream
+  // when the parent assigns a session id after the first message round-trip.
+  const [chatId, setChatId] = useState<string>(
+    () => sessionId ?? (typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   );
-  // Only lock in the real session id when NOT actively streaming,
-  // to prevent the SDK from recreating the Chat object mid-stream.
-  const isStreaming = typeof status === 'string' && (status === 'submitted' || status === 'streaming');
-  if (sessionId && stableChatIdRef.current !== sessionId && !isStreaming) {
-    stableChatIdRef.current = sessionId;
-  }
 
   // Handle data-stream-event parts from the AI SDK data channel.
-  // The server sends custom events (session:init, tool:result, etc.)
-  // via `{ type: 'data-stream-event', data: <StreamEvent> }` which
-  // the AI SDK delivers through the onData callback.  The SDK v3
-  // delivers DataUIPart objects whose `type` is the custom event name.
   const handleDataPart = useCallback(
     (part: { type: string; data?: unknown }) => {
       if (part.type === 'data-stream-event' && part.data && typeof part.data === 'object' && 'type' in part.data) {
@@ -378,10 +365,17 @@ export function ChatPage({
 
   const { messages, sendMessage, status, setMessages, error, clearError } =
     useChat({
-      id: stableChatIdRef.current,
+      id: chatId,
       transport,
       onData: handleDataPart as any,
     });
+
+  // Lock in the real session id once it arrives, but only when not streaming.
+  useEffect(() => {
+    if (sessionId && chatId !== sessionId && status !== 'submitted' && status !== 'streaming') {
+      setChatId(sessionId);
+    }
+  }, [sessionId, status, chatId]);
 
   useEffect(() => {
     if (usage && usage !== lastRecordedUsageRef.current) {
