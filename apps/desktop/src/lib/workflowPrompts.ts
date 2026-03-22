@@ -17,7 +17,7 @@ export interface WorkflowPrompts {
   codeReview: string;
 }
 
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from './api-config';
 
 export const WORKFLOW_PROMPT_KEYS: WorkflowPromptKey[] = [
   'review',
@@ -177,7 +177,7 @@ async function getErrorMessage(
 }
 
 async function listMemoryFiles(): Promise<Set<string>> {
-  const response = await fetch(`${API_BASE}/api/memory`);
+  const response = await apiFetch(`/api/memory`);
   if (!response.ok) {
     throw new Error(
       await getErrorMessage(response, 'Failed to list repository memory files')
@@ -203,7 +203,7 @@ export async function loadRepoWorkflowPrompts(): Promise<Partial<WorkflowPrompts
     const filename = REPO_WORKFLOW_PROMPT_FILES[key];
     if (!existingFiles.has(filename)) continue;
 
-    const response = await fetch(`${API_BASE}/api/memory/${filename}`);
+    const response = await apiFetch(`/api/memory/${filename}`);
     if (!response.ok) {
       throw new Error(
         await getErrorMessage(
@@ -231,7 +231,7 @@ export async function saveRepoWorkflowPrompts(
     const shouldPersist =
       content.length > 0 && content !== DEFAULT_WORKFLOW_PROMPTS[key].trim();
 
-    const existingResponse = await fetch(`${API_BASE}/api/memory/${filename}`);
+    const existingResponse = await apiFetch(`/api/memory/${filename}`);
 
     if (!existingResponse.ok && existingResponse.status !== 404) {
       throw new Error(
@@ -244,7 +244,7 @@ export async function saveRepoWorkflowPrompts(
 
     if (existingResponse.ok) {
       if (!shouldPersist) {
-        const deleteResponse = await fetch(`${API_BASE}/api/memory/${filename}`, {
+        const deleteResponse = await apiFetch(`/api/memory/${filename}`, {
           method: 'DELETE',
         });
         if (!deleteResponse.ok) {
@@ -258,7 +258,7 @@ export async function saveRepoWorkflowPrompts(
         continue;
       }
 
-      const updateResponse = await fetch(`${API_BASE}/api/memory/${filename}`, {
+      const updateResponse = await apiFetch(`/api/memory/${filename}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: prompts[key] }),
@@ -276,7 +276,7 @@ export async function saveRepoWorkflowPrompts(
 
     if (!shouldPersist) continue;
 
-    const createResponse = await fetch(`${API_BASE}/api/memory`, {
+    const createResponse = await apiFetch(`/api/memory`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: filename, content: prompts[key] }),
