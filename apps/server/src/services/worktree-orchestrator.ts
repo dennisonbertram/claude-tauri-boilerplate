@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { existsSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import type { Workspace, WorkspaceStatus } from '@claude-tauri/shared';
+import type { Workspace, WorkspaceStatus, SetupContract } from '@claude-tauri/shared';
 import {
   createWorkspace as dbCreateWorkspace,
   getWorkspace,
@@ -20,6 +20,11 @@ import {
 } from '../utils/paths';
 import { WorktreeService, worktreeService } from './worktree';
 import { loadWorkspaceConfig } from './workspace-config';
+import {
+  validateSetupContract,
+  resolveCommand,
+  legacyCommandToContract,
+} from './setup-contract';
 
 const SETUP_TIMEOUT_MS = 30_000;
 
@@ -261,27 +266,62 @@ export class WorktreeOrchestrator {
       }
     }
 
-    // 7b. Determine effective setup command:
-    //   - project.setupCommand takes priority (explicit override in DB)
-    //   - repoConfig.lifecycle.setup is used if no project.setupCommand
-    const effectiveSetupCommand =
-      project.setupCommand ?? repoConfig?.lifecycle?.setup ?? null;
+    // 7b. Determine effective setup contract:
+    //   - project.setupCommand (DB override) converts to legacy contract
+    //   - repoConfig.lifecycle.setupContract (structured) beats legacy string
+    //   - repoConfig.lifecycle.setup (legacy string) converts to contract
+    let effectiveContract: SetupContract | null = null;
 
-    if (effectiveSetupCommand) {
+    if (project.setupCommand) {
+      effectiveContract = legacyCommandToContract(project.setupCommand);
+    } else if (repoConfig?.lifecycle?.setupContract) {
+      effectiveContract = repoConfig.lifecycle.setupContract;
+    } else if (repoConfig?.lifecycle?.setup) {
+      effectiveContract = legacyCommandToContract(repoConfig.lifecycle.setup);
+    }
+
+    if (effectiveContract && effectiveContract.steps.length > 0) {
+      // Validate the entire contract before running any step
+      const validation = validateSetupContract(effectiveContract);
+
+      for (const w of validation.warnings) {
+        console.warn(`[workspace-setup] ${w}`);
+      }
+
+      if (!validation.valid) {
+        const errMsg = `Setup contract validation failed: ${validation.errors.join('; ')}`;
+        setWorkspaceError(db, workspaceId, errMsg);
+        recordWorkspaceEvent(db, workspaceId, 'error', { message: errMsg });
+        return getWorkspace(db, workspaceId)!;
+      }
+
       transitionWorkspaceStatus(db, workspaceId, 'setup_running');
-      recordWorkspaceEvent(db, workspaceId, 'setup_started', { command: effectiveSetupCommand });
-
-      // Merge repo env overlay into process environment for the setup command
       const envOverlay = repoConfig?.env ?? {};
 
-      try {
-        await this.runSetupCommand(effectiveSetupCommand, worktreePath, envOverlay);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setWorkspaceError(db, workspaceId, `Setup command failed: ${msg}`);
-        recordWorkspaceEvent(db, workspaceId, 'error', { message: `Setup command failed: ${msg}` });
-        // Return the workspace in error state — don't throw, the workspace exists
-        return getWorkspace(db, workspaceId)!;
+      for (let i = 0; i < effectiveContract.steps.length; i++) {
+        const step = effectiveContract.steps[i];
+        const cmd = resolveCommand(step);
+        const label = step.label ?? `${step.type} (step ${i + 1})`;
+        recordWorkspaceEvent(db, workspaceId, 'setup_started', {
+          command: cmd,
+          label,
+          step: i + 1,
+        });
+
+        try {
+          await this.runSetupCommand(cmd, worktreePath, envOverlay);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setWorkspaceError(
+            db,
+            workspaceId,
+            `Setup step ${i + 1} (${label}) failed: ${msg}`
+          );
+          recordWorkspaceEvent(db, workspaceId, 'error', {
+            message: `Setup step ${i + 1} (${label}) failed: ${msg}`,
+          });
+          return getWorkspace(db, workspaceId)!;
+        }
       }
     }
 
