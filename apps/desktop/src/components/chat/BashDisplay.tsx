@@ -4,14 +4,11 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
-  type MouseEvent,
   type ReactNode,
 } from 'react';
 import {
   TerminalWindow,
   CaretDown,
-  Copy,
-  Check,
   SpinnerGap,
   Warning,
 } from '@phosphor-icons/react';
@@ -20,6 +17,8 @@ import {
   ANSI_CSS_COLORS,
   type AnsiSegment,
 } from '@/lib/ansi-parser';
+import { CopyButton } from '@/components/shared/CopyButton';
+import { formatDuration } from '@/lib/formatUtils';
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -55,44 +54,7 @@ function detectDangerousCommand(command: string): boolean {
   return DANGEROUS_PATTERNS.some(p => p.test(command));
 }
 
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
 // ── Sub-components ───────────────────────────────────────────────────
-
-function CopyButton({
-  text,
-  testId,
-}: {
-  text: string;
-  testId: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (e: MouseEvent) => {
-    e.stopPropagation();
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <button
-      data-testid={testId}
-      onClick={handleCopy}
-      className="p-1 rounded hover:bg-zinc-700 transition-colors text-zinc-400 hover:text-zinc-200"
-      aria-label="Copy"
-    >
-      {copied ? (
-        <Check className="h-3.5 w-3.5 text-green-400" />
-      ) : (
-        <Copy className="h-3.5 w-3.5" />
-      )}
-    </button>
-  );
-}
 
 function AnsiRenderer({ text }: { text: string }): ReactNode {
   const segments = parseAnsi(text);
