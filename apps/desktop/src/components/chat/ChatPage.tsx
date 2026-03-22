@@ -11,7 +11,6 @@ import { ErrorBanner, type ChatError } from './ErrorBanner';
 import { PermissionDialog } from './PermissionDialog';
 import { PlanView } from './PlanView';
 import { SubagentPanel } from './SubagentPanel';
-import { CheckpointTimeline } from './CheckpointTimeline';
 import { RewindDialog } from './RewindDialog';
 import { LatestTurnChangesDialog } from './LatestTurnChangesDialog';
 import type { RewindMode } from './RewindDialog';
@@ -67,6 +66,7 @@ export interface ChatPageStatusData {
   cumulativeUsage: import('@/hooks/useStreamEvents').CumulativeUsage;
   sessionTotalCost: number;
   subagentActiveCount: number;
+  checkpoints: import('@claude-tauri/shared').Checkpoint[];
   sessionInfo?: {
     sessionId: string;
     model: string;
@@ -309,7 +309,6 @@ export function ChatPage({
       settings.vertexProjectId,
       settings.vertexBaseUrl,
       settings.customBaseUrl,
-      settings.runtimeEnv,
       workspaceId,
       additionalDirectories,
       linearIssue,
@@ -344,15 +343,24 @@ export function ChatPage({
     };
   }, []);
 
-  // Stable fallback ID so we don't recreate the Chat on every render
-  // when sessionId is null. Using useRef + crypto ensures it persists
-  // across renders but is unique per ChatPage mount.
-  const fallbackId = useRef(crypto.randomUUID()).current;
+  // Stable chat ID that persists for the lifetime of this mount.
+  // Once a real sessionId arrives we lock it in; until then we use a
+  // random fallback so the SDK never sees an undefined/null id.
+  // Crucially this ref only ever transitions once (fallback → real)
+  // which prevents the SDK from recreating the internal Chat object
+  // mid-stream when the parent assigns a session id after the first
+  // message round-trip.
+  const stableChatIdRef = useRef<string>(sessionId ?? crypto.randomUUID());
+  if (sessionId && stableChatIdRef.current !== sessionId) {
+    // Lock in the real session id once it arrives
+    stableChatIdRef.current = sessionId;
+  }
 
   // Handle data-stream-event parts from the AI SDK data channel.
   // The server sends custom events (session:init, tool:result, etc.)
   // via `{ type: 'data-stream-event', data: <StreamEvent> }` which
-  // the AI SDK delivers through the onData callback.
+  // the AI SDK delivers through the onData callback.  The SDK v3
+  // delivers DataUIPart objects whose `type` is the custom event name.
   const handleDataPart = useCallback(
     (part: { type: string; data?: unknown }) => {
       if (part.type === 'data-stream-event' && part.data && typeof part.data === 'object' && 'type' in part.data) {
@@ -364,7 +372,7 @@ export function ChatPage({
 
   const { messages, sendMessage, status, setMessages, error, clearError } =
     useChat({
-      id: sessionId ?? fallbackId,
+      id: stableChatIdRef.current,
       transport,
       onData: handleDataPart as any,
     });
@@ -821,9 +829,10 @@ export function ChatPage({
       cumulativeUsage,
       sessionTotalCost,
       subagentActiveCount,
+      checkpoints,
       sessionInfo: sessionInfo ?? null,
     });
-  }, [sessionInfo, isLoading, toolCalls, cumulativeUsage, sessionTotalCost, subagentActiveCount, onStatusChange]);
+  }, [sessionInfo, isLoading, toolCalls, cumulativeUsage, sessionTotalCost, subagentActiveCount, checkpoints, onStatusChange]);
 
   const chatError: ChatError | null = useMemo(() => {
     if (!error) return null;
@@ -1302,12 +1311,6 @@ export function ChatPage({
           onToggleVisibility={toggleSubagentPanel}
         />
       )}
-      {/* Checkpoint timeline */}
-      <CheckpointTimeline
-        checkpoints={checkpoints}
-        onRewind={handleRewindClick}
-        onViewLatestChanges={workspaceId ? handleViewLatestChanges : undefined}
-      />
       <LatestTurnChangesDialog
         open={latestChangesOpen}
         loading={latestChangesLoading}
@@ -1407,7 +1410,7 @@ export function ChatPage({
         </div>
       )}
       {/* Footer composer */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-sm z-20 px-8 py-4 flex items-center justify-center">
+      <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-center">
         <ChatInput
           input={input}
           onInputChange={handleInputChange}
