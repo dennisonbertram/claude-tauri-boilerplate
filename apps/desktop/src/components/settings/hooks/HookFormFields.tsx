@@ -20,7 +20,6 @@ export function HookFormFields({
 
   return (
     <>
-      {/* Event Type */}
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Event Type</label>
         <select
@@ -37,7 +36,6 @@ export function HookFormFields({
         </select>
       </div>
 
-      {/* Matcher (conditional) */}
       {showMatcher && (
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">
@@ -54,7 +52,6 @@ export function HookFormFields({
         </div>
       )}
 
-      {/* Handler Type */}
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Handler Type</label>
         <select
@@ -69,7 +66,6 @@ export function HookFormFields({
         </select>
       </div>
 
-      {/* Handler-specific fields */}
       <HandlerFields form={form} setForm={setForm} isEdit={isEdit} />
     </>
   );
