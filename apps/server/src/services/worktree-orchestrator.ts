@@ -25,6 +25,7 @@ import {
   resolveCommand,
   legacyCommandToContract,
 } from './setup-contract';
+import { validateSetupCommand } from './setup-validator';
 
 const SETUP_TIMEOUT_MS = 30_000;
 
@@ -302,6 +303,16 @@ export class WorktreeOrchestrator {
         const step = effectiveContract.steps[i];
         const cmd = resolveCommand(step);
         const label = step.label ?? `${step.type} (step ${i + 1})`;
+
+        // Per-command validation via setup-validator (shell injection, dangerous patterns)
+        const cmdValidation = validateSetupCommand(cmd);
+        if (!cmdValidation.valid) {
+          const errMsg = `Setup step ${i + 1} (${label}) blocked: ${cmdValidation.reason}`;
+          setWorkspaceError(db, workspaceId, errMsg);
+          recordWorkspaceEvent(db, workspaceId, 'error', { message: errMsg });
+          return getWorkspace(db, workspaceId)!;
+        }
+
         recordWorkspaceEvent(db, workspaceId, 'setup_started', {
           command: cmd,
           label,
