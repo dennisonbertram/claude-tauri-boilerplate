@@ -186,13 +186,15 @@ export function AppSidebar({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k')) {
+      const isSearchShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+      if (!isSearchShortcut) {
         return;
       }
 
       if (event.defaultPrevented) return;
 
       event.preventDefault();
+      event.stopPropagation();
       handleSearch();
     };
 

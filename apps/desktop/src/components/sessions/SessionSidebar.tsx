@@ -74,8 +74,10 @@ export function SessionSidebar({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      const isSessionSearchShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      if (isSessionSearchShortcut) {
         e.preventDefault();
+        e.stopPropagation();
         searchRef.current?.focus();
       }
     };
