@@ -11,6 +11,7 @@ import {
   CaretLeft,
   CaretRight,
   MagnifyingGlass,
+  FileText,
 } from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { groupSessionsByDate } from '@/components/sidebar/date-utils';
@@ -21,7 +22,7 @@ import { ProjectsSection } from '@/components/sidebar/ProjectsSection';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents';
+type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents' | 'documents';
 
 export interface AppSidebarProps {
   activeView: ActiveView;
@@ -53,6 +54,7 @@ export interface AppSidebarProps {
 /* ------------------------------------------------------------------ */
 
 const navItems: { view: ActiveView; icon: typeof ChatCircle; label: string }[] = [
+  { view: 'documents', icon: FileText, label: 'Documents' },
   { view: 'workspaces', icon: FolderOpen, label: 'Projects' },
   { view: 'agents', icon: Robot, label: 'Agent Profiles' },
   { view: 'teams', icon: UsersThree, label: 'Teams' },

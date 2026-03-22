@@ -8,6 +8,7 @@ import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { TeamsView } from '@/components/teams/TeamsView';
 import { AgentBuilderView } from '@/components/agent-builder';
+import { DocumentsView } from '@/components/documents/DocumentsView';
 import { AppSidebar } from '@/components/AppSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
 import { ProjectsGridView } from '@/components/workspaces/ProjectsGridView';
@@ -37,7 +38,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
   const handleOpenSettings = useCallback((tab?: string) => { setSettingsInitialTab(tab); setSettingsOpen(true); }, []);
   const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
-  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents' | 'documents'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingWelcomeSessionId, setPendingWelcomeSessionId] = useState<string | null>(null);
@@ -66,7 +67,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const handleAddProject = useCallback(async (p: string) => { const proj = await addProject(p); setSelectedProjectId(proj.id); }, [addProject]);
   const handleCreateWorkspace = useCallback(async (name: string, base?: string, src?: string, issue?: import('@/lib/workspace-api').GithubIssue) => { const ws = await addWorkspace(name, base, src, undefined, settings.workspaceBranchPrefix, issue ? { number: issue.number, title: issue.title, url: issue.url } : undefined); if (ws) setSelectedWorkspace(ws); }, [addWorkspace, settings.workspaceBranchPrefix]);
   const handleWorkspaceUpdate = useCallback(async () => { const u = await refreshWorkspaces(); if (selectedWorkspace) setSelectedWorkspace(u?.find((w) => w.id === selectedWorkspace.id) ?? null); }, [refreshWorkspaces, selectedWorkspace]);
-  const handleSwitchView = useCallback((v: 'chat' | 'teams' | 'workspaces' | 'agents') => { setActiveView(v); if (v === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [selectedProjectId, projects]);
+  const handleSwitchView = useCallback((v: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents') => { setActiveView(v); if (v === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [selectedProjectId, projects]);
   useEffect(() => { if (activeSessionId) setOpenSessionIds((p) => p.includes(activeSessionId) ? p : [...p, activeSessionId]); }, [activeSessionId]);
   useEffect(() => { setOpenSessionIds((p) => p.filter((id) => sessions.some((s) => s.id === id))); }, [sessions]);
   useEffect(() => { if (activeView === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [activeView, selectedProjectId, projects]);
@@ -99,7 +100,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             ) : activeView === 'workspaces' ? (
               selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} />
                 : <ProjectsGridView projects={projects} workspacesByProject={workspacesByProject} onAddProject={() => setAddProjectOpen(true)} onSelectWorkspace={handleSelectWorkspace} />
-            ) : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
+            ) : activeView === 'documents' ? <DocumentsView /> : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
           </div>
         </div>
         <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} initialTab={settingsInitialTab as any}
