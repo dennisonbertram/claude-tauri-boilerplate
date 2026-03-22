@@ -475,5 +475,33 @@ function parseDiffNameStatus(line: string): ChangedFile | null {
   };
 }
 
+/**
+ * Auto-commit any uncommitted changes in a worktree before merge.
+ */
+export async function autoCommitWorktree(worktreePath: string): Promise<void> {
+  // Stage all changes
+  const addResult = await gitCommand.run(['add', '-A'], { cwd: worktreePath });
+  if (addResult.exitCode !== 0) {
+    throw new Error(`git add failed in worktree ${worktreePath}: ${addResult.stderr}`);
+  }
+
+  // Check if there are staged changes
+  const statusResult = await gitCommand.run(
+    ['diff', '--cached', '--quiet'],
+    { cwd: worktreePath }
+  );
+
+  // exitCode 0 means no diff (nothing staged), exitCode 1 means there are changes
+  if (statusResult.exitCode === 1) {
+    const commitResult = await gitCommand.run(
+      ['commit', '-m', 'WIP: auto-commit before merge'],
+      { cwd: worktreePath }
+    );
+    if (commitResult.exitCode !== 0) {
+      throw new Error(`git commit failed in worktree ${worktreePath}: ${commitResult.stderr}`);
+    }
+  }
+}
+
 /** Singleton instance */
 export const worktreeService = new WorktreeService();

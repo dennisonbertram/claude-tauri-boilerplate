@@ -1,5 +1,5 @@
 import { realpath } from 'node:fs/promises';
-import { resolve, normalize, join } from 'node:path';
+import { isAbsolute, resolve, normalize, join } from 'node:path';
 import { homedir } from 'node:os';
 
 function resolveWorktreeBaseDir(): string {
@@ -110,72 +110,31 @@ export function sanitizeWorkspaceName(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-// ---------------------------------------------------------------------------
-// GitHub clone security utilities
-// ---------------------------------------------------------------------------
-
-/** Pattern for valid GitHub owner or repo names */
-const GITHUB_NAME_RE = /^[a-zA-Z0-9._-]+$/;
-
 /**
- * Validate a GitHub owner or repo name.
- * Allowed characters: alphanumeric, hyphens, underscores, dots.
+ * Normalize an array of directory paths relative to a workspace root,
+ * resolving each to a canonical (realpath) form and verifying every entry
+ * falls within one of the allowed roots.
  */
-export function isValidGitHubName(name: string): boolean {
-  if (!name || name.length > 100) return false;
-  return GITHUB_NAME_RE.test(name);
-}
+export async function normalizeAdditionalDirectories(
+  input: string[] | undefined,
+  workspaceRoot: string,
+  allowedRoots: string[],
+  errorMessage: string
+): Promise<string[] | undefined> {
+  if (input === undefined) return undefined;
 
-/**
- * Validate that a URL is a well-formed GitHub HTTPS clone URL.
- * Accepts `https://github.com/owner/repo` with optional `.git` suffix.
- */
-export function isValidGitHubUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:') return false;
-    if (parsed.hostname !== 'github.com') return false;
-    // Reject credentials embedded in the URL
-    if (parsed.username || parsed.password) return false;
-    const segments = parsed.pathname.replace(/^\//, '').replace(/\.git$/, '').split('/');
-    if (segments.length !== 2) return false;
-    return isValidGitHubName(segments[0]) && isValidGitHubName(segments[1]);
-  } catch {
-    return false;
-  }
-}
+  const normalized = new Set<string>();
+  for (const rawEntry of input) {
+    const trimmed = rawEntry.trim();
+    if (!trimmed) continue;
 
-/**
- * Sanitize and validate a clone destination path.
- *
- * Rules:
- * - `requestedPath` must resolve to a location under `basePath`
- * - Path must not contain `..` segments
- * - Path must not contain null bytes or other suspicious characters
- *
- * Returns the resolved absolute path or throws an error.
- */
-export function sanitizeClonePath(basePath: string, requestedPath: string): string {
-  if (!requestedPath || typeof requestedPath !== 'string') {
-    throw new Error('Clone path is required');
+    const resolved = isAbsolute(trimmed) ? trimmed : resolve(workspaceRoot, trimmed);
+    const canonical = await canonicalizePath(resolved);
+    if (!isPathWithinAnyRoot(canonical, allowedRoots)) {
+      throw new Error(errorMessage);
+    }
+    normalized.add(canonical);
   }
 
-  // Reject null bytes
-  if (requestedPath.includes('\0')) {
-    throw new Error('Clone path contains invalid characters');
-  }
-
-  // Reject explicit traversal segments
-  const segments = requestedPath.split(/[/\\]/);
-  if (segments.includes('..')) {
-    throw new Error('Clone path must not contain ".." segments');
-  }
-
-  // Resolve to absolute and verify it falls under the base
-  const resolved = resolve(basePath, requestedPath);
-  if (!isPathSafe(resolved, basePath)) {
-    throw new Error('Clone path must be within the allowed base directory');
-  }
-
-  return resolved;
+  return [...normalized];
 }
