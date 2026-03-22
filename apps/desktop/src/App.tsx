@@ -393,7 +393,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               <div className="bg-sidebar/80 backdrop-blur-md border border-border rounded-full p-1 flex items-center gap-1 shadow-sm pointer-events-auto">
                 <button
                   onClick={() => handleSwitchView('chat')}
-                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-white shadow-sm border border-black/5 text-foreground"
+                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-card shadow-sm border border-border text-foreground"
                 >
                   Chat
                 </button>

@@ -99,7 +99,7 @@ const navItems: { view: ActiveView; icon: typeof ChatCircle; label: string }[] =
 const navItemClass = (active: boolean) =>
   `flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full text-left transition-colors ${
     active
-      ? 'bg-white shadow-sm border border-black/5 font-medium text-foreground'
+      ? 'bg-card shadow-sm border border-border font-medium text-foreground'
       : 'text-muted-foreground hover:bg-sidebar-accent/50'
   }`;
 
@@ -158,7 +158,7 @@ export function AppSidebar({
         <button
           title="New Chat"
           onClick={onNewChat}
-          className="rounded-md p-2 bg-white shadow-sm border border-black/5 text-foreground transition-colors"
+          className="rounded-md p-2 bg-card shadow-sm border border-border text-foreground transition-colors"
         >
           <Plus className="h-[18px] w-[18px]" />
         </button>
@@ -176,7 +176,7 @@ export function AppSidebar({
             onClick={() => onSelectView(item.view)}
             className={`rounded-md p-2 transition-colors ${
               activeView === item.view
-                ? 'bg-white shadow-sm border border-black/5 text-foreground'
+                ? 'bg-card shadow-sm border border-border text-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent/50'
             }`}
           >
@@ -224,7 +224,7 @@ export function AppSidebar({
             {/* New Chat — always styled as primary action */}
             <button
               onClick={onNewChat}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white shadow-sm border border-black/5 font-medium text-foreground w-full text-left transition-colors hover:shadow"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-card shadow-sm border border-border font-medium text-foreground w-full text-left transition-colors hover:shadow"
             >
               <Plus className="h-[18px] w-[18px]" /> New Chat
             </button>
@@ -275,7 +275,7 @@ export function AppSidebar({
                         onClick={() => onSelectSession(session.id)}
                         className={`px-3 py-1.5 rounded-lg text-sm w-full text-left transition-colors truncate ${
                           session.id === activeSessionId
-                            ? 'bg-white shadow-sm border border-black/5 font-medium text-foreground'
+                            ? 'bg-card shadow-sm border border-border font-medium text-foreground'
                             : 'text-muted-foreground hover:bg-sidebar-accent/50'
                         }`}
                       >
@@ -444,7 +444,7 @@ function ProjectsSection({
                       onClick={() => onSelectWorkspace(ws)}
                       className={`w-full rounded-lg px-3 py-1.5 text-left transition-colors ${
                         ws.id === selectedWorkspaceId
-                          ? 'bg-white shadow-sm border border-black/5 font-medium text-foreground'
+                          ? 'bg-card shadow-sm border border-border font-medium text-foreground'
                           : 'text-muted-foreground hover:bg-sidebar-accent/50'
                       }`}
                     >

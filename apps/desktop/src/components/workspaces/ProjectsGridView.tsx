@@ -97,18 +97,18 @@ export function ProjectsGridView({
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-9 pr-3 rounded-lg border border-border bg-white text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-border w-56"
+              className="h-8 pl-9 pr-3 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-border w-56"
             />
           </div>
-          <button className="h-8 px-3 rounded-lg border border-border bg-white text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <button className="h-8 px-3 rounded-lg border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors">
             Status
           </button>
-          <button className="h-8 px-3 rounded-lg border border-border bg-white text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <button className="h-8 px-3 rounded-lg border border-border bg-card text-xs text-muted-foreground hover:text-foreground transition-colors">
             Tech Stack
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border bg-white overflow-hidden">
+          <div className="flex items-center rounded-lg border border-border bg-card overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-border/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
@@ -134,7 +134,7 @@ export function ProjectsGridView({
             return (
               <div
                 key={project.id}
-                className="group bg-white border border-border rounded-2xl p-5 hover:shadow-soft hover:border-[#d4d2cc] transition-all cursor-pointer flex flex-col gap-4"
+                className="group bg-card border border-border rounded-2xl p-5 hover:shadow-soft hover:border-[#d4d2cc] transition-all cursor-pointer flex flex-col gap-4"
                 onClick={() => {
                   const ws = workspacesByProject[project.id]?.[0];
                   if (ws) onSelectWorkspace(ws);
@@ -187,7 +187,7 @@ export function ProjectsGridView({
             onClick={onAddProject}
             className="group border-2 border-dashed border-border rounded-2xl p-5 hover:border-muted-foreground hover:bg-sidebar/50 transition-all flex flex-col items-center justify-center gap-3 min-h-[180px]"
           >
-            <div className="w-12 h-12 rounded-full bg-white border border-border flex items-center justify-center text-muted-foreground group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground group-hover:scale-110 transition-transform">
               <PlusCircle size={24} />
             </div>
             <div className="text-center">

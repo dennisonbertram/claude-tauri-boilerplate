@@ -544,7 +544,7 @@ export function ChatInput({
         )}
 
         {/* Pill-shaped input container */}
-        <div className="w-full bg-white rounded-full shadow-soft border border-border p-1.5 flex items-center gap-1">
+        <div className="w-full bg-card rounded-full shadow-soft border border-border p-1.5 flex items-center gap-1">
           {/* Attach button (left) */}
           <button
             type="button"

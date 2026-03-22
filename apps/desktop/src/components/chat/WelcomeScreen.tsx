@@ -30,7 +30,7 @@ export function WelcomeScreen({
         {/* Hero section */}
         <div className="w-full max-w-3xl flex flex-col items-center text-center mb-10">
           {/* AI Logo */}
-          <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 mb-6 shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
+          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 mb-6 shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
             <Sparkle size={24} weight="fill" />
           </div>
           <h1 className="font-serif text-5xl tracking-tight text-foreground mb-3">
@@ -48,7 +48,7 @@ export function WelcomeScreen({
         </div>
 
         {/* Large card composer */}
-        <div className="w-full max-w-3xl bg-white rounded-[28px] shadow-[0_8px_30px_-6px_rgba(0,0,0,0.04),0_4px_12px_-4px_rgba(0,0,0,0.02)] border border-border p-3 flex flex-col mb-16 transition-all duration-300 focus-within:shadow-[0_8px_40px_-6px_rgba(0,0,0,0.08),0_4px_12px_-4px_rgba(0,0,0,0.04)] focus-within:border-border/80">
+        <div className="w-full max-w-3xl bg-card rounded-[28px] shadow-[0_8px_30px_-6px_rgba(0,0,0,0.04),0_4px_12px_-4px_rgba(0,0,0,0.02)] border border-border p-3 flex flex-col mb-16 transition-all duration-300 focus-within:shadow-[0_8px_40px_-6px_rgba(0,0,0,0.08),0_4px_12px_-4px_rgba(0,0,0,0.04)] focus-within:border-border/80">
           <textarea
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
@@ -98,9 +98,9 @@ export function WelcomeScreen({
               <div key={template.title}>
                 <button
                   onClick={() => onNewChat()}
-                  className="group flex items-center gap-4 p-3 rounded-2xl hover:bg-white border border-transparent hover:border-border hover:shadow-sm transition-all text-left w-full"
+                  className="group flex items-center gap-4 p-3 rounded-2xl hover:bg-card border border-transparent hover:border-border hover:shadow-sm transition-all text-left w-full"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-white border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
+                  <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shadow-[inset_0_2px_6px_0_rgba(0,0,0,0.05)]">
                     <template.Icon size={20} />
                   </div>
                   <div className="flex-1">

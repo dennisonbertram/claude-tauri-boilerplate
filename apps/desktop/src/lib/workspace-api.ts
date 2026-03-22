@@ -562,6 +562,7 @@ export async function unlinkWorkspaceDeployment(workspaceId: string): Promise<vo
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to unlink workspace deployment: ${res.status}`);
+  }
 }
 
 export async function fetchReviewTodos(workspaceId: string): Promise<WorkspaceReviewTodo[]> {
