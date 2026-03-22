@@ -31,6 +31,7 @@ import { createWorkspaceProvisioningRouter } from './routes/workspace-provisioni
 import { createDeploymentRouter, createDeploymentSettingsRouter } from './routes/deployment';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
+import { bearerAuth } from './middleware/bearer-auth';
 
 const app = new Hono();
 
@@ -46,6 +47,10 @@ app.use(
     exposeHeaders: ['Content-Disposition'],
   })
 );
+
+// Bearer token auth — enforced when SIDECAR_BEARER_TOKEN is set (production).
+// Skipped in dev mode (no token configured). Health endpoint is always open.
+app.use('*', bearerAuth());
 
 const db = createDb();
 
