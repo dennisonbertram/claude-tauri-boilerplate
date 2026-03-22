@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, fireEvent } from '@testing-library/react';
 import { useCommandPalette } from './useCommandPalette';
 import type { Command } from './useCommands';
 
@@ -320,6 +320,26 @@ describe('useCommandPalette', () => {
       });
 
       expect(result.current.isOpen).toBe(true);
+    });
+
+    it('does not open palette when another handler already prevented the event', () => {
+      const preventer = (event: KeyboardEvent) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+          event.preventDefault();
+        }
+      };
+
+      window.addEventListener('keydown', preventer, { capture: true });
+
+      const { result } = renderHook(() => useCommandPalette(mockCommands));
+
+      act(() => {
+        fireEvent.keyDown(window, { key: 'k', metaKey: true, bubbles: true, cancelable: true });
+      });
+
+      expect(result.current.isOpen).toBe(false);
+
+      window.removeEventListener('keydown', preventer, { capture: true });
     });
   });
 });
