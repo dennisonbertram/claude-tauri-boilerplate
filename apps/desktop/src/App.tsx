@@ -69,12 +69,12 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     sessions,
     activeSessionId,
     setActiveSessionId,
-    createSession,
     deleteSession,
     renameSession,
     forkSession,
     exportSession,
     autoNameSession,
+    fetchSessions,
   } = useSessions(sessionSearchQuery);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -91,6 +91,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [activeView, setActiveView] = useState<'chat' | 'teams' | 'workspaces' | 'agents'>('chat');
   const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [pendingWelcomeSessionId, setPendingWelcomeSessionId] = useState<string | null>(null);
 
   // Global keyboard shortcuts (work from any view)
   useEffect(() => {
@@ -127,7 +128,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [handleOpenSettings, activeView, openSessionIds, activeSessionId, setActiveSessionId, createSession]);
+  }, [handleOpenSettings, activeView, openSessionIds, activeSessionId, setActiveSessionId]);
   const selectedSessionHasMessages = (session?: (typeof sessions)[number]) => {
     if (!session) return false;
     return session.claudeSessionId != null || (session.messageCount ?? 0) > 0;
@@ -241,11 +242,27 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   };
 
   const handleWelcomeSubmit = async (message: string) => {
-    await createSession();
+    setPendingWelcomeSessionId(null);
     setActiveSessionHasMessages(false);
     setActiveView('chat');
     setPendingMessage(message);
   };
+
+  const handleSessionInitialized = useCallback((sessionId: string) => {
+    if (!pendingMessage) return;
+    setPendingWelcomeSessionId((current) => current ?? sessionId);
+  }, [pendingMessage]);
+
+  const handleInitialMessageConsumed = useCallback(() => {
+    setPendingMessage(null);
+    if (!activeSessionId && pendingWelcomeSessionId) {
+      setActiveSessionId(pendingWelcomeSessionId);
+      setPendingWelcomeSessionId(null);
+      void fetchSessions(sessionSearchQuery);
+      return;
+    }
+    setPendingWelcomeSessionId(null);
+  }, [activeSessionId, fetchSessions, pendingWelcomeSessionId, sessionSearchQuery, setActiveSessionId]);
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
     if (data.isStreaming) {
@@ -365,6 +382,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       setSelectedProjectId(projects[0].id);
     }
   }, [selectedProjectId, projects]);
+  const chatSessionId = activeSessionId ?? pendingWelcomeSessionId;
 
   return (
     <div className="flex h-screen flex-col">
@@ -439,12 +457,12 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               />
             )}
 
-            {activeSessionId ? (
+            {activeSessionId || pendingMessage ? (
               <ChatPage
-                key={activeSessionId}
-                sessionId={activeSessionId}
+                key={activeSessionId ?? 'new-chat'}
+                sessionId={chatSessionId}
                 onCreateSession={handleNewChat}
-                onExportSession={() => exportSession(activeSessionId, 'json')}
+                onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined}
                 onStatusChange={handleStatusChange}
                 onAutoName={autoNameSession}
                 onToggleSidebar={() => setSidebarOpen((open) => !open)}
@@ -456,7 +474,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
                 agentProfiles={agentProfiles}
                 onSelectProfile={setSelectedProfileId}
                 initialMessage={pendingMessage}
-                onInitialMessageConsumed={() => setPendingMessage(null)}
+                onSessionInitialized={handleSessionInitialized}
+                onInitialMessageConsumed={handleInitialMessageConsumed}
               />
             ) : (
               <WelcomeScreen
