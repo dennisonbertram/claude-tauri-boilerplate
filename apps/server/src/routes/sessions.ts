@@ -35,6 +35,7 @@ const forkSessionSchema = z.object({
 
 export function createSessionsRouter(db: Database) {
   const router = new Hono();
+  const DEFAULT_PLACEHOLDER_TITLES = new Set(['New Chat', 'New Conversation']);
 
   router.get('/', (c) => {
     const searchQuery = c.req.query('q') || '';
@@ -55,8 +56,9 @@ export function createSessionsRouter(db: Database) {
     }
 
     const id = crypto.randomUUID();
-    const title = (parsed.data.title && parsed.data.title !== 'New Chat')
-      ? parsed.data.title
+    const requestedTitle = parsed.data.title?.trim();
+    const title = requestedTitle && !DEFAULT_PLACEHOLDER_TITLES.has(requestedTitle)
+      ? requestedTitle
       : generateRandomName();
 
     // Validate the profile exists if profileId is provided
