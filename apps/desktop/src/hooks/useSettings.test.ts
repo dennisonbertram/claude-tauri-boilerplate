@@ -73,7 +73,7 @@ describe('useSettings', () => {
 
     it('has correct default theme', () => {
       const { result } = renderHook(() => useSettings(), { wrapper });
-      expect(result.current.settings.theme).toBe('dark');
+      expect(result.current.settings.theme).toBe('light');
     });
 
     it('has correct default accentColor', () => {
@@ -326,7 +326,7 @@ describe('useSettings', () => {
 
       expect(result.current.settings.model).toBe('claude-haiku-4-5-20251001');
       // Other fields should have defaults
-      expect(result.current.settings.theme).toBe('dark');
+      expect(result.current.settings.theme).toBe('light');
       expect(result.current.settings.accentColor).toBe('slate');
       expect(result.current.settings.fontSize).toBe(14);
       expect(result.current.settings.chatFont).toBe('proportional');
@@ -378,6 +378,7 @@ describe('useSettings', () => {
     it('hydrates repository workflow prompt overrides on mount', async () => {
       globalThis.fetch = vi.fn(async (input: string | URL) => {
         const url = String(input);
+        // List endpoint returns available memory files
         if (url === 'http://localhost:3131/api/memory') {
           return {
             ok: true,
@@ -390,6 +391,25 @@ describe('useSettings', () => {
                 },
               ],
             }),
+          } as Response;
+        }
+        // Individual file endpoint returns file content
+        if (url === 'http://localhost:3131/api/memory/workflow-review.md') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              content: 'Repo review override',
+            }),
+          } as Response;
+        }
+
+        // Other workflow prompt files may not exist
+        if (url.startsWith('http://localhost:3131/api/memory/workflow-')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Not found' }),
           } as Response;
         }
 
@@ -464,7 +484,7 @@ describe('useSettings', () => {
 
       expect(result.current.settings.model).toBe('claude-opus-4-6');
       // Other settings unchanged
-      expect(result.current.settings.theme).toBe('dark');
+      expect(result.current.settings.theme).toBe('light');
     });
 
     it('updates multiple settings at once', () => {

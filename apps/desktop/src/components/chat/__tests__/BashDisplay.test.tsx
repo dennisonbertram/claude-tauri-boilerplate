@@ -308,11 +308,11 @@ describe('BashDisplay', () => {
       const copyCommandBtn = screen.getByTestId('copy-command');
       await user.click(copyCommandBtn);
 
-      // After clicking, the copy button icon should change to a check mark,
+      // After clicking, the copy button icon should change to a green check mark,
       // indicating the copy handler ran successfully.
       await waitFor(() => {
         const svg = copyCommandBtn.querySelector('svg');
-        expect(svg?.classList.toString()).toMatch(/check/);
+        expect(svg?.classList.toString()).toMatch(/text-green-400/);
       });
     });
 
@@ -323,10 +323,10 @@ describe('BashDisplay', () => {
       const copyOutputBtn = screen.getByTestId('copy-output');
       await user.click(copyOutputBtn);
 
-      // After clicking, the copy button icon should change to a check mark
+      // After clicking, the copy button icon should change to a green check mark
       await waitFor(() => {
         const svg = copyOutputBtn.querySelector('svg');
-        expect(svg?.classList.toString()).toMatch(/check/);
+        expect(svg?.classList.toString()).toMatch(/text-green-400/);
       });
     });
   });

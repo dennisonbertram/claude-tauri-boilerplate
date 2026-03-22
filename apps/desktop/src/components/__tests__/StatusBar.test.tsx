@@ -161,16 +161,17 @@ describe('StatusBar', () => {
       expect(permissionSegment).toHaveTextContent('Bypass');
     });
 
-    it('calls onShowSettings with "advanced" tab when clicked', () => {
+    it('does not call onShowSettings when permission segment is clicked', () => {
       const onShowSettings = vi.fn();
       renderWithSettings(<StatusBar {...makeProps({ onShowSettings })} />);
       fireEvent.click(screen.getByTestId('permission-mode-segment'));
-      expect(onShowSettings).toHaveBeenCalledWith('advanced');
+      // PermissionModeSegment no longer delegates clicks to onShowSettings
+      expect(onShowSettings).not.toHaveBeenCalled();
     });
   });
 
   describe('ConnectionIndicator', () => {
-    it('shows green dot when connected', async () => {
+    it('shows muted dot when connected (idle, not streaming)', async () => {
       renderWithSettings(<StatusBar {...makeProps()} />);
 
       // Wait for the fetch to resolve
@@ -179,7 +180,8 @@ describe('StatusBar', () => {
       });
 
       const dot = screen.getByTestId('connection-dot');
-      expect(dot).toHaveClass('bg-green-500');
+      // When connected but not streaming, dot uses muted style
+      expect(dot).toHaveClass('bg-muted-foreground/40');
     });
 
     it('shows red dot when disconnected (fetch fails)', async () => {
