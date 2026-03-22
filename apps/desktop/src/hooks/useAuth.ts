@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { AuthStatus } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 export function useAuth() {
   const [auth, setAuth] = useState<AuthStatus | null>(null);
@@ -10,7 +9,7 @@ export function useAuth() {
   const checkAuth = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/status`);
+      const res = await apiFetch('/api/auth/status');
       const data = await res.json();
       setAuth(data);
     } catch {

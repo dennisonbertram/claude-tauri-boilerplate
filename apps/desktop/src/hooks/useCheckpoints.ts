@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Checkpoint, FileChange, RewindPreview } from '@claude-tauri/shared';
 import type { ToolCallState } from './useStreamEvents';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 /** Tool names that indicate file changes */
 const FILE_CHANGE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit']);
@@ -80,7 +79,7 @@ export function useCheckpoints({
 
     async function loadCheckpoints() {
       try {
-        const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/checkpoints`);
+        const res = await apiFetch(`/api/sessions/${sessionId}/checkpoints`);
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled) {
@@ -120,7 +119,7 @@ export function useCheckpoints({
 
     void (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/checkpoints`, {
+        const res = await apiFetch(`/api/sessions/${sessionId}/checkpoints`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -145,7 +144,7 @@ export function useCheckpoints({
       if (!sessionId) return null;
 
       try {
-        const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/checkpoints`, {
+        const res = await apiFetch(`/api/sessions/${sessionId}/checkpoints`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -204,7 +203,7 @@ export function useCheckpoints({
         if (!res.ok) return false;
 
         // Reload checkpoints after rewind
-        const listRes = await fetch(`${API_BASE}/api/sessions/${sessionId}/checkpoints`);
+        const listRes = await apiFetch(`/api/sessions/${sessionId}/checkpoints`);
         if (listRes.ok) {
           const data = await listRes.json();
           setCheckpoints(data.checkpoints ?? []);

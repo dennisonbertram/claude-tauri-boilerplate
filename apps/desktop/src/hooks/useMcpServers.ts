@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 export interface McpServerInfo {
   name: string;
@@ -16,7 +15,7 @@ export function useMcpServers() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${API_BASE}/api/mcp/servers`)
+    apiFetch('/api/mcp/servers')
       .then((r) => r.json())
       .then((data: { servers?: McpServerInfo[] }) => {
         if (!cancelled) {

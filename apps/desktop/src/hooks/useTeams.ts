@@ -6,8 +6,7 @@ import type {
   TeamMessage,
   TeamTask,
 } from '@claude-tauri/shared';
-
-const API_BASE = 'http://localhost:3131';
+import { apiFetch } from '../lib/api-config';
 
 export interface TeamDetail extends TeamConfig {
   agentStatuses: TeammateStatus[];
@@ -25,7 +24,7 @@ export function useTeams() {
   // Fetch all teams
   const fetchTeams = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/teams`);
+      const res = await apiFetch(`/api/teams`);
       if (res.ok) {
         const data = await res.json();
         setTeams(data);
@@ -39,9 +38,9 @@ export function useTeams() {
   const fetchTeamDetail = useCallback(async (teamId: string) => {
     try {
       const [teamRes, msgRes, taskRes] = await Promise.all([
-        fetch(`${API_BASE}/api/teams/${teamId}`),
-        fetch(`${API_BASE}/api/teams/${teamId}/messages`),
-        fetch(`${API_BASE}/api/teams/${teamId}/tasks`),
+        apiFetch(`/api/teams/${teamId}`),
+        apiFetch(`/api/teams/${teamId}/messages`),
+        apiFetch(`/api/teams/${teamId}/tasks`),
       ]);
 
       if (teamRes.ok) {
@@ -64,7 +63,7 @@ export function useTeams() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_BASE}/api/teams`, {
+        const res = await apiFetch(`/api/teams`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, agents, displayMode }),
@@ -91,7 +90,7 @@ export function useTeams() {
   const deleteTeam = useCallback(
     async (teamId: string) => {
       try {
-        await fetch(`${API_BASE}/api/teams/${teamId}`, { method: 'DELETE' });
+        await apiFetch(`/api/teams/${teamId}`, { method: 'DELETE' });
         if (activeTeamId === teamId) {
           setActiveTeamId(null);
           setActiveTeam(null);
@@ -110,7 +109,7 @@ export function useTeams() {
   const shutdownTeam = useCallback(
     async (teamId: string) => {
       try {
-        await fetch(`${API_BASE}/api/teams/${teamId}/shutdown`, { method: 'POST' });
+        await apiFetch(`/api/teams/${teamId}/shutdown`, { method: 'POST' });
         await fetchTeamDetail(teamId);
       } catch {
         // Silently ignore
