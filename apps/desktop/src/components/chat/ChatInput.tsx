@@ -606,6 +606,7 @@ export function ChatInput({
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
+            aria-label="Send message"
             className="px-5 py-2 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors text-sm font-medium flex items-center gap-2 shrink-0 disabled:opacity-50"
           >
             <svg
