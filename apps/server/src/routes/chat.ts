@@ -863,11 +863,11 @@ export function createChatRouter(db: Database) {
                 delta: event.text,
               });
               // Also send on data channel for rich UI (useStreamEvents)
-              (writer as any).write({ type: 'data-stream-event', data: event });
+              (writer as any).write({ type: 'data-stream-event', data: event, transient: true });
               fullResponse += event.text;
             } else {
               // Non-text events: data channel for the custom event handler
-              (writer as any).write({ type: 'data-stream-event', data: event });
+              (writer as any).write({ type: 'data-stream-event', data: event, transient: true });
 
               // Handle protocol-relevant events
               if (event.type === 'session:init') {
@@ -914,7 +914,7 @@ export function createChatRouter(db: Database) {
           // Classify the error and send it on the data channel so
           // the frontend can display a useful message
           const errorEvent = classifyStreamError(err);
-          (writer as any).write({ type: 'data-stream-event', data: errorEvent });
+          (writer as any).write({ type: 'data-stream-event', data: errorEvent, transient: true });
 
           // Log to stderr for server-side debugging
           console.error('[chat-stream]', err);
