@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent, type ClipboardEvent, type DragEvent, type ChangeEvent } from 'react';
 import { CommandPalette } from './CommandPalette';
-import { X, FileText, Paperclip } from '@phosphor-icons/react';
+import { X, FileText, Plus } from '@phosphor-icons/react';
 import type { Command } from '@/hooks/useCommands';
 import { isImageFile } from './file-utils';
 import { useSettings } from '@/hooks/useSettings';
@@ -160,6 +160,7 @@ export function ChatInput({
   mcpServerNames,
 }: ChatInputProps) {
   const { settings } = useSettings();
+  const chatWidthClass = settings.chatWidth === 'wide' ? 'max-w-5xl' : settings.chatWidth === 'full' ? 'max-w-none' : 'max-w-3xl';
   const paletteRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -458,7 +459,7 @@ export function ChatInput({
       onDrop={handleDrop}
     >
       <div
-        className="relative mx-auto w-full max-w-4xl"
+        className={`relative mx-auto w-full ${chatWidthClass}`}
         data-testid="chat-input-shell"
       >
         {showPalette && (
@@ -543,30 +544,10 @@ export function ChatInput({
           </div>
         )}
 
-        {/* Pill-shaped input container */}
-        <div className="w-full bg-card rounded-full shadow-soft border border-border p-1.5 flex items-center gap-1">
-          {/* Attach button (left) */}
-          <button
-            type="button"
-            onClick={handlePickFilesClick}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
-            title="Attach files"
-          >
-            <Paperclip className="h-4 w-4" />
-          </button>
-
-          {/* Command palette trigger */}
-          <button
-            type="button"
-            onClick={() => onInputChange('/')}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
-            title="Open command palette (/)"
-          >
-            <span className="text-sm font-mono leading-none">/</span>
-          </button>
-
+        {/* Card-shaped input container */}
+        <div className="w-full bg-card rounded-[20px] shadow-soft border border-border flex flex-col">
           {/* Text input */}
-          <div className="relative flex-1 min-w-0">
+          <div className="relative">
             <textarea
               value={input}
               onChange={(e) => {
@@ -576,10 +557,10 @@ export function ChatInput({
               }}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              placeholder="Message Claude..."
+              placeholder="Reply..."
               disabled={isLoading}
               rows={1}
-              className={`flex-1 w-full bg-transparent border-none focus:ring-0 px-3 text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none ${chatFontClass}`}
+              className={`flex-1 w-full bg-transparent border-none focus:ring-0 px-4 pt-4 pb-2 text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none ${chatFontClass}`}
               style={{
                 maxHeight: '120px',
                 minHeight: '36px',
@@ -594,7 +575,7 @@ export function ChatInput({
             {showGhost && (
               <div
                 data-testid="ghost-text"
-                className="pointer-events-none absolute left-0 top-0 px-3 py-2 text-[15px] text-muted-foreground/50"
+                className="pointer-events-none absolute left-0 top-0 px-4 pt-4 text-[15px] text-muted-foreground/50"
                 aria-hidden="true"
               >
                 {ghostText}
@@ -602,28 +583,50 @@ export function ChatInput({
             )}
           </div>
 
-          {/* Send button (right) */}
-          <button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            aria-label="Send message"
-            className="px-5 py-2 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors text-sm font-medium flex items-center gap-2 shrink-0 disabled:opacity-50"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {/* Bottom toolbar */}
+          <div className="flex items-center justify-between px-3 pb-3 pt-1">
+            {/* Left: attach + command */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handlePickFilesClick}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+                title="Attach files"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onInputChange('/')}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+                title="Open command palette (/)"
+              >
+                <span className="text-sm font-mono leading-none">/</span>
+              </button>
+            </div>
+
+            {/* Right: submit button (icon only) */}
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              aria-label="Send message"
+              className="w-8 h-8 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors flex items-center justify-center shrink-0 disabled:opacity-50"
             >
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-            Send
-          </button>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <input
