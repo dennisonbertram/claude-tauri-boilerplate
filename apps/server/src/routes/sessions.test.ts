@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { createDb } from '../db';
+import { addMessage } from '../db';
 import { createSessionsRouter } from './sessions';
 
 describe('Sessions Routes', () => {
@@ -72,6 +73,33 @@ describe('Sessions Routes', () => {
       expect(titles).toContain('Python Helpers');
       expect(titles).toContain('Python Data Science');
       expect(titles).not.toContain('JavaScript Notes');
+    });
+
+    test('search with matching message content returns sessions', async () => {
+      const createFirst = await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Customer Notes' }),
+      });
+      const firstSession = await createFirst.json();
+
+      const createSecond = await app.request('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Meeting Log' }),
+      });
+      const secondSession = await createSecond.json();
+
+      addMessage(db, 'msg-1', firstSession.id, 'user', 'Deployment checklist approved by QA.');
+      addMessage(db, 'msg-2', secondSession.id, 'assistant', 'Unrelated discussion about snacks.');
+
+      const res = await app.request('/api/sessions?q=Deployment');
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toHaveLength(1);
+      expect(body[0].id).toBe(firstSession.id);
+      expect(body[0].title).toBe('Customer Notes');
     });
 
     test('search with non-matching query returns empty array', async () => {

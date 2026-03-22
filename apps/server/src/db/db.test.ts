@@ -88,6 +88,21 @@ describe('Database Module', () => {
       expect(sessions[0].id).toBe('new');
       expect(sessions[1].id).toBe('old');
     });
+
+    test('matches query against message content as well as title', () => {
+      createSession(db, 'sess-title-match', 'Sprint Planning');
+      createSession(db, 'sess-message-match', 'Retro Notes');
+      createSession(db, 'sess-no-match', 'No Match');
+
+      addMessage(db, 'msg-1', 'sess-message-match', 'user', 'We discussed migration strategy in this thread.');
+      addMessage(db, 'msg-2', 'sess-no-match', 'assistant', 'Nothing to do with search terms.');
+
+      const sessions = listSessions(db, 'migration');
+
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].id).toBe('sess-message-match');
+      expect(sessions[0].title).toBe('Retro Notes');
+    });
   });
 
   describe('deleteSession', () => {
