@@ -236,6 +236,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     }
     await createSession();
     setActiveSessionHasMessages(false);
+    setActiveView('chat');
   };
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
