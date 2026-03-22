@@ -3,6 +3,11 @@ import { DEFAULT_WORKFLOW_PROMPTS, type WorkflowPrompts } from '@/lib/workflowPr
 import type { ProviderType } from '@claude-tauri/shared';
 import { DEFAULT_PROVIDER_CONFIG } from '@claude-tauri/shared';
 import type { IdeId } from '@/lib/ide-opener';
+import {
+  getCredential,
+  setCredential,
+  CredentialKeys,
+} from '@/services/secure-credentials';
 
 export interface AppSettings {
   // Provider
@@ -136,6 +141,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const STORAGE_KEY = 'claude-tauri-settings';
 
+/** Fields that are credentials and must NOT be persisted in the main
+ *  settings blob. They are stored via the secure-credentials service. */
+const CREDENTIAL_FIELDS = ['apiKey', 'githubToken'] as const;
+
 // Migration map: old short model names -> full model IDs
 const MODEL_MIGRATION: Record<string, string> = {
   sonnet: 'claude-sonnet-4-6',
@@ -143,6 +152,10 @@ const MODEL_MIGRATION: Record<string, string> = {
   haiku: 'claude-haiku-4-5-20251001',
 };
 
+/**
+ * Load non-credential settings from localStorage (synchronous).
+ * Credentials are loaded separately via `loadCredentials()`.
+ */
 export function loadSettings(): AppSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -152,6 +165,10 @@ export function loadSettings(): AppSettings {
     if (parsed.model && parsed.model in MODEL_MIGRATION) {
       parsed.model = MODEL_MIGRATION[parsed.model];
     }
+    // Strip credential fields that may have been persisted by older versions
+    for (const field of CREDENTIAL_FIELDS) {
+      delete parsed[field];
+    }
     // Merge with defaults so new keys get default values
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
@@ -159,9 +176,78 @@ export function loadSettings(): AppSettings {
   }
 }
 
+/**
+ * Persist non-credential settings to localStorage.
+ * Credential fields are stripped before writing.
+ */
 export function saveSettings(settings: AppSettings): void {
   const { workflowPrompts: _workflowPrompts, ...persisted } = settings;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+  // Remove credentials from the blob — they are stored separately
+  const cleaned: Record<string, unknown> = { ...persisted };
+  for (const field of CREDENTIAL_FIELDS) {
+    delete cleaned[field];
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+}
+
+// ---------------------------------------------------------------------------
+// Credential helpers (async)
+// ---------------------------------------------------------------------------
+
+/** Map from AppSettings field name to credential store key. */
+const FIELD_TO_CRED_KEY: Record<string, string> = {
+  apiKey: CredentialKeys.API_KEY,
+  githubToken: CredentialKeys.GITHUB_TOKEN,
+};
+
+/**
+ * Load credentials from the secure store and return partial settings to merge.
+ * Also performs a one-time migration: if the old settings blob still contains
+ * credential values, they are moved to the secure store and removed from the
+ * blob.
+ */
+export async function loadCredentials(): Promise<Partial<AppSettings>> {
+  // --- One-time migration from old settings blob ---
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      let dirty = false;
+      for (const field of CREDENTIAL_FIELDS) {
+        if (parsed[field]) {
+          await setCredential(FIELD_TO_CRED_KEY[field], parsed[field]);
+          delete parsed[field];
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Migration is best-effort
+  }
+
+  // --- Read credentials from secure store ---
+  const result: Partial<AppSettings> = {};
+  const apiKey = await getCredential(CredentialKeys.API_KEY);
+  if (apiKey) result.apiKey = apiKey;
+  const githubToken = await getCredential(CredentialKeys.GITHUB_TOKEN);
+  if (githubToken) result.githubToken = githubToken;
+  return result;
+}
+
+/**
+ * Persist credential fields to the secure store.
+ * Only writes fields present in `updates`.
+ */
+export async function saveCredentials(updates: Partial<AppSettings>): Promise<void> {
+  for (const field of CREDENTIAL_FIELDS) {
+    if (field in updates) {
+      const value = updates[field] as string;
+      await setCredential(FIELD_TO_CRED_KEY[field], value);
+    }
+  }
 }
 
 /**

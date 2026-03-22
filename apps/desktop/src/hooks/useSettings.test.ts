@@ -361,6 +361,20 @@ describe('useSettings', () => {
       expect(savedValue.workflowPrompts).toBeUndefined();
     });
 
+    it('does not persist credential fields (apiKey, githubToken) to localStorage', () => {
+      saveSettings({
+        ...DEFAULT_SETTINGS,
+        apiKey: 'sk-ant-secret',
+        githubToken: 'ghp_secret',
+      });
+
+      const savedValue = JSON.parse(
+        localStorageMock.setItem.mock.calls.at(-1)![1]
+      );
+      expect(savedValue.apiKey).toBeUndefined();
+      expect(savedValue.githubToken).toBeUndefined();
+    });
+
     it('hydrates repository workflow prompt overrides on mount', async () => {
       globalThis.fetch = vi.fn(async (input: string | URL) => {
         const url = String(input);
@@ -521,8 +535,12 @@ describe('useSettings', () => {
       });
 
       const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
-      const { workflowPrompts: _workflowPrompts, ...expectedStored } =
-        DEFAULT_SETTINGS;
+      const {
+        workflowPrompts: _workflowPrompts,
+        apiKey: _apiKey,
+        githubToken: _githubToken,
+        ...expectedStored
+      } = DEFAULT_SETTINGS;
       expect(stored).toEqual(expectedStored);
     });
   });
