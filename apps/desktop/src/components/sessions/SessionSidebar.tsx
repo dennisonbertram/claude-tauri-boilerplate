@@ -7,8 +7,23 @@ import { Separator } from '@/components/ui/separator';
 import { UserBadge } from '@/components/auth/UserBadge';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 
-const DATE_BUCKETS = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older'] as const;
-type DateBucket = (typeof DATE_BUCKETS)[number];
+const DATE_BUCKETS = ['Today', 'Yesterday', 'This Week', 'Last Week', 'This Month'] as const;
+type DateBucket = (typeof DATE_BUCKETS)[number] | string;
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
 
 function getDateBucket(date: Date): DateBucket {
   const now = new Date();
@@ -17,15 +32,20 @@ function getDateBucket(date: Date): DateBucket {
   yesterday.setDate(yesterday.getDate() - 1);
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
+  const lastWeekAgo = new Date(today);
+  lastWeekAgo.setDate(lastWeekAgo.getDate() - 14);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
   if (d >= today) return 'Today';
   if (d >= yesterday) return 'Yesterday';
   if (d >= weekAgo) return 'This Week';
+  if (d >= lastWeekAgo) return 'Last Week';
   if (d >= monthStart) return 'This Month';
-  return 'Older';
+  if (d >= lastMonthStart) return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function groupSessionsByDate(sessions: Session[]): { bucket: DateBucket; sessions: Session[] }[] {
@@ -35,9 +55,26 @@ function groupSessionsByDate(sessions: Session[]): { bucket: DateBucket; session
     if (!groups.has(bucket)) groups.set(bucket, []);
     groups.get(bucket)!.push(session);
   }
-  return DATE_BUCKETS
-    .filter((b) => groups.has(b))
-    .map((b) => ({ bucket: b, sessions: groups.get(b)! }));
+  const monthBuckets = Array.from(groups.keys())
+    .filter((bucket): bucket is string =>
+      !DATE_BUCKETS.includes(bucket as (typeof DATE_BUCKETS)[number])
+    )
+    .map((bucket) => {
+      const [monthLabel, yearLabel] = bucket.split(' ');
+      return {
+        bucket,
+        sessions: groups.get(bucket)!,
+        sortValue: (Number(yearLabel) * 12) + MONTH_NAMES.indexOf(monthLabel as any),
+      };
+    })
+    .sort((a, b) => b.sortValue - a.sortValue);
+
+  return [
+    ...DATE_BUCKETS
+      .filter((b) => groups.has(b))
+      .map((bucket) => ({ bucket, sessions: groups.get(bucket)! })),
+    ...monthBuckets.map(({ bucket, sessions }) => ({ bucket, sessions })),
+  ];
 }
 
 interface SessionSidebarProps {

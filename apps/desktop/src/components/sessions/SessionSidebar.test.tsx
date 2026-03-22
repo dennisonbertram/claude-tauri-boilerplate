@@ -27,6 +27,16 @@ const mockSessions: Session[] = [
   },
 ];
 
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: 'session-1',
+    title: 'Daily standup',
+    createdAt: '2026-03-22T12:00:00.000Z',
+    updatedAt: '2026-03-22T12:00:00.000Z',
+    ...overrides,
+  };
+}
+
 const defaultProps = {
   sessions: mockSessions,
   activeSessionId: 'session-1',
@@ -50,6 +60,49 @@ describe('SessionSidebar', () => {
 
     expect(screen.getByText('First Chat')).toBeTruthy();
     expect(screen.getByText('Second Chat')).toBeTruthy();
+  });
+
+  test('groups sessions into Last Week and month buckets', () => {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ] as const;
+
+    const today = new Date();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const toMonthLabel = (date: Date) => `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1, 9, 0, 0, 0);
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 20, 9, 0, 0, 0);
+    const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 20, 9, 0, 0, 0);
+    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 20, 9, 0, 0, 0);
+
+    const sessions = [
+      makeSession({ id: 'thisMonth', title: 'March summary', createdAt: thisMonth.toISOString() }),
+      makeSession({ id: 'lastMonth', title: 'Last month summary', createdAt: lastMonth.toISOString() }),
+      makeSession({ id: 'twoMonthsAgo', title: 'Two months ago summary', createdAt: twoMonthsAgo.toISOString() }),
+      makeSession({ id: 'threeMonthsAgo', title: 'Three months ago summary', createdAt: threeMonthsAgo.toISOString() }),
+      makeSession({ id: 'lastWeek', title: 'Last week summary', createdAt: new Date(today.getTime() - (10 * dayMs)).toISOString() }),
+    ];
+
+    render(<SessionSidebar {...defaultProps} sessions={sessions} />);
+
+    expect(screen.getByText('Last Week')).toBeTruthy();
+    expect(screen.getByText('This Month')).toBeTruthy();
+    expect(screen.getByText(toMonthLabel(lastMonth))).toBeTruthy();
+    expect(screen.getByText(toMonthLabel(twoMonthsAgo))).toBeTruthy();
+    expect(screen.getByText(toMonthLabel(threeMonthsAgo))).toBeTruthy();
+    expect(screen.getByText('March summary')).toBeTruthy();
   });
 
   test('renders New Chat button', () => {
