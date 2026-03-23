@@ -8,12 +8,20 @@
 
 This single command checks prerequisites, installs dependencies, starts backend + frontend, health-checks both, and prints the URLs. Works in the main repo, worktrees, and fresh clones.
 
-## Environment URLs
+## Port Allocation
 
-| Service | URL | Health Check |
-|---------|-----|-------------|
-| Backend (Hono/Bun) | http://localhost:3131 | http://localhost:3131/api/health |
-| Frontend (Vite/React) | http://localhost:1420 | — |
+**Ports are random by default.** Each `init.sh` invocation picks free ports automatically, so multiple worktrees/agents can run simultaneously without killing each other's processes.
+
+- Server port: random in range 3100–3999
+- Frontend port: random in range 1400–1999
+- The frontend is told the server port via `VITE_API_PORT` env var
+
+After startup, read `.init-state` to get the actual URLs:
+```bash
+source .init-state
+echo $SERVER_URL    # http://localhost:3247
+echo $FRONTEND_URL  # http://localhost:1583
+```
 
 ## init.sh Modes
 
@@ -22,7 +30,7 @@ This single command checks prerequisites, installs dependencies, starts backend 
 | **Foreground** (default) | `./init.sh` | Runs until Ctrl+C, kills services on exit |
 | **Daemonize** | `INIT_DAEMONIZE=1 ./init.sh` | Starts services, writes `.init-state`, exits |
 | **Keep running** | `INIT_KEEP_RUNNING=1 ./init.sh` | Services survive script exit |
-| **Custom ports** | `INIT_SERVER_PORT=4000 INIT_VITE_PORT=5173 ./init.sh` | Override default ports |
+| **Pin ports** | `INIT_SERVER_PORT=3131 INIT_VITE_PORT=1420 ./init.sh` | Use specific ports (kills existing if occupied) |
 
 ### For Subagents / Worktrees
 

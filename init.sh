@@ -18,12 +18,40 @@ info() { echo -e "${CYAN}→${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# ── Port allocation ────────────────────────────────────────────────
+# Find a free port in a given range. Usage: find_free_port [start] [end]
+find_free_port() {
+  local start="${1:-3000}" end="${2:-9999}"
+  local port
+  for port in $(shuf -i "$start-$end" -n 50 2>/dev/null || jot -r 50 "$start" "$end"); do
+    if ! lsof -ti :"$port" &>/dev/null 2>&1; then
+      echo "$port"
+      return 0
+    fi
+  done
+  err "Could not find a free port in range $start-$end"
+  return 1
+}
+
 # ── Configuration ───────────────────────────────────────────────────
-SERVER_PORT="${INIT_SERVER_PORT:-3131}"
-VITE_PORT="${INIT_VITE_PORT:-1420}"
+# Use explicit port if provided, otherwise pick a random free one
+if [ -n "${INIT_SERVER_PORT:-}" ]; then
+  SERVER_PORT="$INIT_SERVER_PORT"
+else
+  SERVER_PORT=$(find_free_port 3100 3999)
+fi
+
+if [ -n "${INIT_VITE_PORT:-}" ]; then
+  VITE_PORT="$INIT_VITE_PORT"
+else
+  VITE_PORT=$(find_free_port 1400 1999)
+fi
+
 GOLDEN_DIR="${GOLDEN_DIR:-$HOME/.claude-tauri/golden}"
 SERVER_PID=""
 VITE_PID=""
+
+info "Ports: server=$SERVER_PORT, frontend=$VITE_PORT"
 
 # ── Cleanup trap ────────────────────────────────────────────────────
 cleanup() {
@@ -170,16 +198,7 @@ else
   install_deps_direct
 fi
 
-# ── Phase 4: Kill existing processes on target ports ────────────────
-for port in "$SERVER_PORT" "$VITE_PORT"; do
-  if lsof -ti :"$port" &>/dev/null; then
-    warn "Port $port in use — killing existing process"
-    lsof -ti :"$port" | xargs kill 2>/dev/null || true
-    sleep 0.5
-  fi
-done
-
-# ── Phase 5: Start backend ─────────────────────────────────────────
+# ── Phase 4: Start backend ──────────────────────────────────────────
 info "Starting server on port $SERVER_PORT..."
 PORT="$SERVER_PORT" bun --watch "$SCRIPT_DIR/apps/server/src/index.ts" &
 SERVER_PID=$!
@@ -200,10 +219,10 @@ if [ "$SERVER_READY" -eq 0 ]; then
 fi
 ok "Server ready at http://localhost:$SERVER_PORT"
 
-# ── Phase 6: Start frontend ────────────────────────────────────────
+# ── Phase 5: Start frontend ────────────────────────────────────────
 info "Starting frontend on port $VITE_PORT..."
 cd "$SCRIPT_DIR/apps/desktop"
-npx vite --port "$VITE_PORT" &
+VITE_API_PORT="$SERVER_PORT" npx vite --port "$VITE_PORT" --strictPort false &
 VITE_PID=$!
 cd "$SCRIPT_DIR"
 

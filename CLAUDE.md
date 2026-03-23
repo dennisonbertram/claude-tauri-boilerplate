@@ -4,9 +4,9 @@
 
 **Run `./init.sh` to get a fully working environment.** See [docs/runbook.md](docs/runbook.md) for full details.
 
-- Backend: http://localhost:3131 (Hono/Bun) | Health: `GET /api/health`
-- Frontend: http://localhost:1420 (Vite/React)
+- Ports are **random** by default — multiple worktrees run safely in parallel
 - For subagents/worktrees: `INIT_DAEMONIZE=1 ./init.sh && source .init-state`
+- Use `$SERVER_URL`, `$FRONTEND_URL`, `$HEALTH_CHECK` from `.init-state` — never hardcode ports
 - Golden cache at `~/.claude-tauri/golden/` makes worktree installs <0.5s
 - Clean stale worktrees: `./scripts/cleanup-worktrees.sh`
 - **Credentials are auto-detected**: local uses subscription auth (no keys), cloud requires `ANTHROPIC_API_KEY` from platform secrets. Never put secrets in `.env`.

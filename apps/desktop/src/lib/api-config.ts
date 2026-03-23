@@ -1,5 +1,7 @@
 // Singleton — port and token are set once by sidecar.ts at startup
-let _baseUrl = 'http://localhost:3131'; // fallback for browser dev
+// VITE_API_PORT allows init.sh to pass the server port when using random ports
+const _defaultPort = import.meta.env.VITE_API_PORT || '3131';
+let _baseUrl = `http://localhost:${_defaultPort}`; // fallback for browser dev
 let _bearerToken = '';
 
 export function setSidecarConfig(port: number, token: string) {
