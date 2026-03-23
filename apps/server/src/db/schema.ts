@@ -178,6 +178,23 @@ export const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS idx_agent_profiles_name ON agent_profiles(name);
   CREATE INDEX IF NOT EXISTS idx_agent_profiles_sort_order ON agent_profiles(sort_order);
+
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    storage_path TEXT NOT NULL UNIQUE,
+    mime_type TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'error')),
+    pipeline_steps TEXT NOT NULL DEFAULT '[]',
+    tags TEXT NOT NULL DEFAULT '[]',
+    session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+  CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at);
+  CREATE INDEX IF NOT EXISTS idx_documents_mime_type ON documents(mime_type);
 `;
 
 // Re-export all migrations from the dedicated migrations module for backward compatibility
@@ -194,4 +211,5 @@ export {
   migrateWorkspaceProviders,
   migrateWorkspaceDeploymentsTable,
   migrateDeploymentSettingsTable,
+  migrateDocumentsTable,
 } from './migrations';
