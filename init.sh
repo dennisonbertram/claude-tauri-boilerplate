@@ -2,7 +2,7 @@
 # init.sh — Zero-effort dev environment bootstrap
 # Usage: ./init.sh                     (foreground, Ctrl+C to stop)
 #        INIT_DAEMONIZE=1 ./init.sh    (start services, write .init-state, exit)
-#        INIT_KEEP_RUNNING=1 ./init.sh (don't kill services on exit)
+#        ./init.sh stop                (kill a daemonized environment)
 #
 # See docs/runbook.md for full documentation.
 set -euo pipefail
@@ -17,6 +17,21 @@ info() { echo -e "${CYAN}→${NC} $1"; }
 # ── Resolve script directory (works in worktrees) ───────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# ── Stop command ────────────────────────────────────────────────────
+if [ "${1:-}" = "stop" ]; then
+  if [ -f "$SCRIPT_DIR/.init-state" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/.init-state"
+    kill "$SERVER_PID" 2>/dev/null && ok "Server (PID $SERVER_PID) stopped" || warn "Server already stopped"
+    kill "$FRONTEND_PID" 2>/dev/null && ok "Frontend (PID $FRONTEND_PID) stopped" || warn "Frontend already stopped"
+    rm -f "$SCRIPT_DIR/.init-state"
+    ok "Environment stopped"
+  else
+    warn "No .init-state found — nothing to stop"
+  fi
+  exit 0
+fi
 
 # ── Port allocation ────────────────────────────────────────────────
 # Find a free port in a given range. Usage: find_free_port [start] [end]
@@ -55,7 +70,7 @@ info "Ports: server=$SERVER_PORT, frontend=$VITE_PORT"
 
 # ── Cleanup trap ────────────────────────────────────────────────────
 cleanup() {
-  if [ "${INIT_KEEP_RUNNING:-}" = "1" ] || [ "${INIT_DAEMONIZE:-}" = "1" ]; then
+  if [ "${INIT_DAEMONIZE:-}" = "1" ]; then
     return
   fi
   echo ""
@@ -65,6 +80,11 @@ cleanup() {
   rm -f "$SCRIPT_DIR/.init-state"
 }
 trap cleanup EXIT
+
+# ── Phase 0: Clean stale worktrees (background, non-blocking) ──────
+if [ -f "$SCRIPT_DIR/scripts/cleanup-worktrees.sh" ]; then
+  "$SCRIPT_DIR/scripts/cleanup-worktrees.sh" --max-age-days 7 &>/dev/null &
+fi
 
 # ── Phase 1: Prerequisites ──────────────────────────────────────────
 info "Checking prerequisites..."
@@ -106,8 +126,6 @@ elif [ ! -d "$HOME/.claude" ]; then
 fi
 
 # ── Phase 2b: Validate Keys for Environment ────────────────────────
-# Register required keys per environment. Local needs nothing (subscription).
-# Cloud needs ANTHROPIC_API_KEY at minimum.
 KEYS_MISSING=0
 
 if [ "$INIT_ENV" = "cloud" ]; then
@@ -128,28 +146,19 @@ else
   fi
 fi
 
-# Add future required keys here:
-# if [ -z "${SOME_OTHER_KEY:-}" ]; then
-#   err "SOME_OTHER_KEY is required. Set it in your platform secrets."
-#   KEYS_MISSING=1
-# fi
-
 if [ "$KEYS_MISSING" -eq 1 ]; then
   err "Missing required environment variables. See docs/runbook.md"
   exit 1
 fi
 
 # ── Phase 2c: .env File ────────────────────────────────────────────
+# Only create if missing — don't noisily report on every run
 if [ ! -f "$SCRIPT_DIR/.env" ]; then
   if [ -f "$SCRIPT_DIR/.env.example" ]; then
     cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
-    ok "Created .env from .env.example"
   else
     echo "PORT=$SERVER_PORT" > "$SCRIPT_DIR/.env"
-    ok "Created minimal .env (PORT=$SERVER_PORT)"
   fi
-else
-  ok ".env exists"
 fi
 
 # ── Phase 3: Dependencies (Golden Symlink or Install) ───────────────
@@ -182,7 +191,7 @@ install_deps_golden() {
       ln -s "$golden_nm" "$target"
     fi
   done
-  ok "Dependencies linked from golden ($GOLDEN_DIR)"
+  ok "Dependencies linked from golden"
 }
 
 install_deps_direct() {
@@ -191,7 +200,6 @@ install_deps_direct() {
   ok "Dependencies installed"
 }
 
-# Use golden symlink strategy if golden-sync.sh exists, otherwise direct install
 if [ -f "$SCRIPT_DIR/scripts/golden-sync.sh" ]; then
   install_deps_golden
 else
@@ -242,7 +250,7 @@ if [ "$VITE_READY" -eq 0 ]; then
 fi
 ok "Frontend ready at http://localhost:$VITE_PORT"
 
-# ── Phase 7: Write state file ──────────────────────────────────────
+# ── Phase 6: Write state file ──────────────────────────────────────
 cat > "$SCRIPT_DIR/.init-state" <<EOF
 SERVER_URL=http://localhost:$SERVER_PORT
 SERVER_PID=$SERVER_PID
@@ -250,6 +258,21 @@ FRONTEND_URL=http://localhost:$VITE_PORT
 FRONTEND_PID=$VITE_PID
 HEALTH_CHECK=http://localhost:$SERVER_PORT/api/health
 EOF
+
+# ── Phase 7: Install post-merge hook (once) ─────────────────────────
+HOOK_PATH="$SCRIPT_DIR/.git/hooks/post-merge"
+if [ -d "$SCRIPT_DIR/.git/hooks" ] && [ ! -f "$HOOK_PATH" ]; then
+  cat > "$HOOK_PATH" <<'HOOKEOF'
+#!/usr/bin/env bash
+# Auto-refresh golden node_modules when pnpm-lock.yaml changes on merge
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+if git diff HEAD@{1} --name-only | grep -q 'pnpm-lock.yaml'; then
+  echo "pnpm-lock.yaml changed — refreshing golden directory in background..."
+  "$SCRIPT_DIR/scripts/golden-sync.sh" &>/dev/null &
+fi
+HOOKEOF
+  chmod +x "$HOOK_PATH"
+fi
 
 # ── Phase 8: Summary ───────────────────────────────────────────────
 echo ""

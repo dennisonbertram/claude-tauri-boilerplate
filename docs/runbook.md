@@ -29,8 +29,8 @@ echo $FRONTEND_URL  # http://localhost:1583
 |------|---------|----------|
 | **Foreground** (default) | `./init.sh` | Runs until Ctrl+C, kills services on exit |
 | **Daemonize** | `INIT_DAEMONIZE=1 ./init.sh` | Starts services, writes `.init-state`, exits |
-| **Keep running** | `INIT_KEEP_RUNNING=1 ./init.sh` | Services survive script exit |
-| **Pin ports** | `INIT_SERVER_PORT=3131 INIT_VITE_PORT=1420 ./init.sh` | Use specific ports (kills existing if occupied) |
+| **Stop** | `./init.sh stop` | Kill a daemonized environment |
+| **Pin ports** | `INIT_SERVER_PORT=3131 INIT_VITE_PORT=1420 ./init.sh` | Use specific ports instead of random |
 
 ### For Subagents / Worktrees
 
