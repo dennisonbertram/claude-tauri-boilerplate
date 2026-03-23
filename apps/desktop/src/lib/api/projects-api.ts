@@ -1,6 +1,7 @@
 import type { Project, CreateProjectRequest } from '@claude-tauri/shared';
+import { getApiBase } from '@/lib/api-config';
 
-const API_BASE = 'http://localhost:3131';
+const API_BASE = getApiBase();
 
 export async function fetchProjects(): Promise<Project[]> {
   const res = await fetch(`${API_BASE}/api/projects`);

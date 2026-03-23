@@ -1,6 +1,7 @@
 import type { WorkspaceDeployment } from '@claude-tauri/shared';
+import { getApiBase } from '@/lib/api-config';
 
-const API_BASE = 'http://localhost:3131';
+const API_BASE = getApiBase();
 
 export async function getWorkspaceDeployment(workspaceId: string): Promise<{ deployment: WorkspaceDeployment | null; isConfigured: boolean }> {
   const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/deployment`);

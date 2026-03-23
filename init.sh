@@ -200,7 +200,7 @@ fi
 
 # ── Phase 4: Start backend ──────────────────────────────────────────
 info "Starting server on port $SERVER_PORT..."
-PORT="$SERVER_PORT" bun --watch "$SCRIPT_DIR/apps/server/src/index.ts" &
+PORT="$SERVER_PORT" VITE_PORT="$VITE_PORT" bun --watch "$SCRIPT_DIR/apps/server/src/index.ts" &
 SERVER_PID=$!
 
 # Health check

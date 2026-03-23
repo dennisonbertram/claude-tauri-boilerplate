@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:3131';
+import { getApiBase } from '@/lib/api-config';
+
+const API_BASE = getApiBase();
 
 export async function fetchWorkspaceNotes(workspaceId: string): Promise<string> {
   const res = await fetch(`${API_BASE}/api/workspaces/${workspaceId}/notes`);

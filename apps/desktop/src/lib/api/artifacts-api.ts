@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:3131';
+import { getApiBase } from '@/lib/api-config';
+
+const API_BASE = getApiBase();
 
 export async function fetchSessionThread(sessionId: string): Promise<import('@claude-tauri/shared').ThreadMessage[]> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/thread`);

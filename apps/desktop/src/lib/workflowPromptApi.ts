@@ -4,8 +4,9 @@ import {
   REPO_WORKFLOW_PROMPT_FILES,
   DEFAULT_WORKFLOW_PROMPTS,
 } from './workflowPromptDefaults';
+import { getApiBase } from '@/lib/api-config';
 
-const API_BASE = 'http://localhost:3131';
+const API_BASE = getApiBase();
 
 async function getErrorMessage(response: Response, fallback: string): Promise<string> {
   try {

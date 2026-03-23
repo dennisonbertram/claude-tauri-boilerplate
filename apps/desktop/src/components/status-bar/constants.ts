@@ -1,2 +1,4 @@
-export const API_BASE = 'http://localhost:3131';
+import { getApiBase } from '@/lib/api-config';
+
+export const API_BASE = getApiBase();
 export const MAX_CONTEXT_TOKENS = 200_000;

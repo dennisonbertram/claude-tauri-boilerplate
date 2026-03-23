@@ -1,6 +1,7 @@
 import type { McpServerConfig } from '@claude-tauri/shared';
+import { getApiBase } from '@/lib/api-config';
 
-export const API_BASE = 'http://localhost:3131';
+export const API_BASE = getApiBase();
 
 export const TYPE_STYLES: Record<McpServerConfig['type'], { label: string; className: string }> = {
   stdio: { label: 'stdio', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },

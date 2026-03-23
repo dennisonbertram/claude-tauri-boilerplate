@@ -2,8 +2,9 @@ import type { UIMessage } from '@ai-sdk/react';
 import type { Message } from '@claude-tauri/shared';
 import type { CreateWorkspaceRequest } from '@claude-tauri/shared';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
+import { getApiBase } from '@/lib/api-config';
 
-export const API_BASE = 'http://localhost:3131';
+export const API_BASE = getApiBase();
 export const PLAN_EXPORT_DRAFT_KEY = 'claude-tauri-plan-export-draft';
 export const MAX_CONTEXT_TOKENS = 200_000;
 

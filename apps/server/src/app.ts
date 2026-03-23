@@ -39,10 +39,11 @@ const app = new Hono();
 // consistent JSON responses: { error, code, details? }
 app.onError(errorHandler);
 
+const vitePort = process.env.VITE_PORT || '1420';
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:1420', 'tauri://localhost'],
+    origin: [`http://localhost:${vitePort}`, 'tauri://localhost'],
     credentials: true,
     exposeHeaders: ['Content-Disposition'],
   })

@@ -7,10 +7,11 @@ import { HookEventReference } from './hooks/HookEventReference';
 import { parseKeyValuePairs } from './hooks/utils';
 import { EMPTY_FORM } from './hooks/types';
 import type { AddHookForm, HookExecutionLog as HookExecutionLogEntry } from './hooks/types';
+import { getApiBase } from '@/lib/api-config';
 
 export type { HookExecutionLog as HookExecutionLogType } from './hooks/types';
 
-const API_BASE = 'http://localhost:3131';
+const API_BASE = getApiBase();
 
 export function HooksPanel() {
   const [hooks, setHooks] = useState<HookConfig[]>([]);

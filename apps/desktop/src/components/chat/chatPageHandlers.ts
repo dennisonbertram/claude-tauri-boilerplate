@@ -149,7 +149,7 @@ export function useChatPageHandlers(state: State, props: ChatPageProps) {
       const prompt = getWorkflowPrompt(settings.workflowPrompts, 'browser');
       const text = buildBrowserWorkflowMessage({
         prompt,
-        targetUrl: 'http://localhost:1420',
+        targetUrl: window.location.origin,
         task,
       });
       await sendMessage({ text } as any);
