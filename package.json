@@ -1,6 +1,7 @@
 {
   "name": "claude-tauri-boilerplate",
   "private": true,
+  "packageManager": "pnpm@10.18.1",
   "scripts": {
     "dev": "pnpm --filter @claude-tauri/desktop dev",
     "dev:server": "pnpm --filter @claude-tauri/server dev",
