@@ -26,7 +26,7 @@ import { Agentation } from 'agentation';
 import type { Project, Workspace } from '@claude-tauri/shared';
 import { useSettings } from './hooks/useSettings';
 import { getModelDisplay } from './lib/models';
-import { ThemedToaster, useSidecarBoot, ViewSwitcherHeader, useAppKeyboardShortcuts, useTaskNotifications, defaultStatusData, ErrorScreen, LoadingScreen } from './app';
+import { ThemedToaster, useSidecarBoot, ViewSwitcherHeader, useAppKeyboardShortcuts, useTaskNotifications, defaultStatusData, ErrorScreen, LoadingScreen } from './app/index';
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   useTheme();
