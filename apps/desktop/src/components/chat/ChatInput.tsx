@@ -37,6 +37,8 @@ interface ChatInputProps {
   contextSummary?: string | null;
   /** Names of enabled non-internal MCP servers to show in the toolbar */
   mcpServerNames?: string[];
+  /** Model display name shown in the toolbar (e.g., "Sonnet 4.6") */
+  modelDisplay?: string;
 }
 
 let imageIdCounter = 0;
@@ -158,9 +160,12 @@ export function ChatInput({
   onAcceptSuggestion,
   contextSummary,
   mcpServerNames,
+  modelDisplay,
 }: ChatInputProps) {
   const { settings } = useSettings();
-  const chatWidthClass = settings.chatWidth === 'wide' ? 'max-w-5xl' : settings.chatWidth === 'full' ? 'max-w-none' : 'max-w-3xl';
+  // Input stretches to fill the footer — no max-width constraint so it
+  // matches the full available width rather than being artificially narrow.
+  const chatWidthClass = 'max-w-none';
   const paletteRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -357,10 +362,16 @@ export function ChatInput({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (showPalette) {
+        // Close palette on Escape directly instead of dispatching a DOM event
+        // (React's onKeyDown doesn't respond to dispatchEvent)
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onPaletteClose();
+          return;
+        }
         const shouldForwardToPalette =
           e.key === 'ArrowDown' ||
           e.key === 'ArrowUp' ||
-          e.key === 'Escape' ||
           (e.key === 'Enter' && paletteCommands.length > 0);
         if (shouldForwardToPalette) {
           e.preventDefault();
@@ -605,27 +616,34 @@ export function ChatInput({
               </button>
             </div>
 
-            {/* Right: submit button (icon only) */}
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              aria-label="Send message"
-              className="w-8 h-8 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors flex items-center justify-center shrink-0 disabled:opacity-50"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {/* Right: model display + submit */}
+            <div className="flex items-center gap-2">
+              {modelDisplay && (
+                <span className="text-xs text-muted-foreground font-medium px-2 py-1 rounded-lg">
+                  {modelDisplay}
+                </span>
+              )}
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                aria-label="Send message"
+                className="w-8 h-8 rounded-lg bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors flex items-center justify-center shrink-0 disabled:opacity-50 shadow-sm"
               >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -237,6 +237,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       setSelectedProfileId(profileId);
     }
     setActiveSessionId(null);
+    setPendingMessage(null);
+    setPendingWelcomeSessionId(null);
     setActiveView('chat');
     setActiveSessionHasMessages(false);
   };
@@ -254,15 +256,21 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   }, [pendingMessage]);
 
   const handleInitialMessageConsumed = useCallback(() => {
-    setPendingMessage(null);
-    if (!activeSessionId && pendingWelcomeSessionId) {
-      setActiveSessionId(pendingWelcomeSessionId);
-      setPendingWelcomeSessionId(null);
+    // No-op: the welcome flow keeps pendingMessage set so ChatPage stays
+    // mounted with a stable key. Transition happens when the user navigates
+    // away (e.g., clicks another session or New Chat).
+  }, []);
+
+  // When the server responds with the app session ID, refresh the sidebar
+  // so the new session appears. We do NOT set activeSessionId here because
+  // that would change the ChatPage key, causing a remount that loses
+  // all streamed messages. Instead, ChatPage uses pendingWelcomeSessionId
+  // via chatSessionId = activeSessionId ?? pendingWelcomeSessionId.
+  useEffect(() => {
+    if (pendingMessage && pendingWelcomeSessionId && !activeSessionId) {
       void fetchSessions(sessionSearchQuery);
-      return;
     }
-    setPendingWelcomeSessionId(null);
-  }, [activeSessionId, fetchSessions, pendingWelcomeSessionId, sessionSearchQuery, setActiveSessionId]);
+  }, [pendingMessage, pendingWelcomeSessionId, activeSessionId, fetchSessions, sessionSearchQuery]);
 
   const handleStatusChange = useCallback((data: ChatPageStatusData) => {
     if (data.isStreaming) {
@@ -340,6 +348,8 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
     (id: string) => {
       setActiveView('chat');
       setActiveSessionId(id);
+      setPendingMessage(null);
+      setPendingWelcomeSessionId(null);
       const session = sessions.find((s) => s.id === id);
       setActiveSessionHasMessages(selectedSessionHasMessages(session));
     },
@@ -391,12 +401,14 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           activeView={activeView}
           onSelectView={handleSwitchView}
           sessions={sessions}
-          activeSessionId={activeSessionId}
+          activeSessionId={activeSessionId ?? pendingWelcomeSessionId}
           searchQuery={sessionSearchQuery}
           onSearchQueryChange={setSessionSearchQuery}
           onSelectSession={(id) => {
             setActiveView('chat');
             setActiveSessionId(id);
+            setPendingMessage(null);
+            setPendingWelcomeSessionId(null);
             const session = sessions.find(s => s.id === id);
             setActiveSessionHasMessages(selectedSessionHasMessages(session));
           }}

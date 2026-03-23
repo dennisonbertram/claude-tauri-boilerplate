@@ -224,7 +224,70 @@ describe('App', () => {
     expect(latestChatPageProps?.initialMessage).toBe('Build an app');
   });
 
-  it('activates the first session id received from session:init after welcome submit', () => {
+  it('keeps ChatPage mounted with stable key after session:init (no premature remount)', () => {
+    mockSessions.setSessions([]);
+    mockSessions.setActiveSessionIdValue(null);
+    useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
+
+    render(<App />);
+    fireEvent.click(screen.getByTestId('welcome-submit'));
+    // Simulate the server responding with session:init (containing appSessionId).
+    // The key should stay 'new-chat' — we do NOT set activeSessionId during
+    // the welcome flow to avoid remounting ChatPage and losing streamed messages.
+    fireEvent.click(screen.getByText('session init'));
+
+    expect(mockSessions.createSession).not.toHaveBeenCalled();
+    // activeSessionId is NOT set — ChatPage stays mounted with key='new-chat'
+    expect(mockSessions.setActiveSessionId).not.toHaveBeenCalled();
+    // But sessions are refreshed so the new session appears in sidebar
+    expect(mockSessions.fetchSessions).toHaveBeenCalledTimes(1);
+    // ChatPage should still be mounted
+    expect(screen.getByTestId('chat-page-placeholder')).toBeInTheDocument();
+  });
+
+  // --- Regression tests for welcome-screen submit race condition ---
+  // See: docs/investigations/welcome-screen-submit-bug.md
+  // Bug: pendingMessage was cleared before the server responded with a session ID,
+  // causing ChatPage to unmount and the user to bounce back to the welcome screen.
+
+  it('regression: ChatPage stays mounted while waiting for session:init', () => {
+    mockSessions.setSessions([]);
+    mockSessions.setActiveSessionIdValue(null);
+    useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
+
+    render(<App />);
+    fireEvent.click(screen.getByTestId('welcome-submit'));
+
+    // ChatPage should be mounted because pendingMessage is set
+    expect(screen.getByTestId('chat-page-placeholder')).toBeInTheDocument();
+
+    // activeSessionId should still be null (server hasn't responded yet)
+    expect(mockSessions.setActiveSessionId).not.toHaveBeenCalled();
+
+    // ChatPage should still have the initialMessage prop
+    expect(latestChatPageProps?.initialMessage).toBe('Build an app');
+  });
+
+  it('regression: onInitialMessageConsumed does not prematurely clear pendingMessage', () => {
+    mockSessions.setSessions([]);
+    mockSessions.setActiveSessionIdValue(null);
+    useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
+
+    render(<App />);
+    fireEvent.click(screen.getByTestId('welcome-submit'));
+
+    // Even if onInitialMessageConsumed is called before session:init,
+    // it should be a no-op — ChatPage should remain mounted
+    fireEvent.click(screen.getByText('initial consumed'));
+
+    // ChatPage should still be visible (pendingMessage not prematurely cleared
+    // causing unmount; or activeSessionId already set)
+    // The key test: setActiveSessionId should NOT have been called yet
+    // since no session:init has fired
+    expect(mockSessions.setActiveSessionId).not.toHaveBeenCalled();
+  });
+
+  it('regression: second session:init does not override the first', () => {
     mockSessions.setSessions([]);
     mockSessions.setActiveSessionIdValue(null);
     useSessionsMock.mockReturnValue(mockSessions.getSessionHookValue());
@@ -232,10 +295,14 @@ describe('App', () => {
     render(<App />);
     fireEvent.click(screen.getByTestId('welcome-submit'));
     fireEvent.click(screen.getByText('session init'));
-    fireEvent.click(screen.getByText('initial consumed'));
 
-    expect(mockSessions.createSession).not.toHaveBeenCalled();
-    expect(mockSessions.setActiveSessionId).toHaveBeenCalledWith('session-from-stream');
+    // fetchSessions called once for the first session init
     expect(mockSessions.fetchSessions).toHaveBeenCalledTimes(1);
+    mockSessions.fetchSessions.mockClear();
+
+    // Second session:init should be ignored (pendingWelcomeSessionId already set)
+    fireEvent.click(screen.getByText('session init'));
+    // fetchSessions should not be called again — the session was already registered
+    expect(mockSessions.fetchSessions).not.toHaveBeenCalled();
   });
 });

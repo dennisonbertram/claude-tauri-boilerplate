@@ -33,6 +33,7 @@ import { useCheckpoints } from '@/hooks/useCheckpoints';
 import { SuggestionChips } from './SuggestionChips';
 import { useSettings } from '@/hooks/useSettings';
 import { calculateCost, getModelFromName } from '@/lib/pricing';
+import { getModelDisplay } from '@/lib/models';
 import type { PlanDecisionRequest, Checkpoint, RewindPreview } from '@claude-tauri/shared';
 import type { ToolCallState } from '@/hooks/useStreamEvents';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
@@ -361,9 +362,11 @@ export function ChatPage({
     (part: { type: string; data?: unknown }) => {
       if (part.type === 'data-stream-event' && part.data && typeof part.data === 'object' && 'type' in part.data) {
         if ((part.data as { type: string }).type === 'session:init') {
-          const event = part.data as { type: 'session:init'; sessionId?: string };
-          if (typeof event.sessionId === 'string' && event.sessionId.trim().length > 0) {
-            onSessionInitialized?.(event.sessionId);
+          const event = part.data as { type: 'session:init'; sessionId?: string; appSessionId?: string };
+          // Prefer appSessionId (the app-level DB session) over the Claude SDK sessionId
+          const effectiveId = event.appSessionId || event.sessionId;
+          if (typeof effectiveId === 'string' && effectiveId.trim().length > 0) {
+            onSessionInitialized?.(effectiveId);
           }
         }
         processEvent(part.data as import('@claude-tauri/shared').StreamEvent);
@@ -1294,7 +1297,8 @@ export function ChatPage({
     }
 
     initialMessageSentRef.current = true;
-    onInitialMessageConsumed?.();
+    // Don't call onInitialMessageConsumed here — pendingMessage must stay
+    // truthy to keep ChatPage mounted until handleSessionInitialized fires
     resetStreamEvents();
     lastUserPromptRef.current = initialMessage;
     lastUserMessageIdRef.current = `user-${Date.now()}`;
@@ -1424,7 +1428,7 @@ export function ChatPage({
         </div>
       )}
       {/* Footer composer */}
-      <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-center">
+      <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-stretch">
         <ChatInput
           input={input}
           onInputChange={handleInputChange}
@@ -1442,6 +1446,7 @@ export function ChatPage({
           onAcceptSuggestion={handleAcceptGhostText}
           contextSummary={isLoading ? undefined : contextSummary}
           mcpServerNames={mcpServers.map((s) => s.name)}
+          modelDisplay={getModelDisplay(sessionInfo?.model ?? settings.model)}
         />
       </div>
       <ShortcutHelpModal

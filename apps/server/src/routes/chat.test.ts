@@ -634,6 +634,9 @@ describe('Chat Route - POST /chat', () => {
       expect(sessionInit.sessionId).toBe('data-channel-test');
       expect(sessionInit.model).toBe('claude-opus-4-6');
       expect(sessionInit.tools).toEqual(['Read', 'Edit']);
+      // Regression: appSessionId must be included so the frontend can
+      // use the correct app-level session ID (not the Claude SDK session ID)
+      expect(sessionInit.appSessionId).toBe(session.id);
     }
 
     const textDelta = streamEvents.find(
