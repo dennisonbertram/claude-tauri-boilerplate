@@ -33,9 +33,13 @@ export function ChatInput({
   ghostText,
   onAcceptSuggestion,
   contextSummary,
+  mcpServerNames,
+  modelDisplay,
 }: ChatInputProps) {
   const { settings } = useSettings();
-  const chatWidthClass = settings.chatWidth === 'wide' ? 'max-w-5xl' : settings.chatWidth === 'full' ? 'max-w-none' : 'max-w-3xl';
+  // Input stretches to fill the footer — no max-width constraint so it
+  // matches the full available width rather than being artificially narrow.
+  const chatWidthClass = 'max-w-none';
   const paletteRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -126,7 +130,14 @@ export function ChatInput({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (showPalette) {
-        const shouldForward = ['ArrowDown', 'ArrowUp', 'Escape'].includes(e.key) || (e.key === 'Enter' && paletteCommands.length > 0);
+        // Close palette on Escape directly instead of dispatching a DOM event
+        // (React's onKeyDown doesn't respond to dispatchEvent)
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onPaletteClose();
+          return;
+        }
+        const shouldForward = ['ArrowDown', 'ArrowUp'].includes(e.key) || (e.key === 'Enter' && paletteCommands.length > 0);
         if (shouldForward) {
           e.preventDefault();
           const el = paletteRef.current?.querySelector('[data-testid="command-palette"]');
@@ -148,7 +159,7 @@ export function ChatInput({
       }
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !isLoading) onSubmit(); }
     },
-    [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion, isMentionOpen, mentionCandidates, selectedMentionIndex, handleMentionSelect, closeMentionPalette, paletteCommands]
+    [input, isLoading, onSubmit, showPalette, showGhost, onAcceptSuggestion, isMentionOpen, mentionCandidates, selectedMentionIndex, handleMentionSelect, closeMentionPalette, paletteCommands, onPaletteClose]
   );
 
   const chatFontClass = settings.chatFont === 'mono' ? 'font-mono' : '';
@@ -209,7 +220,7 @@ export function ChatInput({
               </div>
             )}
           </div>
-          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} />
+          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} />
         </div>
 
         <input ref={pickerRef} type="file" data-testid="file-input" multiple className="sr-only" onChange={handlePickFilesChange} />

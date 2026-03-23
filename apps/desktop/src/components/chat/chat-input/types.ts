@@ -31,4 +31,6 @@ export interface ChatInputProps {
   contextSummary?: string | null;
   /** Names of enabled non-internal MCP servers to show in the toolbar */
   mcpServerNames?: string[];
+  /** Model display name shown in the toolbar (e.g., "Sonnet 4.6") */
+  modelDisplay?: string;
 }

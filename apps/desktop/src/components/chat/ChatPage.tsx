@@ -8,6 +8,7 @@ import { RewindDialog } from './RewindDialog';
 import { LatestTurnChangesDialog } from './LatestTurnChangesDialog';
 import { ShortcutHelpModal } from '@/components/ShortcutHelpModal';
 import { SuggestionChips } from './SuggestionChips';
+import { getModelDisplay } from '@/lib/models';
 import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import { DashboardPromptModal } from '@/components/workspaces/DashboardPromptModal';
 import { CostDialog } from './CostDialog';
@@ -223,7 +224,7 @@ export function ChatPage(props: ChatPageProps) {
       )}
 
       {/* Footer composer */}
-      <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-center">
+      <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-stretch">
         <ChatInput
           input={input}
           onInputChange={handleInputChange}
@@ -241,6 +242,7 @@ export function ChatPage(props: ChatPageProps) {
           onAcceptSuggestion={handleAcceptGhostText}
           contextSummary={isLoading ? undefined : contextSummary}
           mcpServerNames={mcpServers.map((s) => s.name)}
+          modelDisplay={getModelDisplay(sessionInfo?.model ?? settings.model)}
         />
       </div>
 

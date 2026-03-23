@@ -58,10 +58,17 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const { workspaces, addWorkspace, refresh: refreshWorkspaces } = useWorkspaces(selectedProjectId);
   const workspacesByProject = useMemo(() => { const m: Record<string, Workspace[]> = {}; if (selectedProjectId) m[selectedProjectId] = workspaces; return m; }, [selectedProjectId, workspaces]);
   const handleWorkspaceTaskComplete = useCallback((p: { status: 'completed' | 'failed' | 'stopped'; summary: string; branch?: string; workspaceName?: string }) => handleTaskComplete({ ...p, workspaceId: selectedWorkspace?.id }), [handleTaskComplete, selectedWorkspace?.id]);
-  const handleNewChat = async (profileId?: string) => { if (profileId !== undefined) setSelectedProfileId(profileId); setActiveSessionId(null); setActiveView('chat'); setActiveSessionHasMessages(false); };
+  const handleNewChat = async (profileId?: string) => { if (profileId !== undefined) setSelectedProfileId(profileId); setActiveSessionId(null); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveView('chat'); setActiveSessionHasMessages(false); };
   const handleWelcomeSubmit = async (msg: string) => { setPendingWelcomeSessionId(null); setActiveSessionHasMessages(false); setActiveView('chat'); setPendingMessage(msg); };
-  const handleSessionInitialized = useCallback((sid: string) => { if (pendingMessage) setPendingWelcomeSessionId((c) => c ?? sid); }, [pendingMessage]);
-  const handleInitialMessageConsumed = useCallback(() => { setPendingMessage(null); if (!activeSessionId && pendingWelcomeSessionId) { setActiveSessionId(pendingWelcomeSessionId); setPendingWelcomeSessionId(null); void fetchSessions(sessionSearchQuery); return; } setPendingWelcomeSessionId(null); }, [activeSessionId, fetchSessions, pendingWelcomeSessionId, sessionSearchQuery, setActiveSessionId]);
+  const handleSessionInitialized = useCallback((sid: string) => { if (!pendingMessage) return; setPendingWelcomeSessionId((c) => c ?? sid); }, [pendingMessage]);
+  const handleInitialMessageConsumed = useCallback(() => {
+    // No-op: the welcome flow keeps pendingMessage set so ChatPage stays
+    // mounted with a stable key. Transition happens when the user navigates
+    // away (e.g., clicks another session or New Chat).
+  }, []);
+  // When the server responds with the app session ID, refresh the sidebar
+  // so the new session appears without changing the ChatPage key.
+  useEffect(() => { if (pendingMessage && pendingWelcomeSessionId && !activeSessionId) { void fetchSessions(sessionSearchQuery); } }, [pendingMessage, pendingWelcomeSessionId, activeSessionId, fetchSessions, sessionSearchQuery]);
   const handleStatusChange = useCallback((d: ChatPageStatusData) => { if (d.isStreaming) setActiveSessionHasMessages(true); subagentActiveCountRef.current = d.subagentActiveCount; setStatusData({ ...d, checkpoints: d.checkpoints ?? [] }); }, []);
   const handleSelectWorkspace = useCallback((ws: Workspace) => { setSelectedProjectId(ws.projectId); setSelectedWorkspace(ws); markAsRead(ws.id); }, [markAsRead]);
   const handleAddProject = useCallback(async (p: string) => { const proj = await addProject(p); setSelectedProjectId(proj.id); }, [addProject]);
@@ -71,14 +78,14 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   useEffect(() => { if (activeSessionId) setOpenSessionIds((p) => p.includes(activeSessionId) ? p : [...p, activeSessionId]); }, [activeSessionId]);
   useEffect(() => { setOpenSessionIds((p) => p.filter((id) => sessions.some((s) => s.id === id))); }, [sessions]);
   useEffect(() => { if (activeView === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [activeView, selectedProjectId, projects]);
-  const handleActivateTab = useCallback((id: string) => { setActiveView('chat'); setActiveSessionId(id); setActiveSessionHasMessages(hasMessages(sessions.find((s) => s.id === id))); }, [setActiveSessionId, sessions]);
+  const handleActivateTab = useCallback((id: string) => { setActiveView('chat'); setActiveSessionId(id); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveSessionHasMessages(hasMessages(sessions.find((s) => s.id === id))); }, [setActiveSessionId, sessions]);
   const handleCloseTab = useCallback((id: string) => { setOpenSessionIds((p) => { const n = p.filter((x) => x !== id); if (id === activeSessionId) setActiveSessionId(n[n.length - 1] ?? null); return n; }); }, [activeSessionId, setActiveSessionId]);
 
   return (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 min-h-0">
-        <AppSidebar activeView={activeView} onSelectView={handleSwitchView} sessions={sessions} activeSessionId={activeSessionId} searchQuery={sessionSearchQuery} onSearchQueryChange={setSessionSearchQuery}
-          onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); setActiveSessionHasMessages(hasMessages(sessions.find(s => s.id === id))); }}
+        <AppSidebar activeView={activeView} onSelectView={handleSwitchView} sessions={sessions} activeSessionId={activeSessionId ?? pendingWelcomeSessionId} searchQuery={sessionSearchQuery} onSearchQueryChange={setSessionSearchQuery}
+          onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveSessionHasMessages(hasMessages(sessions.find(s => s.id === id))); }}
           onNewChat={handleNewChat} onDeleteSession={deleteSession} onRenameSession={renameSession} onForkSession={forkSession} onExportSession={exportSession}
           projects={projects} workspacesByProject={workspacesByProject} selectedWorkspaceId={selectedWorkspace?.id ?? null} onSelectWorkspace={handleSelectWorkspace}
           onAddProject={() => setAddProjectOpen(true)} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(p => !p)} email={email} plan={plan} onOpenSettings={handleOpenSettings} />

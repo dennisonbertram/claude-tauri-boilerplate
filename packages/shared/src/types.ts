@@ -162,6 +162,8 @@ export type StreamEvent =
 export interface StreamSessionInit {
   type: 'session:init';
   sessionId: string;
+  /** The app-level session ID used by the sidebar/sessions list (distinct from the Claude SDK sessionId). */
+  appSessionId?: string;
   model: string;
   tools: string[];
   mcpServers: Array<{ name: string; status: string }>;

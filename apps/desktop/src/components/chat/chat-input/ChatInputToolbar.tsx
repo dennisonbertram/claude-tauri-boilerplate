@@ -5,6 +5,7 @@ interface ChatInputToolbarProps {
   isLoading: boolean;
   onPickFiles: () => void;
   onOpenPalette: () => void;
+  modelDisplay?: string;
 }
 
 export function ChatInputToolbar({
@@ -12,6 +13,7 @@ export function ChatInputToolbar({
   isLoading,
   onPickFiles,
   onOpenPalette,
+  modelDisplay,
 }: ChatInputToolbarProps) {
   return (
     <div className="flex items-center justify-between px-3 pb-3 pt-1">
@@ -35,13 +37,19 @@ export function ChatInputToolbar({
         </button>
       </div>
 
-      {/* Right: submit button (icon only) */}
-      <button
-        type="submit"
-        disabled={!inputHasContent || isLoading}
-        aria-label="Send message"
-        className="w-8 h-8 rounded-full bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors flex items-center justify-center shrink-0 disabled:opacity-50"
-      >
+      {/* Right: model display + submit */}
+      <div className="flex items-center gap-2">
+        {modelDisplay && (
+          <span className="text-xs text-muted-foreground font-medium px-2 py-1 rounded-lg">
+            {modelDisplay}
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={!inputHasContent || isLoading}
+          aria-label="Send message"
+          className="w-8 h-8 rounded-lg bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors flex items-center justify-center shrink-0 disabled:opacity-50 shadow-sm"
+        >
         <svg
           width="14"
           height="14"
@@ -56,6 +64,7 @@ export function ChatInputToolbar({
           <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
       </button>
+      </div>
     </div>
   );
 }

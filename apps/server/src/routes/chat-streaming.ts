@@ -238,16 +238,19 @@ export function buildStreamExecute(ctx: StreamingContext) {
             (writer as any).write({ type: 'data-stream-event', data: event, transient: true });
             fullResponse += event.text;
           } else {
-            (writer as any).write({ type: 'data-stream-event', data: event, transient: true });
-
+            // Handle protocol-relevant events before writing to data channel
             if (event.type === 'session:init') {
               claudeSessionId = event.sessionId;
+              // Inject appSessionId so the frontend can use the correct ID
+              (event as any).appSessionId = appSessionId ?? callerSessionId ?? undefined;
               logChat('info', 'claude session initialized', {
                 claudeSessionId,
                 appSessionId: appSessionId ?? callerSessionId ?? null,
                 workspaceId: workspaceId ?? null,
               });
             }
+            // Non-text events: data channel for the custom event handler
+            (writer as any).write({ type: 'data-stream-event', data: event, transient: true });
           }
         }
         break;
