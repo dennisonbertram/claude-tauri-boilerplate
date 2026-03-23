@@ -86,7 +86,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       <div className="flex flex-1 min-h-0">
         <AppSidebar activeView={activeView} onSelectView={handleSwitchView} sessions={sessions} activeSessionId={activeSessionId ?? pendingWelcomeSessionId} searchQuery={sessionSearchQuery} onSearchQueryChange={setSessionSearchQuery}
           onSelectSession={(id) => { setActiveView('chat'); setActiveSessionId(id); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveSessionHasMessages(hasMessages(sessions.find(s => s.id === id))); }}
-          onNewChat={handleNewChat} onDeleteSession={deleteSession} onRenameSession={renameSession} onForkSession={forkSession} onExportSession={exportSession}
+          onNewChat={handleNewChat} onDeleteSession={deleteSession} onRenameSession={renameSession} onForkSession={async (id: string) => { await forkSession(id); setActiveView('chat'); }} onExportSession={exportSession}
           projects={projects} workspacesByProject={workspacesByProject} selectedWorkspaceId={selectedWorkspace?.id ?? null} onSelectWorkspace={handleSelectWorkspace}
           onAddProject={() => setAddProjectOpen(true)} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(p => !p)} email={email} plan={plan} onOpenSettings={handleOpenSettings} />
         <div className="relative flex-1 min-h-0 flex flex-col">
@@ -106,7 +106,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
               </div>
             ) : activeView === 'workspaces' ? (
               selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} />
-                : <ProjectsGridView projects={projects} workspacesByProject={workspacesByProject} onAddProject={() => setAddProjectOpen(true)} onSelectWorkspace={handleSelectWorkspace} />
+                : <ProjectsGridView projects={projects} workspacesByProject={workspacesByProject} onAddProject={() => setAddProjectOpen(true)} onSelectWorkspace={handleSelectWorkspace} onSelectProject={(id) => setSelectedProjectId(id)} />
             ) : activeView === 'documents' ? <DocumentsView /> : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
           </div>
         </div>

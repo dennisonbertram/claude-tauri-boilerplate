@@ -15,6 +15,7 @@ interface ProjectsGridViewProps {
   workspacesByProject: Record<string, Workspace[]>;
   onAddProject: () => void;
   onSelectWorkspace: (ws: Workspace) => void;
+  onSelectProject: (projectId: string) => void;
 }
 
 const BADGE_COLORS = [
@@ -30,6 +31,7 @@ export function ProjectsGridView({
   workspacesByProject,
   onAddProject,
   onSelectWorkspace,
+  onSelectProject,
 }: ProjectsGridViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -54,7 +56,8 @@ export function ProjectsGridView({
             </p>
           </div>
           <button
-            onClick={onAddProject}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAddProject(); }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-[var(--app-cta)] transition-colors shadow-sm"
           >
             <PlusCircle size={16} />
@@ -76,7 +79,8 @@ export function ProjectsGridView({
           </span>
         </div>
         <button
-          onClick={onAddProject}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onAddProject(); }}
           className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-[var(--app-cta)] transition-colors shadow-sm"
         >
           <PlusCircle size={16} />
@@ -137,7 +141,11 @@ export function ProjectsGridView({
                 className="group bg-card border border-border rounded-2xl p-5 hover:shadow-soft hover:border-[#d4d2cc] transition-all cursor-pointer flex flex-col gap-4"
                 onClick={() => {
                   const ws = workspacesByProject[project.id]?.[0];
-                  if (ws) onSelectWorkspace(ws);
+                  if (ws) {
+                    onSelectWorkspace(ws);
+                  } else {
+                    onSelectProject(project.id);
+                  }
                 }}
               >
                 {/* Icon + menu */}
@@ -184,7 +192,8 @@ export function ProjectsGridView({
 
           {/* New Project card */}
           <button
-            onClick={onAddProject}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAddProject(); }}
             className="group border-2 border-dashed border-border rounded-2xl p-5 hover:border-muted-foreground hover:bg-sidebar/50 transition-all flex flex-col items-center justify-center gap-3 min-h-[180px]"
           >
             <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground group-hover:scale-110 transition-transform">

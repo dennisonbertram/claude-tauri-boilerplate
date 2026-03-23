@@ -102,12 +102,12 @@ export function WorkspacePanelHeader({
           Open In
         </button>
         {canMerge && (
-          <Button variant="outline" size="sm" onClick={onMerge}>
+          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onMerge(); }}>
             Merge
           </Button>
         )}
         {canDiscard && (
-          <Button variant="destructive" size="sm" onClick={onDiscard}>
+          <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); onDiscard(); }}>
             Discard
           </Button>
         )}
