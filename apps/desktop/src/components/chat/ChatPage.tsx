@@ -76,6 +76,7 @@ export function ChatPage(props: ChatPageProps) {
     suggestions,
     contextSummary,
     mcpServers,
+    sessionInfo,
   } = state;
 
   const {
