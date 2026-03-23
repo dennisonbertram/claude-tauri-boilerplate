@@ -115,6 +115,43 @@ export function sanitizeWorkspaceName(name: string): string {
  * resolving each to a canonical (realpath) form and verifying every entry
  * falls within one of the allowed roots.
  */
+/**
+ * Validate a GitHub owner or repo name.
+ * Must be 1-100 chars, alphanumeric plus hyphens, no leading/trailing hyphens.
+ */
+export function isValidGitHubName(name: string): boolean {
+  return /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,98}[a-zA-Z0-9])?$/.test(name);
+}
+
+/**
+ * Validate a GitHub HTTPS clone URL.
+ * Must be https://github.com/{owner}/{repo} or {owner}/{repo}.git with no credentials.
+ */
+export function isValidGitHubUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return false;
+    if (parsed.hostname !== 'github.com') return false;
+    if (parsed.username || parsed.password) return false;
+    const parts = parsed.pathname.replace(/^\//, '').replace(/\.git$/, '').split('/');
+    return parts.length === 2 && parts.every(p => isValidGitHubName(p));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sanitize a clone destination path, ensuring it stays under the allowed base directory.
+ */
+export function sanitizeClonePath(baseDir: string, localPath: string): string {
+  const resolved = isAbsolute(localPath) ? localPath : resolve(baseDir, localPath);
+  const normalized = resolve(resolved);
+  if (!normalized.startsWith(resolve(baseDir))) {
+    throw new Error('Clone path must be within the allowed base directory');
+  }
+  return normalized;
+}
+
 export async function normalizeAdditionalDirectories(
   input: string[] | undefined,
   workspaceRoot: string,
