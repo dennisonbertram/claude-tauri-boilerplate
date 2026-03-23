@@ -22,7 +22,7 @@ export function HookCard({
   onEditStart: () => void;
   onEditCancel: () => void;
 }) {
-  const typeStyle = HANDLER_TYPE_STYLES[hook.handler.type];
+  const typeStyle = HANDLER_TYPE_STYLES[hook.handler.type] ?? { className: 'bg-muted text-muted-foreground', label: hook.handler.type };
 
   return (
     <div

@@ -141,7 +141,7 @@ export function AppSidebar({
           </button>
         ))}
         <div className="flex-1" />
-        <button title="Settings" onClick={onOpenSettings} className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground">
+        <button title="Settings" aria-label="Settings" onClick={onOpenSettings} className="rounded-md p-2 hover:bg-sidebar-accent/50 transition-colors text-muted-foreground">
           <Gear className="h-[18px] w-[18px]" />
         </button>
       </aside>
@@ -156,8 +156,8 @@ export function AppSidebar({
           <SidebarSimple className="h-[18px] w-[18px]" />
         </button>
         <div className="flex items-center gap-2">
-          <button className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors"><CaretLeft className="h-4 w-4" /></button>
-          <button className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors"><CaretRight className="h-4 w-4" /></button>
+          <button aria-label="Navigate back" className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors"><CaretLeft className="h-4 w-4" /></button>
+          <button aria-label="Navigate forward" className="opacity-50 rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors"><CaretRight className="h-4 w-4" /></button>
         </div>
       </div>
 
@@ -225,7 +225,7 @@ export function AppSidebar({
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
           </div>
-          <button onClick={onOpenSettings} className="rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
+          <button aria-label="Settings" onClick={onOpenSettings} className="rounded-md p-1 hover:bg-sidebar-accent/50 transition-colors">
             <Gear className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>

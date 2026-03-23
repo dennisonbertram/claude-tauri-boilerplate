@@ -148,8 +148,14 @@ export function AgentProfileEditor({
       setConfirmDelete(true);
       return;
     }
-    await onDelete();
-    setConfirmDelete(false);
+    try {
+      await onDelete();
+      setConfirmDelete(false);
+    } catch (err) {
+      console.error('Failed to delete profile:', err);
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'Failed to delete profile' });
+      setConfirmDelete(false);
+    }
   }, [confirmDelete, onDelete]);
 
   // Cmd+S / Ctrl+S shortcut to save
