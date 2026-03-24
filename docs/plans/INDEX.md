@@ -7,6 +7,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | File | Description |
 |------|-------------|
 | [browser-testing-agent-browser.md](browser-testing-agent-browser.md) | Plan and completion checklist for switching the default browser testing workflow from Playwright MCP to the `agent-browser` CLI while keeping `agentation` separate. |
+| [agent-profile-ai-generation-modal.md](agent-profile-ai-generation-modal.md) | Agent Builder create-flow plan for adding a modal that offers blank-profile creation or AI-assisted agent generation, including the server endpoint, client hook, and manual verification steps. |
 | [runtime-hardening-pass-top-3.md](runtime-hardening-pass-top-3.md) | Completed top-three hardening pass for the current Claude-based boilerplate, covering issues #231-#233: request-scoped env isolation, safe-by-default logging, and workspace path boundary enforcement. |
 | [self-healing-dev-environment.md](self-healing-dev-environment.md) | Self-Healing Development Environment (#220-#229): flight recorder, bug report UI, AI diagnosis, worktree fix agent, hot patch delivery. 10 issues across 4 phases. Reviewed by GPT-5.4. DEFERRED. |
 | [canvas-workspace.md](canvas-workspace.md) | Canvas Workspace feature plan (#176-#183): infinite canvas with React Flow for multi-thread spatial UI, split-pane view, freeze pattern, FigJam-style annotations. DEFERRED. |

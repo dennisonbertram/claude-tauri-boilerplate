@@ -28,6 +28,10 @@ $HEALTH_CHECK    # e.g. http://localhost:3847/api/health
 ./init.sh stop
 ```
 
+### Worktree bootstrap rule
+- If you create a worktree manually, run `./init.sh` immediately after checkout before any tests or browser work.
+- Do not rely on a separate install step; `init.sh` is the bootstrap entrypoint for every worktree.
+
 ### Before starting, ALWAYS check if services are already running:
 ```bash
 if [ -f .init-state ]; then
@@ -116,6 +120,11 @@ pnpm -r build                                      # Build all packages (no init
 - [ ] `tsc --noEmit` passes with 0 errors
 - [ ] All tests pass (desktop + server)
 - [ ] No skipped tests were added to hide failures
+- [ ] If the task touched the UI, browser verification in `agent-browser` or `claude-chrome` was completed and passed before considering the work done
+
+### UI Verification Rule
+
+If a task changes anything visible, clickable, navigable, or otherwise user-facing in the app, you must verify it in `agent-browser` or `claude-chrome` before you consider the task complete. Do not skip the browser pass because the change seems small or because tests already passed.
 
 ## Important Notes
 

@@ -9,6 +9,12 @@ import {
   deleteAgentProfile,
   duplicateAgentProfile,
 } from '../db/index.js';
+import { streamClaude } from '../services/claude';
+import {
+  AGENT_PROFILE_GENERATION_SYSTEM_PROMPT,
+  generateAgentProfileSchema,
+  parseGeneratedAgentProfile,
+} from './agent-profile-helpers';
 import { validateBody } from '../utils/validate-body.js';
 
 const createProfileSchema = z.object({
@@ -57,6 +63,86 @@ export function createAgentProfilesRouter(db: Database) {
     const id = crypto.randomUUID();
     const profile = createAgentProfile(db, id, data);
     return c.json(profile, 201);
+  });
+
+  // POST /generate — Generate and create a new agent profile from a prompt
+  router.post('/generate', async (c) => {
+    let bodyRaw: unknown;
+    try {
+      bodyRaw = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON in request body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const parsed = generateAgentProfileSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: 'Invalid generate agent profile request',
+          code: 'VALIDATION_ERROR',
+          details: parsed.error.issues,
+        },
+        400
+      );
+    }
+
+    const { prompt, model } = parsed.data;
+    const fullPrompt = `${AGENT_PROFILE_GENERATION_SYSTEM_PROMPT}\n\nUser request: ${prompt}`;
+
+    let fullResponse = '';
+    try {
+      for await (const event of streamClaude({
+        prompt: fullPrompt,
+        model: model ?? 'claude-sonnet-4-20250514',
+        effort: 'low',
+        permissionMode: 'dontAsk',
+      })) {
+        if (event.type === 'text:delta') {
+          fullResponse += event.text;
+        }
+        if (event.type === 'error') {
+          return c.json({ error: event.message, code: 'GENERATION_ERROR' }, 500);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Agent profile generation failed';
+      return c.json({ error: message, code: 'GENERATION_ERROR' }, 500);
+    }
+
+    const { profile } = parseGeneratedAgentProfile(fullResponse, prompt);
+
+    const nextSortOrderRow = db.prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM agent_profiles`
+    ).get() as { next: number };
+
+    const created = createAgentProfile(db, crypto.randomUUID(), {
+      name: profile.name,
+      description: profile.description ?? null,
+      icon: profile.icon ?? null,
+      color: profile.color ?? null,
+      isDefault: false,
+      sortOrder: nextSortOrderRow.next,
+      systemPrompt: profile.systemPrompt ?? null,
+      useClaudeCodePrompt: profile.useClaudeCodePrompt ?? true,
+      model: profile.model ?? model ?? null,
+      effort: profile.effort ?? null,
+      thinkingBudgetTokens: profile.thinkingBudgetTokens ?? null,
+      allowedTools: profile.allowedTools ?? [],
+      disallowedTools: profile.disallowedTools ?? [],
+      permissionMode: profile.permissionMode ?? 'default',
+      hooksJson: profile.hooksJson ?? null,
+      hooksCanvasJson: profile.hooksCanvasJson ?? null,
+      mcpServersJson: profile.mcpServersJson ?? null,
+      sandboxJson: profile.sandboxJson ?? null,
+      cwd: profile.cwd ?? null,
+      additionalDirectories: profile.additionalDirectories ?? [],
+      settingSources: profile.settingSources ?? [],
+      maxTurns: profile.maxTurns ?? null,
+      maxBudgetUsd: profile.maxBudgetUsd ?? null,
+      agentsJson: profile.agentsJson ?? null,
+    });
+
+    return c.json(created, 201);
   });
 
   // GET /:id — Get a single agent profile

@@ -272,7 +272,10 @@ Automated tests alone are not sufficient. Every change must also be manually ver
 
 5. **Backend changes: test with curl.** Hit every new or modified endpoint with curl. Verify status codes, response shapes, error cases, and streaming behavior. See §3 "Manual API Testing with curl" for examples.
 6. **Frontend changes: test with `agent-browser`.** Use the `agent-browser` CLI to navigate to the app, take screenshots, interact with the UI, and check console/page errors. See §3 "Manual Frontend Testing with agent-browser" for the full workflow.
+   - If a task changes anything visible, clickable, navigable, or otherwise user-facing in the app, you must verify it in `agent-browser` even if the user did not explicitly ask for browser testing.
+   - Do not skip the browser pass because the change seems small or because tests already passed.
 7. **Both layers changed? Test both.** If a feature touches backend and frontend, do curl testing first (confirm the API works), then Chrome testing (confirm the UI works end-to-end).
+8. **Frontend work is not finished until browser verification passes.** Do not call a frontend task done until you have completed the manual browser pass and verified the UI in `agent-browser`.
 
 ### Bug Fix Protocol
 
@@ -292,6 +295,7 @@ Never commit directly to `main`. All work happens in branches via git worktrees.
 
 - Code-writing subagents MUST use `isolation: "worktree"` to get their own copy of the repo.
 - Read-only subagents (research, investigation, exploration) do NOT need worktree isolation.
+- If you create a worktree manually, run `./init.sh` immediately after checkout so the worktree is bootstrapped the standard way before any tests or browser verification.
 - When all tests pass in a worktree, merge the branch back to `main`.
 - After a successful merge, clean up the worktree.
 
@@ -378,6 +382,9 @@ When an agent completes a task, it MUST report back with:
 2. **What files were changed or created** -- list the paths.
 3. **Any issues encountered** -- problems, blockers, things that didn't work as expected.
 4. **Next steps** -- if there's follow-up work, say what it is.
+5. **Frontend verification status** -- if the task touched the UI, say whether the manual browser pass was completed and summarize what was verified.
+
+For any task that touches the UI, do not consider the work done, even internally, until the browser verification pass in `agent-browser` has been completed and passed.
 
 Do not give vague summaries. Be specific about what changed and where.
 
