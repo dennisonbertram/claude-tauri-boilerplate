@@ -58,9 +58,6 @@ fi
 
 ## Monorepo Structure
 
-- `apps/desktop` — Vite + React + Tauri frontend (dynamic port via init.sh)
-- `apps/server` — Hono + Bun backend with embedded SQLite (dynamic port via init.sh)
-- `packages/shared` — Shared TypeScript types (raw TS, no build step)
 - Package manager: **pnpm** workspaces
 - Server runtime: **Bun** (required — uses `bun:sqlite`)
 
