@@ -3,6 +3,24 @@ import type { Session } from '@claude-tauri/shared';
 import { ProfileBadge } from '@/components/agent-builder/shared/ProfileBadge';
 
 /* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ------------------------------------------------------------------ */
 /*  SessionItem — per-session row with context menu                    */
 /* ------------------------------------------------------------------ */
 
@@ -201,6 +219,13 @@ export function SessionItem({
               </div>
             )}
           </div>
+          {!isRenaming && (session.messageCount ?? 0) > 0 && (
+            <div className="text-[11px] text-muted-foreground/70 truncate mt-0.5 pl-0.5">
+              {session.messageCount} {session.messageCount === 1 ? 'message' : 'messages'}
+              {' · '}
+              {formatRelativeTime(session.updatedAt)}
+            </div>
+          )}
           {session.profile && (
             <div className="mt-0.5">
               <ProfileBadge profile={session.profile} />

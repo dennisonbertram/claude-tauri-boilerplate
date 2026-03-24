@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Artifact } from '@claude-tauri/shared';
 import * as api from '@/lib/workspace-api';
 import { DashboardPromptModal } from './DashboardPromptModal';
+import { DashboardWidgetRenderer } from './DashboardWidgetRenderer';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,8 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [revisionSpec, setRevisionSpec] = useState<string | null>(null);
+  const [revisionLoading, setRevisionLoading] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -127,6 +130,29 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
     void loadArtifacts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, includeArchived]);
+
+  // Fetch latest revision spec when an artifact is selected
+  useEffect(() => {
+    if (!selected?.currentRevisionId) {
+      setRevisionSpec(null);
+      return;
+    }
+    let cancelled = false;
+    setRevisionLoading(true);
+    api.fetchArtifactLatestRevision(selected.id)
+      .then((rev) => {
+        if (cancelled) return;
+        setRevisionSpec(rev.specJson ?? null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRevisionSpec(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRevisionLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.currentRevisionId]);
 
   const handleNewDashboard = useCallback(() => {
     setModalTitle('New Dashboard');
@@ -227,16 +253,6 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
     },
     [handleTitleSave]
   );
-
-  // Parse spec for display
-  const parsedSpec = selected ? (() => {
-    try {
-      return JSON.parse(selected.currentRevisionId ? '{}' : '{}');
-    } catch {
-      return null;
-    }
-  })() : null;
-  void parsedSpec;
 
   return (
     <div className="flex flex-1 min-h-0">
@@ -411,16 +427,22 @@ export function WorkspaceDashboardsView({ projectId, workspaceId: _workspaceId }
               <div className="rounded-md border border-border bg-muted/10">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Dashboard Spec
+                    Dashboard
                     {selected.currentRevisionId && ' (latest revision)'}
                   </span>
                 </div>
                 <div className="p-3">
-                  {selected.currentRevisionId ? (
+                  {revisionLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                  ) : revisionSpec ? (
+                    <DashboardWidgetRenderer specJson={revisionSpec} />
+                  ) : selected.currentRevisionId ? (
                     <p className="text-sm text-muted-foreground italic">
                       Spec stored in revision{' '}
                       <span className="font-mono">{selected.currentRevisionId.slice(0, 8)}</span>.
-                      Dashboard canvas is in early preview. Spec is saved — interactive widget rendering is coming soon.
+                      Unable to load revision data.
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">No spec generated yet.</p>

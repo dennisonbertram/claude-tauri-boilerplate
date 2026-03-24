@@ -33,8 +33,11 @@ export function ChatInput({
   ghostText,
   onAcceptSuggestion,
   contextSummary,
-  mcpServerNames,
+  mcpServerNames: _mcpServerNames,
   modelDisplay,
+  sessionTotalCost,
+  onCostClick,
+  contextUsage,
 }: ChatInputProps) {
   const { settings } = useSettings();
   // Input stretches to fill the footer — no max-width constraint so it
@@ -220,12 +223,27 @@ export function ChatInput({
               </div>
             )}
           </div>
-          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} />
+          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} />
         </div>
 
         <input ref={pickerRef} type="file" data-testid="file-input" multiple className="sr-only" onChange={handlePickFilesChange} />
       </div>
     </form>
+    {/* Token estimate row: input estimate + context window usage */}
+    {(input || contextUsage) && (
+      <div data-testid="token-estimate-row" className="flex items-center justify-center gap-3 mt-1 px-2 text-[11px] text-muted-foreground" style={{ opacity: 0.5 }}>
+        {input && (
+          <span data-testid="input-token-estimate" className="font-mono">
+            ~{formatTokenEstimate(Math.ceil(input.length / 4))} tokens in draft
+          </span>
+        )}
+        {contextUsage && contextUsage.inputTokens + contextUsage.outputTokens > 0 && (
+          <span data-testid="context-window-usage" className="font-mono">
+            {formatTokenEstimate(contextUsage.inputTokens + contextUsage.outputTokens)} / {formatTokenEstimate(contextUsage.maxTokens)} context
+          </span>
+        )}
+      </div>
+    )}
     {contextSummary && (
       <p data-testid="context-summary" className="text-xs italic text-center mt-1 px-2" style={{ opacity: 0.4, color: 'inherit' }}>
         {contextSummary}
@@ -233,4 +251,10 @@ export function ChatInput({
     )}
     </>
   );
+}
+
+function formatTokenEstimate(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}k`;
+  return String(tokens);
 }

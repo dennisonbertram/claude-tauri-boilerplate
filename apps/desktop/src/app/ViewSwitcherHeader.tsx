@@ -1,6 +1,6 @@
 interface ViewSwitcherHeaderProps {
-  activeView: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents';
-  onSwitchView: (view: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents') => void;
+  activeView: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker';
+  onSwitchView: (view: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker') => void;
 }
 
 export function ViewSwitcherHeader({ activeView, onSwitchView }: ViewSwitcherHeaderProps) {
@@ -10,6 +10,7 @@ export function ViewSwitcherHeader({ activeView, onSwitchView }: ViewSwitcherHea
     { view: 'chat' as const, label: 'Chat' },
     { view: 'workspaces' as const, label: 'Code' },
     { view: 'teams' as const, label: 'Cowork' },
+    { view: 'tracker' as const, label: 'Tracker' },
   ];
 
   return (

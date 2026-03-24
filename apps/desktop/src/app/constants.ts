@@ -2,7 +2,7 @@ import type { StatusBarProps } from '@/components/StatusBar';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import type { Checkpoint } from '@claude-tauri/shared';
 
-export const defaultStatusData: StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
+export const defaultStatusData: StatusBarProps & { checkpoints?: import('@claude-tauri/shared').Checkpoint[]; sessionInfo?: ChatPageStatusData['sessionInfo'] } = {
   model: null,
   isStreaming: false,
   toolCalls: new Map(),

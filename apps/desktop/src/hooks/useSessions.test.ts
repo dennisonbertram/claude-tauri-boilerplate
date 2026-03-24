@@ -42,6 +42,12 @@ describe('useSessions', () => {
       },
     });
 
+    // Default: resolve all fetches with an empty array (covers initial mount fetch)
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
     vi.spyOn(URL, 'createObjectURL').mockImplementation(mockCreateObjectURL);
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(mockRevokeObjectURL);
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(mockAnchorClick);
@@ -79,7 +85,8 @@ describe('useSessions', () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3131/api/sessions/session-1/export?format=json'
+      'http://localhost:3131/api/sessions/session-1/export?format=json',
+      expect.objectContaining({ headers: expect.any(Object) })
     );
     expect(mockCreateObjectURL).toHaveBeenCalledOnce();
     expect(mockAnchorClick).toHaveBeenCalledOnce();
@@ -139,20 +146,6 @@ describe('useSessions', () => {
   });
 
   it('passes search query text when fetching sessions', async () => {
-    mockFetch.mockImplementation(async (url: string) => {
-      if (url === 'http://localhost:3131/api/sessions?q=weekly%20standup') {
-        return {
-          ok: true,
-          json: async () => [],
-        };
-      }
-
-      return {
-        ok: true,
-        json: async () => [],
-      };
-    });
-
     const { result } = renderHook(() => useSessions());
 
     await act(async () => {
@@ -160,7 +153,8 @@ describe('useSessions', () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3131/api/sessions?q=weekly%20standup'
+      'http://localhost:3131/api/sessions?q=weekly%20standup',
+      expect.objectContaining({ headers: expect.any(Object) })
     );
   });
 
@@ -168,24 +162,12 @@ describe('useSessions', () => {
     renderHook(() => useSessions('alpha thread'));
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3131/api/sessions?q=alpha%20thread'
+      'http://localhost:3131/api/sessions?q=alpha%20thread',
+      expect.objectContaining({ headers: expect.any(Object) })
     );
   });
 
   it('passes prReviewModel when auto-naming a session', async () => {
-    mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
-      if (url.includes('/api/sessions') && url.includes('/auto-name')) {
-        return {
-          ok: true,
-          json: async () => ({ title: 'Test Title' }),
-        };
-      }
-      return {
-        ok: true,
-        json: async () => [],
-      };
-    });
-
     const { result } = renderHook(() => useSessions());
 
     await act(async () => {
@@ -196,7 +178,7 @@ describe('useSessions', () => {
       'http://localhost:3131/api/sessions/session-123/auto-name',
       expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ model: 'claude-haiku-4-5-20251001' }),
       })
     );

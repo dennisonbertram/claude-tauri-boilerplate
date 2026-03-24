@@ -38,10 +38,13 @@ export function useSessions(initialSearchQuery: string = '') {
   }, [settings.model]);
 
   const deleteSession = useCallback(async (id: string) => {
+    const session = sessions.find(s => s.id === id);
+    const sessionTitle = session?.title || 'Untitled session';
     await apiFetch(`/api/sessions/${id}`, { method: 'DELETE' });
     setSessions(prev => prev.filter(s => s.id !== id));
     if (activeSessionId === id) setActiveSessionId(null);
-  }, [activeSessionId]);
+    toast.success('Session deleted', { description: sessionTitle });
+  }, [activeSessionId, sessions]);
 
   const renameSession = useCallback(async (id: string, title: string) => {
     const res = await apiFetch(`/api/sessions/${id}`, {

@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateGoogleOAuthTable } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -26,6 +26,8 @@ export function createDb(path?: string): Database {
   migrateWorkspaceProviders(db);
   migrateWorkspaceDeploymentsTable(db);
   migrateDeploymentSettingsTable(db);
+  migrateTrackerTables(db);
+  migrateDocumentsTable(db);
   migrateGoogleOAuthTable(db);
   return db;
 }
@@ -113,6 +115,8 @@ export {
   createArtifactRevision,
   updateArtifactTitle,
   countArtifactRevisions,
+  getArtifactLatestRevision,
+  getArtifactRevision,
 } from './db-artifacts';
 
 // ─── Agent Profiles ─────────────────────────────────────────────────────────────
@@ -167,6 +171,15 @@ export {
 } from './db-workspace-provisioning';
 export type { WorkspaceProvisioningRunRow } from './db-workspace-provisioning';
 
+// ─── Documents ──────────────────────────────────────────────────────────────────
+export {
+  createDocument,
+  getDocument,
+  listDocuments,
+  updateDocument,
+  deleteDocument,
+} from './db-documents';
+
 // ─── Deployments & Settings ────────────────────────────────────────────────────
 export {
   getWorkspaceDeployment,
@@ -176,6 +189,33 @@ export {
   getRailwayToken,
   setRailwayToken,
 } from './db-deployments';
+
+// ─── Tracker ─────────────────────────────────────────────────────────────────
+export {
+  createTrackerProject,
+  listTrackerProjects,
+  getTrackerProject,
+  getTrackerProjectBySlug,
+  getTrackerProjectWithDetails,
+  updateTrackerProject,
+  deleteTrackerProject,
+  listTrackerStatuses,
+  createTrackerStatus,
+  updateTrackerStatus,
+  deleteTrackerStatus,
+  listTrackerLabels,
+  createTrackerLabel,
+  deleteTrackerLabel,
+  createTrackerIssue,
+  getTrackerIssue,
+  getTrackerIssueByIdentifier,
+  listTrackerIssues,
+  updateTrackerIssue,
+  moveTrackerIssue,
+  deleteTrackerIssue,
+  listTrackerComments,
+  createTrackerComment,
+} from './db-tracker';
 
 // ─── Google OAuth ──────────────────────────────────────────────────────────────
 export {

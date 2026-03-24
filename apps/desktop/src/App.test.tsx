@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -34,7 +35,7 @@ vi.mock('./hooks/useWorkspaces', () => ({
 }));
 
 vi.mock('@/components/auth/AuthGate', () => ({
-  AuthGate: ({ children }: { children: (auth: { email: string; plan: string }) => JSX.Element }) =>
+  AuthGate: ({ children }: { children: (auth: { email: string; plan: string }) => React.JSX.Element }) =>
     children({ email: 'qa@example.com', plan: 'pro' }),
 }));
 
@@ -87,13 +88,13 @@ vi.mock('@/components/chat/ChatPage', () => ({
         <div data-testid="chat-page-placeholder" />
         <button
           type="button"
-          onClick={() => props.onSessionInitialized?.('session-from-stream')}
+          onClick={() => (props.onSessionInitialized as ((id: string) => void) | undefined)?.('session-from-stream')}
         >
           session init
         </button>
         <button
           type="button"
-          onClick={() => props.onInitialMessageConsumed?.()}
+          onClick={() => (props.onInitialMessageConsumed as (() => void) | undefined)?.()}
         >
           initial consumed
         </button>
@@ -182,8 +183,9 @@ const makeUseSessionsMock = () => {
       forkSession: vi.fn(),
       exportSession: vi.fn(),
       autoNameSession: vi.fn(),
+      fetchMessages: vi.fn(),
       fetchSessions,
-    }),
+    } as unknown as ReturnType<typeof useSessions>),
     createSession,
     fetchSessions,
   };
@@ -221,7 +223,7 @@ describe('App', () => {
 
     expect(mockSessions.createSession).not.toHaveBeenCalled();
     expect(screen.getByTestId('chat-page-placeholder')).toBeInTheDocument();
-    expect(latestChatPageProps?.initialMessage).toBe('Build an app');
+    expect(latestChatPageProps?.['initialMessage']).toBe('Build an app');
   });
 
   it('keeps ChatPage mounted with stable key after session:init (no premature remount)', () => {
@@ -265,7 +267,7 @@ describe('App', () => {
     expect(mockSessions.setActiveSessionId).not.toHaveBeenCalled();
 
     // ChatPage should still have the initialMessage prop
-    expect(latestChatPageProps?.initialMessage).toBe('Build an app');
+    expect(latestChatPageProps?.['initialMessage']).toBe('Build an app');
   });
 
   it('regression: onInitialMessageConsumed does not prematurely clear pendingMessage', () => {

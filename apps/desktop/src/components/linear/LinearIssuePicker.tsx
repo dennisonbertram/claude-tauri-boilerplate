@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { X, ClockCounterClockwise } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import type { Project } from '@claude-tauri/shared';
 import * as linear from '@/lib/linear-api';
 import * as workspaceApi from '@/lib/workspace-api';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 
 type LinearIssue = linear.LinearIssue;
 
@@ -29,6 +31,9 @@ export function LinearIssuePicker({
   const [issues, setIssues] = useState<LinearIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { history: searchHistory, addSearch, removeSearch, clearAll: clearHistory } = useSearchHistory('linear');
 
   const [selectedIssue, setSelectedIssue] = useState<LinearIssue | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -86,6 +91,7 @@ export function LinearIssuePicker({
           const list = await linear.listIssues(query);
           if (cancelled) return;
           setIssues(list);
+          if (query.trim()) addSearch(query.trim());
         } catch (err) {
           if (cancelled) return;
           setIssues([]);
@@ -202,16 +208,64 @@ export function LinearIssuePicker({
         ) : (
           <div className="grid grid-cols-2 gap-0">
             <div className="border-r border-border p-4">
+              <div className="relative">
               <div className="flex items-center gap-2">
                 <Input
+                  ref={searchInputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setShowHistory(true)}
+                  onBlur={() => setTimeout(() => setShowHistory(false), 200)}
                   placeholder="Search by title or identifier (e.g. ENG-123)…"
                 />
                 <Button variant="outline" size="sm" onClick={() => setQuery('')}>
                   Clear
                 </Button>
               </div>
+              {showHistory && searchHistory.length > 0 && !query.trim() && (
+                <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                      <ClockCounterClockwise className="h-3 w-3" />
+                      Recent searches
+                    </span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => clearHistory()}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  {searchHistory.map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent cursor-pointer"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setQuery(item);
+                        setShowHistory(false);
+                      }}
+                    >
+                      <span className="text-sm truncate flex-1">{item}</span>
+                      <button
+                        type="button"
+                        className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSearch(item);
+                        }}
+                        title="Remove from history"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
               {error && (
                 <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   {error}

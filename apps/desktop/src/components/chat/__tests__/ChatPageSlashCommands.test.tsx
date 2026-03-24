@@ -236,7 +236,7 @@ describe('ChatPage - slash command validation', () => {
     expect(mockSendMessage).toHaveBeenCalledOnce();
     expect(mockSendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining('Target URL: http://localhost:1420'),
+        text: expect.stringContaining('Target URL: http://localhost:3000'),
       })
     );
     expect(mockSetMessages).not.toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { Plus } from '@phosphor-icons/react';
+import { Plus, CurrencyDollar } from '@phosphor-icons/react';
 
 interface ChatInputToolbarProps {
   inputHasContent: boolean;
@@ -6,6 +6,10 @@ interface ChatInputToolbarProps {
   onPickFiles: () => void;
   onOpenPalette: () => void;
   modelDisplay?: string;
+  /** Total session cost in USD — shown as a clickable pill next to model name */
+  sessionTotalCost?: number;
+  /** Called when the cost indicator is clicked (opens cost breakdown dialog) */
+  onCostClick?: () => void;
 }
 
 export function ChatInputToolbar({
@@ -14,6 +18,8 @@ export function ChatInputToolbar({
   onPickFiles,
   onOpenPalette,
   modelDisplay,
+  sessionTotalCost,
+  onCostClick,
 }: ChatInputToolbarProps) {
   return (
     <div className="flex items-center justify-between px-3 pb-3 pt-1">
@@ -37,8 +43,20 @@ export function ChatInputToolbar({
         </button>
       </div>
 
-      {/* Right: model display + submit */}
+      {/* Right: cost + model display + submit */}
       <div className="flex items-center gap-2">
+        {sessionTotalCost != null && sessionTotalCost > 0 && (
+          <button
+            type="button"
+            data-testid="cost-indicator"
+            onClick={onCostClick}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground font-mono px-2 py-1 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer"
+            title="View session cost breakdown"
+          >
+            <CurrencyDollar className="h-3 w-3" />
+            <span>${sessionTotalCost.toFixed(4)}</span>
+          </button>
+        )}
         {modelDisplay && (
           <span className="text-xs text-muted-foreground font-medium px-2 py-1 rounded-lg">
             {modelDisplay}

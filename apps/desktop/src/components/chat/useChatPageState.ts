@@ -402,12 +402,14 @@ export function useChatPageState(props: ChatPageProps) {
       userMsgCountRef.current += 1;
       if (
         userMsgCountRef.current >= 1 &&
+        messages.length >= 2 &&
         !autoNameCalledRef.current &&
         sessionId &&
         onAutoName
       ) {
         autoNameCalledRef.current = true;
-        onAutoName(sessionId);
+        // Small delay to ensure the server has persisted the assistant message
+        setTimeout(() => onAutoName(sessionId), 500);
       }
     }
   }, [isLoading, sessionId, onAutoName, messages, workspaceId, fetchWorkspaceDiff]);

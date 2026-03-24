@@ -36,7 +36,7 @@ describe('Chat Route - Slash command handling', () => {
   let db: Database;
 
   beforeEach(() => {
-    mockQuery.mockReset();
+    mockQuery.mockClear();
     db = createDb(':memory:');
     const chatRouter = createChatRouter(db);
     testApp = new Hono();
@@ -61,6 +61,8 @@ describe('Chat Route - Slash command handling', () => {
     // Non-client slash commands (including plugin-installed ones) are handled by the SDK.
     // The server should not reject them at the API boundary.
     expect(res.status).toBe(200);
+    // Consume the streaming response body so the execute callback completes
+    await res.text();
     expect(mockQuery).toHaveBeenCalled();
   });
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Microphone, ArrowUpRight } from '@phosphor-icons/react';
+import { ProfileSelector } from '@/components/agent-builder/shared/ProfileSelector';
+import type { AgentProfile } from '@claude-tauri/shared';
 
 const TEMPLATES = [
   { title: 'Generate a dashboard layout', subtitle: 'With sidebar navigation and data grid', Icon: SquaresFour },
@@ -8,9 +10,9 @@ const TEMPLATES = [
 ];
 
 interface WelcomeScreenProps {
-  onNewChat: () => void;
+  onNewChat: (profileId?: string) => void;
   onSubmit?: (message: string) => void;
-  agentProfiles?: unknown[];
+  agentProfiles?: AgentProfile[];
   selectedProfileId?: string | null;
   onSelectProfile?: (id: string | null) => void;
   modelDisplay?: string;
@@ -19,6 +21,9 @@ interface WelcomeScreenProps {
 export function WelcomeScreen({
   onNewChat,
   onSubmit,
+  agentProfiles,
+  selectedProfileId,
+  onSelectProfile,
   modelDisplay = 'Claude',
 }: WelcomeScreenProps) {
   const [inputValue, setInputValue] = useState('');
@@ -60,6 +65,18 @@ export function WelcomeScreen({
             </a>
           </p>
         </div>
+
+        {/* Profile selector */}
+        {agentProfiles && agentProfiles.length > 0 && onSelectProfile && (
+          <div className="w-full max-w-3xl mb-4">
+            <div className="text-xs text-muted-foreground mb-1.5 px-1">Start as</div>
+            <ProfileSelector
+              profiles={agentProfiles}
+              selectedProfileId={selectedProfileId ?? null}
+              onSelectProfile={onSelectProfile}
+            />
+          </div>
+        )}
 
         {/* Large card composer */}
         <div className="w-full max-w-3xl bg-card rounded-[28px] shadow-[0_8px_30px_-6px_rgba(0,0,0,0.04),0_4px_12px_-4px_rgba(0,0,0,0.02)] border border-border p-3 flex flex-col mb-16 transition-all duration-300 focus-within:shadow-[0_8px_40px_-6px_rgba(0,0,0,0.08),0_4px_12px_-4px_rgba(0,0,0,0.04)] focus-within:border-border/80">

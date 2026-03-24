@@ -28,7 +28,7 @@ function makeProfile(overrides: Partial<AgentProfile> = {}): AgentProfile {
     sandboxJson: '',
     agentsJson: '',
     cwd: null,
-    additionalDirectories: null,
+    additionalDirectories: [],
     maxTurns: null,
     maxBudgetUsd: null,
     createdAt: '2026-01-01T00:00:00Z',
@@ -38,10 +38,11 @@ function makeProfile(overrides: Partial<AgentProfile> = {}): AgentProfile {
 }
 
 describe('AgentProfileEditor Cmd/Ctrl+S shortcut', () => {
-  let onSave: ReturnType<typeof vi.fn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let onSave: any;
 
   beforeEach(() => {
-    onSave = vi.fn<[], Promise<AgentProfile>>().mockResolvedValue(makeProfile());
+    onSave = vi.fn().mockResolvedValue(makeProfile());
   });
 
   it('saves the updated profile and prevents default on Cmd+S', async () => {

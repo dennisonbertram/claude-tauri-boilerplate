@@ -20,6 +20,7 @@ interface WebSearchDisplayProps {
 
 interface WebSearchInput {
   query: string;
+  [key: string]: unknown;
 }
 
 interface SearchResult {

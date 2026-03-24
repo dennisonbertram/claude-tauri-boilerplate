@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { DiffMode } from './diff-parser';
 import type * as api from '@/lib/workspace-api';
@@ -22,6 +23,7 @@ interface DiffToolbarProps {
   onToggleAllReviewed: () => void;
   onReviewClick: () => void;
   onReviewContextMenu: (e: React.MouseEvent) => void;
+  rawDiff: string;
 }
 
 export function DiffToolbar({
@@ -44,7 +46,32 @@ export function DiffToolbar({
   onToggleAllReviewed,
   onReviewClick,
   onReviewContextMenu,
+  rawDiff,
 }: DiffToolbarProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(rawDiff);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard write failed silently
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([rawDiff], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'workspace.patch';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex flex-col gap-2 border-b border-border p-3">
       <div className="flex items-center justify-between gap-2">
@@ -68,6 +95,12 @@ export function DiffToolbar({
           </Button>
           <Button variant="ghost" size="sm" onClick={onRefresh}>
             Refresh
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleCopy}>
+            {copied ? 'Copied!' : 'Copy'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleDownload}>
+            Download
           </Button>
           <Button
             variant="outline"

@@ -46,6 +46,16 @@ export async function testGithubToken(token: string): Promise<{ ok: boolean; use
   return res.json();
 }
 
+export async function createGithubIssue(projectId: string, params: { title: string; body: string; labels?: string[] }): Promise<{ url: string; number: number }> {
+  const res = await fetch(`${API_BASE}/api/projects/${projectId}/github-issues`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) { const body = await res.json().catch(() => ({ error: res.statusText })); throw new Error(body.error || `Failed to create issue: ${res.status}`); }
+  return res.json();
+}
+
 export async function createProjectFromGithub(owner: string, repo: string, options?: { localPath?: string; token?: string }): Promise<import('@claude-tauri/shared').Project> {
   const res = await fetch(`${API_BASE}/api/projects/from-github`, {
     method: 'POST',
