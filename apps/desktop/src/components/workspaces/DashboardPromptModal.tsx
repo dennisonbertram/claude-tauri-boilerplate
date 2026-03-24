@@ -1,7 +1,27 @@
 // Modal for collecting a dashboard generation prompt from the user.
 // Replaces window.prompt() across all dashboard creation/regeneration flows.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+const STORAGE_KEY = 'dashboard-prompt-history';
+const MAX_HISTORY = 10;
+
+function loadPromptHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((s: unknown) => typeof s === 'string').slice(0, MAX_HISTORY) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePromptToHistory(prompt: string) {
+  const history = loadPromptHistory().filter((p) => p !== prompt);
+  history.unshift(prompt);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+}
 
 export interface DashboardPromptModalProps {
   isOpen: boolean;
@@ -48,6 +68,14 @@ export function DashboardPromptModal({
   onCancel,
 }: DashboardPromptModalProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [history, setHistory] = useState<string[]>([]);
+
+  // Load prompt history when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setHistory(loadPromptHistory());
+    }
+  }, [isOpen]);
 
   // Auto-focus textarea when opened and populate with defaultValue
   useEffect(() => {
@@ -81,6 +109,7 @@ export function DashboardPromptModal({
   const handleSubmit = () => {
     const value = textareaRef.current?.value ?? '';
     if (value.trim() && !isLoading) {
+      savePromptToHistory(value.trim());
       onConfirm(value.trim());
     }
   };
@@ -95,6 +124,27 @@ export function DashboardPromptModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+
+        {history.length > 0 && (
+          <div className="mt-2 mb-1">
+            <div className="text-xs text-muted-foreground mb-1">Recent prompts:</div>
+            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+              {history.map((prompt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    if (textareaRef.current) textareaRef.current.value = prompt;
+                  }}
+                  className="text-left text-xs rounded px-2 py-1.5 bg-zinc-900/50 border border-border hover:bg-accent hover:text-foreground truncate transition-colors text-muted-foreground"
+                  title={prompt}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4">
           <textarea

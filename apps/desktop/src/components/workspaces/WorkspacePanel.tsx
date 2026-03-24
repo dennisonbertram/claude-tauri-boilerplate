@@ -136,7 +136,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
             </div>
           )
         ) : activeTab === 'diff' ? (
-          <WorkspaceDiffView workspaceId={workspace.id} />
+          <WorkspaceDiffView workspaceId={workspace.id} projectId={workspace.projectId} />
         ) : activeTab === 'dashboards' ? (
           <WorkspaceDashboardsView projectId={workspace.projectId} workspaceId={workspace.id} />
         ) : activeTab === 'notes' ? (

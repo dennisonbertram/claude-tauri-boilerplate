@@ -6,6 +6,8 @@ import {
   createArtifactRevision,
   setArtifactCurrentRevision,
   updateArtifactTitle,
+  getArtifactLatestRevision,
+  getArtifactRevision,
 } from '../db';
 import { streamClaude } from '../services/claude';
 import {
@@ -31,6 +33,30 @@ export function createArtifactsRouter(db: Database) {
       return c.json({ error: 'Artifact not found', code: 'NOT_FOUND' }, 404);
     }
     return c.json(artifact);
+  });
+
+  // GET /api/artifacts/:id/latest-revision — get the latest revision for an artifact
+  router.get('/:id/latest-revision', (c) => {
+    const id = c.req.param('id');
+    const artifact = getArtifact(db, id);
+    if (!artifact) {
+      return c.json({ error: 'Artifact not found', code: 'NOT_FOUND' }, 404);
+    }
+    const revision = getArtifactLatestRevision(db, id);
+    if (!revision) {
+      return c.json({ error: 'No revisions found', code: 'NOT_FOUND' }, 404);
+    }
+    return c.json(revision);
+  });
+
+  // GET /api/artifacts/:id/revisions/:revisionId — get a specific revision
+  router.get('/:id/revisions/:revisionId', (c) => {
+    const revisionId = c.req.param('revisionId');
+    const revision = getArtifactRevision(db, revisionId);
+    if (!revision) {
+      return c.json({ error: 'Revision not found', code: 'NOT_FOUND' }, 404);
+    }
+    return c.json(revision);
   });
 
   // PATCH /api/artifacts/:id/archive — archive an artifact

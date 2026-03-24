@@ -114,6 +114,8 @@ export {
   createArtifactRevision,
   updateArtifactTitle,
   countArtifactRevisions,
+  getArtifactLatestRevision,
+  getArtifactRevision,
 } from './db-artifacts';
 
 // ─── Agent Profiles ─────────────────────────────────────────────────────────────

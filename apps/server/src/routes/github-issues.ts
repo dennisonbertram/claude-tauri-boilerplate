@@ -168,5 +168,74 @@ export function createGithubIssuesRouter(db: Database) {
     }
   });
 
+  /**
+   * POST /api/projects/:projectId/github-issues
+   * Create a GitHub issue for a project's repo using the `gh` CLI.
+   */
+  router.post('/:projectId/github-issues', async (c) => {
+    const projectId = c.req.param('projectId');
+
+    const project = getProject(db, projectId);
+    if (!project) {
+      return c.json({ error: 'Project not found', code: 'NOT_FOUND' }, 404);
+    }
+
+    let body: { title?: string; body?: string; labels?: string[] };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON in request body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const { title, body: issueBody, labels } = body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return c.json({ error: 'Missing or empty title', code: 'VALIDATION_ERROR' }, 400);
+    }
+    if (!issueBody || typeof issueBody !== 'string') {
+      return c.json({ error: 'Missing or empty body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const args: string[] = [
+      'issue', 'create',
+      '--title', title.trim(),
+      '--body', issueBody,
+    ];
+
+    if (labels && Array.isArray(labels)) {
+      for (const label of labels) {
+        if (typeof label === 'string' && label.trim()) {
+          args.push('--label', label.trim());
+        }
+      }
+    }
+
+    try {
+      const result = Bun.spawnSync(['gh', ...args], {
+        cwd: project.repoPathCanonical,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+
+      if (result.exitCode !== 0) {
+        const stderr = result.stderr.toString().trim();
+        if (stderr.includes('authentication') || stderr.includes('not logged') || stderr.includes('Could not resolve')) {
+          return c.json({ error: 'GitHub CLI not authenticated or no remote', code: 'GH_ERROR' }, 503);
+        }
+        return c.json({ error: 'Failed to create GitHub issue', code: 'GH_ERROR', detail: stderr.slice(0, 200) }, 502);
+      }
+
+      const output = result.stdout.toString().trim();
+      // gh issue create outputs the issue URL, e.g. https://github.com/owner/repo/issues/42
+      const urlMatch = output.match(/(https:\/\/github\.com\/[^\s]+\/issues\/(\d+))/);
+      const url = urlMatch?.[1] ?? output;
+      const number = urlMatch?.[2] ? parseInt(urlMatch[2], 10) : 0;
+
+      return c.json({ url, number });
+    } catch {
+      return c.json({ error: 'GitHub CLI not available', code: 'GH_UNAVAILABLE' }, 503);
+    }
+  });
+
   return router;
 }

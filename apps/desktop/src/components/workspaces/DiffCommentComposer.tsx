@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface DiffCommentComposerProps {
@@ -8,9 +9,16 @@ interface DiffCommentComposerProps {
 }
 
 export function DiffCommentComposer({ value, onChange, onSave, onCancel }: DiffCommentComposerProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   return (
     <div className="flex flex-col gap-2 border-y border-border bg-zinc-950/40 p-2">
       <textarea
+        ref={textareaRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="w-full min-h-20 rounded border border-border bg-background p-2 text-xs font-mono text-foreground"
