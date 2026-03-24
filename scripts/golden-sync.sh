@@ -14,40 +14,43 @@ GOLDEN_DIR="${GOLDEN_DIR:-$HOME/.claude-tauri/golden}"
 
 info "Syncing golden directory at $GOLDEN_DIR"
 
-# Create golden directory structure
-mkdir -p "$GOLDEN_DIR/apps/desktop"
-mkdir -p "$GOLDEN_DIR/apps/server"
-mkdir -p "$GOLDEN_DIR/packages/shared"
-
-# Copy workspace configuration files
+# Copy root workspace configuration files
+mkdir -p "$GOLDEN_DIR"
 cp "$REPO_DIR/pnpm-lock.yaml" "$GOLDEN_DIR/"
 cp "$REPO_DIR/package.json" "$GOLDEN_DIR/"
 
-# Copy pnpm-workspace.yaml
 if [ -f "$REPO_DIR/pnpm-workspace.yaml" ]; then
   cp "$REPO_DIR/pnpm-workspace.yaml" "$GOLDEN_DIR/"
 fi
 
-# Copy .npmrc if it exists
 if [ -f "$REPO_DIR/.npmrc" ]; then
   cp "$REPO_DIR/.npmrc" "$GOLDEN_DIR/"
 fi
 
-# Copy all workspace package.json files
-cp "$REPO_DIR/apps/desktop/package.json" "$GOLDEN_DIR/apps/desktop/"
-cp "$REPO_DIR/apps/server/package.json" "$GOLDEN_DIR/apps/server/"
-cp "$REPO_DIR/packages/shared/package.json" "$GOLDEN_DIR/packages/shared/"
+# Dynamically discover all workspace packages from their package.json files
+# This avoids hardcoding package paths — new packages are picked up automatically.
+workspace_dirs=()
+while IFS= read -r pkg_json; do
+  workspace_dirs+=("$(dirname "$pkg_json")")
+done < <(cd "$REPO_DIR" && find apps packages -maxdepth 2 -name package.json -not -path '*/node_modules/*' 2>/dev/null | sort)
 
-# The shared package exports raw TypeScript, so we need its source for resolution
-if [ -d "$REPO_DIR/packages/shared/src" ]; then
-  mkdir -p "$GOLDEN_DIR/packages/shared/src"
-  cp -R "$REPO_DIR/packages/shared/src/." "$GOLDEN_DIR/packages/shared/src/"
-fi
+info "Found ${#workspace_dirs[@]} workspace packages: ${workspace_dirs[*]}"
+
+for ws_dir in "${workspace_dirs[@]}"; do
+  mkdir -p "$GOLDEN_DIR/$ws_dir"
+  cp "$REPO_DIR/$ws_dir/package.json" "$GOLDEN_DIR/$ws_dir/"
+
+  # If the package exports raw TypeScript source (like shared), copy it for resolution
+  if [ -d "$REPO_DIR/$ws_dir/src" ] && grep -q '"\.\/src' "$REPO_DIR/$ws_dir/package.json" 2>/dev/null; then
+    mkdir -p "$GOLDEN_DIR/$ws_dir/src"
+    cp -R "$REPO_DIR/$ws_dir/src/." "$GOLDEN_DIR/$ws_dir/src/"
+  fi
+done
 
 # Install dependencies in golden directory
 info "Running pnpm install in golden directory..."
 cd "$GOLDEN_DIR"
-pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+CI=true pnpm install --frozen-lockfile 2>/dev/null || CI=true pnpm install
 ok "Dependencies installed"
 
 # Write lockfile hash for cache invalidation
