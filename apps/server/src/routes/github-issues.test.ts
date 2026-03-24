@@ -19,8 +19,8 @@ beforeAll(async () => {
   repoPath = join(tempDir, 'repo');
   mkdirSync(repoPath, { recursive: true });
 
-  // Initialize a minimal git repo
-  Bun.spawnSync(['git', 'init'], { cwd: repoPath });
+  // Initialize a minimal git repo with 'main' as the default branch
+  Bun.spawnSync(['git', 'init', '-b', 'main'], { cwd: repoPath });
   Bun.spawnSync(['git', 'config', 'user.email', 'test@test.com'], { cwd: repoPath });
   Bun.spawnSync(['git', 'config', 'user.name', 'Test'], { cwd: repoPath });
   await Bun.write(join(repoPath, 'README.md'), '# Test');
@@ -29,9 +29,7 @@ beforeAll(async () => {
 
   // Create additional branches for branch listing tests
   Bun.spawnSync(['git', 'checkout', '-b', 'feature/auth'], { cwd: repoPath });
-  Bun.spawnSync(['git', 'checkout', 'main'], { cwd: repoPath }).exitCode ||
-    Bun.spawnSync(['git', 'checkout', '-b', 'main'], { cwd: repoPath });
-  Bun.spawnSync(['git', 'branch', '-m', 'main'], { cwd: repoPath });
+  Bun.spawnSync(['git', 'checkout', 'main'], { cwd: repoPath });
   Bun.spawnSync(['git', 'checkout', '-b', 'fix/bug-123'], { cwd: repoPath });
   Bun.spawnSync(['git', 'checkout', 'main'], { cwd: repoPath });
 });
