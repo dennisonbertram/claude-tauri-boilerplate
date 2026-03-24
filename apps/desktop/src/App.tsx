@@ -56,7 +56,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const { handleTaskComplete, markAsRead } = useTaskNotifications();
   const subagentActiveCountRef = useRef(0);
   useEffect(() => { const h = (e: BeforeUnloadEvent) => { if (subagentActiveCountRef.current > 0) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', h); return () => window.removeEventListener('beforeunload', h); }, []);
-  const { workspaces, addWorkspace, refresh: refreshWorkspaces } = useWorkspaces(selectedProjectId);
+  const { workspaces, addWorkspace, renameWorkspace, refresh: refreshWorkspaces } = useWorkspaces(selectedProjectId);
   const workspacesByProject = useMemo(() => { const m: Record<string, Workspace[]> = {}; if (selectedProjectId) m[selectedProjectId] = workspaces; return m; }, [selectedProjectId, workspaces]);
   const handleWorkspaceTaskComplete = useCallback((p: { status: 'completed' | 'failed' | 'stopped'; summary: string; branch?: string; workspaceName?: string }) => handleTaskComplete({ ...p, workspaceId: selectedWorkspace?.id }), [handleTaskComplete, selectedWorkspace?.id]);
   const handleNewChat = async (profileId?: string) => { if (profileId !== undefined) setSelectedProfileId(profileId); setActiveSessionId(null); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveView('chat'); setActiveSessionHasMessages(false); };
@@ -106,7 +106,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
                 ) : <WelcomeScreen onNewChat={handleNewChat} onSubmit={handleWelcomeSubmit} agentProfiles={agentProfiles} selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId} modelDisplay={getModelDisplay(settings.model)} />}
               </div>
             ) : activeView === 'workspaces' ? (
-              selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} />
+              selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} onRenameWorkspace={async (id, updates) => { await renameWorkspace(id, updates); await handleWorkspaceUpdate(); }} />
                 : <ProjectsGridView projects={projects} workspacesByProject={workspacesByProject} onAddProject={() => setAddProjectOpen(true)} onSelectWorkspace={handleSelectWorkspace} onSelectProject={(id) => setSelectedProjectId(id)} />
             ) : activeView === 'tracker' ? <TrackerView /> : activeView === 'documents' ? <DocumentsView /> : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
           </div>

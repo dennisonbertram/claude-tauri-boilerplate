@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Workspace } from '@claude-tauri/shared';
 import { Button } from '@/components/ui/button';
 import { WorkspaceStatusBadge } from './WorkspaceStatusBadge';
@@ -13,6 +14,7 @@ interface WorkspacePanelHeaderProps {
   canDiscard: boolean;
   onMerge: () => void;
   onDiscard: () => void;
+  onRename?: (id: string, updates: { name?: string }) => Promise<void> | void;
 }
 
 export function WorkspacePanelHeader({
@@ -23,13 +25,93 @@ export function WorkspacePanelHeader({
   canDiscard,
   onMerge,
   onDiscard,
+  onRename,
 }: WorkspacePanelHeaderProps) {
   const { settings } = useSettings();
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(workspace.name);
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  // Sync editValue when workspace name changes externally
+  useEffect(() => {
+    if (!editing) setEditValue(workspace.name);
+  }, [workspace.name, editing]);
+
+  const handleSave = useCallback(async () => {
+    const trimmed = editValue.trim();
+    if (!trimmed || trimmed === workspace.name) {
+      setEditValue(workspace.name);
+      setEditing(false);
+      return;
+    }
+    if (onRename) {
+      setSaving(true);
+      try {
+        await onRename(workspace.id, { name: trimmed });
+      } finally {
+        setSaving(false);
+      }
+    }
+    setEditing(false);
+  }, [editValue, workspace.name, workspace.id, onRename]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void handleSave();
+    } else if (e.key === 'Escape') {
+      setEditValue(workspace.name);
+      setEditing(false);
+    }
+  }, [handleSave, workspace.name]);
 
   return (
     <div className="flex items-center justify-between border-b border-border px-4 py-2">
       <div className="flex items-center gap-3 min-w-0">
-        <h2 className="text-sm font-semibold text-foreground truncate">{workspace.name}</h2>
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="text-sm font-semibold text-foreground bg-transparent border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring min-w-0"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => void handleSave()}
+            onKeyDown={handleKeyDown}
+            disabled={saving}
+            aria-label="Rename workspace"
+          />
+        ) : (
+          <div className="group flex items-center gap-1 min-w-0">
+            <h2
+              className={`text-sm font-semibold text-foreground truncate ${onRename ? 'cursor-pointer hover:underline' : ''}`}
+              onClick={onRename ? () => setEditing(true) : undefined}
+              title={onRename ? 'Click to rename' : undefined}
+            >
+              {workspace.name}
+            </h2>
+            {onRename && (
+              <button
+                type="button"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-0.5"
+                onClick={() => setEditing(true)}
+                aria-label="Rename workspace"
+                title="Rename workspace"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
         <span className="text-xs font-mono text-muted-foreground shrink-0">{workspace.branch}</span>
         <button
           type="button"
