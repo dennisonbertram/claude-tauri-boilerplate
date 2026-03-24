@@ -15,6 +15,8 @@ export function TeamsView() {
     createTeam,
     deleteTeam,
     shutdownTeam,
+    addAgent,
+    removeAgent,
   } = useTeams();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -28,6 +30,8 @@ export function TeamsView() {
         messages={messages}
         tasks={tasks}
         onShutdown={shutdownTeam}
+        onAddAgent={addAgent}
+        onRemoveAgent={removeAgent}
         onBack={() => setActiveTeamId(null)}
       />
     );
