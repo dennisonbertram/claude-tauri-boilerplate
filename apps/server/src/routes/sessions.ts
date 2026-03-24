@@ -324,6 +324,20 @@ export function createSessionsRouter(db: Database) {
       } else {
         console.error('[auto-name] Failed to generate title:', err instanceof Error ? err.message.split('\n')[0] : 'unknown error');
       }
+
+      // Fall back to a content-based title from the first user message
+      const firstUserMsg = messages.find((m) => m.role === 'user');
+      if (firstUserMsg?.content) {
+        const words = firstUserMsg.content.trim().split(/\s+/).slice(0, 6);
+        let fallback = words.join(' ');
+        if (firstUserMsg.content.trim().split(/\s+/).length > 6) {
+          fallback += '...';
+        }
+        fallback = fallback.slice(0, 60);
+        updateSessionTitle(db, id, fallback);
+        return c.json({ title: fallback });
+      }
+
       return c.json(
         { error: 'Failed to generate title', code: 'GENERATION_ERROR' },
         500
