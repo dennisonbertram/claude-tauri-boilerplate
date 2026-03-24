@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-106",
+  "title": "Regenerate Dashboard with Different Prompt",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Dashboards tab > Test Dashboard",
+  "observations": [
+    "Regenerate dashboard button visible on dashboard detail view header",
+    "Positioned next to Archive button"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Regenerate dashboard button"]
+}

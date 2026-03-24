@@ -1,0 +1,352 @@
+{
+  "timestamp": "2026-03-23T12:00:00.000Z",
+  "run": 2,
+  "reason": "Post-fix re-walk after PR #342 (ChatPage/Workspace crash fix) and PR #343 (HookCard/Settings crash fix)",
+  "total_stories": 161,
+  "walking": 56,
+  "skipping": 105,
+  "re_verifying": 0,
+  "order": [
+    {
+      "id": "STORY-004",
+      "title": "Fork Session at Checkpoint",
+      "action": "re-walk",
+      "reason": "BLOCKED by conversation crash (now fixed)",
+      "category": "Chat Sessions"
+    },
+    {
+      "id": "STORY-012",
+      "title": "Browse Full Session Thread with Message Parts",
+      "action": "re-walk",
+      "reason": "BLOCKED by conversation crash (now fixed)",
+      "category": "Chat Sessions"
+    },
+    {
+      "id": "STORY-028",
+      "title": "Create a Basic Workspace Manually",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-029",
+      "title": "Create Workspace from GitHub Issue",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-030",
+      "title": "Create Workspace from Branch",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-031",
+      "title": "Monitor Workspace Creation Status",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-032",
+      "title": "View Workspace Diff and Changed Files",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-033",
+      "title": "Add Additional Directories to Workspace",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-034",
+      "title": "Merge Workspace Back to Base Branch",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-035",
+      "title": "Discard Workspace (Destructive)",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-036",
+      "title": "Add Code Review Comments to Diff",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-037",
+      "title": "View Workspace Git History (Revisions)",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-038",
+      "title": "Rename Workspace and Branch",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-039",
+      "title": "View Workspace Notes with Preview",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-041",
+      "title": "Open Workspace in IDE",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-042",
+      "title": "Handle Workspace Status Errors and Recovery",
+      "action": "re-walk",
+      "reason": "PARTIAL FAIL - ErrorBoundary now has Reload button (may improve result)",
+      "category": "Workspace Worktree Management"
+    },
+    {
+      "id": "STORY-059",
+      "title": "Manage Memory Files with Search and Edit",
+      "action": "re-walk",
+      "reason": "BLOCKED by Data & Context tab crash (now fixed)",
+      "category": "Settings Panel"
+    },
+    {
+      "id": "STORY-060",
+      "title": "Add MCP Server with Preset",
+      "action": "re-walk",
+      "reason": "BLOCKED by Data & Context tab crash (now fixed)",
+      "category": "Settings Panel"
+    },
+    {
+      "id": "STORY-063",
+      "title": "Configure Hooks for Automated Workflows",
+      "action": "re-walk",
+      "reason": "FAIL -> FIXED via HookCard nullish coalescing fix",
+      "category": "Settings Panel"
+    },
+    {
+      "id": "STORY-097",
+      "title": "View Workspace Diff with Unified Layout",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed) - Code Review & Dashboards",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-098",
+      "title": "Comment on Specific Diff Line",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-099",
+      "title": "Filter Diff Files by Review Status",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-100",
+      "title": "Start AI Code Review",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-101",
+      "title": "Right-Click Review Customization",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-102",
+      "title": "View Code Review Summary with Severity Index",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-103",
+      "title": "Create New Dashboard with Prompt",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-104",
+      "title": "Rename Dashboard Title",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-105",
+      "title": "Archive and Restore Dashboard Visibility",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-106",
+      "title": "Regenerate Dashboard with Different Prompt",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-107",
+      "title": "View Artifact Revision History",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-108",
+      "title": "Generate Dashboard from Chat Message",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-109",
+      "title": "Copy Diff to Clipboard",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-110",
+      "title": "Export Workspace Diff as File",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-111",
+      "title": "View Workspace Notes Panel",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-112",
+      "title": "Diff Comment Threads with Nested Replies",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-113",
+      "title": "Export Code Review to Issue",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-114",
+      "title": "Side-by-Side Diff View with Sticky Headers",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-115",
+      "title": "Dashboard Canvas Widget Rendering",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-116",
+      "title": "Artifact Archive and Restore Workflow",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-117",
+      "title": "Artifact Search and Filter by Project",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-118",
+      "title": "Code Review Severity Breakdown",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-119",
+      "title": "Dashboard Prompt History",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-120",
+      "title": "Diff Line Count Summary",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-121",
+      "title": "Inline Code Syntax Highlighting in Diff",
+      "action": "re-walk",
+      "reason": "BLOCKED by workspace crash (now fixed)",
+      "category": "Code Review & Dashboards"
+    },
+    {
+      "id": "STORY-153",
+      "title": "Error Boundary Recovery & Crash Handling",
+      "action": "re-walk",
+      "reason": "FAIL -> FIXED with Reload button in PR #343",
+      "category": "Desktop App Shell & Sidecar"
+    },
+    {
+      "id": "STORY-155",
+      "title": "Multi-View Navigation & State Persistence",
+      "action": "re-walk",
+      "reason": "PARTIAL FAIL - state persistence blocked by crash (now fixed)",
+      "category": "Desktop App Shell & Sidecar"
+    },
+    {
+      "id": "STORY-052",
+      "title": "Delete Profile with Confirmation",
+      "action": "re-walk",
+      "reason": "FAIL -> FIXED with error handling in PR #343",
+      "category": "Agent Profiles & Configuration"
+    }
+  ],
+  "notes": {
+    "critical_fixes": [
+      "PR #342: ChatPage sessionInfo destructuring crash fixed",
+      "PR #343: HookCard handler type styling + ErrorBoundary Reload button + aria-labels + profile delete error handling"
+    ],
+    "skip_categories": [
+      "Stories marked PASS in run #1 (63 total) — no blockers fixed that would change results",
+      "Stories marked NOT IMPLEMENTED (10: STORY-137-146, Advanced Chat Features) — no fixes applied",
+      "Stories marked PARTIAL that have other root causes (not crash-related)"
+    ],
+    "expected_impact": "With 56 stories re-walked, pass rate should improve from 39% to estimated 55-65%. All 25 Code Review stories and 12 Workspace stories are now unblocked."
+  }
+}

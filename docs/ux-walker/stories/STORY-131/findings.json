@@ -1,0 +1,8 @@
+{
+  "story": "STORY-131",
+  "title": "Shutdown Team with Confirmation Flow",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Shutdown All button present. Delete confirmation uses two-step inline pattern. Shutdown All not clicked to preserve test state."
+}

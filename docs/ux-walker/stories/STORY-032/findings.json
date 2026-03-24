@@ -1,0 +1,20 @@
+[
+  {
+    "id": "F-032-001",
+    "severity": "info",
+    "type": "positive",
+    "title": "Diff tab loads with full comparison controls",
+    "description": "The Diff tab renders correctly with Unified/Side-by-side toggle, commit range selectors, filter dropdown, Review button, and Mark all unreviewed functionality.",
+    "screenshot": "screenshots/02-diff-tab-controls.png"
+  },
+  {
+    "id": "F-032-002",
+    "severity": "medium",
+    "type": "functional",
+    "title": "Apply button on diff comparison may navigate away from workspace",
+    "description": "When changing the compare range (from Workspace base to Current) and clicking Apply, the app navigated away from the workspace view to Settings or chat. This prevented viewing the full diff.",
+    "steps": "1. Open workspace Diff tab. 2. Change 'from' dropdown to 'Workspace base'. 3. Change 'to' dropdown to 'Current'. 4. Click Apply. 5. App navigates away from workspace.",
+    "expected": "Diff should reload with the new comparison range",
+    "actual": "App navigates away from workspace view"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-119",
+  "title": "Dashboard Prompt History",
+  "status": "not_implemented",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No prompt history feature found in dashboard creation or management. The dashboard view shows Has revisions label and a Regenerate button, suggesting dashboards are AI-generated. However, there is no visible prompt history panel showing previous prompts used to create or modify the dashboard.",
+      "location": "Workspace > Dashboards tab"
+    }
+  ],
+  "ui_elements_found": ["+ New button", "Has revisions label", "Regenerate button", "Dashboard spec display"],
+  "tested_at": "2026-03-23"
+}

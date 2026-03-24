@@ -1,0 +1,32 @@
+{
+  "storyId": "STORY-022",
+  "title": "Context Indicator Nearing Limit",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "ContextIndicator component displays token usage as a progress bar with color coding (green <50%, yellow 50-80%, red >80%) and pulse animation at 80%+",
+      "evidence": "ContextIndicator.tsx: percentage calculation from inputTokens+outputTokens vs maxTokens, three color thresholds, animate-pulse at 80%+",
+      "component": "apps/desktop/src/components/chat/ContextIndicator.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Shows detailed token breakdown on hover: input tokens, output tokens, cache read tokens, cache creation tokens",
+      "evidence": "ContextIndicator.tsx: isHovered state reveals detailed breakdown panel",
+      "component": "apps/desktop/src/components/chat/ContextIndicator.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Compaction indicator ('Compacting...') shown when context window is being compacted",
+      "evidence": "ContextIndicator.tsx line 55-57: isCompacting prop renders yellow 'Compacting...' text",
+      "component": "apps/desktop/src/components/chat/ContextIndicator.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "ContextUsageSegment in status bar provides persistent context usage visibility",
+      "evidence": "StatusBar.tsx line 11: imports ContextUsageSegment in right section",
+      "component": "apps/desktop/src/components/status-bar/ContextUsageSegment.tsx"
+    }
+  ]
+}

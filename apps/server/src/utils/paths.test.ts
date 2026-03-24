@@ -11,8 +11,9 @@ import {
   getWorkspaceWorktreeDir,
   sanitizeWorkspaceName,
 } from './paths';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { mkdtempSync, symlinkSync, rmSync } from 'node:fs';
 
 describe('canonicalizePath', () => {
   test('resolves an existing path', async () => {
@@ -74,8 +75,17 @@ describe('isPathWithinAnyRoot', () => {
 
 describe('canonicalizeRoots', () => {
   test('deduplicates canonical roots', async () => {
-    const roots = await canonicalizeRoots(['/tmp', '/private/tmp']);
-    expect(roots).toHaveLength(1);
+    // Create a real directory and a symlink to it so dedup works on any OS
+    const realDir = mkdtempSync(join(tmpdir(), 'canon-roots-real-'));
+    const symlinkDir = join(tmpdir(), `canon-roots-link-${Date.now()}`);
+    try {
+      symlinkSync(realDir, symlinkDir);
+      const roots = await canonicalizeRoots([realDir, symlinkDir]);
+      expect(roots).toHaveLength(1);
+    } finally {
+      rmSync(symlinkDir, { force: true });
+      rmSync(realDir, { recursive: true, force: true });
+    }
   });
 });
 

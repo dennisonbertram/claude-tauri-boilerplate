@@ -1,0 +1,15 @@
+[
+  {
+    "id": "F-002-001",
+    "story": "STORY-002",
+    "title": "Search nav button does not open a dedicated search dialog",
+    "severity": "LOW",
+    "type": "missing-feature",
+    "description": "The 'Search' button in the sidebar navigation does not open a Cmd+K style search dialog or any dedicated search interface. The sidebar filter input is the only search mechanism.",
+    "steps_to_reproduce": "1. Navigate to http://localhost:1927\n2. Click the 'Search' button in the sidebar navigation\n3. Observe that no search dialog or palette opens",
+    "expected": "A dedicated search dialog or Cmd+K palette should open for searching across sessions, documents, etc.",
+    "actual": "No visible change or search interface appears",
+    "impact": "Low - the sidebar filter input works well for filtering conversations. A Cmd+K palette would be a nice enhancement.",
+    "screenshots": ["screenshots/04-search-page.png"]
+  }
+]

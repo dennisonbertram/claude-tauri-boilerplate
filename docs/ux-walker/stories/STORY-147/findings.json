@@ -1,0 +1,30 @@
+[
+  {
+    "id": "F-147-001",
+    "story_id": "STORY-147",
+    "severity": "low",
+    "category": "happy-path",
+    "criterion": "Conversation history entries should display meaningful titles for scannability",
+    "score": "warn",
+    "description": "Many conversation entries in the RECENTS sidebar display only timestamps (e.g., 'Mar 21 at 9:15 PM') instead of meaningful conversation titles. Approximately 15+ entries show this pattern, making it hard to find past conversations.",
+    "expected": "Each conversation entry shows a descriptive title summarizing the conversation topic",
+    "actual": "Multiple entries show only timestamps like 'Mar 21 at 9:15 PM', 'Mar 21 at 2:53 PM', etc., with no descriptive title",
+    "screenshot": "screenshots/step-1-initial.png",
+    "suggested_fix": "Ensure the conversation title generation runs for all conversations. For conversations that fail to generate a title, fall back to the first user message preview rather than a raw timestamp.",
+    "files_likely_involved": ["src/components/sidebar/ConversationList.tsx", "src/hooks/useConversations.ts"]
+  },
+  {
+    "id": "F-147-002",
+    "story_id": "STORY-147",
+    "severity": "suggestion",
+    "category": "happy-path",
+    "criterion": "Navigation items should have clear, predictable behavior",
+    "score": "warn",
+    "description": "Clicking the 'Search' sidebar navigation item returns to the Chat view rather than opening a dedicated search interface. The search functionality is embedded as a filter textbox in the sidebar, but users may expect a dedicated search page.",
+    "expected": "Clicking 'Search' opens a recognizable search interface or focuses the search input with visual emphasis",
+    "actual": "Clicking 'Search' navigates to the Chat view; the filter textbox in the sidebar is the only search mechanism",
+    "screenshot": "screenshots/step-7-search.png",
+    "suggested_fix": "When 'Search' is clicked, auto-focus the filter textbox and optionally expand it or show a search overlay to make the search action more explicit.",
+    "files_likely_involved": ["src/components/sidebar/Sidebar.tsx", "src/components/sidebar/Navigation.tsx"]
+  }
+]

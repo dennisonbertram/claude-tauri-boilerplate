@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-079",
+  "title": "Configure Sandbox for Tool Isolation",
+  "status": "pass",
+  "bugs": [],
+  "missing_features": [],
+  "ui_present": [
+    "Sandbox tab in Agent Profile editor",
+    "Sandbox Environment presets (None, Node.js, Python 3, Custom JSON)",
+    "Editable JSON Environment Configuration",
+    "Docker container config (type, image, volumes)",
+    "Descriptive help text explaining sandbox purpose"
+  ],
+  "ui_missing": []
+}

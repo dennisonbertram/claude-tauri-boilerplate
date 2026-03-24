@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-100",
+  "title": "Start AI Code Review",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Diff tab",
+  "observations": [
+    "Review button at top-right of diff view",
+    "Tooltip: Left-click: start AI review. Right-click: customize prompt.",
+    "Right-click opens AI Code Review dialog with Start Review button"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Review button", "AI Code Review dialog", "Start Review button", "Cancel button"]
+}

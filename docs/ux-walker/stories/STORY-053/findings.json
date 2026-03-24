@@ -1,0 +1,13 @@
+[
+  {
+    "id": "F-053-001",
+    "severity": "low",
+    "story": "STORY-053",
+    "title": "No import/export functionality for agent profiles",
+    "description": "There are no import or export buttons/options anywhere in the Agent Profiles UI. Users cannot export a profile to share with team members or import a profile configuration from a file.",
+    "steps_to_reproduce": "1. Navigate to Agent Profiles\n2. Select any profile\n3. Search all tabs for import/export options\n4. None found",
+    "expected": "Import/Export buttons to save profile configurations as JSON files and load them",
+    "actual": "No import/export functionality exists",
+    "category": "missing-feature"
+  }
+]

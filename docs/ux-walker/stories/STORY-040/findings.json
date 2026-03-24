@@ -1,0 +1,38 @@
+{
+  "story": "STORY-040",
+  "title": "Filter and Search Workspaces in Sidebar",
+  "status": "partial-pass",
+  "findings": [
+    {
+      "id": "STORY-040-F1",
+      "severity": "pass",
+      "type": "functionality",
+      "summary": "Project search works - filters projects by name",
+      "description": "The 'Search projects...' textbox correctly filters project cards in the grid view by name. Matching projects appear; non-matching are hidden.",
+      "screenshot": "screenshots/02-search-results.png"
+    },
+    {
+      "id": "STORY-040-F2",
+      "severity": "low",
+      "type": "ui",
+      "summary": "Total count does not update when search filters results",
+      "description": "The '1 total' counter next to 'Projects' heading remains static even when search hides all projects.",
+      "screenshot": "screenshots/03-no-results.png"
+    },
+    {
+      "id": "STORY-040-F3",
+      "severity": "medium",
+      "type": "ux",
+      "summary": "Status/Tech Stack filters lack dropdown or clear feedback",
+      "description": "The Status and Tech Stack filter buttons appear to toggle filter states but do not show a dropdown or popover with filter options. No visual indication of active filter state.",
+      "screenshot": "screenshots/04-status-filter.png"
+    },
+    {
+      "id": "STORY-040-F4",
+      "severity": "low",
+      "type": "ux",
+      "summary": "Sidebar workspace tree does not filter with main search",
+      "description": "The PROJECTS section in the sidebar always shows all projects/workspaces regardless of the search query in the main grid."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "F-157-001",
+    "storyId": "STORY-157",
+    "severity": "medium",
+    "category": "functionality",
+    "title": "No Tauri-specific close confirmation for running agents",
+    "description": "The app uses a web beforeunload handler (App.tsx line 57) to prevent accidental tab closure when agents are running, but this does not reliably work in Tauri webviews. A Tauri on_window_event(CloseRequested) handler in lib.rs is needed to intercept window close and show a confirmation dialog when subagents are active.",
+    "file": "apps/desktop/src-tauri/src/lib.rs",
+    "line": 2,
+    "suggestion": "Add a Tauri window close event handler that checks with the frontend (via IPC) whether agents are running, and if so, shows a native confirmation dialog before closing."
+  },
+  {
+    "id": "F-157-002",
+    "storyId": "STORY-157",
+    "severity": "low",
+    "category": "ux",
+    "title": "No visible quit/close button in the web UI",
+    "description": "There is no explicit quit or close button in the application UI. Users rely on browser tab close or Tauri window controls. This is acceptable for web apps but could be improved for the desktop Tauri version.",
+    "file": "apps/desktop/src/App.tsx",
+    "line": 57
+  },
+  {
+    "id": "F-157-003",
+    "storyId": "STORY-157",
+    "severity": "info",
+    "category": "ux",
+    "title": "Conditional beforeunload handler is well-designed",
+    "description": "The beforeunload handler only fires when subagentActiveCountRef.current > 0, avoiding unnecessary confirmation dialogs when no agents are running. Good UX pattern.",
+    "file": "apps/desktop/src/App.tsx",
+    "line": 57
+  }
+]

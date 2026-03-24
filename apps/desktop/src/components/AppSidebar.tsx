@@ -17,12 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { groupSessionsByDate } from '@/components/sidebar/date-utils';
 import { SessionItem } from '@/components/sidebar/SessionItem';
 import { ProjectsSection } from '@/components/sidebar/ProjectsSection';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents' | 'documents' | 'tracker';
+import type { ActiveView } from '@/lib/routes';
 
 export interface AppSidebarProps {
   activeView: ActiveView;

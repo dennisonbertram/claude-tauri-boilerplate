@@ -1,0 +1,26 @@
+{
+  "storyId": "STORY-017",
+  "title": "Effort Picker Flow with Thinking Budget Trade-off",
+  "status": "PARTIAL",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "observation",
+      "description": "EffortSelector component exists with Low/Medium/High/Max options and descriptions explaining token/thinking trade-offs",
+      "evidence": "EffortSelector.tsx: DEFAULT_OPTIONS array with 4 levels including descriptions about token usage and thinking depth",
+      "component": "apps/desktop/src/components/ui/EffortSelector.tsx"
+    },
+    {
+      "type": "finding",
+      "description": "EffortSelector is NOT present in the main chat input area. It only appears in Settings > Model tab, Agent Profile > Model tab, and Workflows tab. No effort picker is accessible from the chat compose view.",
+      "evidence": "Grep for EffortSelector usage shows only: settings/ModelTab.tsx, agent-builder/tabs/ModelTab.tsx, settings/WorkflowsTab.tsx",
+      "component": "apps/desktop/src/components/chat/ChatInput.tsx"
+    },
+    {
+      "type": "finding",
+      "description": "The bottom status bar shows 'Normal' button but this is the Permission Mode selector (Normal/Accept Edits/Plan/Bypass), NOT the effort level selector. Users may confuse these.",
+      "evidence": "PermissionModeSegment.tsx: PERMISSION_MODE_LABELS maps 'default' to 'Normal'",
+      "component": "apps/desktop/src/components/status-bar/PermissionModeSegment.tsx"
+    }
+  ]
+}

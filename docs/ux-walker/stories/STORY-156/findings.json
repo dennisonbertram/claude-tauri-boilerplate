@@ -1,0 +1,33 @@
+[
+  {
+    "id": "F-156-001",
+    "storyId": "STORY-156",
+    "severity": "low",
+    "category": "accessibility",
+    "title": "Expanded sidebar gear button missing aria-label/title",
+    "description": "The gear button in the expanded sidebar footer (AppSidebar.tsx line 228) has no aria-label or title attribute, unlike the collapsed sidebar gear which has title='Settings'. Screen readers cannot identify the button's purpose.",
+    "file": "apps/desktop/src/components/AppSidebar.tsx",
+    "line": 228,
+    "suggestion": "Add title='Settings' and aria-label='Open settings' to the gear button in the expanded sidebar footer."
+  },
+  {
+    "id": "F-156-002",
+    "storyId": "STORY-156",
+    "severity": "info",
+    "category": "ux",
+    "title": "Cmd+, keyboard shortcut for settings works correctly",
+    "description": "Standard macOS convention Cmd+, (Ctrl+, on other platforms) opens the settings panel. This is implemented in useAppKeyboardShortcuts.ts.",
+    "file": "apps/desktop/src/app/useAppKeyboardShortcuts.ts",
+    "line": 45
+  },
+  {
+    "id": "F-156-003",
+    "storyId": "STORY-156",
+    "severity": "low",
+    "category": "accessibility",
+    "title": "Back/forward navigation buttons lack labels and appear non-functional",
+    "description": "The CaretLeft and CaretRight buttons in the sidebar header have opacity-50 and no title or aria-label attributes. Their purpose (back/forward navigation) is unclear to users and screen readers.",
+    "file": "apps/desktop/src/components/AppSidebar.tsx",
+    "line": 159
+  }
+]

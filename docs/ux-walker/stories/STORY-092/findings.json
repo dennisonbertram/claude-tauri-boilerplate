@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-092",
+  "title": "Multi-Issue Workspace Context",
+  "status": "not_implemented",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "gap",
+      "description": "Only single Linear issue + single GitHub issue supported per workspace. No multi-issue attachment UI or data model."
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

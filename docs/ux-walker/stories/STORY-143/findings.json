@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-143",
+  "title": "Monitor Token Usage While Typing",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No token usage indicator visible near the chat input or status bar. The status bar shows model (Sonnet 4.6), mode (Normal), and branch (main) but no token count or usage meter.",
+      "expected": "A real-time token usage indicator near the input area showing token count as the user types.",
+      "actual": "No token usage indicator exists anywhere in the visible UI.",
+      "blocked_by": null
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented. No token usage monitoring while typing."
+}

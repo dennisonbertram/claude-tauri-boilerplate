@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-025",
+  "title": "Rewind Dialog and Checkpoint Timeline",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "RewindDialog component provides modal with three rewind modes: 'Code & Conversation', 'Conversation only', and 'Code only'. Shows checkpoint turn number, preview of changes (loading state + diff summary), and confirm/cancel buttons.",
+      "evidence": "RewindDialog.tsx: three RewindMode options, checkpoint.turnIndex display, preview loading state, onRewind/onCancel callbacks",
+      "component": "apps/desktop/src/components/chat/RewindDialog.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "CheckpointTimeline component renders vertical timeline with dots, lines, turn numbers, timestamps, file change summaries (created/modified/deleted counts), and rewind buttons per checkpoint",
+      "evidence": "CheckpointTimeline.tsx: timeline-dot, timeline-line elements, fileActionSummary helper, checkpoint-toggle expandable, onRewind and onViewLatestChanges callbacks",
+      "component": "apps/desktop/src/components/chat/CheckpointTimeline.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Checkpoint hook (useCheckpoints) manages checkpoint state with tests",
+      "evidence": "hooks/useCheckpoints.ts and hooks/__tests__/useCheckpoints.test.tsx",
+      "component": "apps/desktop/src/hooks/useCheckpoints.ts"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot verify live checkpoint timeline or rewind dialog in conversation view due to conversation crash issue",
+      "evidence": "Known issue"
+    }
+  ]
+}

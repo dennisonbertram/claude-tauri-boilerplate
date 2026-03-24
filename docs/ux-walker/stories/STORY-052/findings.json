@@ -1,0 +1,22 @@
+{
+  "story_id": "STORY-052",
+  "title": "Delete Profile with Confirmation",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "Delete button now has error handling and two-step confirmation",
+  "findings": [
+    {
+      "severity": "minor",
+      "type": "ux",
+      "description": "Delete confirmation auto-dismisses after 3 seconds, which is very short for a destructive action",
+      "recommendation": "Increase auto-dismiss timeout to 5-10 seconds"
+    }
+  ],
+  "screenshots": [
+    "01-agent-profiles.png",
+    "02-profile-open.png",
+    "05-confirm-state.png",
+    "06-after-cancel.png"
+  ]
+}

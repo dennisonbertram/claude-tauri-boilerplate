@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-111",
+  "title": "View Workspace Notes Panel",
+  "status": "pass",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "feature_present",
+      "description": "Notes tab is present in the workspace view. Shows 'Workspace notes' header with description 'Notes are shared with Claude as context when chatting in this workspace.' Includes a text editor with placeholder and a Preview button.",
+      "location": "Workspace > Notes tab",
+      "expected": "A Notes tab or panel in workspace",
+      "actual": "Notes tab present with editable text area and Preview toggle"
+    }
+  ],
+  "ui_elements_found": ["Notes tab", "Workspace notes header", "Text editor with placeholder", "Preview button"],
+  "tested_at": "2026-03-23"
+}

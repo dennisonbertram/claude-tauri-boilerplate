@@ -1,0 +1,19 @@
+[
+  {
+    "id": "F-035-001",
+    "severity": "info",
+    "type": "positive",
+    "title": "Discard button is present and visible in workspace header",
+    "description": "The 'Discard' button is visible in the workspace header alongside 'Open In' and 'Merge'. Not clicked per instructions (destructive action).",
+    "screenshot": "screenshots/01-discard-button-visible.png"
+  },
+  {
+    "id": "F-035-002",
+    "severity": "medium",
+    "type": "risk",
+    "title": "Discard button may navigate away instead of showing confirmation (unverified)",
+    "description": "Based on the pattern observed with the Merge button (F-034-001) where clicking navigates away from the workspace, the Discard button may exhibit the same behavior. A destructive action without confirmation is a high-risk UX issue if confirmed.",
+    "expected": "Clicking Discard should show a confirmation dialog before proceeding",
+    "actual": "Not tested (destructive action), but risk flagged based on Merge button behavior"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "story_id": "STORY-097",
+  "title": "View Workspace Diff with Unified Layout",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Diff tab",
+  "observations": [
+    "Diff tab renders with Unified and Side-by-side toggle buttons",
+    "Compare dropdowns allow selecting from/to checkpoints (8 options each)",
+    "37 changed files displayed when comparing initial commit to latest",
+    "File list shows modification type indicators (yellow=modified, green A=added)",
+    "Apply button triggers diff recalculation"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Unified button", "Side-by-side button", "Refresh button", "Review button", "Apply button", "Compare from combobox", "Compare to combobox"]
+}

@@ -1,0 +1,2690 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">Document Box Component Library</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" vid="6">
+    <script src="https://unpkg.com/@phosphor-icons/web" vid="7"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css">
+    
+    <style vid="9">
+        body {
+            background-color: #fcfbf8;
+            color: #1a1816;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e8e6df;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #d4d2cc;
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+    </style>
+
+  <style type="text/css">
+*, ::before, ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}/*
+! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
+*//*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  tab-size: 4; /* 3 */
+  font-family: Inter, sans-serif; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.pointer-events-none {
+  pointer-events: none;
+}
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.inset-0 {
+  inset: 0px;
+}
+.-right-1 {
+  right: -0.25rem;
+}
+.-top-1 {
+  top: -0.25rem;
+}
+.bottom-6 {
+  bottom: 1.5rem;
+}
+.left-1\/2 {
+  left: 50%;
+}
+.left-3 {
+  left: 0.75rem;
+}
+.right-3 {
+  right: 0.75rem;
+}
+.top-1\/2 {
+  top: 50%;
+}
+.top-3 {
+  top: 0.75rem;
+}
+.z-10 {
+  z-index: 10;
+}
+.z-20 {
+  z-index: 20;
+}
+.row-span-2 {
+  grid-row: span 2 / span 2;
+}
+.mx-1 {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.ml-2 {
+  margin-left: 0.5rem;
+}
+.ml-4 {
+  margin-left: 1rem;
+}
+.mt-0\.5 {
+  margin-top: 0.125rem;
+}
+.mt-1 {
+  margin-top: 0.25rem;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mt-auto {
+  margin-top: auto;
+}
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.flex {
+  display: flex;
+}
+.grid {
+  display: grid;
+}
+.hidden {
+  display: none;
+}
+.aspect-\[4\/3\] {
+  aspect-ratio: 4/3;
+}
+.h-1 {
+  height: 0.25rem;
+}
+.h-1\.5 {
+  height: 0.375rem;
+}
+.h-10 {
+  height: 2.5rem;
+}
+.h-12 {
+  height: 3rem;
+}
+.h-16 {
+  height: 4rem;
+}
+.h-2 {
+  height: 0.5rem;
+}
+.h-24 {
+  height: 6rem;
+}
+.h-3\.5 {
+  height: 0.875rem;
+}
+.h-32 {
+  height: 8rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.h-48 {
+  height: 12rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.h-6 {
+  height: 1.5rem;
+}
+.h-7 {
+  height: 1.75rem;
+}
+.h-8 {
+  height: 2rem;
+}
+.h-9 {
+  height: 2.25rem;
+}
+.h-\[850px\] {
+  height: 850px;
+}
+.h-full {
+  height: 100%;
+}
+.h-px {
+  height: 1px;
+}
+.min-h-screen {
+  min-height: 100vh;
+}
+.w-1 {
+  width: 0.25rem;
+}
+.w-10 {
+  width: 2.5rem;
+}
+.w-12 {
+  width: 3rem;
+}
+.w-2 {
+  width: 0.5rem;
+}
+.w-20 {
+  width: 5rem;
+}
+.w-24 {
+  width: 6rem;
+}
+.w-28 {
+  width: 7rem;
+}
+.w-3\.5 {
+  width: 0.875rem;
+}
+.w-32 {
+  width: 8rem;
+}
+.w-4 {
+  width: 1rem;
+}
+.w-5 {
+  width: 1.25rem;
+}
+.w-6 {
+  width: 1.5rem;
+}
+.w-64 {
+  width: 16rem;
+}
+.w-7 {
+  width: 1.75rem;
+}
+.w-8 {
+  width: 2rem;
+}
+.w-80 {
+  width: 20rem;
+}
+.w-9 {
+  width: 2.25rem;
+}
+.w-96 {
+  width: 24rem;
+}
+.w-full {
+  width: 100%;
+}
+.w-px {
+  width: 1px;
+}
+.min-w-0 {
+  min-width: 0px;
+}
+.max-w-\[1400px\] {
+  max-width: 1400px;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
+.-translate-x-1\/2 {
+  --tw-translate-x: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.-translate-y-1\/2 {
+  --tw-translate-y: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.appearance-none {
+  appearance: none;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-end {
+  align-items: flex-end;
+}
+.items-center {
+  align-items: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.gap-5 {
+  gap: 1.25rem;
+}
+.gap-6 {
+  gap: 1.5rem;
+}
+.gap-8 {
+  gap: 2rem;
+}
+.-space-x-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(-0.375rem * var(--tw-space-x-reverse));
+  margin-left: calc(-0.375rem * calc(1 - var(--tw-space-x-reverse)));
+}
+.-space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(-0.5rem * var(--tw-space-x-reverse));
+  margin-left: calc(-0.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+.space-y-20 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(5rem * var(--tw-space-y-reverse));
+}
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.break-all {
+  word-break: break-all;
+}
+.rounded {
+  border-radius: 0.25rem;
+}
+.rounded-2xl {
+  border-radius: 1rem;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-md {
+  border-radius: 0.375rem;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.border {
+  border-width: 1px;
+}
+.border-2 {
+  border-width: 2px;
+}
+.border-b {
+  border-bottom-width: 1px;
+}
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+.border-l {
+  border-left-width: 1px;
+}
+.border-r {
+  border-right-width: 1px;
+}
+.border-t {
+  border-top-width: 1px;
+}
+.border-amber-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 243 199 / var(--tw-border-opacity, 1));
+}
+.border-amber-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(253 230 138 / var(--tw-border-opacity, 1));
+}
+.border-amber-900\/20 {
+  border-color: rgb(120 53 15 / 0.2);
+}
+.border-blue-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(219 234 254 / var(--tw-border-opacity, 1));
+}
+.border-brand-blue {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+.border-brand-border {
+  --tw-border-opacity: 1;
+  border-color: rgb(232 230 223 / var(--tw-border-opacity, 1));
+}
+.border-brand-hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(244 242 236 / var(--tw-border-opacity, 1));
+}
+.border-brand-text {
+  --tw-border-opacity: 1;
+  border-color: rgb(26 24 22 / var(--tw-border-opacity, 1));
+}
+.border-fuchsia-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(250 232 255 / var(--tw-border-opacity, 1));
+}
+.border-gray-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+}
+.border-gray-300 {
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
+}
+.border-green-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(220 252 231 / var(--tw-border-opacity, 1));
+}
+.border-orange-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(255 237 213 / var(--tw-border-opacity, 1));
+}
+.border-purple-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(243 232 255 / var(--tw-border-opacity, 1));
+}
+.border-red-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 226 226 / var(--tw-border-opacity, 1));
+}
+.border-slate-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(51 65 85 / var(--tw-border-opacity, 1));
+}
+.border-teal-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(204 251 241 / var(--tw-border-opacity, 1));
+}
+.border-transparent {
+  border-color: transparent;
+}
+.border-white {
+  --tw-border-opacity: 1;
+  border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
+}
+.bg-\[\#1a1816\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(26 24 22 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#faf9f7\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 249 247 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#fcfbf8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 251 248 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 251 235 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(245 158 11 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-900\/10 {
+  background-color: rgb(120 53 15 / 0.1);
+}
+.bg-black\/5 {
+  background-color: rgb(0 0 0 / 0.05);
+}
+.bg-blue-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-50\/30 {
+  background-color: rgb(239 246 255 / 0.3);
+}
+.bg-blue-50\/40 {
+  background-color: rgb(239 246 255 / 0.4);
+}
+.bg-brand-bg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 251 248 / var(--tw-bg-opacity, 1));
+}
+.bg-brand-blue {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+}
+.bg-brand-border {
+  --tw-bg-opacity: 1;
+  background-color: rgb(232 230 223 / var(--tw-bg-opacity, 1));
+}
+.bg-brand-hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 242 236 / var(--tw-bg-opacity, 1));
+}
+.bg-brand-text {
+  --tw-bg-opacity: 1;
+  background-color: rgb(26 24 22 / var(--tw-bg-opacity, 1));
+}
+.bg-fuchsia-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(253 244 255 / var(--tw-bg-opacity, 1));
+}
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+.bg-gray-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+.bg-green-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+}
+.bg-green-50\/50 {
+  background-color: rgb(240 253 244 / 0.5);
+}
+.bg-green-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1));
+}
+.bg-orange-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+.bg-purple-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 232 255 / var(--tw-bg-opacity, 1));
+}
+.bg-purple-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 245 255 / var(--tw-bg-opacity, 1));
+}
+.bg-red-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
+}
+.bg-slate-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(30 41 59 / var(--tw-bg-opacity, 1));
+}
+.bg-teal-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 253 250 / var(--tw-bg-opacity, 1));
+}
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.bg-white\/20 {
+  background-color: rgb(255 255 255 / 0.2);
+}
+.bg-white\/80 {
+  background-color: rgb(255 255 255 / 0.8);
+}
+.bg-white\/90 {
+  background-color: rgb(255 255 255 / 0.9);
+}
+.bg-yellow-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 252 232 / var(--tw-bg-opacity, 1));
+}
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+.bg-gradient-to-tr {
+  background-image: linear-gradient(to top right, var(--tw-gradient-stops));
+}
+.from-indigo-100 {
+  --tw-gradient-from: #e0e7ff var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(224 231 255 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.from-purple-200 {
+  --tw-gradient-from: #e9d5ff var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(233 213 255 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.to-pink-100 {
+  --tw-gradient-to: #fce7f3 var(--tw-gradient-to-position);
+}
+.to-purple-100 {
+  --tw-gradient-to: #f3e8ff var(--tw-gradient-to-position);
+}
+.object-cover {
+  object-fit: cover;
+}
+.p-0\.5 {
+  padding: 0.125rem;
+}
+.p-3 {
+  padding: 0.75rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.p-5 {
+  padding: 1.25rem;
+}
+.p-6 {
+  padding: 1.5rem;
+}
+.p-8 {
+  padding: 2rem;
+}
+.px-1\.5 {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.py-0\.5 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.pb-2 {
+  padding-bottom: 0.5rem;
+}
+.pb-20 {
+  padding-bottom: 5rem;
+}
+.pb-24 {
+  padding-bottom: 6rem;
+}
+.pl-3 {
+  padding-left: 0.75rem;
+}
+.pl-5 {
+  padding-left: 1.25rem;
+}
+.pl-6 {
+  padding-left: 1.5rem;
+}
+.pl-7 {
+  padding-left: 1.75rem;
+}
+.pl-9 {
+  padding-left: 2.25rem;
+}
+.pr-4 {
+  padding-right: 1rem;
+}
+.pr-8 {
+  padding-right: 2rem;
+}
+.pt-4 {
+  padding-top: 1rem;
+}
+.text-right {
+  text-align: right;
+}
+.font-sans {
+  font-family: Inter, sans-serif;
+}
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+.text-5xl {
+  font-size: 3rem;
+  line-height: 1;
+}
+.text-\[10px\] {
+  font-size: 10px;
+}
+.text-\[11px\] {
+  font-size: 11px;
+}
+.text-\[12px\] {
+  font-size: 12px;
+}
+.text-\[13px\] {
+  font-size: 13px;
+}
+.text-\[14px\] {
+  font-size: 14px;
+}
+.text-\[15px\] {
+  font-size: 15px;
+}
+.text-\[16px\] {
+  font-size: 16px;
+}
+.text-\[18px\] {
+  font-size: 18px;
+}
+.text-\[20px\] {
+  font-size: 20px;
+}
+.text-\[9px\] {
+  font-size: 9px;
+}
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.leading-snug {
+  line-height: 1.375;
+}
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+.text-amber-600 {
+  --tw-text-opacity: 1;
+  color: rgb(217 119 6 / var(--tw-text-opacity, 1));
+}
+.text-amber-700 {
+  --tw-text-opacity: 1;
+  color: rgb(180 83 9 / var(--tw-text-opacity, 1));
+}
+.text-amber-800 {
+  --tw-text-opacity: 1;
+  color: rgb(146 64 14 / var(--tw-text-opacity, 1));
+}
+.text-blue-600 {
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity, 1));
+}
+.text-blue-700 {
+  --tw-text-opacity: 1;
+  color: rgb(29 78 216 / var(--tw-text-opacity, 1));
+}
+.text-brand-blue {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+.text-brand-text {
+  --tw-text-opacity: 1;
+  color: rgb(26 24 22 / var(--tw-text-opacity, 1));
+}
+.text-brand-textMuted {
+  --tw-text-opacity: 1;
+  color: rgb(130 127 122 / var(--tw-text-opacity, 1));
+}
+.text-fuchsia-500 {
+  --tw-text-opacity: 1;
+  color: rgb(217 70 239 / var(--tw-text-opacity, 1));
+}
+.text-fuchsia-600 {
+  --tw-text-opacity: 1;
+  color: rgb(192 38 211 / var(--tw-text-opacity, 1));
+}
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+}
+.text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+.text-gray-700 {
+  --tw-text-opacity: 1;
+  color: rgb(55 65 81 / var(--tw-text-opacity, 1));
+}
+.text-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+.text-green-600\/50 {
+  color: rgb(22 163 74 / 0.5);
+}
+.text-green-700 {
+  --tw-text-opacity: 1;
+  color: rgb(21 128 61 / var(--tw-text-opacity, 1));
+}
+.text-orange-500 {
+  --tw-text-opacity: 1;
+  color: rgb(249 115 22 / var(--tw-text-opacity, 1));
+}
+.text-purple-300 {
+  --tw-text-opacity: 1;
+  color: rgb(216 180 254 / var(--tw-text-opacity, 1));
+}
+.text-purple-600 {
+  --tw-text-opacity: 1;
+  color: rgb(147 51 234 / var(--tw-text-opacity, 1));
+}
+.text-red-400 {
+  --tw-text-opacity: 1;
+  color: rgb(248 113 113 / var(--tw-text-opacity, 1));
+}
+.text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+}
+.text-slate-200 {
+  --tw-text-opacity: 1;
+  color: rgb(226 232 240 / var(--tw-text-opacity, 1));
+}
+.text-teal-600 {
+  --tw-text-opacity: 1;
+  color: rgb(13 148 136 / var(--tw-text-opacity, 1));
+}
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.text-white\/70 {
+  color: rgb(255 255 255 / 0.7);
+}
+.text-yellow-500 {
+  --tw-text-opacity: 1;
+  color: rgb(234 179 8 / var(--tw-text-opacity, 1));
+}
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.accent-brand-blue {
+  accent-color: #3b82f6;
+}
+.opacity-0 {
+  opacity: 0;
+}
+.opacity-40 {
+  opacity: 0.4;
+}
+.opacity-50 {
+  opacity: 0.5;
+}
+.shadow-card {
+  --tw-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 4px 16px -4px rgba(0, 0, 0, 0.02);
+  --tw-shadow-colored: 0 2px 8px -2px var(--tw-shadow-color), 0 4px 16px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-floating {
+  --tw-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --tw-shadow-colored: 0 10px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-subtle {
+  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.outline-none {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.backdrop-blur-md {
+  --tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.backdrop-blur-sm {
+  --tw-backdrop-blur: blur(4px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.duration-300 {
+  transition-duration: 300ms;
+}
+.hover\:border-brand-blue:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+.hover\:border-gray-300:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
+}
+.hover\:bg-\[\#faf9f7\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 249 247 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-black:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-brand-blueHover:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-brand-hover:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 242 236 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-gray-100:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-gray-200:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-gray-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-red-500\/20:hover {
+  background-color: rgb(239 68 68 / 0.2);
+}
+.hover\:bg-white\/10:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+.hover\:text-brand-blueHover:hover {
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity, 1));
+}
+.hover\:text-brand-text:hover {
+  --tw-text-opacity: 1;
+  color: rgb(26 24 22 / var(--tw-text-opacity, 1));
+}
+.hover\:text-gray-800:hover {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity, 1));
+}
+.hover\:text-white:hover {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.hover\:underline:hover {
+  text-decoration-line: underline;
+}
+.hover\:shadow-subtle:hover {
+  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.focus\:border-brand-blue:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+.focus\:bg-white:focus {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus\:ring-2:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus\:ring-brand-blue\/20:focus {
+  --tw-ring-color: rgb(59 130 246 / 0.2);
+}
+.focus\:ring-brand-blue\/30:focus {
+  --tw-ring-color: rgb(59 130 246 / 0.3);
+}
+.focus\:ring-brand-blue\/50:focus {
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+}
+.group:hover .group-hover\:pl-6 {
+  padding-left: 1.5rem;
+}
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+.group:hover .group-hover\:opacity-90 {
+  opacity: 0.9;
+}
+@media (min-width: 640px) {
+
+  .sm\:block {
+    display: block;
+  }
+
+  .sm\:hidden {
+    display: none;
+  }
+
+  .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+
+  .md\:block {
+    display: block;
+  }
+
+  .md\:flex {
+    display: flex;
+  }
+
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:justify-start {
+    justify-content: flex-start;
+  }
+
+  .md\:p-12 {
+    padding: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+
+  .lg\:flex {
+    display: flex;
+  }
+
+  .lg\:inline-flex {
+    display: inline-flex;
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .lg\:p-16 {
+    padding: 4rem;
+  }
+}
+@media (min-width: 1280px) {
+
+  .xl\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .xl\:flex {
+    display: flex;
+  }
+
+  .xl\:hidden {
+    display: none;
+  }
+
+  .xl\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1536px) {
+
+  .\32xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}* {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  </style></head>
+<body class="w-full min-h-screen p-8 md:p-12 lg:p-16 overflow-x-hidden" vid="10">
+
+    <div class="max-w-[1400px] mx-auto space-y-20" vid="11">
+        
+        <header vid="12">
+            <h1 class="text-3xl font-semibold mb-2 text-brand-text tracking-tight" vid="13">Data Room &amp; Document Box</h1>
+            <p class="text-brand-textMuted" vid="14">Component library and page layouts for document management interfaces.</p>
+        </header>
+
+        
+        <section class="space-y-6" vid="15">
+            <div class="flex items-center gap-3" vid="16">
+                <h2 class="text-sm font-semibold text-brand-textMuted uppercase tracking-wider" vid="17">1. Document Cards (Grid)</h2>
+                <div class="h-px bg-brand-border flex-1" vid="18"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" vid="19">
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 relative group hover:border-gray-300 hover:shadow-subtle transition-all cursor-pointer" vid="20">
+                    <div class="flex items-start justify-between mb-4" vid="21">
+                        <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0" vid="22">
+                            <i class="ph-fill ph-file-pdf text-2xl" vid="23"></i>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="24">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="25"><i class="ph ph-download-simple text-[18px]" vid="26"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="27"><i class="ph ph-share-network text-[18px]" vid="28"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="29"><i class="ph ph-dots-three text-[20px]" vid="30"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4" vid="31">
+                        <h3 class="text-[15px] font-medium text-brand-text mb-1 truncate" title="Q4_Financial_Report.pdf" vid="32">Q4_Financial_Report.pdf</h3>
+                        <div class="flex items-center gap-2 text-[13px] text-brand-textMuted" vid="33">
+                            <span vid="34">2.4 MB</span>
+                            <span class="w-1 h-1 rounded-full bg-brand-border" vid="35"></span>
+                            <span vid="36">Modified 2h ago</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-brand-hover" vid="37">
+                        <div class="flex items-center gap-2" vid="38">
+                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-semibold text-blue-700" vid="39">SJ</div>
+                            <span class="text-[12px] font-medium text-brand-textMuted" vid="40">Sarah J.</span>
+                        </div>
+                        <span class="px-2 py-1 bg-gray-50 text-brand-textMuted text-[11px] rounded-md border border-brand-border font-medium" vid="41">Final</span>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 relative group hover:border-gray-300 hover:shadow-subtle transition-all cursor-pointer" vid="42">
+                    <div class="flex items-start justify-between mb-4" vid="43">
+                        <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0" vid="44">
+                            <i class="ph-fill ph-file-xls text-2xl" vid="45"></i>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="46">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="47"><i class="ph ph-download-simple text-[18px]" vid="48"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="49"><i class="ph ph-dots-three text-[20px]" vid="50"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4" vid="51">
+                        <h3 class="text-[15px] font-medium text-brand-text mb-1 truncate" title="Revenue_Forecast_2024.xlsx" vid="52">Revenue_Forecast_2024.xlsx</h3>
+                        <div class="flex items-center gap-2 text-[13px] text-brand-textMuted" vid="53">
+                            <span vid="54">1.8 MB</span>
+                            <span class="w-1 h-1 rounded-full bg-brand-border" vid="55"></span>
+                            <span vid="56">Yesterday</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-4 border-t border-brand-hover" vid="57">
+                        <span class="flex items-center gap-1 px-2 py-1 bg-brand-bg text-brand-text text-[11px] rounded-md border border-brand-border font-medium" vid="58">
+                            <i class="ph ph-rows text-[12px]" vid="59"></i> 1,402 rows
+                        </span>
+                        <span class="flex items-center gap-1 px-2 py-1 bg-brand-bg text-brand-text text-[11px] rounded-md border border-brand-border font-medium" vid="60">
+                            <i class="ph ph-funnel text-[12px]" vid="61"></i> Sortable
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 relative group hover:border-gray-300 hover:shadow-subtle transition-all cursor-pointer" vid="62">
+                    <div class="flex items-start justify-between mb-4" vid="63">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 relative" vid="64">
+                            <i class="ph-fill ph-file-doc text-2xl" vid="65"></i>
+                            <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-white" vid="66"></div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="67">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="68"><i class="ph ph-download-simple text-[18px]" vid="69"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="70"><i class="ph ph-dots-three text-[20px]" vid="71"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4" vid="72">
+                        <h3 class="text-[15px] font-medium text-brand-text mb-1 truncate" title="Merger_Agreement_v3.docx" vid="73">Merger_Agreement_v3.docx</h3>
+                        <div class="flex items-center gap-2 text-[13px] text-brand-textMuted" vid="74">
+                            <span vid="75">856 KB</span>
+                            <span class="w-1 h-1 rounded-full bg-brand-border" vid="76"></span>
+                            <span vid="77">Oct 24, 2023</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-4 border-t border-brand-hover" vid="78">
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 text-[11px] rounded-md border border-amber-200 font-medium" vid="79">
+                            <i class="ph-fill ph-pencil-simple text-[12px]" vid="80"></i> Under Review
+                        </span>
+                        <span class="flex items-center gap-1 px-2 py-1 bg-brand-bg text-brand-textMuted text-[11px] rounded-md border border-brand-border font-medium" vid="81">
+                            <i class="ph ph-git-commit text-[12px]" vid="82"></i> Tracked changes
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card overflow-hidden relative group hover:border-gray-300 hover:shadow-subtle transition-all cursor-pointer flex flex-col" vid="83">
+                    <div class="h-32 bg-gray-100 w-full relative overflow-hidden shrink-0 group-hover:opacity-90 transition-opacity" vid="84">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100" vid="85"></div>
+                        <div class="absolute inset-0 flex items-center justify-center opacity-40" vid="86">
+                            <svg class="w-32 h-32 text-purple-300" fill="currentColor" viewBox="0 0 24 24" vid="87"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z" vid="88"></path></svg>
+                        </div>
+                        <div class="absolute top-3 left-3 w-8 h-8 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-purple-600" vid="89">
+                            <i class="ph-fill ph-image text-lg" vid="90"></i>
+                        </div>
+                        <div class="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-md rounded-lg p-0.5 shadow-sm" vid="91">
+                            <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-700 transition-colors" vid="92"><i class="ph ph-download-simple" vid="93"></i></button>
+                            <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-700 transition-colors" vid="94"><i class="ph ph-dots-three text-lg" vid="95"></i></button>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between" vid="96">
+                        <div vid="97">
+                            <h3 class="text-[14px] font-medium text-brand-text mb-1 truncate" title="Site_Photos_Batch_12.jpg" vid="98">Site_Photos_Batch_12.jpg</h3>
+                            <div class="flex items-center gap-2 text-[12px] text-brand-textMuted mb-3" vid="99">
+                                <span vid="100">3.2 MB</span>
+                                <span class="w-1 h-1 rounded-full bg-brand-border" vid="101"></span>
+                                <span vid="102">Oct 22, 2023</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2" vid="103">
+                            <span class="px-2 py-1 bg-brand-bg text-brand-textMuted text-[10px] rounded-md border border-brand-border font-medium" vid="104">3840 × 2160</span>
+                            <span class="px-2 py-1 bg-brand-bg text-brand-textMuted text-[10px] rounded-md border border-brand-border font-medium uppercase" vid="105">JPG</span>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 relative group hover:border-brand-blue hover:shadow-subtle transition-all cursor-pointer" vid="106">
+                    <div class="flex items-start justify-between mb-4" vid="107">
+                        <div class="w-12 h-12 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center shrink-0" vid="108">
+                            <i class="ph-fill ph-folder text-2xl" vid="109"></i>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="110">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="111"><i class="ph ph-link text-[18px]" vid="112"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="113"><i class="ph ph-dots-three text-[20px]" vid="114"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4" vid="115">
+                        <h3 class="text-[15px] font-medium text-brand-text mb-1 truncate" title="Due Diligence Documents" vid="116">Due Diligence Documents</h3>
+                        <div class="flex items-center gap-2 text-[13px] text-brand-textMuted" vid="117">
+                            <span vid="118">42 items</span>
+                            <span class="w-1 h-1 rounded-full bg-brand-border" vid="119"></span>
+                            <span vid="120">Yesterday</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center pt-4 border-t border-brand-hover" vid="121">
+                        <div class="flex -space-x-2" vid="122">
+                            <img src="https://ui-avatars.com/api/?name=Alex&amp;background=E0F2FE&amp;color=0369A1&amp;size=64" class="w-6 h-6 rounded-full border-2 border-white" alt="User" vid="123">
+                            <img src="https://ui-avatars.com/api/?name=Maria&amp;background=FCE7F3&amp;color=BE185D&amp;size=64" class="w-6 h-6 rounded-full border-2 border-white" alt="User" vid="124">
+                            <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[9px] font-medium text-gray-500" vid="125">+3</div>
+                        </div>
+                        <span class="ml-2 text-[12px] text-brand-textMuted font-medium" vid="126">Shared</span>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 relative group hover:border-gray-300 hover:shadow-subtle transition-all cursor-pointer" vid="127">
+                    <div class="flex items-start justify-between mb-4" vid="128">
+                        <div class="w-12 h-12 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center shrink-0" vid="129">
+                            <i class="ph-fill ph-file-video text-2xl" vid="130"></i>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="131">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="132"><i class="ph ph-download-simple text-[18px]" vid="133"></i></button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brand-hover text-brand-textMuted hover:text-brand-text transition-colors" vid="134"><i class="ph ph-dots-three text-[20px]" vid="135"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4" vid="136">
+                        <h3 class="text-[15px] font-medium text-brand-text mb-1 truncate" title="Board_Meeting_Recording.mp4" vid="137">Board_Meeting_Recording.mp4</h3>
+                        <div class="flex items-center gap-2 text-[13px] text-brand-textMuted" vid="138">
+                            <span vid="139">450 MB</span>
+                            <span class="w-1 h-1 rounded-full bg-brand-border" vid="140"></span>
+                            <span vid="141">Oct 15, 2023</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-4 border-t border-brand-hover" vid="142">
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 bg-brand-bg text-brand-text text-[11px] rounded-md border border-brand-border font-medium" vid="143">
+                            <i class="ph-fill ph-play-circle text-[14px] text-brand-textMuted" vid="144"></i> 1:24:33
+                        </span>
+                        <span class="px-2 py-1 bg-gray-100 text-gray-600 text-[11px] rounded-md font-medium uppercase" vid="145">MP4</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+        <section class="space-y-6" vid="146">
+            <div class="flex items-center gap-3" vid="147">
+                <h2 class="text-sm font-semibold text-brand-textMuted uppercase tracking-wider" vid="148">2. File List Views</h2>
+                <div class="h-px bg-brand-border flex-1" vid="149"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-brand-border shadow-card overflow-hidden" vid="150">
+                
+                <div class="flex items-center justify-between p-4 border-b border-brand-hover hover:bg-[#faf9f7] transition-colors cursor-pointer group" vid="151">
+                    <div class="flex items-center gap-4 flex-1 min-w-0" vid="152">
+                        <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0" vid="153">
+                            <i class="ph-fill ph-file-pdf text-xl" vid="154"></i>
+                        </div>
+                        <div class="flex-1 min-w-0" vid="155">
+                            <p class="text-[14px] font-medium text-brand-text truncate" vid="156">Employee_Handbook_2024.pdf</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-8 shrink-0 ml-4" vid="157">
+                        <span class="text-[13px] text-brand-textMuted w-20 text-right" vid="158">3.1 MB</span>
+                        <span class="text-[13px] text-brand-textMuted w-28 text-right hidden sm:block" vid="159">Jan 12, 2024</span>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-brand-textMuted transition-colors opacity-0 group-hover:opacity-100" vid="160">
+                            <i class="ph ph-dots-three text-xl" vid="161"></i>
+                        </button>
+                    </div>
+                </div>
+
+                
+                <div class="flex items-center justify-between p-4 border-b border-brand-hover bg-blue-50/30 cursor-pointer group" vid="162">
+                    <div class="flex items-center gap-4 flex-1 min-w-0" vid="163">
+                        <label class="flex items-center justify-center cursor-pointer shrink-0" vid="164">
+                            <input type="checkbox" checked="" class="w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer accent-brand-blue" vid="165">
+                        </label>
+                        <div class="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0" vid="166">
+                            <i class="ph-fill ph-file-xls text-xl" vid="167"></i>
+                        </div>
+                        <div class="flex flex-col flex-1 min-w-0" vid="168">
+                            <p class="text-[14px] font-medium text-brand-text truncate" vid="169">Q1_Budget_Allocation.xlsx</p>
+                            <span class="text-[12px] text-brand-textMuted sm:hidden mt-0.5" vid="170">850 KB • Yesterday</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6 shrink-0 ml-4" vid="171">
+                        <div class="hidden md:flex items-center gap-2 w-32" vid="172">
+                            <img src="https://ui-avatars.com/api/?name=David&amp;background=F3F4F6&amp;color=374151&amp;size=64" class="w-6 h-6 rounded-full" alt="David" vid="173">
+                            <span class="text-[13px] text-brand-text truncate" vid="174">David L.</span>
+                        </div>
+                        <div class="hidden lg:flex w-24" vid="175">
+                            <span class="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] rounded-full font-medium" vid="176">
+                                <i class="ph-fill ph-users text-[12px]" vid="177"></i> Shared
+                            </span>
+                        </div>
+                        <span class="text-[13px] text-brand-textMuted w-20 text-right hidden sm:block" vid="178">850 KB</span>
+                        <span class="text-[13px] text-brand-textMuted w-28 text-right hidden sm:block" vid="179">Yesterday</span>
+                        <div class="flex items-center gap-1" vid="180">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-brand-textMuted hover:text-brand-text transition-colors" vid="181">
+                                <i class="ph ph-share-network text-lg" vid="182"></i>
+                            </button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-brand-textMuted hover:text-brand-text transition-colors" vid="183">
+                                <i class="ph ph-dots-three text-xl" vid="184"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="flex items-center justify-between p-4 hover:bg-[#faf9f7] transition-colors cursor-pointer group" vid="185">
+                    <div class="flex items-center gap-4 flex-1 min-w-0" vid="186">
+                        <label class="flex items-center justify-center cursor-pointer shrink-0" vid="187">
+                            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity" vid="188">
+                        </label>
+                        <div class="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0" vid="189">
+                            <i class="ph-fill ph-file-zip text-xl" vid="190"></i>
+                        </div>
+                        <div class="flex flex-col flex-1 min-w-0" vid="191">
+                            <p class="text-[14px] font-medium text-brand-text truncate" vid="192">Project_Assets_Final_Delivery.zip</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6 shrink-0 ml-4" vid="193">
+                        <div class="hidden md:flex items-center gap-2 w-32" vid="194">
+                            <img src="https://ui-avatars.com/api/?name=Emma&amp;background=FEF3C7&amp;color=B45309&amp;size=64" class="w-6 h-6 rounded-full" alt="Emma" vid="195">
+                            <span class="text-[13px] text-brand-text truncate" vid="196">Emma W.</span>
+                        </div>
+                        <div class="hidden lg:flex w-24" vid="197">
+                            <span class="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] rounded-full font-medium" vid="198">
+                                <i class="ph-fill ph-lock-key text-[12px]" vid="199"></i> Private
+                            </span>
+                        </div>
+                        <span class="text-[13px] text-brand-textMuted w-20 text-right hidden sm:block" vid="200">1.2 GB</span>
+                        <span class="text-[13px] text-brand-textMuted w-28 text-right hidden sm:block" vid="201">Jan 10, 2024</span>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" vid="202">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-brand-textMuted hover:text-brand-text transition-colors" vid="203">
+                                <i class="ph ph-download-simple text-lg" vid="204"></i>
+                            </button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-brand-textMuted hover:text-brand-text transition-colors" vid="205">
+                                <i class="ph ph-dots-three text-xl" vid="206"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+        <section class="space-y-6" vid="207">
+            <div class="flex items-center gap-3" vid="208">
+                <h2 class="text-sm font-semibold text-brand-textMuted uppercase tracking-wider" vid="209">4. File Type Icons</h2>
+                <div class="h-px bg-brand-border flex-1" vid="210"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-brand-border shadow-card p-8 flex flex-wrap gap-6 items-center justify-center md:justify-start" vid="211">
+                
+                <div class="flex flex-col items-center gap-2" vid="212">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shadow-sm border border-red-100" vid="213">
+                        <i class="ph-fill ph-file-pdf text-2xl" vid="214"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="215">PDF</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="216">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm border border-blue-100" vid="217">
+                        <i class="ph-fill ph-file-doc text-2xl" vid="218"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="219">Word</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="220">
+                    <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shadow-sm border border-green-100" vid="221">
+                        <i class="ph-fill ph-file-xls text-2xl" vid="222"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="223">Excel</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="224">
+                    <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm border border-orange-100" vid="225">
+                        <i class="ph-fill ph-file-ppt text-2xl" vid="226"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="227">PowerPoint</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="228">
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm border border-purple-100" vid="229">
+                        <i class="ph-fill ph-image text-2xl" vid="230"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="231">Image</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="232">
+                    <div class="w-12 h-12 rounded-xl bg-fuchsia-50 text-fuchsia-500 flex items-center justify-center shadow-sm border border-fuchsia-100" vid="233">
+                        <i class="ph-fill ph-file-video text-2xl" vid="234"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="235">Video</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="236">
+                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-sm border border-teal-100" vid="237">
+                        <i class="ph-fill ph-file-audio text-2xl" vid="238"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="239">Audio</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="240">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center shadow-sm border border-gray-200" vid="241">
+                        <i class="ph-fill ph-file-zip text-2xl" vid="242"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="243">Archive</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="244">
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 text-slate-200 flex items-center justify-center shadow-sm border border-slate-700" vid="245">
+                        <i class="ph-fill ph-file-code text-2xl" vid="246"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="247">Code</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2" vid="248">
+                    <div class="w-12 h-12 rounded-xl bg-amber-900/10 text-amber-800 flex items-center justify-center shadow-sm border border-amber-900/20" vid="249">
+                        <i class="ph-fill ph-file-text text-2xl" vid="250"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-brand-textMuted" vid="251">Text</span>
+                </div>
+
+            </div>
+        </section>
+
+        
+        <section class="space-y-6" vid="252">
+            <div class="flex items-center gap-3" vid="253">
+                <h2 class="text-sm font-semibold text-brand-textMuted uppercase tracking-wider" vid="254">5. Management Tools</h2>
+                <div class="h-px bg-brand-border flex-1" vid="255"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" vid="256">
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-6 flex flex-col gap-5 row-span-2" vid="257">
+                    <div class="flex items-center justify-between" vid="258">
+                        <h3 class="text-[16px] font-semibold text-brand-text" vid="259">Share "Q4_Financial_Report.pdf"</h3>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-brand-textMuted transition-colors" vid="260"><i class="ph ph-x text-lg" vid="261"></i></button>
+                    </div>
+
+                    <div class="flex items-center gap-2" vid="262">
+                        <div class="flex-1 relative" vid="263">
+                            <input type="email" placeholder="Add people or groups..." class="w-full pl-3 pr-4 py-2 bg-brand-bg border border-brand-border rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all" vid="264">
+                        </div>
+                        <div class="relative shrink-0" vid="265">
+                            <select class="appearance-none bg-white border border-brand-border rounded-xl pl-3 pr-8 py-2 text-[13px] font-medium text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-blue/20 cursor-pointer" vid="266">
+                                <option vid="267">Editor</option>
+                                <option vid="268">Viewer</option>
+                            </select>
+                            <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-brand-textMuted pointer-events-none" vid="269"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1 mt-2" vid="270">
+                        <h4 class="text-[12px] font-semibold text-brand-textMuted uppercase tracking-wider mb-2" vid="271">People with access</h4>
+                        
+                        <div class="flex items-center justify-between py-2" vid="272">
+                            <div class="flex items-center gap-3" vid="273">
+                                <img src="https://ui-avatars.com/api/?name=Sarah&amp;background=E0E7FF&amp;color=3730A3&amp;size=64" class="w-8 h-8 rounded-full" alt="User" vid="274">
+                                <div class="flex flex-col" vid="275">
+                                    <span class="text-[14px] font-medium text-brand-text" vid="276">Sarah Jenkins (You)</span>
+                                    <span class="text-[12px] text-brand-textMuted" vid="277">sarah.j@company.com</span>
+                                </div>
+                            </div>
+                            <span class="text-[13px] text-brand-textMuted" vid="278">Owner</span>
+                        </div>
+
+                        <div class="flex items-center justify-between py-2" vid="279">
+                            <div class="flex items-center gap-3" vid="280">
+                                <img src="https://ui-avatars.com/api/?name=David&amp;background=F3F4F6&amp;color=374151&amp;size=64" class="w-8 h-8 rounded-full" alt="User" vid="281">
+                                <div class="flex flex-col" vid="282">
+                                    <span class="text-[14px] font-medium text-brand-text" vid="283">David Lee</span>
+                                    <span class="text-[12px] text-brand-textMuted" vid="284">david.l@company.com</span>
+                                </div>
+                            </div>
+                            <span class="text-[13px] text-brand-textMuted" vid="285">Editor</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-4 border-t border-brand-hover flex flex-col gap-4" vid="286">
+                        <div class="flex items-center justify-between" vid="287">
+                            <div class="flex items-center gap-3" vid="288">
+                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600" vid="289">
+                                    <i class="ph ph-link text-lg" vid="290"></i>
+                                </div>
+                                <div class="flex flex-col" vid="291">
+                                    <span class="text-[14px] font-medium text-brand-text" vid="292">Anyone with the link</span>
+                                    <span class="text-[12px] text-brand-textMuted" vid="293">Can view</span>
+                                </div>
+                            </div>
+                            <button class="text-[13px] font-medium text-brand-blue hover:text-brand-blueHover" vid="294">Change</button>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 mt-2" vid="295">
+                            <button class="flex-1 py-2 px-4 rounded-xl border border-brand-border bg-white text-[14px] font-medium text-brand-text hover:bg-gray-50 transition-colors flex items-center justify-center gap-2" vid="296">
+                                <i class="ph ph-copy" vid="297"></i> Copy link
+                            </button>
+                            <button class="flex-1 py-2 px-4 rounded-xl bg-brand-text text-white text-[14px] font-medium hover:bg-black transition-colors" vid="298">
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 flex flex-col" vid="299">
+                    <h3 class="text-[14px] font-medium text-brand-text mb-4" vid="300">Uploading 1 item</h3>
+                    <div class="flex items-start gap-4" vid="301">
+                        <div class="w-10 h-10 rounded-lg bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center shrink-0" vid="302">
+                            <i class="ph-fill ph-file-video text-xl" vid="303"></i>
+                        </div>
+                        <div class="flex-1 min-w-0" vid="304">
+                            <div class="flex items-center justify-between mb-1" vid="305">
+                                <p class="text-[13px] font-medium text-brand-text truncate" vid="306">Marketing_Campaign_Video_v2.mp4</p>
+                                <button class="text-brand-textMuted hover:text-gray-800 transition-colors" vid="307"><i class="ph ph-x" vid="308"></i></button>
+                            </div>
+                            <div class="flex items-center justify-between mb-2" vid="309">
+                                <span class="text-[12px] text-brand-textMuted" vid="310">142 MB of 210 MB</span>
+                                <span class="text-[12px] font-medium text-brand-text" vid="311">67%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-brand-border rounded-full overflow-hidden" vid="312">
+                                <div class="h-full bg-brand-blue rounded-full" style="width: 67%;" vid="313"></div>
+                            </div>
+                            <p class="text-[11px] text-brand-textMuted mt-2 text-right" vid="314">~4 mins left</p>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 flex flex-col gap-4" vid="315">
+                    <h3 class="text-[14px] font-medium text-brand-text" vid="316">Permission Indicators</h3>
+                    <div class="flex flex-wrap gap-3" vid="317">
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-[12px] rounded-full font-medium" vid="318">
+                            <i class="ph-fill ph-lock-key text-[14px]" vid="319"></i> Private
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 text-[12px] rounded-full font-medium" vid="320">
+                            <i class="ph-fill ph-users text-[14px]" vid="321"></i> Shared
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border border-green-100 text-[12px] rounded-full font-medium" vid="322">
+                            <i class="ph-fill ph-globe text-[14px]" vid="323"></i> Public link
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-100 text-[12px] rounded-full font-medium" vid="324">
+                            <i class="ph-fill ph-eye text-[14px]" vid="325"></i> View only
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white rounded-2xl border border-brand-border shadow-card p-5 flex flex-col xl:col-span-2" vid="326">
+                    <h3 class="text-[14px] font-medium text-brand-text mb-4" vid="327">Version History</h3>
+                    <div class="border border-brand-border rounded-xl overflow-hidden" vid="328">
+                        
+                        <div class="flex items-center justify-between p-3 bg-[#faf9f7] border-b border-brand-border" vid="329">
+                            <div class="flex items-center gap-3" vid="330">
+                                <span class="w-2 h-2 rounded-full bg-green-500" vid="331"></span>
+                                <div class="flex flex-col" vid="332">
+                                    <span class="text-[13px] font-medium text-brand-text" vid="333">Current Version (v4)</span>
+                                    <span class="text-[11px] text-brand-textMuted" vid="334">Today, 10:23 AM by You</span>
+                                </div>
+                            </div>
+                            <span class="text-[12px] text-brand-textMuted" vid="335">2.4 MB</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 border-b border-brand-border hover:bg-[#faf9f7] transition-colors group" vid="336">
+                            <div class="flex items-center gap-3 pl-5" vid="337">
+                                <div class="flex flex-col" vid="338">
+                                    <span class="text-[13px] font-medium text-brand-text" vid="339">Version 3</span>
+                                    <span class="text-[11px] text-brand-textMuted" vid="340">Yesterday, 4:15 PM by David Lee</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4" vid="341">
+                                <span class="text-[12px] text-brand-textMuted" vid="342">2.3 MB</span>
+                                <button class="opacity-0 group-hover:opacity-100 text-[12px] font-medium text-brand-blue hover:underline transition-opacity" vid="343">Restore</button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 hover:bg-[#faf9f7] transition-colors group" vid="344">
+                            <div class="flex items-center gap-3 pl-5" vid="345">
+                                <div class="flex flex-col" vid="346">
+                                    <span class="text-[13px] font-medium text-brand-text" vid="347">Version 2</span>
+                                    <span class="text-[11px] text-brand-textMuted" vid="348">Oct 24, 2023 by Emma W.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4" vid="349">
+                                <span class="text-[12px] text-brand-textMuted" vid="350">2.1 MB</span>
+                                <button class="opacity-0 group-hover:opacity-100 text-[12px] font-medium text-brand-blue hover:underline transition-opacity" vid="351">Restore</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        
+        <section class="space-y-6 pb-20" vid="352">
+            <div class="flex items-center gap-3" vid="353">
+                <h2 class="text-sm font-semibold text-brand-textMuted uppercase tracking-wider" vid="354">3. Full Page Layout: Data Room Explorer</h2>
+                <div class="h-px bg-brand-border flex-1" vid="355"></div>
+            </div>
+
+            
+            <div class="w-full h-[850px] bg-brand-bg rounded-2xl border border-brand-border shadow-floating overflow-hidden flex flex-col relative text-brand-text" vid="356">
+                
+                
+                <header class="h-16 border-b border-brand-border bg-white flex items-center justify-between px-6 shrink-0 z-10" vid="357">
+                    <div class="flex items-center gap-8" vid="358">
+                        
+                        <div class="flex items-center gap-2" vid="359">
+                            <div class="w-8 h-8 rounded-lg bg-brand-text text-white flex items-center justify-center" vid="360">
+                                <i class="ph-bold ph-vault text-lg" vid="361"></i>
+                            </div>
+                            <span class="font-semibold text-[16px] tracking-tight" vid="362">VaultBox</span>
+                        </div>
+                        
+                        
+                        <div class="relative hidden md:block w-96" vid="363">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-brand-textMuted" vid="364"></i>
+                            <input type="text" placeholder="Search in Alpha Corp Data Room..." class="w-full pl-9 pr-4 py-2 bg-brand-hover border border-transparent rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:bg-white focus:border-brand-blue transition-all" vid="365">
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1" vid="366">
+                                <kbd class="hidden lg:inline-flex items-center justify-center px-1.5 py-0.5 border border-brand-border rounded-md text-[10px] font-sans text-brand-textMuted bg-white" vid="367">⌘</kbd>
+                                <kbd class="hidden lg:inline-flex items-center justify-center px-1.5 py-0.5 border border-brand-border rounded-md text-[10px] font-sans text-brand-textMuted bg-white" vid="368">K</kbd>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4" vid="369">
+                        <button class="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-xl text-[14px] font-medium hover:bg-brand-blueHover transition-colors shadow-sm" vid="370">
+                            <i class="ph-bold ph-plus" vid="371"></i> Upload
+                        </button>
+                        <div class="w-px h-6 bg-brand-border mx-1" vid="372"></div>
+                        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-brand-hover text-brand-textMuted transition-colors" vid="373">
+                            <i class="ph ph-bell text-xl" vid="374"></i>
+                        </button>
+                        <button class="w-9 h-9 rounded-full overflow-hidden border border-brand-border focus:ring-2 focus:ring-brand-blue/50 outline-none" vid="375">
+                            <img src="https://ui-avatars.com/api/?name=Sarah&amp;background=E0E7FF&amp;color=3730A3&amp;size=64" class="w-full h-full object-cover" alt="Avatar" vid="376">
+                        </button>
+                    </div>
+                </header>
+
+                
+                <div class="flex flex-1 overflow-hidden relative" vid="377">
+                    
+                    
+                    <aside class="w-64 border-r border-brand-border bg-[#fcfbf8] flex flex-col shrink-0 hidden md:flex" vid="378">
+                        <div class="p-4 flex-1 overflow-y-auto custom-scrollbar" vid="379">
+                            <div class="mb-6" vid="380">
+                                <h3 class="text-[11px] font-semibold text-brand-textMuted uppercase tracking-wider mb-2 px-3" vid="381">Locations</h3>
+                                <nav class="flex flex-col gap-1" vid="382">
+                                    <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl bg-white shadow-sm border border-brand-border text-brand-text font-medium text-[14px]" vid="383">
+                                        <div class="flex items-center gap-3" vid="384">
+                                            <i class="ph-fill ph-hard-drives text-lg text-brand-blue" vid="385"></i>
+                                            Alpha Corp Data Room
+                                        </div>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-brand-hover text-brand-textMuted hover:text-brand-text font-medium text-[14px] transition-colors" vid="386">
+                                        <div class="flex items-center gap-3" vid="387">
+                                            <i class="ph ph-user text-lg" vid="388"></i>
+                                            Personal Files
+                                        </div>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-brand-hover text-brand-textMuted hover:text-brand-text font-medium text-[14px] transition-colors" vid="389">
+                                        <div class="flex items-center gap-3" vid="390">
+                                            <i class="ph ph-users text-lg" vid="391"></i>
+                                            Shared with me
+                                        </div>
+                                        <span class="text-[10px] font-bold bg-brand-border text-brand-text px-1.5 py-0.5 rounded-md" vid="392">2</span>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-brand-hover text-brand-textMuted hover:text-brand-text font-medium text-[14px] transition-colors" vid="393">
+                                        <div class="flex items-center gap-3" vid="394">
+                                            <i class="ph ph-clock text-lg" vid="395"></i>
+                                            Recent
+                                        </div>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-brand-hover text-brand-textMuted hover:text-brand-text font-medium text-[14px] transition-colors" vid="396">
+                                        <div class="flex items-center gap-3" vid="397">
+                                            <i class="ph ph-star text-lg" vid="398"></i>
+                                            Starred
+                                        </div>
+                                    </a>
+                                </nav>
+                            </div>
+
+                            <div vid="399">
+                                <h3 class="text-[11px] font-semibold text-brand-textMuted uppercase tracking-wider mb-2 px-3" vid="400">Folders</h3>
+                                <div class="flex flex-col gap-1" vid="401">
+                                    
+                                    <div class="flex flex-col" vid="402">
+                                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="403">
+                                            <i class="ph-fill ph-caret-down text-[10px] text-brand-textMuted" vid="404"></i>
+                                            <i class="ph-fill ph-folder text-brand-textMuted text-[16px]" vid="405"></i>
+                                            Financials
+                                        </div>
+                                        <div class="pl-7 flex flex-col gap-1 mt-1" vid="406">
+                                            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="407">
+                                                <i class="ph-fill ph-folder text-brand-textMuted text-[16px]" vid="408"></i>
+                                                2022
+                                            </div>
+                                            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-hover cursor-pointer text-[13px] font-medium text-brand-text" vid="409">
+                                                <i class="ph-fill ph-folder-open text-brand-blue text-[16px]" vid="410"></i>
+                                                2023
+                                            </div>
+                                            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="411">
+                                                <i class="ph-fill ph-folder text-brand-textMuted text-[16px]" vid="412"></i>
+                                                Projections
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="413">
+                                        <i class="ph-fill ph-caret-right text-[10px] text-brand-textMuted" vid="414"></i>
+                                        <i class="ph-fill ph-folder text-brand-textMuted text-[16px]" vid="415"></i>
+                                        Legal &amp; Contracts
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="416">
+                                        <i class="ph-fill ph-caret-right text-[10px] text-brand-textMuted" vid="417"></i>
+                                        <i class="ph-fill ph-folder text-yellow-500 text-[16px]" vid="418"></i>
+                                        Due Diligence
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-hover cursor-pointer text-[13px] text-brand-text" vid="419">
+                                        <i class="ph-fill ph-caret-right text-[10px] text-brand-textMuted" vid="420"></i>
+                                        <i class="ph-fill ph-folder text-brand-textMuted text-[16px]" vid="421"></i>
+                                        HR &amp; Employees
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <div class="p-4 border-t border-brand-border" vid="422">
+                            <div class="flex items-center justify-between mb-2" vid="423">
+                                <span class="text-[12px] font-medium text-brand-text" vid="424">Storage</span>
+                                <span class="text-[12px] text-brand-textMuted" vid="425">82%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-brand-border rounded-full overflow-hidden mb-2" vid="426">
+                                <div class="h-full bg-brand-text rounded-full" style="width: 82%;" vid="427"></div>
+                            </div>
+                            <p class="text-[11px] text-brand-textMuted" vid="428">41 GB used of 50 GB</p>
+                        </div>
+                    </aside>
+
+                    
+                    <main class="flex-1 bg-white flex flex-col relative min-w-0" vid="429">
+                        
+                        
+                        <div class="px-6 py-4 border-b border-brand-border flex items-center justify-between bg-white shrink-0 z-10" vid="430">
+                            <div class="flex items-center gap-2 text-[14px] text-brand-textMuted" vid="431">
+                                <a href="#" class="hover:text-brand-text transition-colors" vid="432">Alpha Corp Data Room</a>
+                                <i class="ph ph-caret-right text-[12px]" vid="433"></i>
+                                <a href="#" class="hover:text-brand-text transition-colors" vid="434">Financials</a>
+                                <i class="ph ph-caret-right text-[12px]" vid="435"></i>
+                                <span class="font-medium text-brand-text" vid="436">2023</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-3" vid="437">
+                                <div class="relative hidden sm:block" vid="438">
+                                    <button class="flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-lg text-[13px] font-medium text-brand-text hover:bg-brand-hover transition-colors" vid="439">
+                                        Last modified <i class="ph-fill ph-caret-down text-[10px]" vid="440"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center p-0.5 bg-brand-hover rounded-lg border border-brand-border" vid="441">
+                                    <button class="w-8 h-8 rounded-md bg-white shadow-sm flex items-center justify-center text-brand-text" vid="442">
+                                        <i class="ph-fill ph-squares-four text-lg" vid="443"></i>
+                                    </button>
+                                    <button class="w-8 h-8 rounded-md flex items-center justify-center text-brand-textMuted hover:text-brand-text transition-colors" vid="444">
+                                        <i class="ph ph-list text-lg" vid="445"></i>
+                                    </button>
+                                </div>
+                                <button class="w-9 h-9 rounded-lg border border-brand-border flex items-center justify-center text-brand-textMuted hover:bg-brand-hover hover:text-brand-text transition-colors xl:hidden" vid="446">
+                                    <i class="ph ph-info text-lg" vid="447"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        
+                        <div class="flex-1 overflow-y-auto custom-scrollbar p-6" vid="448">
+                            
+                            <div class="mb-6" vid="449">
+                                <h3 class="text-[13px] font-medium text-brand-textMuted mb-4" vid="450">Folders</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4" vid="451">
+                                    
+                                    
+                                    <div class="bg-white rounded-xl border border-brand-border p-4 flex items-center gap-3 hover:bg-[#faf9f7] hover:border-gray-300 transition-colors cursor-pointer group" vid="452">
+                                        <i class="ph-fill ph-folder text-2xl text-yellow-500" vid="453"></i>
+                                        <div class="flex-1 min-w-0" vid="454">
+                                            <p class="text-[14px] font-medium text-brand-text truncate" vid="455">Q1 Reports</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-white rounded-xl border border-brand-border p-4 flex items-center gap-3 hover:bg-[#faf9f7] hover:border-gray-300 transition-colors cursor-pointer group" vid="456">
+                                        <i class="ph-fill ph-folder text-2xl text-brand-textMuted" vid="457"></i>
+                                        <div class="flex-1 min-w-0" vid="458">
+                                            <p class="text-[14px] font-medium text-brand-text truncate" vid="459">Q2 Reports</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-white rounded-xl border border-brand-border p-4 flex items-center gap-3 hover:bg-[#faf9f7] hover:border-gray-300 transition-colors cursor-pointer group" vid="460">
+                                        <i class="ph-fill ph-folder text-2xl text-brand-textMuted" vid="461"></i>
+                                        <div class="flex-1 min-w-0" vid="462">
+                                            <p class="text-[14px] font-medium text-brand-text truncate" vid="463">Q3 Reports</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div vid="464">
+                                <h3 class="text-[13px] font-medium text-brand-textMuted mb-4" vid="465">Files</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-24" vid="466">
+                                    
+                                    
+                                    <div class="bg-blue-50/40 rounded-2xl border-2 border-brand-blue shadow-sm p-4 relative cursor-pointer flex flex-col h-48" vid="467">
+                                        <div class="absolute top-3 left-3 z-10" vid="468">
+                                            <input type="checkbox" checked="" class="w-4.5 h-4.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer accent-brand-blue shadow-sm" vid="469">
+                                        </div>
+                                        <div class="flex items-start justify-between mb-3 pl-6" vid="470">
+                                            <div class="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0" vid="471">
+                                                <i class="ph-fill ph-file-xls text-xl" vid="472"></i>
+                                            </div>
+                                            <button class="text-brand-textMuted hover:text-brand-text" vid="473"><i class="ph ph-dots-three text-xl" vid="474"></i></button>
+                                        </div>
+                                        <h3 class="text-[14px] font-medium text-brand-text mb-1 line-clamp-2" vid="475">Master_Budget_2023_Final_Approved.xlsx</h3>
+                                        <div class="mt-auto flex items-center justify-between" vid="476">
+                                            <span class="text-[12px] text-brand-textMuted" vid="477">4.2 MB</span>
+                                            <img src="https://ui-avatars.com/api/?name=Sarah&amp;background=E0E7FF&amp;color=3730A3&amp;size=64" class="w-5 h-5 rounded-full" alt="Owner" vid="478">
+                                        </div>
+                                    </div>
+
+                                    
+                                    <div class="bg-white rounded-2xl border border-brand-border shadow-subtle p-4 relative group hover:border-gray-300 transition-all cursor-pointer flex flex-col h-48" vid="479">
+                                        <div class="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity" vid="480">
+                                            <input type="checkbox" class="w-4.5 h-4.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer" vid="481">
+                                        </div>
+                                        <div class="flex items-start justify-between mb-3 group-hover:pl-6 transition-all" vid="482">
+                                            <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0" vid="483">
+                                                <i class="ph-fill ph-file-pdf text-xl" vid="484"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 transition-opacity text-brand-textMuted hover:text-brand-text" vid="485"><i class="ph ph-dots-three text-xl" vid="486"></i></button>
+                                        </div>
+                                        <h3 class="text-[14px] font-medium text-brand-text mb-1 line-clamp-2" vid="487">Q4_Executive_Summary_Presentation.pdf</h3>
+                                        <div class="mt-auto flex items-center justify-between" vid="488">
+                                            <span class="text-[12px] text-brand-textMuted" vid="489">1.8 MB</span>
+                                            <img src="https://ui-avatars.com/api/?name=David&amp;background=F3F4F6&amp;color=374151&amp;size=64" class="w-5 h-5 rounded-full" alt="Owner" vid="490">
+                                        </div>
+                                    </div>
+
+                                    
+                                    <div class="bg-white rounded-2xl border border-brand-border shadow-subtle p-4 relative group hover:border-gray-300 transition-all cursor-pointer flex flex-col h-48" vid="491">
+                                        <div class="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity" vid="492">
+                                            <input type="checkbox" class="w-4.5 h-4.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer" vid="493">
+                                        </div>
+                                        <div class="flex items-start justify-between mb-3 group-hover:pl-6 transition-all" vid="494">
+                                            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0" vid="495">
+                                                <i class="ph-fill ph-file-doc text-xl" vid="496"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 transition-opacity text-brand-textMuted hover:text-brand-text" vid="497"><i class="ph ph-dots-three text-xl" vid="498"></i></button>
+                                        </div>
+                                        <h3 class="text-[14px] font-medium text-brand-text mb-1 line-clamp-2" vid="499">Auditor_Notes_Draft_v2.docx</h3>
+                                        <div class="mt-auto flex items-center justify-between" vid="500">
+                                            <span class="text-[12px] text-brand-textMuted" vid="501">890 KB</span>
+                                            <div class="flex -space-x-1.5" vid="502">
+                                                <img src="https://ui-avatars.com/api/?name=Emma&amp;background=FEF3C7&amp;color=B45309&amp;size=64" class="w-5 h-5 rounded-full border border-white" alt="Owner" vid="503">
+                                                <img src="https://ui-avatars.com/api/?name=Sarah&amp;background=E0E7FF&amp;color=3730A3&amp;size=64" class="w-5 h-5 rounded-full border border-white" alt="Viewer" vid="504">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    
+                                    <div class="bg-blue-50/40 rounded-2xl border-2 border-brand-blue shadow-sm overflow-hidden relative cursor-pointer flex flex-col h-48 group" vid="505">
+                                        <div class="absolute top-3 left-3 z-10" vid="506">
+                                            <input type="checkbox" checked="" class="w-4.5 h-4.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer accent-brand-blue shadow-sm" vid="507">
+                                        </div>
+                                        <div class="h-24 bg-purple-100 relative shrink-0 overflow-hidden" vid="508">
+                                            <div class="absolute inset-0 bg-gradient-to-tr from-purple-200 to-pink-100 opacity-50" vid="509"></div>
+                                            <div class="absolute top-3 right-3 text-brand-textMuted bg-white/80 rounded-lg w-7 h-7 flex items-center justify-center backdrop-blur-sm" vid="510"><i class="ph ph-dots-three text-lg" vid="511"></i></div>
+                                        </div>
+                                        <div class="p-3 flex-1 flex flex-col" vid="512">
+                                            <h3 class="text-[14px] font-medium text-brand-text mb-1 truncate" title="Office_Expansion_Plans.png" vid="513">Office_Expansion_Plans.png</h3>
+                                            <div class="mt-auto flex items-center justify-between" vid="514">
+                                                <span class="text-[12px] text-brand-textMuted" vid="515">5.4 MB</span>
+                                                <span class="px-1.5 py-0.5 bg-white border border-brand-border rounded text-[10px] font-medium text-brand-textMuted uppercase" vid="516">PNG</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="bg-white rounded-2xl border border-brand-border shadow-subtle p-4 relative group hover:border-gray-300 transition-all cursor-pointer flex flex-col h-48" vid="517">
+                                        <div class="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity" vid="518">
+                                            <input type="checkbox" class="w-4.5 h-4.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue/30 cursor-pointer" vid="519">
+                                        </div>
+                                        <div class="flex items-start justify-between mb-3 group-hover:pl-6 transition-all" vid="520">
+                                            <div class="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0" vid="521">
+                                                <i class="ph-fill ph-file-xls text-xl" vid="522"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 transition-opacity text-brand-textMuted hover:text-brand-text" vid="523"><i class="ph ph-dots-three text-xl" vid="524"></i></button>
+                                        </div>
+                                        <h3 class="text-[14px] font-medium text-brand-text mb-1 line-clamp-2" vid="525">Expense_Report_Q3.xlsx</h3>
+                                        <div class="mt-auto flex items-center justify-between" vid="526">
+                                            <span class="text-[12px] text-brand-textMuted" vid="527">1.1 MB</span>
+                                            <img src="https://ui-avatars.com/api/?name=Mike&amp;background=ECFCCB&amp;color=3F6212&amp;size=64" class="w-5 h-5 rounded-full" alt="Owner" vid="528">
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#1a1816] text-white px-5 py-3 rounded-2xl shadow-floating flex items-center gap-6 z-20 transition-transform duration-300" vid="529">
+                            <div class="flex items-center gap-2" vid="530">
+                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-[12px] font-bold" vid="531">2</span>
+                                <span class="text-[14px] font-medium" vid="532">selected</span>
+                            </div>
+                            <div class="w-px h-6 bg-white/20" vid="533"></div>
+                            <div class="flex items-center gap-2" vid="534">
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/10 transition-colors text-[13px] font-medium" vid="535">
+                                    <i class="ph ph-folder-simple-dashed text-lg" vid="536"></i> Move
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/10 transition-colors text-[13px] font-medium" vid="537">
+                                    <i class="ph ph-share-network text-lg" vid="538"></i> Share
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/10 transition-colors text-[13px] font-medium" vid="539">
+                                    <i class="ph ph-download-simple text-lg" vid="540"></i> Download
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-red-500/20 text-red-400 transition-colors text-[13px] font-medium" vid="541">
+                                    <i class="ph ph-trash text-lg" vid="542"></i>
+                                </button>
+                            </div>
+                            <button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-2" vid="543">
+                                <i class="ph ph-x text-sm" vid="544"></i>
+                            </button>
+                        </div>
+
+                    </main>
+
+                    
+                    <aside class="w-80 border-l border-brand-border bg-[#fcfbf8] flex flex-col shrink-0 hidden xl:flex" vid="545">
+                        <div class="h-16 border-b border-brand-border px-4 flex items-center justify-between shrink-0" vid="546">
+                            <h2 class="text-[15px] font-semibold text-brand-text" vid="547">File Details</h2>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-brand-textMuted hover:bg-brand-hover transition-colors" vid="548">
+                                <i class="ph ph-x" vid="549"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-6" vid="550">
+                            
+                            
+                            <div class="flex flex-col gap-4" vid="551">
+                                <div class="w-full aspect-[4/3] rounded-xl bg-green-50/50 border border-brand-border flex items-center justify-center relative overflow-hidden group cursor-pointer" vid="552">
+                                    <i class="ph-fill ph-file-xls text-5xl text-green-600/50" vid="553"></i>
+                                    <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center" vid="554">
+                                        <span class="px-3 py-1.5 bg-white rounded-lg shadow-sm text-[12px] font-medium flex items-center gap-1" vid="555"><i class="ph ph-arrows-out" vid="556"></i> Preview</span>
+                                    </div>
+                                </div>
+                                <div vid="557">
+                                    <h3 class="text-[16px] font-medium text-brand-text leading-snug word-break break-all" vid="558">Master_Budget_2023_Final_Approved.xlsx</h3>
+                                </div>
+                            </div>
+
+                            
+                            <div class="flex items-center gap-4 border-b border-brand-border" vid="559">
+                                <button class="pb-2 text-[13px] font-medium text-brand-text border-b-2 border-brand-text" vid="560">Details</button>
+                                <button class="pb-2 text-[13px] font-medium text-brand-textMuted hover:text-brand-text transition-colors border-b-2 border-transparent" vid="561">Activity</button>
+                            </div>
+
+                            
+                            <div class="flex flex-col gap-3" vid="562">
+                                <div class="flex items-start justify-between" vid="563">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="564">Type</span>
+                                    <span class="text-[13px] font-medium text-brand-text text-right" vid="565">Excel Spreadsheet</span>
+                                </div>
+                                <div class="flex items-start justify-between" vid="566">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="567">Size</span>
+                                    <span class="text-[13px] font-medium text-brand-text text-right" vid="568">4.2 MB (4,402,120 bytes)</span>
+                                </div>
+                                <div class="flex items-start justify-between" vid="569">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="570">Location</span>
+                                    <span class="text-[13px] font-medium text-brand-blue cursor-pointer hover:underline text-right" vid="571">/Financials/2023</span>
+                                </div>
+                                <div class="flex items-start justify-between" vid="572">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="573">Owner</span>
+                                    <div class="flex items-center gap-1.5 justify-end" vid="574">
+                                        <img src="https://ui-avatars.com/api/?name=Sarah&amp;background=E0E7FF&amp;color=3730A3&amp;size=64" class="w-4 h-4 rounded-full" alt="Sarah" vid="575">
+                                        <span class="text-[13px] font-medium text-brand-text" vid="576">Sarah Jenkins</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start justify-between" vid="577">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="578">Modified</span>
+                                    <div class="flex flex-col items-end text-right" vid="579">
+                                        <span class="text-[13px] font-medium text-brand-text" vid="580">Nov 14, 2023</span>
+                                        <span class="text-[12px] text-brand-textMuted" vid="581">by David Lee</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start justify-between" vid="582">
+                                    <span class="text-[13px] text-brand-textMuted w-24 shrink-0" vid="583">Created</span>
+                                    <span class="text-[13px] font-medium text-brand-text text-right" vid="584">Jan 5, 2023</span>
+                                </div>
+                            </div>
+
+                            <div class="h-px bg-brand-border w-full" vid="585"></div>
+
+                            
+                            <div class="flex flex-col gap-3" vid="586">
+                                <div class="flex items-center justify-between" vid="587">
+                                    <h4 class="text-[13px] font-medium text-brand-text" vid="588">Who has access</h4>
+                                    <button class="text-[12px] font-medium text-brand-blue hover:text-brand-blueHover" vid="589">Manage</button>
+                                </div>
+                                <div class="flex flex-col gap-2" vid="590">
+                                    <div class="flex items-center gap-3" vid="591">
+                                        <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 border border-green-100 flex items-center justify-center shrink-0" vid="592">
+                                            <i class="ph-fill ph-users" vid="593"></i>
+                                        </div>
+                                        <div class="flex flex-col" vid="594">
+                                            <span class="text-[13px] font-medium text-brand-text" vid="595">Finance Team</span>
+                                            <span class="text-[11px] text-brand-textMuted" vid="596">Can edit</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3" vid="597">
+                                        <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0" vid="598">
+                                            <i class="ph-fill ph-link" vid="599"></i>
+                                        </div>
+                                        <div class="flex flex-col" vid="600">
+                                            <span class="text-[13px] font-medium text-brand-text" vid="601">Anyone with link</span>
+                                            <span class="text-[11px] text-brand-textMuted" vid="602">Can view</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </aside>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+
+</body></html>

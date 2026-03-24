@@ -1,0 +1,45 @@
+{
+  "story_id": "STORY-010",
+  "title": "List and Organize Sessions by Date",
+  "result": "PARTIAL PASS",
+  "findings": [
+    {
+      "id": "010-F1",
+      "type": "pass",
+      "severity": "NONE",
+      "description": "Date group headers (TODAY, YESTERDAY, THIS WEEK) are present and visible",
+      "expected": "Sessions grouped by date",
+      "actual": "Three date groups displayed as uppercase labels"
+    },
+    {
+      "id": "010-F2",
+      "type": "pass",
+      "severity": "NONE",
+      "description": "Sessions appear chronologically ordered within each group (newest first)",
+      "expected": "Reverse chronological order",
+      "actual": "Sessions ordered by recency within each group"
+    },
+    {
+      "id": "010-F3",
+      "type": "bug",
+      "severity": "MEDIUM",
+      "description": "Some Mar 21 sessions appear under TODAY instead of YESTERDAY",
+      "expected": "All Mar 21 sessions should be under YESTERDAY (today is Mar 22)",
+      "actual": "Mar 21 at 9:15 PM and 9:09 PM are under TODAY; Mar 21 at 2:53 PM etc. are under YESTERDAY"
+    },
+    {
+      "id": "010-F4",
+      "type": "ux",
+      "severity": "LOW",
+      "description": "Only 3 date groups available with no further granularity for older sessions",
+      "expected": "Additional groups like LAST WEEK, THIS MONTH, OLDER for better organization",
+      "actual": "All sessions older than yesterday fall under THIS WEEK"
+    }
+  ],
+  "steps_completed": 3,
+  "steps_total": 3,
+  "screenshots": [
+    "screenshots/date-groupings-top.png",
+    "screenshots/date-groupings-scrolled.png"
+  ]
+}

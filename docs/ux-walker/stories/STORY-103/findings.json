@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-103",
+  "title": "Create New Dashboard with Prompt",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Dashboards tab",
+  "observations": [
+    "+ New button present on Dashboards tab header",
+    "Two existing dashboards visible as proof of feature",
+    "Dashboard list with titles and dates"
+  ],
+  "issues": [],
+  "ui_elements_found": ["New dashboard button", "Dashboard list"]
+}

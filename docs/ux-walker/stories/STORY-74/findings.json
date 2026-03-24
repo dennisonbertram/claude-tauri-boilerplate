@@ -1,0 +1,19 @@
+{
+  "story_id": "STORY-074",
+  "title": "Set Up Session-Scoped vs. Permanent Permissions",
+  "status": "fail",
+  "bugs": [],
+  "missing_features": [
+    "No session-scoped vs permanent permission toggle",
+    "No per-permission scope configuration",
+    "No session permission expiry settings"
+  ],
+  "ui_present": [
+    "Permission Mode dropdown in Settings > AI & Model > Advanced",
+    "Permission Mode dropdown in Agent Profile > Tools"
+  ],
+  "ui_missing": [
+    "Session vs permanent scope selector",
+    "Permission expiry/duration settings"
+  ]
+}

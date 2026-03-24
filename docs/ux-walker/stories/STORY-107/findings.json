@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-107",
+  "title": "View Artifact Revision History",
+  "status": "PARTIAL",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Dashboards tab > Test Dashboard",
+  "observations": [
+    "Has revisions label visible next to creation date",
+    "DASHBOARD SPEC (LATEST REVISION) section shown with revision hash 232f2ded",
+    "No explicit revision list/browser UI found to browse between revisions"
+  ],
+  "issues": ["Revision metadata displayed but no revision picker/browser to navigate between past versions"],
+  "ui_elements_found": ["Has revisions label", "LATEST REVISION section"]
+}

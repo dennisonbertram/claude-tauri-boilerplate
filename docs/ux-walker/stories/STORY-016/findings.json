@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-016",
+  "title": "First Message with Image Attachment",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "Chat input supports image attachments via ChatInputToolbar component with Plus (+) icon button labeled 'Attach files'",
+      "evidence": "ChatInputToolbar.tsx line 22-29: button with title='Attach files' using Plus icon, triggers file picker",
+      "component": "apps/desktop/src/components/chat/chat-input/ChatInputToolbar.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Attachment utilities support image detection (isLikelyImage), file reading (readFileAsDataUrl), drag-and-drop (collectFilesFromDataTransfer), and thumbnail previews (AttachmentThumbnails component)",
+      "evidence": "chat-input/attachment-utils.ts and AttachmentThumbnails.tsx exist and are exported",
+      "component": "apps/desktop/src/components/chat/chat-input/"
+    },
+    {
+      "type": "pass",
+      "description": "ChatInput component supports images prop, paste/drag-drop handlers for file attachments, and file picker via hidden input",
+      "evidence": "ChatInput.tsx lines 30-31: images prop with onImagesChange callback; addFiles callback processes both image and non-image files",
+      "component": "apps/desktop/src/components/chat/ChatInput.tsx"
+    },
+    {
+      "type": "observation",
+      "description": "The attach button is a small Plus (+) icon in the toolbar below the textarea - not immediately obvious as an image attachment button. No paperclip/image icon or label visible.",
+      "component": "apps/desktop/src/components/chat/chat-input/ChatInputToolbar.tsx"
+    }
+  ]
+}

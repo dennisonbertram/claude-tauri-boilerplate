@@ -1,0 +1,25 @@
+{
+  "story": "STORY-015",
+  "title": "Handle Session with Profile Badge",
+  "status": "partial",
+  "findings": [
+    {
+      "id": "015-1",
+      "type": "present",
+      "severity": "info",
+      "summary": "ProfileBadge component exists and is integrated into SessionItem",
+      "details": "The ProfileBadge renders a colored pill with icon + name. SessionItem conditionally shows it when session.profile is set. Component at apps/desktop/src/components/agent-builder/shared/ProfileBadge.tsx.",
+      "component": "apps/desktop/src/components/agent-builder/shared/ProfileBadge.tsx"
+    },
+    {
+      "id": "015-2",
+      "type": "untestable",
+      "severity": "info",
+      "summary": "No sessions have profiles assigned, so badges are not visible",
+      "details": "All checked sessions have no profile property set. Cannot visually verify badge rendering without creating a session via an agent profile."
+    }
+  ],
+  "screenshots": [
+    "screenshots/01-no-profile-badges-visible.png"
+  ]
+}

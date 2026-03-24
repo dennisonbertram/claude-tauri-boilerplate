@@ -1,0 +1,16 @@
+{
+  "story_id": "STORY-075",
+  "title": "Handle File Write Permission with Content Preview",
+  "status": "blocked",
+  "bugs": [],
+  "missing_features": [
+    "Cannot verify content preview in file write permission dialogs"
+  ],
+  "ui_present": [
+    "Write tool with Default/Allow/Block toggle in Agent Profile",
+    "Edit tool with Default/Allow/Block toggle in Agent Profile"
+  ],
+  "ui_missing": [
+    "Content preview in permission dialog (requires active session to verify)"
+  ]
+}

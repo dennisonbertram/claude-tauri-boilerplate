@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-113",
+  "title": "Export Code Review to Issue",
+  "status": "not_implemented",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No export-to-issue functionality found. The AI Code Review modal allows starting a review with a custom prompt, model selection (claude-haiku-4-5), and effort level (Low/Med/High), but there is no option to export review findings as a GitHub issue.",
+      "location": "Workspace > Diff tab > Review button",
+      "expected": "Option to export code review findings as GitHub issues",
+      "actual": "AI Code Review modal has Start Review and Cancel buttons only; no export-to-issue option"
+    }
+  ],
+  "ui_elements_found": ["AI Code Review modal", "Review Prompt textarea", "Model selector", "Effort selector", "Start Review button", "Cancel button"],
+  "tested_at": "2026-03-23"
+}

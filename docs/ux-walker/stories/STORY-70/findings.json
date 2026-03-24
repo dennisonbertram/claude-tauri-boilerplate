@@ -1,0 +1,18 @@
+{
+  "story_id": "STORY-070",
+  "title": "Request Permission to Run Bash Command",
+  "status": "blocked",
+  "bugs": [
+    {
+      "severity": "critical",
+      "description": "Clicking 'Normal' permission mode button in status bar crashes the app",
+      "location": "status bar > permission mode button",
+      "reproduction": "Click the 'Normal' text in the bottom status bar"
+    }
+  ],
+  "missing_features": [
+    "Cannot verify in-conversation permission request UI without active sidecar session"
+  ],
+  "ui_present": ["status bar permission mode indicator (Normal)"],
+  "ui_missing": []
+}

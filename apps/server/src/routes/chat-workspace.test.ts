@@ -614,8 +614,14 @@ describe('Chat Route - Workspace Integration', () => {
 
   test('rejects attachment references that escape workspace path', async () => {
     setupStandardMock('ws-escape-session', 'Should not be called');
-    const { workspaceId, workspacePath } = createTestWorkspace(db);
-    const escapedPath = resolve(workspacePath, '..', '..', 'secrets.txt');
+    // Create a nested workspace dir so ../../ stays within a writable temp area
+    // (on Linux /tmp is flat, so going up two levels from /tmp/xxx reaches /)
+    const outerDir = mkdtempSync(join(tmpdir(), 'chat-workspace-escape-'));
+    tempPaths.add(outerDir);
+    const nestedWorktree = join(outerDir, 'deep', 'worktree');
+    mkdirSync(nestedWorktree, { recursive: true });
+    const { workspaceId } = createTestWorkspace(db, { workspacePath: nestedWorktree });
+    const escapedPath = resolve(nestedWorktree, '..', '..', 'secrets.txt');
     mkdirSync(dirname(escapedPath), { recursive: true });
     writeFileSync(escapedPath, 'top secret');
 

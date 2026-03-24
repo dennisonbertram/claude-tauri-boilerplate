@@ -1,0 +1,12 @@
+[
+  {
+    "id": "F-030-001",
+    "severity": "medium",
+    "type": "missing-feature",
+    "title": "No branch picker visible in project/workspace creation",
+    "description": "No branch selection or branch picker is accessible from the Projects view. The creation dialog is unreachable (F-028-001).",
+    "steps": "1. Navigate to Projects view. 2. Look for branch picker in workspace creation. 3. None found.",
+    "expected": "Branch selection should be available in workspace creation flow",
+    "actual": "No branch-related UI elements in creation flow; creation dialog unreachable"
+  }
+]

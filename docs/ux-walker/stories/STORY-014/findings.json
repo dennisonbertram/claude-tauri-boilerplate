@@ -1,0 +1,18 @@
+{
+  "story": "STORY-014",
+  "title": "Session Persistence Across App Restart",
+  "status": "pass",
+  "findings": [
+    {
+      "id": "014-1",
+      "type": "present",
+      "severity": "info",
+      "summary": "Sessions persist correctly across page refresh",
+      "details": "All sessions survived a full page navigation/refresh. Order, titles, and count were all preserved. Sessions are stored server-side in SQLite."
+    }
+  ],
+  "screenshots": [
+    "screenshots/01-before-refresh.png",
+    "screenshots/02-after-refresh.png"
+  ]
+}

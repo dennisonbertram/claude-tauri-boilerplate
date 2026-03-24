@@ -1,0 +1,12 @@
+[
+  {
+    "id": "F-029-001",
+    "severity": "medium",
+    "type": "missing-feature",
+    "title": "No GitHub issue integration visible in project/workspace creation",
+    "description": "No GitHub issue picker or integration is accessible from the Projects view. The 'New Project' button is non-functional (F-028-001), so any GitHub issue integration that might exist within a creation dialog cannot be reached.",
+    "steps": "1. Navigate to Projects view. 2. Look for GitHub issue picker or integration. 3. None found.",
+    "expected": "GitHub issue integration should be available in workspace creation flow",
+    "actual": "No GitHub-related UI elements visible; creation dialog unreachable"
+  }
+]

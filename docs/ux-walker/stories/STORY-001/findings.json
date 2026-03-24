@@ -1,0 +1,15 @@
+[
+  {
+    "id": "F-001-001",
+    "story": "STORY-001",
+    "title": "Chat textarea does not respond to standard browser fill automation",
+    "severity": "LOW",
+    "type": "automation-compatibility",
+    "description": "The chat textarea does not respond to standard browser automation fill commands. Requires using JavaScript nativeInputValueSetter to programmatically set values and trigger React's synthetic event system.",
+    "steps_to_reproduce": "1. Navigate to http://localhost:1927\n2. Try to fill the chat textarea using browser automation fill command\n3. Observe that the value is not set",
+    "expected": "Standard fill command should populate the textarea",
+    "actual": "Fill command completes without error but textarea remains empty",
+    "impact": "Automation-only issue. Does not affect manual user interaction.",
+    "screenshots": ["screenshots/04-message-filled.png"]
+  }
+]

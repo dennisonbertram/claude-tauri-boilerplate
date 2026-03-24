@@ -10,6 +10,7 @@
 - `bun run apps/server/...` or `bun --watch apps/server/...` — bypasses port allocation
 - `npx vite` / `pnpm exec vite` — bypasses port allocation
 - `lsof -ti :1420 | xargs kill` or `:3131` — kills other worktrees' processes
+- `pnpm add`, `pnpm install`, `npm install`, `yarn` — use init.sh for deps
 - Hardcoding ANY port number (1420, 3131) in commands, code, or configs
 - Manually editing `.env` to set PORT or VITE_PORT
 
@@ -44,9 +45,16 @@ fi
 - `.init-state` is the single source of truth for URLs and PIDs
 - `PROJECT_ROOT` env var is set by init.sh so the server finds config files in worktrees
 
+## CRITICAL: Dependency Management (MANDATORY — NO EXCEPTIONS)
+
+**Never install packages directly.** Dependencies are managed exclusively through init.sh.
+- `pnpm install --frozen-lockfile` runs automatically via init.sh
+- pnpm's content-addressable store makes installs fast (~2-3s with warm cache)
+- If you need a new dependency, edit `package.json` and `pnpm-lock.yaml`, then run `./init.sh`
+
 ## Git Staging Rules (MANDATORY)
 
-**NEVER use `git add -A` or `git add .`** — `node_modules` are symlinks to the golden cache. Adding them breaks CI. Always stage specific files by name.
+**NEVER use `git add -A` or `git add .`** — always stage specific files by name to avoid accidentally committing `node_modules` or other untracked artifacts.
 
 ## Monorepo Structure
 
@@ -111,5 +119,4 @@ pnpm -r build                                      # Build all packages (no init
 - No external databases — SQLite is embedded in Bun at `~/.claude-tauri/data.db`
 - Auth is skipped in dev mode (no `SIDECAR_BEARER_TOKEN` set)
 - Do NOT set `ANTHROPIC_API_KEY` unless intentional — it overrides subscription auth
-- Golden cache at `~/.claude-tauri/golden/` makes worktree installs <0.5s
 - Clean stale worktrees: `./scripts/cleanup-worktrees.sh`

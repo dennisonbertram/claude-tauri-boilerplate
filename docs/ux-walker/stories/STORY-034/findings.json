@@ -1,0 +1,13 @@
+[
+  {
+    "id": "F-034-001",
+    "severity": "high",
+    "type": "functional",
+    "title": "Merge button navigates away from workspace instead of merging",
+    "description": "Clicking the 'Merge' button in the workspace header navigates the user away from the workspace view to the chat/conversations view. No merge confirmation dialog, progress indicator, or merge action is triggered.",
+    "steps": "1. Open workspace 'Investigation'. 2. Click 'Merge' button. 3. App navigates to chat view.",
+    "expected": "A merge confirmation dialog should appear, or merge should be initiated with progress feedback",
+    "actual": "App navigates away to chat/conversations view; no merge action taken",
+    "screenshot": "screenshots/02-merge-navigated-away.png"
+  }
+]

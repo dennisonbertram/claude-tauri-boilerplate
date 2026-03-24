@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-060",
+  "title": "Add MCP Server with Preset",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "MCP section now accessible after HookCard crash fix",
+  "findings": [],
+  "screenshots": [
+    "01-mcp-servers.png",
+    "02-add-server-button.png",
+    "03-add-server-dialog.png",
+    "04-add-server-form.png"
+  ]
+}

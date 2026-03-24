@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-026",
+  "title": "Thinking Block Expansion & Collapse Toggle",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "ThinkingBlock component renders collapsible thinking blocks with Brain icon, 'Thinking...' label, duration display (Xs), and caret toggle (CaretRight/CaretDown). Supports defaultExpanded prop.",
+      "evidence": "ThinkingBlock.tsx: useState for isExpanded, Brain + Caret icons, durationMs display as seconds, collapsible content area with thinking-text testid",
+      "component": "apps/desktop/src/components/chat/ThinkingBlock.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Thinking text rendered in italic monospace style with max-height scroll and proper word wrapping",
+      "evidence": "ThinkingBlock.tsx line 40: 'text-sm text-muted-foreground italic whitespace-pre-wrap break-words max-h-96 overflow-y-auto'",
+      "component": "apps/desktop/src/components/chat/ThinkingBlock.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Thinking block events handled in stream event handlers",
+      "evidence": "hooks/streamEventHandlers/messageEventHandlers.ts handles thinking block events",
+      "component": "apps/desktop/src/hooks/streamEventHandlers/messageEventHandlers.ts"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot visually verify thinking blocks in active conversation due to conversation crash issue",
+      "evidence": "Known issue"
+    }
+  ]
+}

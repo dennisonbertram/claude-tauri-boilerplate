@@ -1,0 +1,19 @@
+{
+  "story_id": "STORY-081",
+  "title": "Recover from Permission Timeout or Disconnection",
+  "status": "blocked",
+  "bugs": [],
+  "missing_features": [
+    "No permission timeout configuration in UI",
+    "Cannot test timeout behavior without active session"
+  ],
+  "ui_present": [
+    "Error boundary with Try Again button (basic crash recovery)",
+    "Max Turns setting in Advanced"
+  ],
+  "ui_missing": [
+    "Permission timeout configuration",
+    "Timeout indicator in chat",
+    "Reconnection/retry flow for timed-out permissions"
+  ]
+}

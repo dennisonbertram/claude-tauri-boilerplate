@@ -1,0 +1,16 @@
+{
+  "story_id": "STORY-071",
+  "title": "Manage Tool Permissions in Agent Profile",
+  "status": "pass",
+  "bugs": [],
+  "missing_features": [],
+  "ui_present": [
+    "Tools tab in Agent Profile editor",
+    "Permission Mode dropdown (Default)",
+    "Per-tool Default/Allow/Block toggles",
+    "Tool descriptions (Read, Write, Bash, etc.)",
+    "Show raw JSON link",
+    "Allowed Tools vs Blocked Tools explanation"
+  ],
+  "ui_missing": []
+}

@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-121",
+  "title": "Inline Code Syntax Highlighting in Diff",
+  "status": "cannot_verify",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "inconclusive",
+      "description": "Could not verify inline code syntax highlighting in the diff view because file diffs do not expand inline when clicking file rows. Syntax highlighting IS present in global search results. If file diffs were expandable, syntax highlighting would likely be present.",
+      "location": "Workspace > Diff tab"
+    }
+  ],
+  "ui_elements_found": ["File list (no expandable diffs)", "Syntax highlighting in search results (confirmed working)"],
+  "tested_at": "2026-03-23"
+}

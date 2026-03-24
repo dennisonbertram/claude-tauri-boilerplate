@@ -1,6 +1,8 @@
+import type { ActiveView } from '@/lib/routes';
+
 interface ViewSwitcherHeaderProps {
-  activeView: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker';
-  onSwitchView: (view: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker') => void;
+  activeView: ActiveView;
+  onSwitchView: (view: ActiveView) => void;
 }
 
 export function ViewSwitcherHeader({ activeView, onSwitchView }: ViewSwitcherHeaderProps) {

@@ -1,0 +1,12 @@
+{
+  "story_id": "STORY-153",
+  "title": "Error Boundary Recovery & Crash Handling",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "ErrorBoundary now has both Try Again and Reload Page buttons",
+  "findings": [],
+  "screenshots": [
+    "01-normal-state.png"
+  ]
+}

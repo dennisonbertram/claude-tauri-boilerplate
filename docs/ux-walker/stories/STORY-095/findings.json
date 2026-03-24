@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-095",
+  "title": "Issue Search History",
+  "status": "not_implemented",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "gap",
+      "description": "No search history in Linear or GitHub issue pickers. DocumentsView has hardcoded recent searches but issue pickers are stateless."
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

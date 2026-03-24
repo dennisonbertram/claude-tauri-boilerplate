@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-082",
+  "title": "Connect Linear OAuth",
+  "status": "pass",
+  "severity": null,
+  "findings": [
+    {
+      "type": "observation",
+      "description": "Linear OAuth integration UI exists in Settings > Integrations with connect/disconnect/refresh buttons",
+      "screenshot": "ss_2244fdeg9"
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

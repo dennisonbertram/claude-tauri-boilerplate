@@ -27,9 +27,10 @@ interface WorkspacePanelProps {
     branch: string;
     workspaceName: string;
   }) => void;
+  onRenameWorkspace?: (id: string, updates: { name?: string }) => Promise<void> | void;
 }
 
-export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings, onTaskComplete }: WorkspacePanelProps) {
+export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, onOpenSettings, onTaskComplete, onRenameWorkspace }: WorkspacePanelProps) {
   const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [mergeDialog, setMergeDialog] = useState<'merge' | 'discard' | null>(null);
@@ -112,6 +113,7 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
         canDiscard={canDiscard}
         onMerge={() => setMergeDialog('merge')}
         onDiscard={() => setMergeDialog('discard')}
+        onRename={onRenameWorkspace}
       />
 
       <WorkspacePanelTabs activeTab={activeTab} onTabChange={setActiveTab} />

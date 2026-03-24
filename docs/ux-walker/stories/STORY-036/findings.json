@@ -1,0 +1,28 @@
+{
+  "story": "STORY-036",
+  "title": "Add Code Review Comments to Diff",
+  "status": "partial-pass",
+  "findings": [
+    {
+      "type": "bug",
+      "severity": "medium",
+      "title": "Comment composer does not appear when clicking per-line Comment button",
+      "description": "Clicking the per-line Comment button on a diff line does not open the DiffCommentComposer textarea. The click registers but isActiveComment state does not toggle, preventing the composer from rendering.",
+      "file": "apps/desktop/src/components/workspaces/DiffLineView.tsx"
+    },
+    {
+      "type": "ux",
+      "severity": "medium",
+      "title": "Diff code panel hard to reach due to fixed h-1/3 file list",
+      "description": "The diff view layout uses h-1/3 for the file list and a ScrollArea below for code. Page-level scrolling only scrolls the file list, making the actual code diff with per-line Comment buttons hard to access.",
+      "file": "apps/desktop/src/components/workspaces/WorkspaceDiffView.tsx"
+    },
+    {
+      "type": "bug",
+      "severity": "low",
+      "title": "Workspace base to Current comparison returns 0 files",
+      "description": "Selecting 'Workspace base' as from and 'Current' as to in the diff comparison controls returns 0 changed files despite commits existing on the branch.",
+      "file": "apps/desktop/src/components/workspaces/WorkspaceDiffView.tsx"
+    }
+  ]
+}

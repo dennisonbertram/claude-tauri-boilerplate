@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-109",
+  "title": "Copy Diff to Clipboard",
+  "status": "NOT_FOUND",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Diff tab",
+  "observations": [
+    "No copy/clipboard button found in diff view",
+    "Diff toolbar has: Unified, Side-by-side, Refresh, Review",
+    "No copy affordance on file list items either"
+  ],
+  "issues": ["Copy-to-clipboard functionality appears unimplemented in diff view"],
+  "ui_elements_found": []
+}

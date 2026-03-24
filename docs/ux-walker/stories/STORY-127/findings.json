@@ -1,0 +1,8 @@
+{
+  "story": "STORY-127",
+  "title": "Expand Agent Details and View Tools",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Agent expand/collapse works. Shows 'No tools configured' when no tools set. Clean interaction."
+}

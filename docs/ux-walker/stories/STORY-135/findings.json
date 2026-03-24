@@ -1,0 +1,8 @@
+{
+  "story": "STORY-135",
+  "title": "Navigate Between Team List and Workspace",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Bidirectional navigation between team list and workspace works correctly via Back button and team name click."
+}

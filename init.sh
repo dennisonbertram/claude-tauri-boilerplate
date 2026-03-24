@@ -62,7 +62,6 @@ else
   VITE_PORT=$(find_free_port 1400 1999)
 fi
 
-GOLDEN_DIR="${GOLDEN_DIR:-$HOME/.claude-tauri/golden}"
 SERVER_PID=""
 VITE_PID=""
 
@@ -152,58 +151,59 @@ if [ "$KEYS_MISSING" -eq 1 ]; then
 fi
 
 # ── Phase 2c: .env File ────────────────────────────────────────────
-# Only create if missing — don't noisily report on every run
+# Create from template if missing, then always update PORT to match dynamic allocation
 if [ ! -f "$SCRIPT_DIR/.env" ]; then
   if [ -f "$SCRIPT_DIR/.env.example" ]; then
     cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
   else
-    echo "PORT=$SERVER_PORT" > "$SCRIPT_DIR/.env"
+    touch "$SCRIPT_DIR/.env"
   fi
 fi
-
-# ── Phase 3: Dependencies (Golden Symlink or Install) ───────────────
-install_deps_golden() {
-  local repo_hash
-  repo_hash=$(shasum -a 256 "$SCRIPT_DIR/pnpm-lock.yaml" | cut -d' ' -f1)
-  local golden_hash
-  golden_hash=$(cat "$GOLDEN_DIR/.lockfile-hash" 2>/dev/null || echo "none")
-
-  if [ "$repo_hash" != "$golden_hash" ]; then
-    info "Golden directory stale — rebuilding (~4s)..."
-    "$SCRIPT_DIR/scripts/golden-sync.sh"
-  fi
-
-  # Symlink node_modules from golden
-  for dir in "." "apps/desktop" "apps/server"; do
-    local target="$SCRIPT_DIR/$dir/node_modules"
-    local golden_nm="$GOLDEN_DIR/$dir/node_modules"
-    if [ -L "$target" ]; then
-      # Already a symlink — verify it points to golden
-      if [ "$(readlink "$target")" = "$golden_nm" ]; then
-        continue
-      fi
-      rm "$target"
-    elif [ -d "$target" ]; then
-      # Real node_modules exists — remove to replace with symlink
-      rm -rf "$target"
-    fi
-    if [ -d "$golden_nm" ]; then
-      ln -s "$golden_nm" "$target"
-    fi
-  done
-  ok "Dependencies linked from golden"
-}
-
-install_deps_direct() {
-  info "Installing dependencies with pnpm..."
-  pnpm install --frozen-lockfile 2>/dev/null || pnpm install
-  ok "Dependencies installed"
-}
-
-if [ -f "$SCRIPT_DIR/scripts/golden-sync.sh" ]; then
-  install_deps_golden
+# Update PORT to match this run's dynamic allocation
+if grep -q '^PORT=' "$SCRIPT_DIR/.env" 2>/dev/null; then
+  sed -i.bak 's/^PORT=.*/PORT='"$SERVER_PORT"'/' "$SCRIPT_DIR/.env"
+  rm -f "$SCRIPT_DIR/.env.bak"
 else
-  install_deps_direct
+  echo "PORT=$SERVER_PORT" >> "$SCRIPT_DIR/.env"
+fi
+
+# ── Phase 3: Dependencies ─────────────────────────────────────────────
+# pnpm's content-addressable store (~/.local/share/pnpm/store) acts as the
+# cache — first install fetches packages, subsequent installs are near-instant.
+
+# Remove legacy golden-cache symlinks if present (migration from old init.sh)
+for target in "$SCRIPT_DIR"/node_modules \
+              "$SCRIPT_DIR"/apps/*/node_modules \
+              "$SCRIPT_DIR"/packages/*/node_modules; do
+  if [ -L "$target" ]; then
+    info "Removing legacy symlink: $target"
+    rm "$target"
+  fi
+done
+
+# One-time cleanup: remove stale golden cache directory
+GOLDEN_DIR="$HOME/.claude-tauri/golden"
+if [ -d "$GOLDEN_DIR" ]; then
+  info "Removing stale golden cache at $GOLDEN_DIR..."
+  rm -rf "$GOLDEN_DIR"
+  ok "Golden cache removed"
+fi
+
+LOCK_HASH=$(md5 -q "$SCRIPT_DIR/pnpm-lock.yaml" 2>/dev/null || md5sum "$SCRIPT_DIR/pnpm-lock.yaml" | cut -d' ' -f1)
+CACHED_HASH=""
+if [ -f "$SCRIPT_DIR/node_modules/.lock_hash" ]; then
+  CACHED_HASH=$(cat "$SCRIPT_DIR/node_modules/.lock_hash")
+fi
+
+if [ "$LOCK_HASH" != "$CACHED_HASH" ] || [ ! -d "$SCRIPT_DIR/node_modules" ]; then
+  info "Installing dependencies with pnpm..."
+  cd "$SCRIPT_DIR" && pnpm install --frozen-lockfile 2>&1 | tail -5
+  mkdir -p "$SCRIPT_DIR/node_modules"
+  echo "$LOCK_HASH" > "$SCRIPT_DIR/node_modules/.lock_hash"
+  cd "$SCRIPT_DIR"
+  ok "Dependencies installed"
+else
+  ok "Dependencies up to date (cached)"
 fi
 
 # ── Phase 4: Start backend ──────────────────────────────────────────
@@ -230,7 +230,7 @@ ok "Server ready at http://localhost:$SERVER_PORT"
 # ── Phase 5: Start frontend ────────────────────────────────────────
 info "Starting frontend on port $VITE_PORT..."
 cd "$SCRIPT_DIR/apps/desktop"
-VITE_API_PORT="$SERVER_PORT" npx vite --port "$VITE_PORT" --strictPort false &
+VITE_PORT="$VITE_PORT" VITE_API_PORT="$SERVER_PORT" npx vite &
 VITE_PID=$!
 cd "$SCRIPT_DIR"
 
@@ -260,18 +260,23 @@ HEALTH_CHECK=http://localhost:$SERVER_PORT/api/health
 EOF
 
 # ── Phase 7: Install post-merge hook (once) ─────────────────────────
-HOOK_PATH="$SCRIPT_DIR/.git/hooks/post-merge"
-if [ -d "$SCRIPT_DIR/.git/hooks" ] && [ ! -f "$HOOK_PATH" ]; then
-  cat > "$HOOK_PATH" <<'HOOKEOF'
+GIT_DIR=$(git -C "$SCRIPT_DIR" rev-parse --git-dir 2>/dev/null || true)
+if [ -n "$GIT_DIR" ]; then
+  HOOKS_DIR="$GIT_DIR/hooks"
+  mkdir -p "$HOOKS_DIR"
+  HOOK_PATH="$HOOKS_DIR/post-merge"
+  if [ ! -f "$HOOK_PATH" ]; then
+    cat > "$HOOK_PATH" <<'HOOKEOF'
 #!/usr/bin/env bash
-# Auto-refresh golden node_modules when pnpm-lock.yaml changes on merge
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-if git diff HEAD@{1} --name-only | grep -q 'pnpm-lock.yaml'; then
-  echo "pnpm-lock.yaml changed — refreshing golden directory in background..."
-  "$SCRIPT_DIR/scripts/golden-sync.sh" &>/dev/null &
+# Auto-reinstall dependencies when pnpm-lock.yaml changes on merge
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$REPO_ROOT" ] && git diff HEAD@{1} --name-only | grep -q 'pnpm-lock.yaml'; then
+  echo "pnpm-lock.yaml changed — reinstalling dependencies..."
+  cd "$REPO_ROOT" && pnpm install --frozen-lockfile &>/dev/null &
 fi
 HOOKEOF
-  chmod +x "$HOOK_PATH"
+    chmod +x "$HOOK_PATH"
+  fi
 fi
 
 # ── Phase 8: Summary ───────────────────────────────────────────────

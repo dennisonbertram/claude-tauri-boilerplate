@@ -1,0 +1,29 @@
+{
+  "story": "STORY-011",
+  "title": "Recover Recently Deleted Session",
+  "status": "fail",
+  "findings": [
+    {
+      "id": "011-1",
+      "type": "missing-feature",
+      "severity": "medium",
+      "summary": "No undo mechanism after session deletion",
+      "details": "Deleting a session is permanent with no undo toast, trash, or 'Recently Deleted' section. The two-step inline confirmation is the only safeguard.",
+      "component": "apps/desktop/src/components/sidebar/SessionItem.tsx"
+    },
+    {
+      "id": "011-2",
+      "type": "bug",
+      "severity": "high",
+      "summary": "Context menu interaction crashes the app",
+      "details": "Clicking the three-dot menu on a session item sometimes triggers the ErrorBoundary ('Something went wrong'). Related to the known conversation-open crash.",
+      "component": "apps/desktop/src/components/sidebar/SessionItem.tsx"
+    }
+  ],
+  "screenshots": [
+    "screenshots/01-initial-state.png",
+    "screenshots/02-hover-shows-menu.png",
+    "screenshots/03-context-menu-with-delete.png",
+    "screenshots/05-crash-on-menu-click.png"
+  ]
+}

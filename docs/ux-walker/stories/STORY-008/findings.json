@@ -1,0 +1,37 @@
+{
+  "story_id": "STORY-008",
+  "title": "View Session Context Summary",
+  "result": "FAIL",
+  "findings": [
+    {
+      "id": "008-F1",
+      "type": "missing_feature",
+      "severity": "MEDIUM",
+      "description": "No session metadata visible in sidebar entries",
+      "expected": "Session entries should show metadata like message count, date, or size",
+      "actual": "Session entries are plain text buttons with name only"
+    },
+    {
+      "id": "008-F2",
+      "type": "missing_feature",
+      "severity": "MEDIUM",
+      "description": "No context summary or token usage display",
+      "expected": "Token usage, message count, or other context metrics should be visible",
+      "actual": "No such information displayed anywhere"
+    },
+    {
+      "id": "008-F3",
+      "type": "missing_feature",
+      "severity": "LOW",
+      "description": "No tooltip or secondary info shown on session hover",
+      "expected": "Hovering over a session could show creation date, message count, etc.",
+      "actual": "Hover only reveals the action/menu button"
+    }
+  ],
+  "steps_completed": 3,
+  "steps_total": 3,
+  "screenshots": [
+    "screenshots/main-view.png",
+    "screenshots/new-chat-view.png"
+  ]
+}

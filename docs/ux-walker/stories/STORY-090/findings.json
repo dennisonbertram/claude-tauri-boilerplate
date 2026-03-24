@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-090",
+  "title": "Disconnect Linear",
+  "status": "pass",
+  "severity": null,
+  "findings": [
+    {
+      "type": "observation",
+      "description": "Disconnect button (destructive variant) shown when connected, calls linear.disconnect() with error handling"
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

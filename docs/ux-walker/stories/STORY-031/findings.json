@@ -1,0 +1,19 @@
+[
+  {
+    "id": "F-031-001",
+    "severity": "info",
+    "type": "positive",
+    "title": "Ready status badge renders correctly in sidebar and header",
+    "description": "The workspace status badge ('Ready') is displayed clearly in both the sidebar project tree and the workspace detail view header.",
+    "screenshot": "screenshots/01-workspace-status-ready.png"
+  },
+  {
+    "id": "F-031-002",
+    "severity": "low",
+    "type": "untestable",
+    "title": "Cannot verify Creating/Error status states",
+    "description": "Only the 'Ready' status was observable. Cannot trigger 'Creating' or 'Error' states because workspace creation is blocked (F-028-001).",
+    "expected": "Should be able to observe Creating and Error states during workspace lifecycle",
+    "actual": "Only Ready state observable"
+  }
+]

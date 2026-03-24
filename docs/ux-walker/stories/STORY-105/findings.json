@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-105",
+  "title": "Archive and Restore Dashboard Visibility",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Dashboards tab",
+  "observations": [
+    "Archive dashboard button on detail view header",
+    "Archive Test Dashboard button on list item",
+    "Show archived checkbox at top of dashboard list for restore/visibility toggle"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Archive dashboard button", "Archive Test Dashboard button", "Show archived checkbox"]
+}

@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-072",
+  "title": "Review and Approve a Workspace Plan",
+  "status": "blocked",
+  "bugs": [],
+  "missing_features": [
+    "Cannot verify plan review/approval UI due to workspace navigation crash"
+  ],
+  "ui_present": [
+    "Workspace listed under project with branch name and status badge",
+    "ExitPlanMode tool exists in Agent Profile tools list"
+  ],
+  "ui_missing": []
+}

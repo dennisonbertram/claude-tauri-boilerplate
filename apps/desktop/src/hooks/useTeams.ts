@@ -118,6 +118,60 @@ export function useTeams() {
     [fetchTeamDetail]
   );
 
+  // Add agent to team
+  const addAgent = useCallback(
+    async (teamId: string, agent: AgentDefinition) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiFetch(`/api/teams/${teamId}/agents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(agent),
+        });
+        if (!res.ok) {
+          const body = await res.json();
+          setError(body.error ?? 'Failed to add agent');
+          return false;
+        }
+        await fetchTeamDetail(teamId);
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Network error');
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTeamDetail]
+  );
+
+  // Remove agent from team
+  const removeAgent = useCallback(
+    async (teamId: string, agentName: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiFetch(`/api/teams/${teamId}/agents/${encodeURIComponent(agentName)}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          const body = await res.json();
+          setError(body.error ?? 'Failed to remove agent');
+          return false;
+        }
+        await fetchTeamDetail(teamId);
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Network error');
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTeamDetail]
+  );
+
   // Load teams on mount
   useEffect(() => {
     fetchTeams();
@@ -142,6 +196,8 @@ export function useTeams() {
     createTeam,
     deleteTeam,
     shutdownTeam,
+    addAgent,
+    removeAgent,
     refreshTeam: fetchTeamDetail,
   };
 }

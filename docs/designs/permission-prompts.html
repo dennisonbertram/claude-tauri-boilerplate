@@ -1,0 +1,1617 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">Permission Prompts Component Library</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" vid="6">
+    <script src="https://unpkg.com/@phosphor-icons/web" vid="7"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css">
+    
+    <style vid="9">
+        body {
+            background-color: #fbfbfa;
+            color: #111827;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+  <style type="text/css">
+*, ::before, ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}/*
+! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
+*//*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  tab-size: 4; /* 3 */
+  font-family: Inter, sans-serif; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.pointer-events-none {
+  pointer-events: none;
+}
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.inset-0 {
+  inset: 0px;
+}
+.left-3 {
+  left: 0.75rem;
+}
+.right-1\.5 {
+  right: 0.375rem;
+}
+.m-auto {
+  margin: auto;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.ml-4 {
+  margin-left: 1rem;
+}
+.mr-1 {
+  margin-right: 0.25rem;
+}
+.mt-0\.5 {
+  margin-top: 0.125rem;
+}
+.mt-1 {
+  margin-top: 0.25rem;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mt-4 {
+  margin-top: 1rem;
+}
+.flex {
+  display: flex;
+}
+.grid {
+  display: grid;
+}
+.h-10 {
+  height: 2.5rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.min-h-screen {
+  min-height: 100vh;
+}
+.w-10 {
+  width: 2.5rem;
+}
+.w-12 {
+  width: 3rem;
+}
+.w-3 {
+  width: 0.75rem;
+}
+.w-4 {
+  width: 1rem;
+}
+.w-full {
+  width: 100%;
+}
+.max-w-\[1400px\] {
+  max-width: 1400px;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.select-none {
+  user-select: none;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-center {
+  align-items: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.gap-5 {
+  gap: 1.25rem;
+}
+.gap-8 {
+  gap: 2rem;
+}
+.space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+}
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+.divide-y > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-y-reverse: 0;
+  border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+  border-bottom-width: calc(1px * var(--tw-divide-y-reverse));
+}
+.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-divide-opacity, 1));
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-x-auto {
+  overflow-x: auto;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.whitespace-pre {
+  white-space: pre;
+}
+.break-all {
+  word-break: break-all;
+}
+.rounded {
+  border-radius: 0.25rem;
+}
+.rounded-\[24px\] {
+  border-radius: 24px;
+}
+.rounded-\[4px\] {
+  border-radius: 4px;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-md {
+  border-radius: 0.375rem;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.border {
+  border-width: 1px;
+}
+.border-b {
+  border-bottom-width: 1px;
+}
+.border-r {
+  border-right-width: 1px;
+}
+.border-t {
+  border-top-width: 1px;
+}
+.border-amber-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(253 230 138 / var(--tw-border-opacity, 1));
+}
+.border-base-border {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+}
+.border-diff-border {
+  --tw-border-opacity: 1;
+  border-color: rgb(187 247 208 / var(--tw-border-opacity, 1));
+}
+.border-gray-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(243 244 246 / var(--tw-border-opacity, 1));
+}
+.border-gray-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+}
+.border-gray-300 {
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
+}
+.border-gray-700\/50 {
+  border-color: rgb(55 65 81 / 0.5);
+}
+.border-gray-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(31 41 55 / var(--tw-border-opacity, 1));
+}
+.border-green-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(187 247 208 / var(--tw-border-opacity, 1));
+}
+.border-red-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 226 226 / var(--tw-border-opacity, 1));
+}
+.border-transparent {
+  border-color: transparent;
+}
+.border-white\/20 {
+  border-color: rgb(255 255 255 / 0.2);
+}
+.bg-\[\#18181b\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#1c1c1c\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(28 28 28 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#27272a\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(39 39 42 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 251 235 / var(--tw-bg-opacity, 1));
+}
+.bg-base-card {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
+}
+.bg-diff-bg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+}
+.bg-diff-lineBg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1));
+}
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+.bg-gray-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+.bg-gray-50\/50 {
+  background-color: rgb(249 250 251 / 0.5);
+}
+.bg-green-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+}
+.bg-red-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
+}
+.bg-red-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
+}
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.bg-white\/15 {
+  background-color: rgb(255 255 255 / 0.15);
+}
+.p-3 {
+  padding: 0.75rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.p-6 {
+  padding: 1.5rem;
+}
+.p-8 {
+  padding: 2rem;
+}
+.px-1\.5 {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.py-0\.5 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.py-2\.5 {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.pl-3 {
+  padding-left: 0.75rem;
+}
+.pl-4 {
+  padding-left: 1rem;
+}
+.pl-9 {
+  padding-left: 2.25rem;
+}
+.pr-2 {
+  padding-right: 0.5rem;
+}
+.pr-20 {
+  padding-right: 5rem;
+}
+.pt-0 {
+  padding-top: 0px;
+}
+.pt-2 {
+  padding-top: 0.5rem;
+}
+.pt-4 {
+  padding-top: 1rem;
+}
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+}
+.font-sans {
+  font-family: Inter, sans-serif;
+}
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.text-\[10px\] {
+  font-size: 10px;
+}
+.text-\[11px\] {
+  font-size: 11px;
+}
+.text-\[12px\] {
+  font-size: 12px;
+}
+.text-\[13px\] {
+  font-size: 13px;
+}
+.text-\[14px\] {
+  font-size: 14px;
+}
+.text-\[15px\] {
+  font-size: 15px;
+}
+.text-\[16px\] {
+  font-size: 16px;
+}
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.italic {
+  font-style: italic;
+}
+.leading-\[18px\] {
+  line-height: 18px;
+}
+.leading-\[22px\] {
+  line-height: 22px;
+}
+.leading-none {
+  line-height: 1;
+}
+.leading-relaxed {
+  line-height: 1.625;
+}
+.leading-snug {
+  line-height: 1.375;
+}
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+.text-amber-700 {
+  --tw-text-opacity: 1;
+  color: rgb(180 83 9 / var(--tw-text-opacity, 1));
+}
+.text-blue-400 {
+  --tw-text-opacity: 1;
+  color: rgb(96 165 250 / var(--tw-text-opacity, 1));
+}
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+.text-blue-800 {
+  --tw-text-opacity: 1;
+  color: rgb(30 64 175 / var(--tw-text-opacity, 1));
+}
+.text-diff-lineText {
+  --tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--tw-text-opacity, 1));
+}
+.text-diff-text {
+  --tw-text-opacity: 1;
+  color: rgb(22 101 52 / var(--tw-text-opacity, 1));
+}
+.text-gray-300 {
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+.text-gray-400 {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+}
+.text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+.text-gray-700 {
+  --tw-text-opacity: 1;
+  color: rgb(55 65 81 / var(--tw-text-opacity, 1));
+}
+.text-gray-800 {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity, 1));
+}
+.text-gray-900 {
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+.text-green-400 {
+  --tw-text-opacity: 1;
+  color: rgb(74 222 128 / var(--tw-text-opacity, 1));
+}
+.text-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+.text-green-700 {
+  --tw-text-opacity: 1;
+  color: rgb(21 128 61 / var(--tw-text-opacity, 1));
+}
+.text-purple-500 {
+  --tw-text-opacity: 1;
+  color: rgb(168 85 247 / var(--tw-text-opacity, 1));
+}
+.text-red-500 {
+  --tw-text-opacity: 1;
+  color: rgb(239 68 68 / var(--tw-text-opacity, 1));
+}
+.text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+}
+.text-sky-500 {
+  --tw-text-opacity: 1;
+  color: rgb(14 165 233 / var(--tw-text-opacity, 1));
+}
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.text-yellow-300 {
+  --tw-text-opacity: 1;
+  color: rgb(253 224 71 / var(--tw-text-opacity, 1));
+}
+.underline {
+  text-decoration-line: underline;
+}
+.underline-offset-2 {
+  text-underline-offset: 2px;
+}
+.placeholder-gray-400::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-placeholder-opacity, 1));
+}
+.opacity-0 {
+  opacity: 0;
+}
+.shadow-inner {
+  --tw-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: inset 0 2px 4px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-soft {
+  --tw-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 3px rgba(0,0,0,0.02);
+  --tw-shadow-colored: 0 4px 20px -2px var(--tw-shadow-color), 0 0 3px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-shadow {
+  transition-property: box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.hover\:bg-\[\#2c2c2c\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(44 44 44 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-gray-100:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-gray-100\/50:hover {
+  background-color: rgb(243 244 246 / 0.5);
+}
+.hover\:bg-gray-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-red-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(185 28 28 / var(--tw-bg-opacity, 1));
+}
+.hover\:text-gray-800:hover {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity, 1));
+}
+.focus\:border-blue-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus\:ring-2:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus\:ring-blue-500\/20:focus {
+  --tw-ring-color: rgb(59 130 246 / 0.2);
+}
+.group:hover .group-hover\:text-gray-900 {
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+.peer:checked ~ .peer-checked\:border-\[\#1c1c1c\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(28 28 28 / var(--tw-border-opacity, 1));
+}
+.peer:checked ~ .peer-checked\:bg-\[\#1c1c1c\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(28 28 28 / var(--tw-bg-opacity, 1));
+}
+.peer:checked ~ .peer-checked\:opacity-100 {
+  opacity: 1;
+}
+@media (min-width: 768px) {
+
+  .md\:p-12 {
+    padding: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}* {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  </style></head>
+<body class="p-8 md:p-12 min-h-screen" vid="10">
+
+    <div class="max-w-[1400px] mx-auto" vid="11">
+        <div class="mb-10" vid="12">
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900" vid="13">Permission &amp; Information Prompts</h1>
+            <p class="text-gray-500 mt-2 text-sm" vid="14">Component library for system requests, access control, and diff reviews.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start" vid="15">
+
+            
+            <div class="bg-base-card rounded-[24px] border border-base-border shadow-soft p-6 flex flex-col gap-5" vid="16">
+                <div class="text-[15px] text-gray-800" vid="17">
+                    Allow Claude to <span class="font-semibold text-gray-900" vid="18">Write</span> launch.json?
+                </div>
+                
+                <div class="font-mono text-[13px] text-gray-500 break-all leading-relaxed" vid="19">
+                    /Users/dennisonbertram/Develop/claude-tauri-boilerplate/.claude/worktrees/silly-banzai/.claude/launch.json
+                </div>
+
+                <div class="rounded-xl border border-diff-border bg-diff-bg flex overflow-hidden shadow-sm" vid="20">
+                    <div class="w-12 bg-diff-lineBg border-r border-diff-border flex flex-col py-3 select-none" vid="21">
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="22">
+                            <span class="w-4 text-center mr-1" vid="23">+</span><span class="flex-1 text-right text-gray-400" vid="24">1</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="25">
+                            <span class="w-4 text-center mr-1" vid="26">+</span><span class="flex-1 text-right text-gray-400" vid="27">2</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="28">
+                            <span class="w-4 text-center mr-1" vid="29">+</span><span class="flex-1 text-right text-gray-400" vid="30">3</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="31">
+                            <span class="w-4 text-center mr-1" vid="32">+</span><span class="flex-1 text-right text-gray-400" vid="33">4</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="34">
+                            <span class="w-4 text-center mr-1" vid="35">+</span><span class="flex-1 text-right text-gray-400" vid="36">5</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="37">
+                            <span class="w-4 text-center mr-1" vid="38">+</span><span class="flex-1 text-right text-gray-400" vid="39">6</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="40">
+                            <span class="w-4 text-center mr-1" vid="41">+</span><span class="flex-1 text-right text-gray-400" vid="42">7</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="43">
+                            <span class="w-4 text-center mr-1" vid="44">+</span><span class="flex-1 text-right text-gray-400" vid="45">8</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="46">
+                            <span class="w-4 text-center mr-1" vid="47">+</span><span class="flex-1 text-right text-gray-400" vid="48">9</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="49">
+                            <span class="w-4 text-center mr-1" vid="50">+</span><span class="flex-1 text-right text-gray-400" vid="51">10</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="52">
+                            <span class="w-4 text-center mr-1" vid="53">+</span><span class="flex-1 text-right text-gray-400" vid="54">11</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="55">
+                            <span class="w-4 text-center mr-1" vid="56">+</span><span class="flex-1 text-right text-gray-400" vid="57">12</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="58">
+                            <span class="w-4 text-center mr-1" vid="59">+</span><span class="flex-1 text-right text-gray-400" vid="60">13</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="61">
+                            <span class="w-4 text-center mr-1" vid="62">+</span><span class="flex-1 text-right text-gray-400" vid="63">14</span>
+                        </div>
+                        <div class="flex px-2 text-[13px] font-mono text-diff-lineText leading-[22px]" vid="64">
+                            <span class="w-4 text-center mr-1" vid="65">+</span><span class="flex-1 text-right text-gray-400" vid="66">15</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 py-3 pl-4 pr-2 font-mono text-[13px] text-diff-text overflow-x-auto no-scrollbar whitespace-pre leading-[22px]" vid="67">
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "server",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["--watch", "apps/server/src/index.ts"],
+      "port": 3131
+    },
+    {
+      "name": "desktop",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "1420"],
+      "port": 1420
+    }</div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-3 mt-1" vid="68">
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="69">
+                        Deny
+                        <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="70">Esc</span>
+                    </button>
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="71">
+                        Always allow for session
+                        <div class="flex gap-1" vid="72">
+                            <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="73">⌘</span>
+                            <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="74">↩</span>
+                        </div>
+                    </button>
+                    <button class="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-transparent bg-[#1c1c1c] text-[14px] font-medium text-white hover:bg-[#2c2c2c] transition-colors shadow-sm" vid="75">
+                        Allow once
+                        <span class="flex items-center justify-center bg-white/15 border border-white/20 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-white shadow-sm leading-none h-5" vid="76">↩</span>
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="bg-base-card rounded-[24px] border border-base-border shadow-soft p-6 flex flex-col gap-5" vid="77">
+                <div class="flex items-center justify-between" vid="78">
+                    <div class="text-[15px] text-gray-800" vid="79">
+                        Allow Claude to <span class="font-semibold text-gray-900" vid="80">run this command?</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-1 rounded-full text-[12px] font-medium" vid="81">
+                        <i class="ph-fill ph-warning" vid="82"></i>
+                        Moderate risk
+                    </div>
+                </div>
+
+                <div class="bg-[#18181b] rounded-xl overflow-hidden shadow-inner border border-gray-800" vid="83">
+                    <div class="bg-[#27272a] px-4 py-2.5 flex items-center gap-2 border-b border-gray-700/50" vid="84">
+                        <i class="ph ph-terminal-window text-gray-400" vid="85"></i>
+                        <span class="text-[12px] font-mono text-gray-400" vid="86">bash</span>
+                    </div>
+                    <div class="p-4 font-mono text-[13px] leading-relaxed overflow-x-auto no-scrollbar" vid="87">
+                        <span class="text-blue-400" vid="88">npm</span> <span class="text-gray-300" vid="89">install</span> <span class="text-green-400" vid="90">react-router-dom@latest</span> <span class="text-yellow-300" vid="91">--save</span> <span class="text-gray-500" vid="92">&amp;&amp;</span> \
+                        <br vid="93">
+                        <span class="text-blue-400" vid="94">rm</span> <span class="text-yellow-300" vid="95">-rf</span> <span class="text-gray-300" vid="96">node_modules/.cache</span>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200" vid="97">
+                    <i class="ph ph-info mt-0.5 text-gray-400 text-lg" vid="98"></i>
+                    <p class="text-[13px] text-gray-600 leading-snug" vid="99">
+                        This command modifies files in your local project directory. Ensure you have committed any recent changes before proceeding.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-3 mt-1" vid="100">
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="101">
+                        Deny
+                        <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="102">Esc</span>
+                    </button>
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="103">
+                        Allow once
+                    </button>
+                    <button class="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-transparent bg-[#1c1c1c] text-[14px] font-medium text-white hover:bg-[#2c2c2c] transition-colors shadow-sm" vid="104">
+                        Always allow
+                        <span class="flex items-center justify-center bg-white/15 border border-white/20 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-white shadow-sm leading-none h-5" vid="105">↩</span>
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="bg-base-card rounded-[24px] border border-red-100 shadow-soft p-6 flex flex-col gap-5" vid="106">
+                <div class="flex items-center gap-3" vid="107">
+                    <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600" vid="108">
+                        <i class="ph ph-trash text-xl" vid="109"></i>
+                    </div>
+                    <div vid="110">
+                        <h3 class="text-[16px] font-semibold text-gray-900 tracking-tight" vid="111">Delete 3 files?</h3>
+                        <p class="text-[13px] text-gray-500 mt-0.5" vid="112">These files will be permanently removed.</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50/50" vid="113">
+                    <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 group hover:bg-gray-50 transition-colors" vid="114">
+                        <div class="flex items-center gap-3 overflow-hidden" vid="115">
+                            <i class="ph ph-file-ts text-blue-500 text-lg flex-shrink-0" vid="116"></i>
+                            <span class="text-[13px] font-medium text-gray-700 truncate" vid="117">src/components/DeprecatedHero.tsx</span>
+                        </div>
+                        <span class="text-[12px] text-gray-400 flex-shrink-0 ml-4" vid="118">4.2 KB</span>
+                    </div>
+                    <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 group hover:bg-gray-50 transition-colors" vid="119">
+                        <div class="flex items-center gap-3 overflow-hidden" vid="120">
+                            <i class="ph ph-image text-purple-500 text-lg flex-shrink-0" vid="121"></i>
+                            <span class="text-[13px] font-medium text-gray-700 truncate" vid="122">public/assets/logo-v1-old.svg</span>
+                        </div>
+                        <span class="text-[12px] text-gray-400 flex-shrink-0 ml-4" vid="123">12.0 KB</span>
+                    </div>
+                    <div class="flex items-center justify-between px-4 py-3 bg-white group hover:bg-gray-50 transition-colors" vid="124">
+                        <div class="flex items-center gap-3 overflow-hidden" vid="125">
+                            <i class="ph ph-file-css text-sky-500 text-lg flex-shrink-0" vid="126"></i>
+                            <span class="text-[13px] font-medium text-gray-700 truncate" vid="127">styles/legacy-overrides.css</span>
+                        </div>
+                        <span class="text-[12px] text-gray-400 flex-shrink-0 ml-4" vid="128">2.1 KB</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 text-[13px] text-red-600 font-medium" vid="129">
+                    <i class="ph-fill ph-warning-circle" vid="130"></i>
+                    This action cannot be undone.
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-2" vid="131">
+                    <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="132">
+                        Cancel
+                        <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="133">Esc</span>
+                    </button>
+                    <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent bg-red-600 text-[14px] font-medium text-white hover:bg-red-700 transition-colors shadow-sm" vid="134">
+                        Delete files
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="bg-base-card rounded-[24px] border border-base-border shadow-soft p-6 flex flex-col gap-5" vid="135">
+                <div class="flex items-center gap-3 mb-1" vid="136">
+                    <div class="w-10 h-10 rounded-xl border border-gray-200 shadow-sm flex items-center justify-center bg-white" vid="137">
+                        <i class="ph-fill ph-key text-xl text-gray-700" vid="138"></i>
+                    </div>
+                    <div vid="139">
+                        <h3 class="text-[16px] font-semibold text-gray-900 tracking-tight" vid="140">Add API Key</h3>
+                        <p class="text-[13px] text-gray-500 mt-0.5" vid="141">Required for external service integration.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4" vid="142">
+                    <div class="space-y-1.5" vid="143">
+                        <label class="text-[13px] font-medium text-gray-700" vid="144">Provider API Key</label>
+                        <div class="relative flex items-center" vid="145">
+                            <i class="ph ph-lock-key absolute left-3 text-gray-400" vid="146"></i>
+                            <input type="password" placeholder="sk-..." class="w-full pl-9 pr-20 py-2.5 bg-white border border-gray-300 rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-shadow placeholder-gray-400" value="sk-proj-8x7a9sd87f6asdf876asdf" vid="147">
+                            <button class="absolute right-1.5 px-2.5 py-1 text-[12px] font-medium text-gray-600 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-50 transition-colors" vid="148">
+                                Paste
+                            </button>
+                        </div>
+                        <p class="text-[12px] text-gray-500 mt-1" vid="149">Make sure this key has necessary read/write permissions.</p>
+                    </div>
+
+                    <label class="flex items-start gap-3 cursor-pointer group mt-2" vid="150">
+                        <div class="relative flex items-center mt-0.5" vid="151">
+                            <input type="checkbox" checked="" class="peer sr-only" vid="152">
+                            <div class="w-4 h-4 border border-gray-300 rounded bg-white peer-checked:bg-[#1c1c1c] peer-checked:border-[#1c1c1c] transition-colors" vid="153"></div>
+                            <i class="ph-bold ph-check absolute inset-0 text-white text-[10px] m-auto opacity-0 peer-checked:opacity-100 pointer-events-none flex items-center justify-center" vid="154"></i>
+                        </div>
+                        <div class="flex flex-col" vid="155">
+                            <span class="text-[13px] font-medium text-gray-800 group-hover:text-gray-900" vid="156">Remember for this project</span>
+                            <span class="text-[12px] text-gray-500" vid="157">Key will be stored securely in your local environment.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100" vid="158">
+                    <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="159">
+                        Cancel
+                    </button>
+                    <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent bg-[#1c1c1c] text-[14px] font-medium text-white hover:bg-[#2c2c2c] transition-colors shadow-sm" vid="160">
+                        Save key
+                        <span class="flex items-center justify-center bg-white/15 border border-white/20 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-white shadow-sm leading-none h-5" vid="161">↩</span>
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="bg-base-card rounded-[24px] border border-base-border shadow-soft p-6 flex flex-col gap-5" vid="162">
+                <div class="flex items-center justify-between" vid="163">
+                    <div class="text-[15px] text-gray-800" vid="164">
+                        Allow <span class="font-semibold text-gray-900" vid="165">external network request?</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-2 py-1 rounded-full text-[12px] font-medium" vid="166">
+                        <i class="ph-fill ph-lock-key" vid="167"></i>
+                        HTTPS Encrypted
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden" vid="168">
+                    <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white" vid="169">
+                        <span class="bg-blue-100 text-blue-800 font-mono text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wider" vid="170">POST</span>
+                        <span class="font-mono text-[13px] text-gray-700 truncate" vid="171">api.example.com/v1/telemetry/events</span>
+                    </div>
+                    <div class="p-4" vid="172">
+                        <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2" vid="173">Payload Preview</div>
+                        <div class="font-mono text-[12px] text-gray-600 bg-white border border-gray-100 p-3 rounded-lg overflow-x-auto no-scrollbar whitespace-pre leading-relaxed" vid="174">
+{
+  "event_type": "app_start",
+  "timestamp": "2023-10-27T14:32:01Z",
+  "context": {
+    "os": "darwin",
+    "arch": "arm64",
+    "version": "1.2.4"
+  }
+}</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mt-1" vid="175">
+                    <button class="text-[13px] text-gray-500 hover:text-gray-800 font-medium underline underline-offset-2" vid="176">View full request details</button>
+                    <div class="flex items-center gap-3" vid="177">
+                        <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="178">
+                            Block
+                            <span class="flex items-center justify-center bg-gray-100 border border-gray-200 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-gray-500 shadow-sm leading-none h-5" vid="179">Esc</span>
+                        </button>
+                        <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-transparent bg-[#1c1c1c] text-[14px] font-medium text-white hover:bg-[#2c2c2c] transition-colors shadow-sm" vid="180">
+                            Allow request
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="bg-base-card rounded-[24px] border border-base-border shadow-soft p-6 flex flex-col gap-4" vid="181">
+                <div class="flex items-center justify-between mb-2" vid="182">
+                    <div class="text-[16px] font-semibold text-gray-900 tracking-tight" vid="183">
+                        Review 5 changes
+                    </div>
+                    <div class="flex items-center gap-2 text-[13px] font-mono font-medium" vid="184">
+                        <span class="text-green-600 bg-green-50 px-1.5 rounded" vid="185">+104</span>
+                        <span class="text-red-600 bg-red-50 px-1.5 rounded" vid="186">-23</span>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl divide-y divide-gray-200 bg-white overflow-hidden shadow-sm" vid="187">
+                    
+                    
+                    <div vid="188">
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100/50 transition-colors" vid="189">
+                            <div class="flex items-center gap-2" vid="190">
+                                <i class="ph ph-caret-down text-gray-400" vid="191"></i>
+                                <i class="ph ph-file-code text-blue-500" vid="192"></i>
+                                <span class="text-[13px] font-medium text-gray-800 font-mono" vid="193">package.json</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[12px] font-mono" vid="194">
+                                <span class="text-green-600" vid="195">+12</span>
+                                <span class="text-red-500" vid="196">-2</span>
+                            </div>
+                        </button>
+                        
+                        
+                        <div class="bg-gray-50 p-3 pt-0 border-t border-gray-100" vid="197">
+                            <div class="rounded-lg border border-diff-border bg-diff-bg flex overflow-hidden shadow-sm mt-2" vid="198">
+                                <div class="w-10 bg-diff-lineBg border-r border-diff-border flex flex-col py-2 select-none" vid="199">
+                                    <div class="flex px-1.5 text-[11px] font-mono text-diff-lineText leading-[18px]" vid="200">
+                                        <span class="w-3 text-center mr-1" vid="201">+</span><span class="flex-1 text-right text-gray-400" vid="202">42</span>
+                                    </div>
+                                    <div class="flex px-1.5 text-[11px] font-mono text-diff-lineText leading-[18px]" vid="203">
+                                        <span class="w-3 text-center mr-1" vid="204">+</span><span class="flex-1 text-right text-gray-400" vid="205">43</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 py-2 pl-3 pr-2 font-mono text-[11px] text-diff-text overflow-x-auto no-scrollbar whitespace-pre leading-[18px]" vid="206">
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.1",</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <button class="w-full flex items-center justify-between p-3 bg-white hover:bg-gray-50 transition-colors" vid="207">
+                        <div class="flex items-center gap-2" vid="208">
+                            <i class="ph ph-caret-right text-gray-400" vid="209"></i>
+                            <i class="ph ph-file-ts text-blue-500" vid="210"></i>
+                            <span class="text-[13px] font-medium text-gray-700 font-mono" vid="211">src/App.tsx</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[12px] font-mono" vid="212">
+                            <span class="text-green-600" vid="213">+45</span>
+                            <span class="text-red-500" vid="214">-10</span>
+                        </div>
+                    </button>
+
+                    
+                    <button class="w-full flex items-center justify-between p-3 bg-white hover:bg-gray-50 transition-colors" vid="215">
+                        <div class="flex items-center gap-2" vid="216">
+                            <i class="ph ph-caret-right text-gray-400" vid="217"></i>
+                            <i class="ph ph-file-ts text-blue-500" vid="218"></i>
+                            <span class="text-[13px] font-medium text-gray-700 font-mono" vid="219">src/utils/formatters.ts</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[12px] font-mono" vid="220">
+                            <span class="text-green-600" vid="221">+47</span>
+                            <span class="text-red-500" vid="222">-0</span>
+                        </div>
+                    </button>
+                     
+                     <button class="w-full flex items-center justify-between p-3 bg-white hover:bg-gray-50 transition-colors text-gray-400" vid="223">
+                        <div class="flex items-center gap-2" vid="224">
+                            <i class="ph ph-caret-right text-gray-300" vid="225"></i>
+                            <span class="text-[12px] font-medium italic" vid="226">2 more files...</span>
+                        </div>
+                    </button>
+
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between mt-2 pt-2 border-t border-gray-100" vid="227">
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" vid="228">
+                        <i class="ph ph-chat-circle" vid="229"></i> Ask questions
+                    </button>
+                    <div class="flex gap-2" vid="230">
+                        <button class="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-gray-200 text-[14px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm" vid="231">
+                            Reject all
+                        </button>
+                        <button class="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-transparent bg-[#1c1c1c] text-[14px] font-medium text-white hover:bg-[#2c2c2c] transition-colors shadow-sm" vid="232">
+                            Accept changes
+                            <span class="flex items-center justify-center bg-white/15 border border-white/20 rounded-[4px] px-1.5 py-0.5 text-[11px] font-sans text-white shadow-sm leading-none h-5" vid="233">↩</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+</body></html>

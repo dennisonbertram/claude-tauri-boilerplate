@@ -1,0 +1,21 @@
+{
+  "story_id": "STORY-073",
+  "title": "Identify Risk Level of Requested Tool",
+  "status": "fail",
+  "bugs": [],
+  "missing_features": [
+    "No visible risk level indicators on tools",
+    "No risk categorization (low/medium/high)",
+    "No visual differentiation between safe and risky tools"
+  ],
+  "ui_present": [
+    "Tool names and descriptions",
+    "Default/Allow/Block toggles",
+    "Permission mode mentions 'risky operations'"
+  ],
+  "ui_missing": [
+    "Risk level badges or icons per tool",
+    "Risk severity classification",
+    "Color coding by risk level"
+  ]
+}

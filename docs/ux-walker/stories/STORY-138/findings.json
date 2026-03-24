@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-138",
+  "title": "Rewind Conversation to Earlier Checkpoint",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No rewind or checkpoint controls are visible in the chat interface. Cannot test within an active conversation due to known issue (clicking existing conversations crashes the app).",
+      "expected": "Rewind/checkpoint controls should allow users to go back to earlier points in a conversation.",
+      "actual": "No rewind controls visible in new chat view. Blocked from testing in active conversation by known crash bug.",
+      "blocked_by": "Known issue: clicking existing conversations crashes the app"
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented. Additionally blocked from testing in active conversations by known crash bug."
+}

@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-063",
+  "title": "Configure Hooks for Automated Workflows",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "HookCard nullish coalescing fix prevents crash when handler types are undefined",
+  "findings": [],
+  "screenshots": [
+    "01-hooks-section.png",
+    "02-hooks-detail.png",
+    "03-hooks-add-button.png",
+    "04-add-hook-form.png"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "story": "STORY-128",
+  "title": "Change Team Display Mode",
+  "status": "pass",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "ux_note",
+      "description": "Display mode cannot be changed after team creation. Only settable during creation.",
+      "expected": "Ability to change display mode on existing teams",
+      "actual": "Display mode shown as read-only label in team workspace header"
+    }
+  ],
+  "notes": "Display mode works at creation time. Three options available: Auto, In-Process, Tmux."
+}

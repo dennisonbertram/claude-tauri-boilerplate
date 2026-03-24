@@ -1,0 +1,14 @@
+{
+  "story": "STORY-041",
+  "title": "Open Workspace in IDE",
+  "status": "pass",
+  "findings": [
+    {
+      "type": "enhancement",
+      "severity": "low",
+      "title": "No IDE selector dropdown -- only VS Code supported",
+      "description": "The Open In button only opens VS Code. There is no dropdown to select alternative IDEs (Cursor, WebStorm, Zed, etc.). The button text says 'Open In' but the aria-label specifies VS Code.",
+      "file": "apps/desktop/src/components/workspaces/WorkspacePanel.tsx"
+    }
+  ]
+}

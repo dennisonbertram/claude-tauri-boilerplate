@@ -1,0 +1,25 @@
+{
+  "storyId": "STORY-019",
+  "title": "Model & Effort Selector with Fast Mode Toggle",
+  "status": "PARTIAL",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "Model selector exists in two places: (1) status bar bottom-left with dropdown picker supporting keyboard number shortcuts, (2) chat input area showing current model 'Sonnet 4.6'",
+      "evidence": "ModelSegment.tsx: dropdown with AVAILABLE_MODELS, number key fast-switching. Snapshot: button 'Sonnet 4.6' [ref=e6] in status bar, button 'Sonnet 4.6' [ref=e125] near chat input",
+      "component": "apps/desktop/src/components/status-bar/ModelSegment.tsx"
+    },
+    {
+      "type": "finding",
+      "description": "No 'Fast Mode' toggle found anywhere in the chat interface. The effort selector (Low/Medium/High/Max) exists but is buried in Settings, not accessible from chat compose view.",
+      "evidence": "No grep matches for 'fast mode' or 'fast.*toggle'. EffortSelector only used in settings/ModelTab and agent-builder/ModelTab",
+      "component": "N/A"
+    },
+    {
+      "type": "pass",
+      "description": "Mode tabs (Chat/Code/Cowork) are visible in the header banner area, providing different interaction modes",
+      "evidence": "Snapshot: banner contains buttons 'Chat' [ref=e9], 'Code' [ref=e10], 'Cowork' [ref=e11]"
+    }
+  ]
+}
