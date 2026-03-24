@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
-import { createDb, createDocument, getDocument } from '../db';
+import { createDb, createDocument, getDocument, listDocuments } from '../db';
 import { createDocumentsRouter } from './documents';
 import { errorHandler } from '../middleware/error-handler';
 
@@ -320,6 +320,150 @@ describe('PATCH /api/documents/:id', () => {
 
     const fetched = getDocument(db, doc.id);
     expect(fetched?.tags).toEqual(['persisted']);
+  });
+});
+
+// ─── DELETE /api/documents/bulk ──────────────────────────────────────────────
+
+describe('DELETE /api/documents/bulk', () => {
+  test('returns 400 when ids is missing', async () => {
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json() as any;
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('returns 400 when ids is empty array', async () => {
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [] }),
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json() as any;
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('returns 400 when body is invalid JSON', async () => {
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not-json',
+    });
+    expect(res.status).toBe(400);
+
+    const body = await res.json() as any;
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('deletes multiple documents from DB', async () => {
+    const doc1 = createDocument(db, {
+      id: crypto.randomUUID(),
+      filename: 'bulk1.txt',
+      storagePath: '/tmp/bulk1.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 100,
+    });
+    const doc2 = createDocument(db, {
+      id: crypto.randomUUID(),
+      filename: 'bulk2.txt',
+      storagePath: '/tmp/bulk2.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 200,
+    });
+    const doc3 = createDocument(db, {
+      id: crypto.randomUUID(),
+      filename: 'bulk3.txt',
+      storagePath: '/tmp/bulk3.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 300,
+    });
+
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [doc1.id, doc2.id] }),
+    });
+    expect(res.status).toBe(200);
+
+    const body = await res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.deletedCount).toBe(2);
+
+    // Verify doc1 and doc2 are gone
+    expect(getDocument(db, doc1.id)).toBeNull();
+    expect(getDocument(db, doc2.id)).toBeNull();
+
+    // doc3 should still exist
+    expect(getDocument(db, doc3.id)).not.toBeNull();
+  });
+
+  test('handles non-existent ids gracefully', async () => {
+    const doc = createDocument(db, {
+      id: crypto.randomUUID(),
+      filename: 'exists.txt',
+      storagePath: '/tmp/exists.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 100,
+    });
+
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [doc.id, 'nonexistent-id'] }),
+    });
+    expect(res.status).toBe(200);
+
+    const body = await res.json() as any;
+    expect(body.success).toBe(true);
+    // Only 1 actually existed and was deleted
+    expect(body.deletedCount).toBe(1);
+
+    expect(getDocument(db, doc.id)).toBeNull();
+  });
+
+  test('deletes uploaded documents and cleans up files', async () => {
+    // Upload two real files
+    const formData1 = new FormData();
+    formData1.append('file', new File([new Uint8Array([1, 2, 3])], 'bulk-file1.txt', { type: 'text/plain' }));
+    const upload1 = await app.request('/api/documents/upload', { method: 'POST', body: formData1 });
+    const uploadBody1 = await upload1.json() as any;
+
+    const formData2 = new FormData();
+    formData2.append('file', new File([new Uint8Array([4, 5, 6])], 'bulk-file2.txt', { type: 'text/plain' }));
+    const upload2 = await app.request('/api/documents/upload', { method: 'POST', body: formData2 });
+    const uploadBody2 = await upload2.json() as any;
+
+    const id1 = uploadBody1.document.id;
+    const id2 = uploadBody2.document.id;
+    const path1 = uploadBody1.document.storagePath;
+    const path2 = uploadBody2.document.storagePath;
+
+    // Verify files exist
+    expect(await Bun.file(path1).exists()).toBe(true);
+    expect(await Bun.file(path2).exists()).toBe(true);
+
+    // Bulk delete
+    const res = await app.request('/api/documents/bulk', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [id1, id2] }),
+    });
+    expect(res.status).toBe(200);
+
+    // Verify files are gone
+    expect(await Bun.file(path1).exists()).toBe(false);
+    expect(await Bun.file(path2).exists()).toBe(false);
+
+    // Verify DB records are gone
+    expect(getDocument(db, id1)).toBeNull();
+    expect(getDocument(db, id2)).toBeNull();
   });
 });
 

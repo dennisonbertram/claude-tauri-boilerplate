@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
-import { createDocument, getDocument, listDocuments, updateDocument, deleteDocument } from '../db';
+import { createDocument, getDocument, listDocuments, updateDocument, deleteDocument, bulkDeleteDocuments } from '../db';
 import { nudgePipelineWorker } from '../services/pipeline/runner';
 import { mkdirSync, unlinkSync } from 'fs';
 import { join, extname } from 'path';
@@ -206,6 +206,35 @@ export function createDocumentsRouter(db: Database) {
     } catch (err) {
       return c.json({ error: 'Failed to open file', code: 'OPEN_ERROR' }, 500);
     }
+  });
+
+  // DELETE /bulk — bulk delete documents
+  router.delete('/bulk', async (c) => {
+    let bodyRaw: unknown;
+    try {
+      bodyRaw = await c.req.json();
+    } catch {
+      return c.json({ error: 'Invalid JSON in request body', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const data = bodyRaw as Record<string, unknown>;
+    if (!data.ids || !Array.isArray(data.ids) || data.ids.length === 0) {
+      return c.json({ error: 'ids must be a non-empty array of strings', code: 'VALIDATION_ERROR' }, 400);
+    }
+
+    const ids = data.ids as string[];
+    const storagePaths = bulkDeleteDocuments(db, ids);
+
+    // Clean up files on disk
+    for (const storagePath of storagePaths) {
+      try {
+        unlinkSync(storagePath);
+      } catch {
+        // File may already be gone — that's fine
+      }
+    }
+
+    return c.json({ success: true, deletedCount: storagePaths.length });
   });
 
   // DELETE /:id — delete document and file

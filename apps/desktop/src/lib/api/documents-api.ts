@@ -45,6 +45,19 @@ export async function deleteDocument(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Failed to delete document: ${res.status}`);
 }
 
+export async function bulkDeleteDocuments(ids: string[]): Promise<{ deletedCount: number }> {
+  const res = await fetch(`${API_BASE}/api/documents/bulk`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Bulk delete failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchDocumentContent(id: string): Promise<string> {
   const res = await fetch(`${API_BASE}/api/documents/${id}/content`);
   if (!res.ok) {

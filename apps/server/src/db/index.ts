@@ -180,6 +180,7 @@ export {
   listDocuments,
   updateDocument,
   deleteDocument,
+  bulkDeleteDocuments,
 } from './db-documents';
 
 // ─── Deployments & Settings ────────────────────────────────────────────────────

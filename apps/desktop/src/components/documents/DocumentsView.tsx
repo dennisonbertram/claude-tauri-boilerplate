@@ -8,15 +8,16 @@ import {
   FileArrowUp,
 } from '@phosphor-icons/react';
 import { useDocuments } from '@/hooks/useDocuments';
-import { getDocumentFileUrl } from '@/lib/api/documents-api';
+import { useDocumentSelection } from '@/hooks/useDocumentSelection';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { DocumentCard } from './DocumentCard';
 import { DocumentTable } from './DocumentTable';
 import { DocumentContextMenu, type DocumentContextMenuState } from './DocumentContextMenu';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
+import { BulkActionsBar } from './BulkActionsBar';
 
 export function DocumentsView() {
-  const { documents, isLoading, upload, remove } = useDocuments();
+  const { documents, isLoading, upload, remove, removeMany } = useDocuments();
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery');
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +32,18 @@ export function DocumentsView() {
     const q = searchQuery.toLowerCase();
     return documents.filter(d => d.filename.toLowerCase().includes(q));
   }, [documents, searchQuery]);
+
+  const filteredIds = useMemo(() => filtered.map(d => d.id), [filtered]);
+
+  const {
+    selectedIds,
+    toggle: toggleSelect,
+    selectAll,
+    deselectAll,
+    isAllSelected,
+    isSomeSelected,
+    selectedCount,
+  } = useDocumentSelection(filteredIds);
 
   const handleUpload = (files: File[]) => {
     void upload(files);
@@ -58,6 +71,16 @@ export function DocumentsView() {
       await remove(id);
     } catch (err) {
       console.error('Failed to delete document:', err);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      await removeMany(ids);
+      deselectAll();
+    } catch (err) {
+      console.error('Failed to bulk delete documents:', err);
     }
   };
 
@@ -190,25 +213,42 @@ export function DocumentsView() {
                 </p>
               </div>
             </div>
-          ) : viewMode === 'gallery' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {filtered.map((doc) => (
-                <DocumentCard
-                  key={doc.id}
-                  document={doc}
+          ) : (
+            <>
+              <BulkActionsBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={deselectAll}
+              />
+              {viewMode === 'gallery' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filtered.map((doc) => (
+                    <DocumentCard
+                      key={doc.id}
+                      document={doc}
+                      onDelete={handleDelete}
+                      onOpen={handleOpen}
+                      onContextMenu={handleContextMenu}
+                      isSelected={selectedIds.has(doc.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <DocumentTable
+                  documents={filtered}
                   onDelete={handleDelete}
                   onOpen={handleOpen}
                   onContextMenu={handleContextMenu}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  onSelectAll={selectAll}
+                  onDeselectAll={deselectAll}
+                  isAllSelected={isAllSelected}
+                  isSomeSelected={isSomeSelected}
                 />
-              ))}
-            </div>
-          ) : (
-            <DocumentTable
-              documents={filtered}
-              onDelete={handleDelete}
-              onOpen={handleOpen}
-              onContextMenu={handleContextMenu}
-            />
+              )}
+            </>
           )}
         </div>
       </div>

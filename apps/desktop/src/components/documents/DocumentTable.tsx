@@ -19,6 +19,12 @@ interface DocumentTableProps {
   onDelete: (id: string) => void;
   onOpen: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, doc: Document) => void;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, shiftKey: boolean) => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  isAllSelected: boolean;
+  isSomeSelected: boolean;
 }
 
 function getSmallIcon(mimeType: string) {
@@ -41,7 +47,18 @@ function getMimeLabel(mimeType: string): { label: string; className: string } {
 type SortKey = 'name' | 'type' | 'size' | 'date';
 type SortDir = 'asc' | 'desc';
 
-export function DocumentTable({ documents, onDelete, onOpen, onContextMenu }: DocumentTableProps) {
+export function DocumentTable({
+  documents,
+  onDelete,
+  onOpen,
+  onContextMenu,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
+  onDeselectAll,
+  isAllSelected,
+  isSomeSelected,
+}: DocumentTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -72,11 +89,30 @@ export function DocumentTable({ documents, onDelete, onOpen, onContextMenu }: Do
 
   const headerClass = 'px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors';
 
+  const handleHeaderCheckbox = () => {
+    if (isAllSelected || isSomeSelected) {
+      onDeselectAll();
+    } else {
+      onSelectAll();
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border/50">
+            <th className="w-10 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                onChange={handleHeaderCheckbox}
+                className="w-3.5 h-3.5 rounded border-border accent-foreground cursor-pointer"
+                data-testid="select-all-checkbox"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </th>
             <th className={headerClass} onClick={() => toggleSort('name')}>
               <span className="flex items-center gap-1">Name <SortIcon column="name" /></span>
             </th>
@@ -95,10 +131,14 @@ export function DocumentTable({ documents, onDelete, onOpen, onContextMenu }: Do
         <tbody>
           {sorted.map((doc) => {
             const mime = getMimeLabel(doc.mimeType);
+            const isSelected = selectedIds.has(doc.id);
             return (
               <tr
                 key={doc.id}
-                className="border-b border-border/30 last:border-b-0 hover:bg-sidebar/50 transition-colors cursor-pointer group"
+                className={`border-b border-border/30 last:border-b-0 hover:bg-sidebar/50 transition-colors cursor-pointer group ${
+                  isSelected ? 'bg-blue-50/50' : ''
+                }`}
+                data-testid={`document-row-${doc.id}`}
                 onClick={() => onOpen(doc.id)}
                 onContextMenu={(e) => {
                   if (onContextMenu) {
@@ -108,6 +148,19 @@ export function DocumentTable({ documents, onDelete, onOpen, onContextMenu }: Do
                   }
                 }}
               >
+                <td className="px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}} // controlled by onClick
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSelect(doc.id, e.shiftKey);
+                    }}
+                    className="w-3.5 h-3.5 rounded border-border accent-foreground cursor-pointer"
+                    data-testid={`select-checkbox-${doc.id}`}
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     {getSmallIcon(doc.mimeType)}

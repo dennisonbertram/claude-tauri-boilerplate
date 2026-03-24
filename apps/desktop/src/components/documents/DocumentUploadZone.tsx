@@ -53,7 +53,7 @@ export function DocumentUploadZone({ onUpload, children }: DocumentUploadZonePro
 
   return (
     <div
-      className="relative flex-1 min-h-0"
+      className="relative flex-1 min-h-0 flex flex-col overflow-hidden"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}

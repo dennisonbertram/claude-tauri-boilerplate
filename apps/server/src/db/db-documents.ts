@@ -126,3 +126,11 @@ export function deleteDocument(db: Database, id: string): string | null {
   const row = stmt.get(id) as { storage_path: string } | null;
   return row ? row.storage_path : null;
 }
+
+export function bulkDeleteDocuments(db: Database, ids: string[]): string[] {
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(', ');
+  const stmt = db.prepare(`DELETE FROM documents WHERE id IN (${placeholders}) RETURNING storage_path`);
+  const rows = stmt.all(...ids) as { storage_path: string }[];
+  return rows.map(r => r.storage_path);
+}

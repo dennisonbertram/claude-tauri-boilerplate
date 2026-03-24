@@ -17,6 +17,8 @@ interface DocumentCardProps {
   onDelete: (id: string) => void;
   onOpen: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, doc: Document) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }
 
 function getDocumentIcon(mimeType: string) {
@@ -27,7 +29,7 @@ function getDocumentIcon(mimeType: string) {
   return <File size={40} className="text-muted-foreground" />;
 }
 
-export function DocumentCard({ document: doc, onDelete, onOpen, onContextMenu }: DocumentCardProps) {
+export function DocumentCard({ document: doc, onDelete, onOpen, onContextMenu, isSelected, onToggleSelect }: DocumentCardProps) {
   const [imgError, setImgError] = useState(false);
   const isImage = doc.mimeType.startsWith('image/');
   const icon = getDocumentIcon(doc.mimeType);
@@ -42,7 +44,10 @@ export function DocumentCard({ document: doc, onDelete, onOpen, onContextMenu }:
 
   return (
     <div
-      className="group bg-card border border-border rounded-2xl overflow-hidden hover:shadow-soft hover:border-[#d4d2cc] transition-all cursor-pointer flex flex-col"
+      className={`group bg-card border rounded-2xl overflow-hidden hover:shadow-soft hover:border-[#d4d2cc] transition-all cursor-pointer flex flex-col ${
+        isSelected ? 'border-blue-300 bg-blue-50/30' : 'border-border'
+      }`}
+      data-testid={`document-card-${doc.id}`}
       onClick={() => onOpen(doc.id)}
       onContextMenu={handleContextMenu}
     >
@@ -59,6 +64,27 @@ export function DocumentCard({ document: doc, onDelete, onOpen, onContextMenu }:
           <ImageSquare size={40} className="text-muted-foreground" />
         ) : (
           icon
+        )}
+
+        {/* Selection checkbox */}
+        {onToggleSelect && (
+          <div
+            className={`absolute top-2 left-2 transition-opacity ${
+              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected ?? false}
+              onChange={() => {}} // controlled by onClick
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect(doc.id, e.shiftKey);
+              }}
+              className="w-4 h-4 rounded border-border accent-foreground cursor-pointer shadow-sm"
+              data-testid={`select-card-checkbox-${doc.id}`}
+            />
+          </div>
         )}
 
         {/* Hover actions */}
