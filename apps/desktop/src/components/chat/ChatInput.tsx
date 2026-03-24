@@ -35,6 +35,8 @@ export function ChatInput({
   contextSummary,
   mcpServerNames,
   modelDisplay,
+  sessionTotalCost,
+  onCostClick,
 }: ChatInputProps) {
   const { settings } = useSettings();
   // Input stretches to fill the footer — no max-width constraint so it
@@ -220,7 +222,7 @@ export function ChatInput({
               </div>
             )}
           </div>
-          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} />
+          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} />
         </div>
 
         <input ref={pickerRef} type="file" data-testid="file-input" multiple className="sr-only" onChange={handlePickFilesChange} />

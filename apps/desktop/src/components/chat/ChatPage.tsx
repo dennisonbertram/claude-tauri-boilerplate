@@ -244,6 +244,8 @@ export function ChatPage(props: ChatPageProps) {
           contextSummary={isLoading ? undefined : contextSummary}
           mcpServerNames={mcpServers.map((s) => s.name)}
           modelDisplay={getModelDisplay(sessionInfo?.model ?? settings.model)}
+          sessionTotalCost={sessionTotalCost}
+          onCostClick={() => setCostOpen(true)}
         />
       </div>
 

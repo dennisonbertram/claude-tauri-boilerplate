@@ -33,4 +33,8 @@ export interface ChatInputProps {
   mcpServerNames?: string[];
   /** Model display name shown in the toolbar (e.g., "Sonnet 4.6") */
   modelDisplay?: string;
+  /** Total session cost in USD — shown as a clickable pill in the toolbar */
+  sessionTotalCost?: number;
+  /** Called when the cost indicator is clicked (opens cost breakdown dialog) */
+  onCostClick?: () => void;
 }
