@@ -37,4 +37,10 @@ export interface ChatInputProps {
   sessionTotalCost?: number;
   /** Called when the cost indicator is clicked (opens cost breakdown dialog) */
   onCostClick?: () => void;
+  /** Context usage data for token estimate display */
+  contextUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    maxTokens: number;
+  };
 }

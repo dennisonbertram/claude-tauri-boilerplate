@@ -62,6 +62,7 @@ export function ChatPage(props: ChatPageProps) {
     toggleSubagentPanel,
     messageCosts,
     sessionTotalCost,
+    contextUsage,
     suggestedFiles,
     rewindTarget,
     rewindPreview,
@@ -246,6 +247,7 @@ export function ChatPage(props: ChatPageProps) {
           modelDisplay={getModelDisplay(sessionInfo?.model ?? settings.model)}
           sessionTotalCost={sessionTotalCost}
           onCostClick={() => setCostOpen(true)}
+          contextUsage={contextUsage}
         />
       </div>
 
