@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWorkspaceDiff } from '@/hooks/useWorkspaceDiff';
 import { useSettings } from '@/hooks/useSettings';
 import * as api from '@/lib/workspace-api';
-import type { DiffComment, CodeReviewResult } from '@claude-tauri/shared';
+import type { DiffComment, CodeReviewResult, CodeReviewComment } from '@claude-tauri/shared';
 import { CodeReviewDialog } from './CodeReviewDialog';
 import { CodeReviewSummary } from './CodeReviewSummary';
 import { getWorkflowPrompt } from '@/lib/workflowPrompts';
@@ -25,9 +25,10 @@ export { parseWorkspaceDiff } from './diff-parser';
 
 interface WorkspaceDiffViewProps {
   workspaceId: string;
+  projectId?: string;
 }
 
-export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
+export function WorkspaceDiffView({ workspaceId, projectId }: WorkspaceDiffViewProps) {
   const [viewMode, setViewMode] = useState<DiffMode>('unified');
   const [reviewRange, setReviewRange] = useState<api.WorkspaceDiffRange | undefined>(undefined);
   const [draftFromRef, setDraftFromRef] = useState('');
@@ -188,6 +189,20 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
     }
   };
 
+  const saveReplyComment = async (filePath: string, lineNumber: number | null, content: string) => {
+    try {
+      const saved = await api.createDiffComment(workspaceId, {
+        filePath,
+        lineNumber,
+        content,
+        author: 'user',
+      });
+      setDiffComments((prev) => [...prev, saved]);
+    } catch {
+      // non-fatal
+    }
+  };
+
   const openCommentComposer = (key: string, filePath: string, lineNumber: number | null) => {
     setActiveCommentTarget(activeCommentTarget === key ? null : key);
     setActiveCommentMeta(activeCommentTarget === key ? null : { filePath, lineNumber });
@@ -244,6 +259,26 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
     setReviewDialogOpen(true);
   }, []);
 
+  const handleFileIssue = useCallback(async (comment: CodeReviewComment) => {
+    if (!projectId) return;
+    const title = `[${comment.severity.toUpperCase()}] ${comment.file}${comment.line ? `:${comment.line}` : ''} — ${comment.body.slice(0, 80)}`;
+    const body = [
+      `**Severity:** ${comment.severity}`,
+      `**File:** \`${comment.file}\`${comment.line ? ` (line ${comment.line})` : ''}`,
+      '',
+      comment.body,
+    ].join('\n');
+    try {
+      const result = await api.createGithubIssue(projectId, { title, body, labels: ['code-review'] });
+      if (result.url) {
+        // Could show a toast here; for now it's fire-and-forget
+        console.log(`Created GitHub issue: ${result.url}`);
+      }
+    } catch (err) {
+      console.error('Failed to file GitHub issue:', err);
+    }
+  }, [projectId]);
+
   const handleScrollToComment = useCallback((file: string, line?: number) => {
     if (!diffContainerRef.current) return;
     const selector = line
@@ -291,6 +326,7 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
         onToggleAllReviewed={toggleAllReviewed}
         onReviewClick={handleReviewClick}
         onReviewContextMenu={handleReviewContextMenu}
+        rawDiff={diff}
       />
 
       {reviewError && (
@@ -301,7 +337,7 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
 
       {reviewResult && (
         <div className="px-3 py-2 border-b border-border">
-          <CodeReviewSummary result={reviewResult} onCommentClick={handleScrollToComment} />
+          <CodeReviewSummary result={reviewResult} onCommentClick={handleScrollToComment} projectId={projectId} onFileIssue={handleFileIssue} />
         </div>
       )}
 
@@ -358,6 +394,7 @@ export function WorkspaceDiffView({ workspaceId }: WorkspaceDiffViewProps) {
                               onSaveComment={saveComment}
                               onCancelComment={cancelComment}
                               onDeleteComment={deleteComment}
+                              onSaveReply={saveReplyComment}
                             />
                           );
                         })}

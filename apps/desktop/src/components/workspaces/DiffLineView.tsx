@@ -20,6 +20,7 @@ interface DiffLineViewProps {
   onSaveComment: () => void;
   onCancelComment: () => void;
   onDeleteComment: (commentId: string) => void;
+  onSaveReply?: (filePath: string, lineNumber: number | null, content: string) => void;
 }
 
 export function DiffLineView({
@@ -37,6 +38,7 @@ export function DiffLineView({
   onSaveComment,
   onCancelComment,
   onDeleteComment,
+  onSaveReply,
 }: DiffLineViewProps) {
   if (line.type === 'meta' || line.type === 'hunk') {
     return (
@@ -56,7 +58,7 @@ export function DiffLineView({
         data-diff-file={filePath}
         data-diff-line={line.newLine ?? undefined}
       >
-        <div className={`grid grid-cols-[3.2rem_3.2rem_1.5rem_1fr_4.5rem] ${baseLineClass}`}>
+        <div className={`group grid grid-cols-[3.2rem_3.2rem_1.5rem_1fr_4.5rem] ${baseLineClass}`}>
           <span className="px-2 py-1 text-right text-zinc-500 shrink-0">
             {line.oldLine ?? ''}
           </span>
@@ -71,8 +73,11 @@ export function DiffLineView({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2"
-              onClick={() => onOpenComposer(lineKey, filePath, gitLineNumber)}
+              className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenComposer(lineKey, filePath, gitLineNumber);
+              }}
             >
               Comment
             </Button>
@@ -83,6 +88,7 @@ export function DiffLineView({
             lineComments={lineComments}
             inlineComments={inlineComments}
             onDeleteComment={onDeleteComment}
+            onSaveReply={onSaveReply}
           />
         )}
         {isActiveComment && (
@@ -100,7 +106,7 @@ export function DiffLineView({
   // Side-by-side mode
   return (
     <div className="space-y-0.5">
-      <div className={`grid grid-cols-[3.2rem_1fr_3.2rem_1fr_4.5rem] ${baseLineClass}`}>
+      <div className={`group grid grid-cols-[3.2rem_1fr_3.2rem_1fr_4.5rem] ${baseLineClass}`}>
         <span className="px-2 py-1 text-right text-zinc-500 shrink-0">
           {line.type === 'removed' || line.type === 'context' ? line.oldLine : ''}
         </span>
@@ -117,8 +123,11 @@ export function DiffLineView({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2"
-            onClick={() => onOpenComposer(lineKey, filePath, gitLineNumber)}
+            className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenComposer(lineKey, filePath, gitLineNumber);
+            }}
           >
             Comment
           </Button>
@@ -129,6 +138,7 @@ export function DiffLineView({
           lineComments={lineComments}
           inlineComments={inlineComments}
           onDeleteComment={onDeleteComment}
+          onSaveReply={onSaveReply}
         />
       )}
       {isActiveComment && (
