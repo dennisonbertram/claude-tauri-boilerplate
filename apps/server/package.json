@@ -12,6 +12,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.76",
     "@claude-tauri/shared": "workspace:*",
     "ai": "^6.0.116",
+    "googleapis": "^171.4.0",
     "hono": "^4",
     "zod": "^3.23.8"
   },

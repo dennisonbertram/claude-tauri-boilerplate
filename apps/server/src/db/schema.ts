@@ -195,6 +195,23 @@ export const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
   CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at);
   CREATE INDEX IF NOT EXISTS idx_documents_mime_type ON documents(mime_type);
+
+  CREATE TABLE IF NOT EXISTS google_oauth (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    google_sub TEXT NOT NULL,
+    email TEXT NOT NULL,
+    email_verified INTEGER,
+    name TEXT,
+    picture TEXT,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    token_type TEXT,
+    granted_scopes TEXT,
+    expires_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `;
 
 // Re-export all migrations from the dedicated migrations module for backward compatibility
@@ -213,4 +230,5 @@ export {
   migrateDeploymentSettingsTable,
   migrateTrackerTables,
   migrateDocumentsTable,
+  migrateGoogleOAuthTable,
 } from './migrations';

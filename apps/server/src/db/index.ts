@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -28,6 +28,7 @@ export function createDb(path?: string): Database {
   migrateDeploymentSettingsTable(db);
   migrateTrackerTables(db);
   migrateDocumentsTable(db);
+  migrateGoogleOAuthTable(db);
   return db;
 }
 
@@ -215,3 +216,13 @@ export {
   listTrackerComments,
   createTrackerComment,
 } from './db-tracker';
+
+// ─── Google OAuth ──────────────────────────────────────────────────────────────
+export {
+  getGoogleOAuth,
+  upsertGoogleOAuth,
+  updateGoogleOAuthTokens,
+  setGoogleOAuthError,
+  clearGoogleOAuth,
+} from './db-google';
+export type { GoogleOAuthRecord } from './db-google';
