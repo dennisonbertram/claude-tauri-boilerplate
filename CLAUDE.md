@@ -8,6 +8,7 @@
 - For subagents/worktrees: `INIT_DAEMONIZE=1 ./init.sh && source .init-state`
 - Use `$SERVER_URL`, `$FRONTEND_URL`, `$HEALTH_CHECK` from `.init-state` — never hardcode ports
 - Golden cache at `~/.claude-tauri/golden/` makes worktree installs <0.5s
+- **`node_modules` are symlinks** — `init.sh` symlinks `node_modules` to the golden cache. Never use `git add -A` or `git add .` as this will commit the symlinks and break CI. Always stage specific files by name.
 - Clean stale worktrees: `./scripts/cleanup-worktrees.sh`
 - **Credentials are auto-detected**: local uses subscription auth (no keys), cloud requires `ANTHROPIC_API_KEY` from platform secrets. Never put secrets in `.env`.
 
