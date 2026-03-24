@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { SpinnerGap, CaretDown, CaretRight } from '@phosphor-icons/react';
+import { useState, useRef } from 'react';
+import { SpinnerGap, CaretDown, CaretRight, X, ClockCounterClockwise } from '@phosphor-icons/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,9 @@ interface GithubIssueModeFormProps {
   onWorkspaceNameChange: (value: string) => void;
   issueBranch: string;
   onIssueBranchChange: (value: string) => void;
+  searchHistory?: string[];
+  onRemoveHistory?: (query: string) => void;
+  onClearHistory?: () => void;
 }
 
 export function GithubIssueModeForm({
@@ -31,21 +34,82 @@ export function GithubIssueModeForm({
   onWorkspaceNameChange,
   issueBranch,
   onIssueBranchChange,
+  searchHistory = [],
+  onRemoveHistory,
+  onClearHistory,
 }: GithubIssueModeFormProps) {
   const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const hasHistory = searchHistory.length > 0;
+  const shouldShowHistory = showHistory && hasHistory && !issueQuery.trim();
 
   return (
     <>
-      <div>
+      <div className="relative">
         <label className="text-sm font-medium text-foreground">Search Issues</label>
         <Input
+          ref={inputRef}
           type="text"
           placeholder="Search by title or number..."
           value={issueQuery}
           onChange={(e) => onIssueQueryChange(e.target.value)}
+          onFocus={() => setShowHistory(true)}
+          onBlur={() => {
+            // Delay to allow click on history items
+            setTimeout(() => setShowHistory(false), 200);
+          }}
           className="mt-1"
           autoFocus
         />
+        {shouldShowHistory && (
+          <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <ClockCounterClockwise className="h-3 w-3" />
+                Recent searches
+              </span>
+              {onClearHistory && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onClearHistory()}
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+            {searchHistory.map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent cursor-pointer"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onIssueQueryChange(item);
+                  setShowHistory(false);
+                }}
+              >
+                <span className="text-sm truncate flex-1">{item}</span>
+                {onRemoveHistory && (
+                  <button
+                    type="button"
+                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveHistory(item);
+                    }}
+                    title="Remove from history"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="max-h-64 overflow-auto rounded-md border border-border">
         {issueLoading ? (

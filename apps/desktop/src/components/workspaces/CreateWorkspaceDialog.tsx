@@ -112,6 +112,9 @@ export function CreateWorkspaceDialog({
               onWorkspaceNameChange={state.setIssueWorkspaceName}
               issueBranch={state.issueBranch}
               onIssueBranchChange={state.setIssueBranch}
+              searchHistory={state.githubSearchHistory}
+              onRemoveHistory={state.removeGithubSearch}
+              onClearHistory={state.clearGithubSearchHistory}
             />
           )}
 
