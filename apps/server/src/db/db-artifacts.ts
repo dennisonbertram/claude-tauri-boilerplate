@@ -158,6 +158,20 @@ export function updateArtifactTitle(db: Database, id: string, title: string) {
   return stmt.run(title, id);
 }
 
+export function getArtifactLatestRevision(db: Database, artifactId: string) {
+  const stmt = db.prepare(
+    `SELECT * FROM artifact_revisions WHERE artifact_id = ? ORDER BY revision_number DESC LIMIT 1`
+  );
+  const row = stmt.get(artifactId) as ArtifactRevisionRow | null;
+  return row ? mapArtifactRevision(row) : null;
+}
+
+export function getArtifactRevision(db: Database, revisionId: string) {
+  const stmt = db.prepare(`SELECT * FROM artifact_revisions WHERE id = ?`);
+  const row = stmt.get(revisionId) as ArtifactRevisionRow | null;
+  return row ? mapArtifactRevision(row) : null;
+}
+
 export function countArtifactRevisions(db: Database, artifactId: string): number {
   const stmt = db.prepare(
     `SELECT COUNT(*) AS count FROM artifact_revisions WHERE artifact_id = ?`

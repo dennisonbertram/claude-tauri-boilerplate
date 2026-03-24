@@ -32,6 +32,12 @@ export async function renameArtifact(artifactId: string, title: string): Promise
   return res.json();
 }
 
+export async function fetchArtifactLatestRevision(artifactId: string): Promise<import('@claude-tauri/shared').ArtifactRevision> {
+  const res = await fetch(`${API_BASE}/api/artifacts/${artifactId}/latest-revision`);
+  if (!res.ok) { const body = await res.json().catch(() => ({ error: res.statusText })); throw new Error(body.error || `Failed to fetch revision: ${res.status}`); }
+  return res.json();
+}
+
 export async function regenerateArtifact(artifactId: string, params: { prompt: string; model?: string }): Promise<{ artifact: import('@claude-tauri/shared').Artifact; revision: import('@claude-tauri/shared').ArtifactRevision }> {
   const res = await fetch(`${API_BASE}/api/artifacts/${artifactId}/regenerate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
   if (!res.ok) { const body = await res.json().catch(() => ({ error: res.statusText })); throw new Error(body.error || `Failed to regenerate artifact: ${res.status}`); }
