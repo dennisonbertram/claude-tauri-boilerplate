@@ -559,6 +559,75 @@ export interface TeamTask {
   assignee?: string;
 }
 
+// --- Tracker Types ---
+
+export type TrackerStatusCategory = 'backlog' | 'todo' | 'in_progress' | 'done' | 'cancelled';
+export type TrackerPriority = 0 | 1 | 2 | 3 | 4; // 0=None, 1=Urgent, 2=High, 3=Normal, 4=Low
+
+export interface TrackerProject {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  defaultAssignee: string | null;
+  projectId: string | null;
+  nextIssueNumber: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrackerStatus {
+  id: string;
+  trackerProjectId: string;
+  name: string;
+  category: TrackerStatusCategory;
+  color: string | null;
+  sortOrder: number;
+}
+
+export interface TrackerLabel {
+  id: string;
+  trackerProjectId: string;
+  name: string;
+  color: string | null;
+}
+
+export interface TrackerIssue {
+  id: string;
+  identifier: string;
+  trackerProjectId: string;
+  title: string;
+  description: string | null;
+  statusId: string;
+  priority: TrackerPriority;
+  assignee: string | null;
+  dueDate: string | null;
+  sortOrder: number;
+  workspaceId: string | null;
+  sessionId: string | null;
+  parentIssueId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Joined data (optional, populated by some queries)
+  status?: TrackerStatus;
+  labels?: TrackerLabel[];
+}
+
+export interface TrackerComment {
+  id: string;
+  issueId: string;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TrackerProjectWithDetails extends TrackerProject {
+  statuses: TrackerStatus[];
+  labels: TrackerLabel[];
+}
+
 // --- Checkpoint Types ---
 
 export interface Checkpoint {
