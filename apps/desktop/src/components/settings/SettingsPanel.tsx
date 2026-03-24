@@ -6,6 +6,7 @@ import { MemoryPanel } from '@/components/settings/MemoryPanel';
 import { McpPanel } from '@/components/settings/McpPanel';
 import { HooksPanel } from '@/components/settings/HooksPanel';
 import { LinearPanel } from '@/components/settings/LinearPanel';
+import { GooglePanel } from '@/components/settings/GooglePanel';
 import { GeneralTab } from '@/components/settings/GeneralTab';
 import { GitTab } from '@/components/settings/GitTab';
 import { ModelTab } from '@/components/settings/ModelTab';
@@ -26,6 +27,7 @@ type TabId =
   | 'memory'
   | 'mcp'
   | 'linear'
+  | 'google'
   | 'hooks'
   | 'advanced'
   | 'status';
@@ -73,6 +75,7 @@ const GROUPS: SettingsGroup[] = [
     tabs: [
       { id: 'git', label: 'Git' },
       { id: 'linear', label: 'Linear' },
+      { id: 'google', label: 'Google' },
     ],
   },
   {
@@ -99,6 +102,7 @@ function tabToGroup(tabId: string): GroupId {
     hooks: 'data-context',
     git: 'integrations',
     linear: 'integrations',
+    google: 'integrations',
     status: 'status',
   };
   return mapping[tabId] ?? 'general';
@@ -262,6 +266,8 @@ function TabContent({
       return <McpPanel />;
     case 'linear':
       return <LinearPanel />;
+    case 'google':
+      return <GooglePanel />;
     case 'hooks':
       return <HooksPanel />;
     case 'advanced':

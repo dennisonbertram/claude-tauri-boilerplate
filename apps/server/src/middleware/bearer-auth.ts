@@ -14,6 +14,12 @@ export function bearerAuth(): MiddlewareHandler {
       return next();
     }
 
+    // Allow Google OAuth callback — hit by user's browser (no bearer token available).
+    // Safe: callback validates state parameter for CSRF protection.
+    if (c.req.path === '/api/google/oauth/callback' && c.req.method === 'GET') {
+      return next();
+    }
+
     const authHeader = c.req.header('Authorization');
     if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
       return c.json({ error: 'Unauthorized' }, 401);

@@ -1095,3 +1095,60 @@ export interface WorkspaceDeployment {
   createdAt: string;
   updatedAt: string;
 }
+
+// ─── Google Integration Types ─────────────────────────────────────────────────
+
+export interface GoogleAccount {
+  email: string;
+  name?: string;
+  picture?: string;
+}
+
+export interface GmailMessage {
+  id: string;
+  threadId: string;
+  from: string;
+  to: string;
+  subject: string;
+  snippet: string;
+  date: string;
+  labelIds?: string[];
+}
+
+export interface GmailMessageDetail extends GmailMessage {
+  body: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  location?: string;
+  attendees?: Array<{ email: string; responseStatus?: string }>;
+  htmlLink?: string;
+}
+
+export interface CalendarEventInput {
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  location?: string;
+  attendees?: string[];
+}
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: number;
+  modifiedTime?: string;
+  webViewLink?: string;
+}
+
+export interface DocContent {
+  title: string;
+  body: string;
+}

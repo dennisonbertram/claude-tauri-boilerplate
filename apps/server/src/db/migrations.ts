@@ -335,3 +335,29 @@ export function migrateDeploymentSettingsTable(db: import('bun:sqlite').Database
     )
   `);
 }
+
+export function migrateGoogleOAuthTable(db: import('bun:sqlite').Database): void {
+  const tables = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='google_oauth'"
+  ).all() as Array<{ name: string }>;
+  if (tables.length === 0) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS google_oauth (
+        id INTEGER PRIMARY KEY CHECK(id = 1),
+        google_sub TEXT NOT NULL,
+        email TEXT NOT NULL,
+        email_verified INTEGER,
+        name TEXT,
+        picture TEXT,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT,
+        token_type TEXT,
+        granted_scopes TEXT,
+        expires_at TEXT,
+        last_error TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  }
+}

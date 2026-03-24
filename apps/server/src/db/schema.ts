@@ -178,6 +178,23 @@ export const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS idx_agent_profiles_name ON agent_profiles(name);
   CREATE INDEX IF NOT EXISTS idx_agent_profiles_sort_order ON agent_profiles(sort_order);
+
+  CREATE TABLE IF NOT EXISTS google_oauth (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    google_sub TEXT NOT NULL,
+    email TEXT NOT NULL,
+    email_verified INTEGER,
+    name TEXT,
+    picture TEXT,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    token_type TEXT,
+    granted_scopes TEXT,
+    expires_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `;
 
 // Re-export all migrations from the dedicated migrations module for backward compatibility
@@ -194,4 +211,5 @@ export {
   migrateWorkspaceProviders,
   migrateWorkspaceDeploymentsTable,
   migrateDeploymentSettingsTable,
+  migrateGoogleOAuthTable,
 } from './migrations';

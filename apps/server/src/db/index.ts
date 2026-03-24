@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateGoogleOAuthTable } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -26,6 +26,7 @@ export function createDb(path?: string): Database {
   migrateWorkspaceProviders(db);
   migrateWorkspaceDeploymentsTable(db);
   migrateDeploymentSettingsTable(db);
+  migrateGoogleOAuthTable(db);
   return db;
 }
 
@@ -175,3 +176,13 @@ export {
   getRailwayToken,
   setRailwayToken,
 } from './db-deployments';
+
+// ─── Google OAuth ──────────────────────────────────────────────────────────────
+export {
+  getGoogleOAuth,
+  upsertGoogleOAuth,
+  updateGoogleOAuthTokens,
+  setGoogleOAuthError,
+  clearGoogleOAuth,
+} from './db-google';
+export type { GoogleOAuthRecord } from './db-google';
