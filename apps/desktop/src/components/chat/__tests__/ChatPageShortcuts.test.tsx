@@ -8,7 +8,7 @@ const mockSendMessage = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
 const mockUpdateSettings = vi.fn();
-const mockMessageList = vi.fn(() => <div data-testid="message-list" />);
+const mockMessageList = vi.fn((_props?: unknown) => <div data-testid="message-list" />);
 
 let useChatReturn: Record<string, unknown> = {};
 

@@ -47,7 +47,7 @@ describe('useSettings', () => {
       ok: false,
       status: 404,
       json: async () => ({ error: 'Not found' }),
-    })) as typeof fetch;
+    })) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -414,7 +414,7 @@ describe('useSettings', () => {
         }
 
         throw new Error(`Unexpected fetch: ${url}`);
-      }) as typeof fetch;
+      }) as unknown as typeof fetch;
 
       const { result } = renderHook(() => useSettings(), { wrapper });
 

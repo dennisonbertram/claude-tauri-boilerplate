@@ -185,7 +185,7 @@ export function PlanView({
           >
             Approve with Feedback
           </Button>
-          <Button size="sm" onClick={onApprove}>
+          <Button size="sm" onClick={() => onApprove()}>
             Approve
           </Button>
           </div>

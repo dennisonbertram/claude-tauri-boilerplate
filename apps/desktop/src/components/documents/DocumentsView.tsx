@@ -8,7 +8,6 @@ import {
   FileArrowUp,
 } from '@phosphor-icons/react';
 import { useDocuments } from '@/hooks/useDocuments';
-import { getDocumentFileUrl } from '@/lib/api/documents-api';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { DocumentCard } from './DocumentCard';
 import { DocumentTable } from './DocumentTable';

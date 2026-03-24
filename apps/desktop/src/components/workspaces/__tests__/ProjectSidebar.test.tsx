@@ -26,6 +26,7 @@ const makeWorkspace = (overrides: Partial<Workspace> = {}): Workspace => ({
   worktreePathCanonical: '/tmp/workspace-1',
   baseBranch: 'main',
   status: 'ready',
+  additionalDirectories: [],
   createdAt: '2026-03-16T10:00:00.000Z',
   updatedAt: '2026-03-16T10:00:00.000Z',
   ...overrides,

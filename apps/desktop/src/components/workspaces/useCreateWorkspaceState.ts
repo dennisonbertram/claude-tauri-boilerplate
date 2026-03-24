@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GithubIssue, GithubBranch } from '@/lib/workspace-api';
 import { fetchGithubIssues, fetchProjectBranches, fetchGitBranchesFromPath } from '@/lib/workspace-api';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 
 type Mode = 'manual' | 'branch' | 'github-issue';
 
@@ -45,6 +46,9 @@ export function useCreateWorkspaceState(
   const [selectedIssue, setSelectedIssue] = useState<GithubIssue | null>(null);
   const [issueWorkspaceName, setIssueWorkspaceName] = useState('');
   const [issueBranch, setIssueBranch] = useState('');
+
+  // Search history
+  const githubSearchHistory = useSearchHistory('github');
 
   // Shared
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +112,12 @@ export function useCreateWorkspaceState(
       let cancelled = false;
       setIssueLoading(true); setIssueError(null);
       fetchGithubIssues(projectId, issueQuery)
-        .then((list) => { if (!cancelled) setIssues(list); })
+        .then((list) => {
+          if (!cancelled) {
+            setIssues(list);
+            if (issueQuery.trim()) githubSearchHistory.addSearch(issueQuery.trim());
+          }
+        })
         .catch((err) => { if (!cancelled) setIssueError(err instanceof Error ? err.message : 'Failed to load issues'); })
         .finally(() => { if (!cancelled) setIssueLoading(false); });
       return () => { cancelled = true; };
@@ -186,6 +195,10 @@ export function useCreateWorkspaceState(
     selectedIssue, setSelectedIssue,
     issueWorkspaceName, setIssueWorkspaceName,
     issueBranch, setIssueBranch,
+    // Search history
+    githubSearchHistory: githubSearchHistory.history,
+    removeGithubSearch: githubSearchHistory.removeSearch,
+    clearGithubSearchHistory: githubSearchHistory.clearAll,
     // Shared
     error, setError, submitting,
     handleClose, handleSubmit,

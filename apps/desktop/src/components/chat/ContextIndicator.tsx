@@ -20,7 +20,7 @@ function formatNumber(n: number): string {
 export function ContextIndicator({ usage, isCompacting = false }: ContextIndicatorProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const { percentage, color, colorClass } = useMemo(() => {
+  const { percentage, color: _color, colorClass } = useMemo(() => {
     const totalUsed = usage.inputTokens + usage.outputTokens;
     const pct = usage.maxTokens > 0
       ? Math.min(100, Math.round((totalUsed / usage.maxTokens) * 100))

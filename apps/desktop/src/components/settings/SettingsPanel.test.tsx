@@ -237,15 +237,19 @@ describe('SettingsPanel', () => {
 
   // ─── Settings persistence to localStorage ───
 
-  test('changing API key persists to localStorage', async () => {
+  test('changing API key persists to credential store', async () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
     const input = screen.getByTestId('api-key-input');
     await user.type(input, 'sk-ant-test-key-123');
 
-    const stored = JSON.parse(localStorageMock._store['claude-tauri-settings']);
-    expect(stored.apiKey).toBe('sk-ant-test-key-123');
+    // API key is stored in the secure credential store, not in the main settings blob
+    const credStore = JSON.parse(localStorageMock._store['__credential_store'] ?? '{}');
+    expect(credStore['api-key']).toBe('sk-ant-test-key-123');
+    // Ensure it's NOT in the main settings blob (credential fields are stripped)
+    const settings = JSON.parse(localStorageMock._store['claude-tauri-settings']);
+    expect(settings.apiKey).toBeUndefined();
   });
 
   test('changing theme persists to localStorage (visible in General group)', async () => {

@@ -171,8 +171,8 @@ export function useCheckpoints({
       if (!sessionId) return null;
 
       try {
-        const res = await fetch(
-          `${API_BASE}/api/sessions/${sessionId}/checkpoints/${checkpointId}/preview`
+        const res = await apiFetch(
+          `/api/sessions/${sessionId}/checkpoints/${checkpointId}/preview`
         );
         if (!res.ok) return null;
         return await res.json();
@@ -191,8 +191,8 @@ export function useCheckpoints({
       if (!sessionId) return false;
 
       try {
-        const res = await fetch(
-          `${API_BASE}/api/sessions/${sessionId}/checkpoints/${checkpointId}/rewind`,
+        const res = await apiFetch(
+          `/api/sessions/${sessionId}/checkpoints/${checkpointId}/rewind`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -24,6 +24,7 @@ interface ReadInput {
   file_path: string;
   offset?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 const COLLAPSE_THRESHOLD = 50;

@@ -80,11 +80,11 @@ function ToolInputDisplay({
         <div className="bg-zinc-900 text-green-300 rounded p-2 text-xs font-mono whitespace-pre-wrap break-all">
           $ {toolInput.command}
         </div>
-        {toolInput.description && (
+        {toolInput.description ? (
           <div className="text-xs text-muted-foreground italic">
             {String(toolInput.description)}
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
@@ -99,7 +99,7 @@ function ToolInputDisplay({
         <div className="bg-muted rounded px-2 py-1 text-xs font-mono">
           {toolInput.file_path}
         </div>
-        {toolInput.content && (
+        {toolInput.content ? (
           <>
             <div className="text-xs font-medium text-muted-foreground">Content</div>
             <pre className="bg-muted rounded p-2 text-xs font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
@@ -107,8 +107,8 @@ function ToolInputDisplay({
               {String(toolInput.content).length > 500 ? '...' : ''}
             </pre>
           </>
-        )}
-        {toolInput.old_string && (
+        ) : null}
+        {toolInput.old_string ? (
           <>
             <div className="text-xs font-medium text-muted-foreground">Replace</div>
             <pre className="bg-red-950/30 text-red-300 rounded p-2 text-xs font-mono whitespace-pre-wrap break-all max-h-24 overflow-y-auto">
@@ -119,7 +119,7 @@ function ToolInputDisplay({
               {String(toolInput.new_string ?? '').slice(0, 300)}
             </pre>
           </>
-        )}
+        ) : null}
       </div>
     );
   }

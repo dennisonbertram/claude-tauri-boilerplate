@@ -980,9 +980,9 @@ export interface AgentProfile {
   thinkingBudgetTokens: number | null;
 
   // Tools
-  allowedTools: string[] | null;
-  disallowedTools: string[] | null;
-  permissionMode: string | null;  // 'default' | 'plan' | 'acceptEdits' | 'bypassPermissions'
+  allowedTools: string[];
+  disallowedTools: string[];
+  permissionMode: string;  // 'default' | 'plan' | 'acceptEdits' | 'bypassPermissions'
 
   // Hooks (JSON)
   hooksJson: string | null;
@@ -996,8 +996,8 @@ export interface AgentProfile {
 
   // Execution
   cwd: string | null;
-  additionalDirectories: string[] | null;
-  settingSources: string[] | null;  // which setting sources to load
+  additionalDirectories: string[];
+  settingSources: string[];  // which setting sources to load
 
   // Limits
   maxTurns: number | null;

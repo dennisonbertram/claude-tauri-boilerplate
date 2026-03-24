@@ -18,6 +18,7 @@ interface NotebookEditInput {
   edit_mode?: 'replace' | 'insert' | 'delete';
   cell_type?: 'code' | 'markdown';
   cell_id?: string;
+  [key: string]: unknown;
 }
 
 function StatusIndicator({ status }: { status: ToolCallState['status'] }) {

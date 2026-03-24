@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCostTracking } from '../useCostTracking';
-import type { MessageCost } from '../useCostTracking';
 
 describe('useCostTracking', () => {
   describe('initial state', () => {

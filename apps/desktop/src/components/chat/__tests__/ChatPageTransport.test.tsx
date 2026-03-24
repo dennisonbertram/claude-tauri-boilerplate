@@ -435,7 +435,7 @@ describe('ChatPage transport provider payload', () => {
       })
     );
 
-    const fetchMock = vi.fn(async () => ({ ok: false, json: async () => [] }));
+    const fetchMock = vi.fn<(input: string | URL | Request, init?: RequestInit) => Promise<Response>>().mockResolvedValue({ ok: false, json: async () => [] } as unknown as Response);
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     render(<ChatPage sessionId="session-1" />);
@@ -476,7 +476,7 @@ describe('ChatPage transport provider payload', () => {
       })
     );
 
-    const fetchMock = vi.fn(async () => ({ ok: false, json: async () => [] }));
+    const fetchMock = vi.fn<(input: string | URL | Request, init?: RequestInit) => Promise<Response>>().mockResolvedValue({ ok: false, json: async () => [] } as unknown as Response);
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     render(<ChatPage sessionId="session-2" />);

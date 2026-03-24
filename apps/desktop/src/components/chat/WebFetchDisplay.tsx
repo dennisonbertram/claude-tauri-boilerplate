@@ -23,6 +23,7 @@ interface WebFetchDisplayProps {
 interface WebFetchInput {
   url: string;
   prompt: string;
+  [key: string]: unknown;
 }
 
 /** Maximum characters to show before truncating */

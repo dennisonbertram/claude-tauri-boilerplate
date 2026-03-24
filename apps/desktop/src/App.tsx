@@ -45,15 +45,15 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
   const handleOpenSettings = useCallback((tab?: string) => { setSettingsInitialTab(tab); setSettingsOpen(true); }, []);
-  const [statusData, setStatusData] = useState<StatusBarProps & { sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
-  const [activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
+  const [statusData, setStatusData] = useState<StatusBarProps & { checkpoints?: import('@claude-tauri/shared').Checkpoint[]; sessionInfo?: ChatPageStatusData['sessionInfo'] }>(defaultStatusData);
+  const [_activeSessionHasMessages, setActiveSessionHasMessages] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingWelcomeSessionId, setPendingWelcomeSessionId] = useState<string | null>(null);
   useAppKeyboardShortcuts({ activeView, activeSessionId, openSessionIds, setActiveSessionId, setActiveSessionHasMessages, handleOpenSettings });
   const hasMessages = (s?: (typeof sessions)[number]) => s ? (s.claudeSessionId != null || (s.messageCount ?? 0) > 0) : false;
   const { profiles: agentProfiles } = useAgentProfiles();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const { projects, addProject, removeProject } = useProjects();
+  const { projects, addProject, removeProject: _removeProject } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
@@ -93,7 +93,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
       <div className="flex flex-1 min-h-0">
         <AppSidebar activeView={activeView} onSelectView={handleSwitchView} sessions={sessions} activeSessionId={activeSessionId ?? pendingWelcomeSessionId} searchQuery={sessionSearchQuery} onSearchQueryChange={setSessionSearchQuery}
           onSelectSession={(id) => { navigate('/chat'); setActiveSessionId(id); setPendingMessage(null); setPendingWelcomeSessionId(null); setActiveSessionHasMessages(hasMessages(sessions.find(s => s.id === id))); }}
-          onNewChat={handleNewChat} onDeleteSession={deleteSession} onRenameSession={renameSession} onForkSession={async (id: string) => { await forkSession(id); navigate('/chat'); }} onExportSession={exportSession}
+          onNewChat={handleNewChat} onDeleteSession={deleteSession} onRenameSession={renameSession} onForkSession={async (id: string) => { await forkSession(id); navigate('/chat'); }} onExportSession={(id, format) => { void exportSession(id, format as 'json' | 'md'); }}
           projects={projects} workspacesByProject={workspacesByProject} selectedWorkspaceId={selectedWorkspace?.id ?? null} onSelectWorkspace={handleSelectWorkspace}
           onAddProject={() => setAddProjectOpen(true)} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(p => !p)} email={email} plan={plan} onOpenSettings={handleOpenSettings} />
         <div className="relative flex-1 min-h-0 flex flex-col">

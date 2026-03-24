@@ -33,7 +33,7 @@ export function ChatInput({
   ghostText,
   onAcceptSuggestion,
   contextSummary,
-  mcpServerNames,
+  mcpServerNames: _mcpServerNames,
   modelDisplay,
   sessionTotalCost,
   onCostClick,
