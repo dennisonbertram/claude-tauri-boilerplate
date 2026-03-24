@@ -38,8 +38,11 @@ export function ChatInput({
   sessionTotalCost,
   onCostClick,
   contextUsage,
+  showCommandTip,
+  onDismissCommandTip,
 }: ChatInputProps) {
   const { settings } = useSettings();
+  const isSubscription = settings.provider === 'anthropic' && !settings.apiKey;
   // Input stretches to fill the footer — no max-width constraint so it
   // matches the full available width rather than being artificially narrow.
   const chatWidthClass = 'max-w-none';
@@ -223,7 +226,26 @@ export function ChatInput({
               </div>
             )}
           </div>
-          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} />
+          {showCommandTip && onDismissCommandTip && (
+            <div className="flex items-center justify-between px-4 py-1.5">
+              <span className="text-xs text-muted-foreground/60">
+                Type{' '}
+                <kbd className="mx-0.5 rounded border border-border/50 bg-muted/30 px-1 py-0.5 font-mono text-[10px]">
+                  /
+                </kbd>{' '}
+                for commands
+              </span>
+              <button
+                type="button"
+                onClick={onDismissCommandTip}
+                className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                aria-label="Dismiss tip"
+              >
+                dismiss
+              </button>
+            </div>
+          )}
+          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} isSubscription={isSubscription} />
         </div>
 
         <input ref={pickerRef} type="file" data-testid="file-input" multiple className="sr-only" onChange={handlePickFilesChange} />

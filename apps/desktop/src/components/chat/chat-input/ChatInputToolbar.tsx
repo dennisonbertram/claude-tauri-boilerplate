@@ -10,6 +10,8 @@ interface ChatInputToolbarProps {
   sessionTotalCost?: number;
   /** Called when the cost indicator is clicked (opens cost breakdown dialog) */
   onCostClick?: () => void;
+  /** Whether the user is on subscription mode (no API key) */
+  isSubscription?: boolean;
 }
 
 export function ChatInputToolbar({
@@ -20,6 +22,7 @@ export function ChatInputToolbar({
   modelDisplay,
   sessionTotalCost,
   onCostClick,
+  isSubscription,
 }: ChatInputToolbarProps) {
   return (
     <div className="flex items-center justify-between px-3 pb-3 pt-1">
@@ -50,8 +53,8 @@ export function ChatInputToolbar({
             type="button"
             data-testid="cost-indicator"
             onClick={onCostClick}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground font-mono px-2 py-1 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer"
-            title="View session cost breakdown"
+            className={`inline-flex items-center gap-1 text-xs text-muted-foreground font-mono px-2 py-1 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer${isSubscription ? ' opacity-50' : ''}`}
+            title={isSubscription ? "Subscription mode — costs shown for comparison only" : "View session cost breakdown"}
           >
             <CurrencyDollar className="h-3 w-3" />
             <span>${sessionTotalCost.toFixed(4)}</span>

@@ -13,7 +13,6 @@ import { LinearIssuePicker } from '@/components/linear/LinearIssuePicker';
 import { DashboardPromptModal } from '@/components/workspaces/DashboardPromptModal';
 import { CostDialog } from './CostDialog';
 import { LinearIssueBar } from './LinearIssueBar';
-import { CommandTipBanner } from './CommandTipBanner';
 import { useChatPageState } from './useChatPageState';
 import { useChatPageHandlers } from './chatPageHandlers';
 import './gen-ui/defaultRenderers';
@@ -218,13 +217,6 @@ export function ChatPage(props: ChatPageProps) {
         />
       )}
 
-      {/* Command tip */}
-      {showCommandTip && (
-        <CommandTipBanner
-          onDismiss={() => updateSettings({ hasDismissedCommandTip: true })}
-        />
-      )}
-
       {/* Footer composer */}
       <div className="relative border-t border-border bg-background/95 backdrop-blur-sm z-20 px-4 py-4 flex flex-col items-stretch">
         <ChatInput
@@ -248,6 +240,8 @@ export function ChatPage(props: ChatPageProps) {
           sessionTotalCost={sessionTotalCost}
           onCostClick={() => setCostOpen(true)}
           contextUsage={contextUsage}
+          showCommandTip={showCommandTip}
+          onDismissCommandTip={() => updateSettings({ hasDismissedCommandTip: true })}
         />
       </div>
 

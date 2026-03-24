@@ -37,6 +37,12 @@ export interface ChatInputProps {
   sessionTotalCost?: number;
   /** Called when the cost indicator is clicked (opens cost breakdown dialog) */
   onCostClick?: () => void;
+  /** Whether the user is on subscription mode (no API key) */
+  isSubscription?: boolean;
+  /** Whether to show the command tip inside the input */
+  showCommandTip?: boolean;
+  /** Called when the user dismisses the command tip */
+  onDismissCommandTip?: () => void;
   /** Context usage data for token estimate display */
   contextUsage?: {
     inputTokens: number;
