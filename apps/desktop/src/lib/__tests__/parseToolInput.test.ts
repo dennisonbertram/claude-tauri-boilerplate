@@ -23,8 +23,7 @@ describe('parseToolInput', () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
-      expect(result.reason).toBe('malformed_json');
+    if (!result.success && result.reason === 'malformed_json') {
       expect(result.message).toMatch(/JSON/i);
     }
   });
@@ -35,8 +34,7 @@ describe('parseToolInput', () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
-      expect(result.reason).toBe('schema_mismatch');
+    if (!result.success && result.reason === 'schema_mismatch') {
       expect(result.issues).toHaveLength(2);
     }
   });

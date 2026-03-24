@@ -9,6 +9,7 @@ vi.mock('@phosphor-icons/react', () => {
   const Icon = (props: Record<string, unknown>) => <svg data-testid="icon" {...props} />;
   return {
     ChatCircle: Icon,
+    FileText: Icon,
     FolderOpen: Icon,
     UsersThree: Icon,
     Robot: Icon,
@@ -90,7 +91,7 @@ function renderSidebar(overrides: Partial<ComponentProps<typeof AppSidebar>> = {
 
 function renderSidebarWithControlledView() {
   function ControlledSidebar() {
-    const [activeView, setActiveView] = useState<'chat' | 'workspaces' | 'teams' | 'agents'>('workspaces');
+    const [activeView, setActiveView] = useState<'chat' | 'workspaces' | 'teams' | 'agents' | 'documents' | 'tracker'>('workspaces');
     return (
       <AppSidebar
         activeView={activeView}

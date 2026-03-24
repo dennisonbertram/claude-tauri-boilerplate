@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { SubagentNode } from '@/hooks/useSubagents';
 
 // --- Helper: Format elapsed time ---

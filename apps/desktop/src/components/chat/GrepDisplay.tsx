@@ -26,6 +26,7 @@ interface GrepInput {
   output_mode?: string;
   glob?: string;
   type?: string;
+  [key: string]: unknown;
 }
 
 interface GrepMatch {

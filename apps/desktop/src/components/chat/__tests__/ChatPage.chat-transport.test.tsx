@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render } from '@testing-library/react';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks — must be declared before any module imports.

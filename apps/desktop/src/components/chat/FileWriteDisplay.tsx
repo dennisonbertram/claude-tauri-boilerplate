@@ -19,6 +19,7 @@ interface FileWriteDisplayProps {
 interface WriteInput {
   file_path: string;
   content: string;
+  [key: string]: unknown;
 }
 
 const COLLAPSE_THRESHOLD = 50;

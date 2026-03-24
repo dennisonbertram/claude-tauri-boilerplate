@@ -10,6 +10,7 @@ interface BashInput {
   command?: string;
   description?: string;
   run_in_background?: boolean;
+  [key: string]: unknown;
 }
 
 function extractExitCode(status: ToolCallBlockProps['toolCall']['status']): number | undefined {

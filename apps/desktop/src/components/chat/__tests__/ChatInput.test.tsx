@@ -234,7 +234,6 @@ describe.skip('ChatInput', () => {
     });
 
     it('does not submit on Enter when loading', async () => {
-      const user = userEvent.setup();
       const onSubmit = vi.fn();
       renderInput({
         input: 'hello',

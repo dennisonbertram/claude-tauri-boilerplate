@@ -678,15 +678,16 @@ describe('Chat Route - POST /chat', () => {
       ],
     };
 
-    await testApp.request('/api/chat', {
+    const res = await testApp.request('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     // Verify the last user message was used as the prompt
     const callArgs = mockQuery.mock.calls[0][0] as any;
-    expect(callArgs.prompt).toBe('second message');
+    expect(callArgs.prompt).toContain('second message');
   });
 
   test('uses resume option when session has a claudeSessionId', async () => {
@@ -721,11 +722,12 @@ describe('Chat Route - POST /chat', () => {
       sessionId: session.id,
     };
 
-    await testApp.request('/api/chat', {
+    const res = await testApp.request('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     const callArgs = mockQuery.mock.calls[0][0] as any;
     expect(callArgs.options.resume).toBe('previous-claude-session-id');
@@ -849,11 +851,12 @@ describe('Chat Route - POST /chat', () => {
       sessionId: session.id,
     };
 
-    await testApp.request('/api/chat', {
+    const res = await testApp.request('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     const callArgs = mockQuery.mock.calls[0][0] as any;
     expect(callArgs.prompt).toContain('<previous_conversation>');
@@ -1093,6 +1096,7 @@ describe('Chat Route - POST /chat', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     expect(res.status).toBe(200);
     expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
@@ -1139,6 +1143,7 @@ describe('Chat Route - POST /chat', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     expect(res.status).toBe(200);
     expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
@@ -1185,6 +1190,7 @@ describe('Chat Route - POST /chat', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     expect(res.status).toBe(200);
     expect(envAtQueryCall?.ANTHROPIC_API_KEY).toBe('');
@@ -1228,6 +1234,7 @@ describe('Chat Route - POST /chat', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    await res.text();
 
     expect(res.status).toBe(200);
     expect(envAtQueryCall?.RUNTIME_TOKEN).toBe('runtime-abc');

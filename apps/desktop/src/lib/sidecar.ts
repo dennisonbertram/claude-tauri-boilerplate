@@ -1,5 +1,5 @@
 import { Command, type Child } from '@tauri-apps/plugin-shell';
-import { setSidecarConfig, getApiBase, getAuthHeaders } from './api-config';
+import { setSidecarConfig, getApiBase } from './api-config';
 
 let sidecarProcess: Child | null = null;
 const SIDECAR_DEBUG_LOGS_ENABLED =

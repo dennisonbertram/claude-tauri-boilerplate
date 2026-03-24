@@ -141,7 +141,7 @@ describe('workflowPrompts', () => {
         } as Response;
       });
 
-      globalThis.fetch = fetchMock as typeof fetch;
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
 
       const prompts = await loadRepoWorkflowPrompts();
 
@@ -221,7 +221,7 @@ describe('workflowPrompts', () => {
         } as Response;
       });
 
-      globalThis.fetch = fetchMock as typeof fetch;
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
 
       await saveRepoWorkflowPrompts({
         review: 'Repo review prompt',

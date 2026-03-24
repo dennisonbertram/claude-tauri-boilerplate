@@ -5,7 +5,6 @@ import {
   CheckCircle,
   SpinnerGap,
   XCircle,
-  FileText,
   FileCode,
   FileJs,
   FileDoc,
@@ -26,6 +25,7 @@ interface GlobDisplayProps {
 interface GlobInput {
   pattern: string;
   path?: string;
+  [key: string]: unknown;
 }
 
 /**

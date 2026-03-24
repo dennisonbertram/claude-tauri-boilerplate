@@ -19,6 +19,7 @@ interface EditInput {
   old_string: string;
   new_string: string;
   replace_all?: boolean;
+  [key: string]: unknown;
 }
 
 function StatusIndicator({ status }: { status: ToolCallState['status'] }) {

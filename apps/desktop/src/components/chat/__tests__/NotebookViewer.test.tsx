@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NotebookViewer } from '../NotebookViewer';
+import type { NotebookData } from '../NotebookViewer';
 
 // --- Sample notebook data ---
-const sampleNotebook = {
+const sampleNotebook: NotebookData = {
   cells: [
     {
       cell_type: 'code',
@@ -29,7 +30,7 @@ const sampleNotebook = {
   nbformat_minor: 5,
 };
 
-const notebookWithImage = {
+const notebookWithImage: NotebookData = {
   cells: [
     {
       cell_type: 'code',
@@ -50,7 +51,7 @@ const notebookWithImage = {
   nbformat_minor: 5,
 };
 
-const emptyNotebook = {
+const emptyNotebook: NotebookData = {
   cells: [],
   metadata: {},
   nbformat: 4,
@@ -129,7 +130,7 @@ describe('NotebookViewer', () => {
   });
 
   it('renders execute_result output type', () => {
-    const notebookWithResult = {
+    const notebookWithResult: NotebookData = {
       cells: [
         {
           cell_type: 'code',
@@ -153,7 +154,7 @@ describe('NotebookViewer', () => {
   });
 
   it('renders error output type', () => {
-    const notebookWithError = {
+    const notebookWithError: NotebookData = {
       cells: [
         {
           cell_type: 'code',
@@ -178,7 +179,7 @@ describe('NotebookViewer', () => {
   });
 
   it('handles null execution_count', () => {
-    const notebookNullExec = {
+    const notebookNullExec: NotebookData = {
       cells: [
         {
           cell_type: 'code',
