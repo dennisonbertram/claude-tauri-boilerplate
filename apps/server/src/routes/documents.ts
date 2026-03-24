@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { createDocument, getDocument, listDocuments, updateDocument, deleteDocument } from '../db';
+import { nudgePipelineWorker } from '../services/pipeline/runner';
 import { mkdirSync, unlinkSync } from 'fs';
 import { join, extname } from 'path';
 
@@ -16,6 +17,12 @@ export function createDocumentsRouter(db: Database) {
     if (!file || typeof file === 'string') {
       return c.json({ error: 'No file provided', code: 'VALIDATION_ERROR' }, 400);
     }
+
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: 'File too large. Maximum size is 50MB.', code: 'VALIDATION_ERROR' }, 400);
+    }
+
 
     const id = crypto.randomUUID();
     const ext = extname(file.name || 'file') || '';
@@ -36,6 +43,10 @@ export function createDocumentsRouter(db: Database) {
       status: 'ready',
       sessionId: (typeof body['sessionId'] === 'string' ? body['sessionId'] : null),
     });
+
+    // Nudge pipeline worker to pick up the new document
+    nudgePipelineWorker();
+
 
     return c.json({ document }, 201);
   });

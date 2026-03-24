@@ -1167,7 +1167,7 @@ export interface WorkspaceDeployment {
 
 // --- Document Types ---
 
-export type DocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
+export type DocumentStatus = 'uploading' | 'processing' | 'ready' | 'enriching' | 'error';
 
 export interface DocumentPipelineStep {
   name: string;
@@ -1251,4 +1251,167 @@ export interface DriveFile {
 export interface DocContent {
   title: string;
   body: string;
+}
+
+// --- Pipeline Types ---
+
+export type OcrMode = 'mistral-only' | 'gemini-only' | 'dual-verify' | 'mistral-primary-gemini-verify';
+export type EmbeddingProvider = 'openai' | 'anthropic';
+export type PipelineStepName =
+  | 'text_extraction'
+  | 'ocr'
+  | 'claude_vision'
+  | 'metadata_extraction'
+  | 'chunking'
+  | 'entity_extraction';
+
+export type EntityType =
+  | 'person'
+  | 'organization'
+  | 'date'
+  | 'amount'
+  | 'account_number'
+  | 'location'
+  | 'topic'
+  | 'other';
+
+export interface PipelineConfig {
+  ocrMode: OcrMode;
+  enabledSteps: PipelineStepName[];
+  embeddingProvider: EmbeddingProvider;
+  embeddingModel: string;
+  pollIntervalMs: number;
+  chunkTargetTokens: number;
+  chunkOverlapTokens: number;
+  ocrConfidenceThreshold: number;
+  dualVerifyDiffThreshold: number;
+  maxFileSizeBytes: number;
+  maxPageCount: number;
+  stepTimeouts: Record<PipelineStepName, number>;
+}
+
+export interface PipelineStepRun {
+  id: string;
+  documentId: string;
+  stepName: PipelineStepName;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  attempt: number;
+  resultJson?: unknown;
+  error?: string;
+  modelName?: string;
+  modelVersion?: string;
+  providerRequestId?: string;
+  processingTimeMs?: number;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface DocumentContent {
+  id: string;
+  documentId: string;
+  extractedText: string;
+  extractionMethod: string;
+  ocrConfidence?: number | null;
+  pageCount?: number | null;
+  wordCount?: number | null;
+  language?: string | null;
+  docType?: string | null;
+  structuredData?: unknown;
+  metadataJson?: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OcrOutput {
+  id: string;
+  documentId: string;
+  engine: 'mistral' | 'gemini';
+  rawText: string;
+  pageTexts?: string[] | null;
+  confidence?: number | null;
+  processingTimeMs?: number | null;
+  modelVersion?: string | null;
+  providerRequestId?: string | null;
+  createdAt: string;
+}
+
+export interface DocumentChunk {
+  id: string;
+  documentId: string;
+  chunkIndex: number;
+  content: string;
+  contentHash: string;
+  tokenCount: number;
+  charOffsetStart?: number | null;
+  charOffsetEnd?: number | null;
+  pageNumber?: number | null;
+  embeddingModel?: string | null;
+  embeddingDim?: number | null;
+  overlapTokens?: number;
+  createdAt: string;
+}
+
+export interface Entity {
+  id: string;
+  documentId: string;
+  entityType: EntityType;
+  value: string;
+  normalizedValue?: string | null;
+  confidence?: number | null;
+  sourceText?: string | null;
+  pageNumber?: number | null;
+  createdAt: string;
+}
+
+export interface EntityRelationship {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  relationshipType: string;
+  confidence?: number | null;
+  documentId: string;
+  createdAt: string;
+}
+
+export interface PipelineStatus {
+  isRunning: boolean;
+  currentDocumentId?: string;
+  currentStep?: string;
+  queueDepth: number;
+}
+
+export interface DocumentPipelineStatus {
+  documentId: string;
+  status: DocumentStatus;
+  steps: PipelineStepRun[];
+  content?: {
+    hasExtractedText: boolean;
+    wordCount?: number;
+    pageCount?: number;
+    docType?: string;
+    language?: string;
+  };
+  chunks?: {
+    count: number;
+    hasEmbeddings: boolean;
+  };
+  entities?: {
+    count: number;
+    relationshipCount: number;
+  };
+}
+
+export interface SearchRequest {
+  query: string;
+  topK?: number;
+  documentIds?: string[];
+}
+
+export interface SearchResult {
+  chunkId: string;
+  documentId: string;
+  content: string;
+  score: number;
+  pageNumber?: number;
 }

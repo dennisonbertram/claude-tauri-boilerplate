@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable, migrateDocumentsAddEnrichingStatus, migrateDocumentPipelineTables } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -29,6 +29,8 @@ export function createDb(path?: string): Database {
   migrateTrackerTables(db);
   migrateDocumentsTable(db);
   migrateGoogleOAuthTable(db);
+  migrateDocumentsAddEnrichingStatus(db);
+  migrateDocumentPipelineTables(db);
   return db;
 }
 
@@ -226,3 +228,29 @@ export {
   clearGoogleOAuth,
 } from './db-google';
 export type { GoogleOAuthRecord } from './db-google';
+
+// ─── Document Pipeline ──────────────────────────────────────────────────────────
+export {
+  getPipelineConfig,
+  updatePipelineConfig,
+  claimNextUnenrichedDocument,
+  recoverStaleJobs,
+  createStepRun,
+  updateStepRun,
+  getStepRunsForDocument,
+  getLatestStepRun,
+  upsertDocumentContent,
+  getDocumentContent,
+  deleteDocumentContent,
+  upsertOcrOutput,
+  getOcrOutputs,
+  insertChunks,
+  getChunksForDocument,
+  deleteChunksForDocument,
+  insertEntities,
+  insertEntityRelationships,
+  getEntitiesForDocument,
+  getEntityRelationshipsForDocument,
+  deleteEntitiesForDocument,
+  cleanupDocumentEnrichment,
+} from './db-pipeline';

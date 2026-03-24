@@ -185,7 +185,7 @@ export const SCHEMA = `
     storage_path TEXT NOT NULL UNIQUE,
     mime_type TEXT NOT NULL,
     size_bytes INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'error')),
+    status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'enriching', 'error')),
     pipeline_steps TEXT NOT NULL DEFAULT '[]',
     tags TEXT NOT NULL DEFAULT '[]',
     session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
@@ -231,4 +231,6 @@ export {
   migrateTrackerTables,
   migrateDocumentsTable,
   migrateGoogleOAuthTable,
+  migrateDocumentsAddEnrichingStatus,
+  migrateDocumentPipelineTables,
 } from './migrations';
