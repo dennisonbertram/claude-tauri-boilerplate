@@ -346,7 +346,7 @@ export function migrateDocumentsTable(db: import('bun:sqlite').Database): void {
         storage_path TEXT NOT NULL UNIQUE,
         mime_type TEXT NOT NULL,
         size_bytes INTEGER NOT NULL,
-        status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'error')),
+        status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'enriching', 'error')),
         pipeline_steps TEXT NOT NULL DEFAULT '[]',
         tags TEXT NOT NULL DEFAULT '[]',
         session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
@@ -358,4 +358,176 @@ export function migrateDocumentsTable(db: import('bun:sqlite').Database): void {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at)`);
     db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_mime_type ON documents(mime_type)`);
   }
+}
+
+/**
+ * Migrate existing documents table to add 'enriching' status.
+ * SQLite doesn't allow ALTER CHECK, so we recreate the table.
+ */
+export function migrateDocumentsAddEnrichingStatus(db: import('bun:sqlite').Database): void {
+  // Check if the existing CHECK constraint already includes 'enriching'
+  const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='documents'").get() as { sql: string } | null;
+  if (!tableInfo || tableInfo.sql.includes('enriching')) return;
+
+  // Need to recreate table with new CHECK constraint
+  db.exec(`
+    CREATE TABLE documents_new (
+      id TEXT PRIMARY KEY,
+      filename TEXT NOT NULL,
+      storage_path TEXT NOT NULL UNIQUE,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('uploading', 'processing', 'ready', 'enriching', 'error')),
+      pipeline_steps TEXT NOT NULL DEFAULT '[]',
+      tags TEXT NOT NULL DEFAULT '[]',
+      session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`INSERT INTO documents_new SELECT * FROM documents`);
+  db.exec(`DROP TABLE documents`);
+  db.exec(`ALTER TABLE documents_new RENAME TO documents`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_mime_type ON documents(mime_type)`);
+}
+
+/**
+ * Create document processing pipeline tables.
+ * Idempotent — uses CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS.
+ *
+ * NOTE: The documents table CHECK constraint does not include 'enriching' status
+ * because SQLite cannot ALTER CHECK constraints on existing tables. The 'enriching'
+ * status is validated in application code (see shared DocumentStatus type).
+ */
+export function migrateDocumentPipelineTables(db: import('bun:sqlite').Database): void {
+  // Composite index on documents for pipeline queries
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_documents_status_created ON documents(status, created_at)`);
+
+  // Pipeline step execution runs (durable step state)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pipeline_step_runs (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      step_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','running','completed','failed','skipped')),
+      attempt INTEGER NOT NULL DEFAULT 1,
+      result_json TEXT CHECK(result_json IS NULL OR json_valid(result_json)),
+      error TEXT,
+      model_name TEXT,
+      model_version TEXT,
+      provider_request_id TEXT,
+      processing_time_ms INTEGER,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(document_id, step_name, attempt)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_step_runs_document ON pipeline_step_runs(document_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_step_runs_status ON pipeline_step_runs(status)`);
+
+  // Extracted text content
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS document_content (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL UNIQUE REFERENCES documents(id) ON DELETE CASCADE,
+      extracted_text TEXT NOT NULL,
+      extraction_method TEXT NOT NULL CHECK(extraction_method IN ('embedded','ocr_mistral','ocr_gemini','ocr_dual','direct_read')),
+      ocr_confidence REAL,
+      page_count INTEGER,
+      word_count INTEGER,
+      language TEXT,
+      doc_type TEXT,
+      structured_data TEXT CHECK(structured_data IS NULL OR json_valid(structured_data)),
+      metadata_json TEXT CHECK(metadata_json IS NULL OR json_valid(metadata_json)),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_content_document ON document_content(document_id)`);
+
+  // Raw OCR outputs
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ocr_outputs (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      engine TEXT NOT NULL CHECK(engine IN ('mistral','gemini')),
+      raw_text TEXT NOT NULL,
+      page_texts TEXT CHECK(page_texts IS NULL OR json_valid(page_texts)),
+      confidence REAL,
+      processing_time_ms INTEGER,
+      model_version TEXT,
+      provider_request_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(document_id, engine)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ocr_outputs_document ON ocr_outputs(document_id)`);
+
+  // RAG chunks with embeddings
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS document_chunks (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      token_count INTEGER NOT NULL,
+      char_offset_start INTEGER,
+      char_offset_end INTEGER,
+      page_number INTEGER,
+      embedding BLOB,
+      embedding_model TEXT,
+      embedding_dim INTEGER,
+      overlap_tokens INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(document_id, chunk_index)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_chunks_document ON document_chunks(document_id)`);
+
+  // Extracted entities
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entities (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('person','organization','date','amount','account_number','location','topic','other')),
+      value TEXT NOT NULL,
+      normalized_value TEXT,
+      confidence REAL,
+      source_text TEXT,
+      page_number INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_document ON entities(document_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_norm ON entities(entity_type, normalized_value)`);
+
+  // Entity relationships
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_relationships (
+      id TEXT PRIMARY KEY,
+      source_entity_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+      target_entity_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+      relationship_type TEXT NOT NULL,
+      confidence REAL,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ent_rel_source ON entity_relationships(source_entity_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ent_rel_target ON entity_relationships(target_entity_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ent_rel_document ON entity_relationships(document_id)`);
+
+  // Pipeline configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pipeline_config (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL CHECK(json_valid(value)),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
