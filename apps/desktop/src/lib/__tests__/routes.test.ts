@@ -97,8 +97,6 @@ describe('pathToView edge cases (HashRouter awareness)', () => {
     expect(pathToView('/agents/prof-1/settings')).toBe('agents');
   });
 
-  it('handles paths with query-like suffixes', () => {
-    expect(pathToView('/chat?session=123')).toBe('chat');
-    expect(pathToView('/workspaces?filter=active')).toBe('workspaces');
-  });
+  // Note: React Router's location.pathname excludes query strings,
+  // so we don't test '/chat?session=123' — that's not a valid pathname input.
 });

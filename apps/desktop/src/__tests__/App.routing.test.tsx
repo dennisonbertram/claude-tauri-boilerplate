@@ -6,11 +6,19 @@
  * - #352: Fork session stays on /chat (does not navigate to /workspaces)
  * - #353: "New Project" button opens dialog, does not navigate away
  *
- * Strategy: We test the real `pathToView` function (imported from production code)
- * and test routing callbacks by verifying their contract:
- * - handleSwitchView navigates to the correct path
- * - onForkSession calls forkSession then navigates to /chat
- * - onAddProject opens dialog without navigation
+ * KNOWN LIMITATION: App.tsx has a deep import tree (50+ components, hooks,
+ * providers) that causes OOM when rendered in vitest/jsdom. We cannot render
+ * the real App component. Instead, we:
+ * 1. Import and test the real `pathToView` from production code
+ * 2. Use a minimal harness that mirrors App.tsx's routing callbacks
+ * 3. Document which App.tsx lines each callback mirrors
+ *
+ * This means these tests verify the ROUTING CONTRACT (what path each action
+ * navigates to) but NOT the full component wiring. If App.tsx changes its
+ * callback logic, these tests must be updated to match.
+ *
+ * For full integration coverage of the real App routing, use browser-based
+ * E2E tests (e.g., ux-walker stories).
  */
 import { describe, it, expect, vi } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
@@ -167,7 +175,9 @@ describe('#352 regression: fork session navigation', () => {
 
     expect(mockFork).toHaveBeenCalledWith('sess-1');
     // Must remain on chat — the bug was navigating to /workspaces
-    expect(screen.getByTestId('current-path').textContent).toBe('/chat');
+    await waitFor(() => {
+      expect(screen.getByTestId('current-path').textContent).toBe('/chat');
+    });
     expect(screen.getByTestId('active-view').textContent).toBe('chat');
     expect(screen.getByTestId('chat-view')).toBeInTheDocument();
     expect(screen.queryByTestId('workspaces-view')).not.toBeInTheDocument();
@@ -184,7 +194,9 @@ describe('#352 regression: fork session navigation', () => {
     });
 
     expect(mockFork).toHaveBeenCalledWith('sess-1');
-    expect(screen.getByTestId('current-path').textContent).toBe('/chat');
+    await waitFor(() => {
+      expect(screen.getByTestId('current-path').textContent).toBe('/chat');
+    });
     expect(screen.getByTestId('active-view').textContent).toBe('chat');
   });
 });
@@ -234,5 +246,6 @@ describe('#353 regression: Add Project button navigation', () => {
     // (stopPropagation prevents it from reaching the outermost div)
     expect(screen.getByTestId('add-project-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('current-path').textContent).toBe('/workspaces');
+    expect(parentClickSpy).not.toHaveBeenCalled();
   });
 });

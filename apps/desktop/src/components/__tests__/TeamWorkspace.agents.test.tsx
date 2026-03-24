@@ -59,7 +59,7 @@ function renderWithAgentManagement(
 
 describe('TeamWorkspace agent management', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('"+" add agent button visible when onAddAgent provided', () => {
