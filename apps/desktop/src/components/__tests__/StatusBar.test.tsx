@@ -168,6 +168,91 @@ describe('StatusBar', () => {
       // PermissionModeSegment no longer delegates clicks to onShowSettings
       expect(onShowSettings).not.toHaveBeenCalled();
     });
+
+    it('opens dropdown and selects a different permission mode', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
+
+      const segment = screen.getByTestId('permission-mode-segment');
+      const toggleButton = within(segment).getByRole('button');
+
+      // Open dropdown
+      fireEvent.click(toggleButton);
+
+      // All 4 options should be visible
+      const options = within(segment).getAllByRole('button');
+      // Toggle button + 4 dropdown options
+      expect(options).toHaveLength(5);
+      expect(segment).toHaveTextContent('Normal');
+      expect(segment).toHaveTextContent('Accept Edits');
+      expect(segment).toHaveTextContent('Plan');
+      expect(segment).toHaveTextContent('Bypass');
+
+      // Select "Accept Edits"
+      fireEvent.click(screen.getByRole('button', { name: /Accept Edits/i }));
+
+      // Label should update and dropdown should close
+      expect(segment).toHaveTextContent('Accept Edits');
+      // Dropdown closed — only the toggle button remains
+      expect(within(segment).getAllByRole('button')).toHaveLength(1);
+
+      // localStorage should reflect the change
+      const savedSettings = JSON.parse(localStorage.getItem('claude-tauri-settings') || '{}');
+      expect(savedSettings.permissionMode).toBe('acceptEdits');
+    });
+
+    it('closes dropdown on Escape key', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
+
+      const segment = screen.getByTestId('permission-mode-segment');
+      const toggleButton = within(segment).getByRole('button');
+
+      // Open dropdown
+      fireEvent.click(toggleButton);
+      expect(within(segment).getAllByRole('button').length).toBeGreaterThan(1);
+
+      // Press Escape
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      // Dropdown should be closed — only the toggle button remains
+      expect(within(segment).getAllByRole('button')).toHaveLength(1);
+    });
+
+    it('closes dropdown on outside click', () => {
+      renderWithSettings(<StatusBar {...makeProps()} />);
+
+      const segment = screen.getByTestId('permission-mode-segment');
+      const toggleButton = within(segment).getByRole('button');
+
+      // Open dropdown
+      fireEvent.click(toggleButton);
+      expect(within(segment).getAllByRole('button').length).toBeGreaterThan(1);
+
+      // Click outside the segment (mousedown on document body)
+      fireEvent.mouseDown(document.body);
+
+      // Dropdown should be closed
+      expect(within(segment).getAllByRole('button')).toHaveLength(1);
+    });
+
+    it('persists permission mode change across remount', () => {
+      const { unmount } = renderWithSettings(<StatusBar {...makeProps()} />);
+
+      const segment = screen.getByTestId('permission-mode-segment');
+      const toggleButton = within(segment).getByRole('button');
+
+      // Open dropdown and select "Plan"
+      fireEvent.click(toggleButton);
+      fireEvent.click(screen.getByRole('button', { name: /^Plan$/i }));
+
+      expect(segment).toHaveTextContent('Plan');
+
+      // Unmount and remount
+      unmount();
+      renderWithSettings(<StatusBar {...makeProps()} />);
+
+      // New mount should show "Plan"
+      expect(screen.getByTestId('permission-mode-segment')).toHaveTextContent('Plan');
+    });
   });
 
   describe('ConnectionIndicator', () => {
