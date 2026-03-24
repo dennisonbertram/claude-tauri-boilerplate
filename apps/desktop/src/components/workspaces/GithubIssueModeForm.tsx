@@ -1,4 +1,7 @@
-import { SpinnerGap } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { SpinnerGap, CaretDown, CaretRight } from '@phosphor-icons/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Input } from '@/components/ui/input';
 import type { GithubIssue } from '@/lib/workspace-api';
 
@@ -29,6 +32,8 @@ export function GithubIssueModeForm({
   issueBranch,
   onIssueBranchChange,
 }: GithubIssueModeFormProps) {
+  const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
+
   return (
     <>
       <div>
@@ -42,7 +47,7 @@ export function GithubIssueModeForm({
           autoFocus
         />
       </div>
-      <div className="max-h-48 overflow-auto rounded-md border border-border">
+      <div className="max-h-64 overflow-auto rounded-md border border-border">
         {issueLoading ? (
           <div className="p-3 flex items-center gap-2 text-sm text-muted-foreground">
             <SpinnerGap className="h-4 w-4 animate-spin" />
@@ -55,23 +60,45 @@ export function GithubIssueModeForm({
         ) : (
           issues.map((issue) => {
             const isActive = selectedIssue?.number === issue.number;
+            const isExpanded = expandedIssue === issue.number;
             return (
-              <button
-                key={issue.number}
-                type="button"
-                className={`w-full px-3 py-2 text-left border-b border-border last:border-b-0 transition-colors ${
-                  isActive ? 'bg-primary/10' : 'hover:bg-accent'
-                }`}
-                onClick={() => onSelectIssue(issue)}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted-foreground">#{issue.number}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    issue.state === 'OPEN' ? 'bg-green-500/20 text-green-600' : 'bg-gray-500/20 text-gray-500'
-                  }`}>{issue.state}</span>
-                </div>
-                <div className="mt-0.5 text-sm font-medium truncate">{issue.title}</div>
-              </button>
+              <div key={issue.number} className={`border-b border-border last:border-b-0 ${isActive ? 'bg-primary/10' : ''}`}>
+                <button
+                  type="button"
+                  className={`w-full px-3 py-2 text-left transition-colors ${
+                    isActive ? '' : 'hover:bg-accent'
+                  }`}
+                  onClick={() => onSelectIssue(issue)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-muted-foreground">#{issue.number}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      issue.state === 'OPEN' ? 'bg-green-500/20 text-green-600' : 'bg-gray-500/20 text-gray-500'
+                    }`}>{issue.state}</span>
+                    {issue.body && (
+                      <button
+                        type="button"
+                        className="ml-auto p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedIssue(isExpanded ? null : issue.number);
+                        }}
+                        title={isExpanded ? 'Collapse preview' : 'Expand preview'}
+                      >
+                        {isExpanded ? <CaretDown className="h-3.5 w-3.5" /> : <CaretRight className="h-3.5 w-3.5" />}
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-sm font-medium truncate">{issue.title}</div>
+                </button>
+                {isExpanded && issue.body && (
+                  <div className="px-3 pb-2">
+                    <div className="rounded border border-border bg-muted/30 p-2 text-xs prose prose-xs dark:prose-invert max-w-none max-h-40 overflow-auto">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{issue.body}</ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })
         )}
