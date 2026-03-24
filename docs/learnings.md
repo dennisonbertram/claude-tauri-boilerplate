@@ -64,3 +64,26 @@
 - **Don't assume implicit understanding** — agents won't infer testing requirements from CI failures or merge comments
 - **CLAUDE.md is hierarchical**: Global instruction, user instruction, workspace instruction, system prompt — workspace instruction (in project root) takes precedence
 - **Type changes require test updates** — when shared types change, test mocks must be updated or tests fail; this needs explicit instruction
+
+## 2026-03-18: Golden Cache Symlink Architecture Analysis
+
+### Critical Discovery: Symlink-Based node_modules Caching is Fundamentally Broken
+- **Root problem**: Symlinking entire `node_modules` directories breaks Node.js path resolution, pnpm's workspace bookkeeping, and Vite's caching — all expect `node_modules` to be a real co-located directory
+- **Concrete failures caused by symlinks**:
+  1. `workspace:*` symlinks for `@claude-tauri/shared` point to stale worktree code — importing from shared types could pull outdated implementations
+  2. Packages with worker bundles/WASM (e.g., `unpdf`) can't resolve assets because paths land outside the dev server root
+  3. All worktrees share one Vite `.vite/deps` cache → invalidation races and cache corruption
+
+### Non-Obvious Insight: pnpm Already Solves the "Warm Cache" Problem
+- **What the golden cache was solving**: Speed up `pnpm install` across multiple worktrees by maintaining a shared source of truth
+- **Why it's unnecessary**: pnpm already has a content-addressable store (`~/Library/pnpm/store/v10`) and hardlinks from it — a warm store makes `pnpm install` ~2-3 seconds per worktree (negligible)
+- **Net result**: Golden symlink architecture creates 8 new symlink bugs to solve a problem that doesn't exist (pnpm is already fast)
+
+### Architecture Decision
+- Replace golden symlink cache with plain `pnpm install` — each worktree gets real `node_modules`, pnpm's store handles speed
+- Makes `init.sh` faster *and* more correct (no symlink path resolution bugs)
+- Golden-sync becomes a "warm the store" optimization, not a symlink source
+
+### Gotchas
+- **Symlink debugging is cryptic** — failures appear as "module not found" errors in completely unrelated packages, making root cause hard to trace
+- **pnpm's internal bookkeeping relies on `node_modules` structure** — symlinks break this silently; changes appear to work locally but fail in CI
