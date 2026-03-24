@@ -11,7 +11,7 @@
 - `npx vite` / `pnpm exec vite` — bypasses port allocation
 - `lsof -ti :1420 | xargs kill` or `:3131` — kills other worktrees' processes
 - `pnpm add`, `pnpm install`, `npm install`, `yarn` — use init.sh for deps
-- Hardcoding ANY port number (1420, 3131) in commands, code, or configs
+- Hardcoding fixed ports in normal workflows (including 1420, 3131) defeats worktree isolation; use `init.sh` + `.init-state` instead (or set explicit `INIT_*` ports intentionally)
 - Manually editing `.env` to set PORT or VITE_PORT
 
 ### REQUIRED startup procedure (the ONLY correct way):
@@ -22,7 +22,7 @@ INIT_DAEMONIZE=1 ./init.sh && source .init-state
 # Then use ONLY these variables:
 $SERVER_URL      # e.g. http://localhost:3847
 $FRONTEND_URL    # e.g. http://localhost:1623
-$HEALTH_CHECK    # e.g. http://localhost:3847/health
+$HEALTH_CHECK    # e.g. http://localhost:3847/api/health
 
 # To stop:
 ./init.sh stop
@@ -40,10 +40,17 @@ fi
 ```
 
 ### Why:
-- Ports are RANDOM — each worktree gets unique ports to avoid collisions
+- Ports are RANDOM by default so each worktree gets unique ports and avoids collisions
 - `.env` is updated by init.sh with real ports — never edit it manually
 - `.init-state` is the single source of truth for URLs and PIDs
 - `PROJECT_ROOT` env var is set by init.sh so the server finds config files in worktrees
+
+### Stable ports (optional):
+Random ports are what enables concurrent worktree runs by default. Use stable ports only when your automation or toolchain requires fixed URLs (for example, if a script hardcodes `localhost:3131`/`localhost:1420`), by explicitly setting:
+
+```bash
+INIT_SERVER_PORT=3131 INIT_VITE_PORT=1420 INIT_DAEMONIZE=1 ./init.sh
+```
 
 ## CRITICAL: Dependency Management (MANDATORY — NO EXCEPTIONS)
 
