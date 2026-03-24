@@ -194,4 +194,5 @@ export {
   migrateWorkspaceProviders,
   migrateWorkspaceDeploymentsTable,
   migrateDeploymentSettingsTable,
+  migrateTrackerTables,
 } from './migrations';

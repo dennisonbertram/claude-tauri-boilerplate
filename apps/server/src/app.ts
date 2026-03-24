@@ -29,6 +29,7 @@ import { createRuntimeCapabilitiesRouter } from './routes/runtime-capabilities';
 import { createWorkspaceProvidersRouter } from './routes/workspace-providers';
 import { createWorkspaceProvisioningRouter } from './routes/workspace-provisioning';
 import { createDeploymentRouter, createDeploymentSettingsRouter } from './routes/deployment';
+import { createTrackerRouter } from './routes/tracker';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 import { bearerAuth } from './middleware/bearer-auth';
@@ -87,6 +88,7 @@ app.route('/api/workspace-providers', createWorkspaceProvidersRouter(db));
 app.route('/api/workspaces', createWorkspaceProvisioningRouter(db));
 app.route('/api/workspaces', createDeploymentRouter(db));
 app.route('/api/deployment-settings', createDeploymentSettingsRouter(db));
+app.route('/api/tracker', createTrackerRouter(db));
 
 // Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
 // We mount a sub-router that receives sessionId as a param.

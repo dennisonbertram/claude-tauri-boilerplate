@@ -335,3 +335,88 @@ export function migrateDeploymentSettingsTable(db: import('bun:sqlite').Database
     )
   `);
 }
+
+export function migrateTrackerTables(db: import('bun:sqlite').Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_projects (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      description TEXT,
+      icon TEXT,
+      color TEXT,
+      default_assignee TEXT,
+      project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+      next_issue_number INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_projects_slug ON tracker_projects(slug)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_statuses (
+      id TEXT PRIMARY KEY,
+      tracker_project_id TEXT NOT NULL REFERENCES tracker_projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL CHECK(category IN ('backlog','todo','in_progress','done','cancelled')),
+      color TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(tracker_project_id, name)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_statuses_project ON tracker_statuses(tracker_project_id)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_labels (
+      id TEXT PRIMARY KEY,
+      tracker_project_id TEXT NOT NULL REFERENCES tracker_projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      color TEXT,
+      UNIQUE(tracker_project_id, name)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_labels_project ON tracker_labels(tracker_project_id)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_issues (
+      id TEXT PRIMARY KEY,
+      identifier TEXT NOT NULL UNIQUE,
+      tracker_project_id TEXT NOT NULL REFERENCES tracker_projects(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT,
+      status_id TEXT NOT NULL REFERENCES tracker_statuses(id),
+      priority INTEGER NOT NULL DEFAULT 3,
+      assignee TEXT,
+      due_date TEXT,
+      sort_order REAL NOT NULL DEFAULT 0,
+      workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL,
+      session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+      parent_issue_id TEXT REFERENCES tracker_issues(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_issues_project ON tracker_issues(tracker_project_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_issues_status ON tracker_issues(status_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_issues_identifier ON tracker_issues(identifier)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_issue_labels (
+      issue_id TEXT NOT NULL REFERENCES tracker_issues(id) ON DELETE CASCADE,
+      label_id TEXT NOT NULL REFERENCES tracker_labels(id) ON DELETE CASCADE,
+      PRIMARY KEY(issue_id, label_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tracker_comments (
+      id TEXT PRIMARY KEY,
+      issue_id TEXT NOT NULL REFERENCES tracker_issues(id) ON DELETE CASCADE,
+      author TEXT NOT NULL DEFAULT 'user',
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_comments_issue ON tracker_comments(issue_id)`);
+}

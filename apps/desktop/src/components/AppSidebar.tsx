@@ -22,7 +22,7 @@ import { ProjectsSection } from '@/components/sidebar/ProjectsSection';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents' | 'documents';
+type ActiveView = 'chat' | 'workspaces' | 'teams' | 'agents' | 'documents' | 'tracker';
 
 export interface AppSidebarProps {
   activeView: ActiveView;
