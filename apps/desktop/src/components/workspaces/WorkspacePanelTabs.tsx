@@ -1,4 +1,4 @@
-type Tab = 'chat' | 'diff' | 'paths' | 'notes' | 'dashboards';
+type Tab = 'chat' | 'diff' | 'paths' | 'notes' | 'dashboards' | 'issues';
 
 interface WorkspacePanelTabsProps {
   activeTab: Tab;
@@ -49,6 +49,26 @@ export function WorkspacePanelTabs({ activeTab, onTabChange }: WorkspacePanelTab
           <rect x="3" y="14" width="7" height="7" />
         </svg>
         Dashboards
+      </button>
+      <button
+        type="button"
+        onClick={() => onTabChange('issues')}
+        className={`flex items-center gap-1.5 ${tabClass('issues')}`}
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7h16M4 12h16M4 17h10" />
+        </svg>
+        Issues
       </button>
     </div>
   );

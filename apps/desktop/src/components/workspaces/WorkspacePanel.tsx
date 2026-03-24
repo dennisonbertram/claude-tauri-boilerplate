@@ -7,6 +7,7 @@ import { WorkspacePanelHeader } from './WorkspacePanelHeader';
 import { WorkspacePanelTabs } from './WorkspacePanelTabs';
 import { NotesTab } from './NotesTab';
 import { PathsTab } from './PathsTab';
+import { WorkspaceIssuesTab } from './WorkspaceIssuesTab';
 import { ChatPage } from '@/components/chat/ChatPage';
 import type { ChatPageStatusData } from '@/components/chat/ChatPage';
 import { promptMemoryUpdate } from '@/lib/memoryUpdatePrompt';
@@ -14,7 +15,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { getWorkflowPrompt, buildMergeMemoryDraft } from '@/lib/workflowPrompts';
 import * as api from '@/lib/workspace-api';
 
-type Tab = 'chat' | 'diff' | 'paths' | 'notes' | 'dashboards';
+type Tab = 'chat' | 'diff' | 'paths' | 'notes' | 'dashboards' | 'issues';
 
 interface WorkspacePanelProps {
   workspace: Workspace;
@@ -143,6 +144,8 @@ export function WorkspacePanel({ workspace, onStatusChange, onWorkspaceUpdate, o
           <WorkspaceDashboardsView projectId={workspace.projectId} workspaceId={workspace.id} />
         ) : activeTab === 'notes' ? (
           <NotesTab workspaceId={workspace.id} />
+        ) : activeTab === 'issues' ? (
+          <WorkspaceIssuesTab projectId={workspace.projectId} projectName={workspace.name} />
         ) : (
           <PathsTab
             workspaceId={workspace.id}

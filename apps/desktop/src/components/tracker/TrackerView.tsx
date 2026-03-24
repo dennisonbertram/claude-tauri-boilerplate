@@ -159,7 +159,7 @@ export function TrackerView() {
           onClick={() => setCreateProjectOpen(true)}
           className="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          + Project
+          + Board
         </button>
       </div>
 
@@ -187,12 +187,12 @@ export function TrackerView() {
       ) : (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
-            <p className="text-muted-foreground text-sm">No tracker projects yet</p>
+            <p className="text-muted-foreground text-sm">No boards yet</p>
             <button
               onClick={() => setCreateProjectOpen(true)}
               className="text-sm px-4 py-2 rounded-md bg-foreground text-background font-medium hover:bg-foreground/90 transition-colors"
             >
-              Create your first project
+              Create your first board
             </button>
           </div>
         </div>
@@ -223,7 +223,7 @@ export function TrackerView() {
       {createProjectOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setCreateProjectOpen(false)}>
           <div className="bg-card border border-border rounded-xl p-6 w-[400px] shadow-xl space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-semibold text-foreground">New Tracker Project</h2>
+            <h2 className="text-base font-semibold text-foreground">New Board</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Name</label>
