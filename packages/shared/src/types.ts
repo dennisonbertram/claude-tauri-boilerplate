@@ -1164,3 +1164,34 @@ export interface WorkspaceDeployment {
   createdAt: string;
   updatedAt: string;
 }
+
+// --- Document Types ---
+
+export type DocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
+
+export interface DocumentPipelineStep {
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  result?: unknown;
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface Document {
+  id: string;
+  filename: string;
+  storagePath: string;
+  mimeType: string;
+  sizeBytes: number;
+  status: DocumentStatus;
+  pipelineSteps: DocumentPipelineStep[];
+  tags: string[];
+  sessionId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadDocumentResponse {
+  document: Document;
+}

@@ -1,237 +1,233 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
+import type { Document } from '@claude-tauri/shared';
 import {
+  Plus,
   MagnifyingGlass,
-  CaretDown,
-  FolderOpen,
-  FileTs,
-  Clock,
-  FileCode,
-  FileCss,
-  FileHtml,
-  FileJs,
-  File,
+  SquaresFour,
+  List,
+  FileArrowUp,
 } from '@phosphor-icons/react';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-interface FileResult {
-  id: string;
-  name: string;
-  path: string;
-  modifiedLabel: string;
-  lines: { lineNumber: number; text: string; highlighted?: boolean; highlightedSegment?: string }[];
-}
-
-interface ProjectGroup {
-  projectName: string;
-  projectPath: string;
-  files: FileResult[];
-}
-
-/* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
-/* ------------------------------------------------------------------ */
-
-const MOCK_RESULTS: ProjectGroup[] = [
-  {
-    projectName: 'Claude App',
-    projectPath: 'src/lib/auth',
-    files: [
-      {
-        id: '1',
-        name: 'middleware.ts',
-        path: 'src/lib/auth/middleware.ts',
-        modifiedLabel: 'Modified 2 days ago',
-        lines: [
-          { lineNumber: 12, text: 'export async function authMiddleware(req: NextRequest) {' },
-          { lineNumber: 13, text: '  const session = await supabase.auth.getSession()', highlighted: true, highlightedSegment: 'supabase.auth' },
-          { lineNumber: 14, text: '  if (!session && isProtectedRoute(req.nextUrl.pathname)) {' },
-        ],
-      },
-      {
-        id: '2',
-        name: 'session-provider.tsx',
-        path: 'src/lib/auth/session-provider.tsx',
-        modifiedLabel: 'Modified 5 days ago',
-        lines: [
-          { lineNumber: 45, text: '  useEffect(() => {' },
-          { lineNumber: 46, text: '    const { data: { subscription } } = supabase.auth.onAuthStateChange...', highlighted: true, highlightedSegment: 'supabase.auth' },
-        ],
-      },
-    ],
-  },
-  {
-    projectName: 'Marketing Site',
-    projectPath: 'packages/ui-kit',
-    files: [
-      {
-        id: '3',
-        name: 'AuthCard.tsx',
-        path: 'packages/ui-kit/AuthCard.tsx',
-        modifiedLabel: 'Modified Oct 12',
-        lines: [
-          { lineNumber: 8, text: 'export const AuthCard = ({ title, children }: AuthCardProps) => (' },
-        ],
-      },
-    ],
-  },
-];
-
-const RECENT_SEARCHES = [
-  'supabase webhooks',
-  'tailwind config extend',
-  'postgres optimization',
-  'navbar component',
-];
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function getFileIcon(name: string) {
-  if (name.endsWith('.ts') || name.endsWith('.tsx')) return <FileTs size={18} className="text-blue-500" />;
-  if (name.endsWith('.js') || name.endsWith('.jsx')) return <FileJs size={18} className="text-yellow-500" />;
-  if (name.endsWith('.css')) return <FileCss size={18} className="text-purple-500" />;
-  if (name.endsWith('.html')) return <FileHtml size={18} className="text-orange-500" />;
-  if (name.endsWith('.py') || name.endsWith('.rs') || name.endsWith('.go')) return <FileCode size={18} className="text-emerald-500" />;
-  return <File size={18} className="text-muted-foreground" />;
-}
-
-function renderLine(line: FileResult['lines'][number]) {
-  if (!line.highlighted || !line.highlightedSegment) {
-    return <span>{line.text}</span>;
-  }
-  const idx = line.text.indexOf(line.highlightedSegment);
-  if (idx === -1) return <span>{line.text}</span>;
-  return (
-    <span>
-      {line.text.slice(0, idx)}
-      <span className="bg-orange-200/50 dark:bg-orange-500/20 px-0.5 rounded">{line.highlightedSegment}</span>
-      {line.text.slice(idx + line.highlightedSegment.length)}
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+import { useDocuments } from '@/hooks/useDocuments';
+import { getDocumentFileUrl } from '@/lib/api/documents-api';
+import { DocumentUploadZone } from './DocumentUploadZone';
+import { DocumentCard } from './DocumentCard';
+import { DocumentTable } from './DocumentTable';
+import { DocumentContextMenu, type DocumentContextMenuState } from './DocumentContextMenu';
+import { DocumentPreviewModal } from './DocumentPreviewModal';
 
 export function DocumentsView() {
-  const [searchQuery, setSearchQuery] = useState('auth middleware');
-  const results = MOCK_RESULTS;
-  const totalResults = results.reduce((sum, g) => sum + g.files.length, 0);
+  const { documents, isLoading, upload, remove } = useDocuments();
+  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery');
+  const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewDocId, setPreviewDocId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<DocumentContextMenuState>({
+    document: null,
+    position: null,
+  });
+
+  const filtered = useMemo(() => {
+    if (!searchQuery) return documents;
+    const q = searchQuery.toLowerCase();
+    return documents.filter(d => d.filename.toLowerCase().includes(q));
+  }, [documents, searchQuery]);
+
+  const handleUpload = (files: File[]) => {
+    void upload(files);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleUpload(Array.from(files));
+      e.target.value = '';
+    }
+  };
+
+  const handleOpen = (id: string) => {
+    setPreviewDocId(id);
+  };
+
+  const previewDoc = useMemo(
+    () => (previewDocId ? filtered.find(d => d.id === previewDocId) ?? documents.find(d => d.id === previewDocId) ?? null : null),
+    [previewDocId, filtered, documents],
+  );
+
+  const handleDelete = async (id: string) => {
+    try {
+      await remove(id);
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+    }
+  };
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, doc: Document) => {
+    setContextMenu({
+      document: doc,
+      position: { x: e.clientX, y: e.clientY },
+    });
+  }, []);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu({ document: null, position: null });
+  }, []);
+
+  // Empty state — no documents at all
+  if (!isLoading && documents.length === 0) {
+    return (
+      <DocumentUploadZone onUpload={handleUpload}>
+        <div className="flex flex-1 flex-col min-h-0">
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-border/20 flex items-center justify-center">
+                <FileArrowUp size={32} className="text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-medium text-foreground">No documents yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload your first document or drag and drop files here
+                </p>
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-[var(--app-cta)] transition-colors shadow-sm"
+              >
+                <Plus size={16} />
+                Upload Document
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileInputChange}
+              />
+            </div>
+          </div>
+        </div>
+      </DocumentUploadZone>
+    );
+  }
 
   return (
-    <div className="flex flex-1 flex-col min-h-0">
-      <div className="flex-1 flex items-start pt-12 pb-24 px-6 overflow-y-auto">
-        <div className="w-full max-w-4xl mx-auto">
-          {/* Search input */}
-          <div className="bg-card rounded-2xl shadow-soft border border-border p-2 mb-8 focus-within:ring-2 focus-within:ring-ring/20">
-            <div className="flex items-center gap-3 px-4 py-2">
-              <MagnifyingGlass size={24} className="text-muted-foreground/60 shrink-0" />
+    <DocumentUploadZone onUpload={handleUpload}>
+      <div className="flex flex-1 flex-col min-h-0">
+        {/* Header */}
+        <div className="h-14 flex items-center justify-between px-8 border-b border-border bg-background/80 backdrop-blur-sm shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-medium text-foreground">Documents</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-border/40 text-muted-foreground font-medium">
+              {documents.length} total
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlass
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
               <input
                 type="text"
-                className="flex-1 bg-transparent border-none outline-none text-xl text-foreground placeholder:text-muted-foreground/60"
-                placeholder="Search code, projects, and discussions..."
+                placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-9 pr-3 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-border w-56"
               />
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="px-1.5 py-0.5 bg-sidebar border border-border rounded text-[10px] text-muted-foreground font-mono">ESC</span>
-                <span className="text-xs text-muted-foreground/60 mx-1">to close</span>
+            </div>
+
+            {/* View toggle */}
+            <div className="flex items-center rounded-lg border border-border bg-card overflow-hidden">
+              <button
+                onClick={() => setViewMode('gallery')}
+                className={`p-1.5 transition-colors ${viewMode === 'gallery' ? 'bg-border/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Gallery view"
+              >
+                <SquaresFour size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 transition-colors ${viewMode === 'table' ? 'bg-border/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Table view"
+              >
+                <List size={16} />
+              </button>
+            </div>
+
+            {/* Upload button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-[var(--app-cta)] transition-colors shadow-sm"
+            >
+              <Plus size={16} />
+              Upload
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-border border-t-foreground rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading documents...</p>
               </div>
             </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-4 mb-8 px-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-muted-foreground/60 uppercase">Filter by:</span>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-muted-foreground hover:bg-sidebar-accent/50 transition-colors shadow-sm">
-                All Projects <CaretDown size={10} />
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-muted-foreground hover:bg-sidebar-accent/50 transition-colors shadow-sm">
-                File type: .ts, .tsx <CaretDown size={10} />
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-muted-foreground hover:bg-sidebar-accent/50 transition-colors shadow-sm">
-                Last 30 days <CaretDown size={10} />
-              </button>
+          ) : filtered.length === 0 && searchQuery ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium text-foreground">No documents match your search</p>
+                <p className="text-sm text-muted-foreground">
+                  Try a different search term
+                </p>
+              </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs text-muted-foreground/60">{totalResults} results found</span>
-            </div>
-          </div>
-
-          {/* Results grouped by project */}
-          <div className="grid grid-cols-1 gap-12">
-            {results.map((group) => (
-              <section key={group.projectName}>
-                <div className="flex items-center gap-2 mb-4 px-2">
-                  <FolderOpen size={18} className="text-muted-foreground" />
-                  <h2 className="text-[15px] font-semibold text-foreground">{group.projectName}</h2>
-                  <span className="w-1 h-1 rounded-full bg-border" />
-                  <span className="text-xs text-muted-foreground/60">{group.projectPath}</span>
-                </div>
-                <div className="space-y-4">
-                  {group.files.map((file) => (
-                    <div
-                      key={file.id}
-                      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:border-muted-foreground/30 transition-colors cursor-pointer group"
-                    >
-                      {/* File header */}
-                      <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getFileIcon(file.name)}
-                          <span className="font-medium text-foreground">{file.name}</span>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground/60">{file.modifiedLabel}</span>
-                      </div>
-                      {/* Code preview */}
-                      <div className="p-4 bg-[var(--app-code-bg)] font-mono text-[13px] leading-relaxed text-muted-foreground">
-                        {file.lines.map((line) => (
-                          <div
-                            key={line.lineNumber}
-                            className={`flex ${line.highlighted ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''}`}
-                          >
-                            <span className={`w-8 shrink-0 select-none ${line.highlighted ? 'text-orange-400' : 'text-muted-foreground/30'}`}>
-                              {line.lineNumber}
-                            </span>
-                            {renderLine(line)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent searches sidebar — visible on xl screens */}
-        <div className="w-64 shrink-0 hidden xl:block sticky top-0 ml-8">
-          <div className="px-4 py-2 border-l border-border">
-            <h3 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-widest mb-4">Recent Searches</h3>
-            <div className="flex flex-col gap-1">
-              {RECENT_SEARCHES.map((term) => (
-                <button
-                  key={term}
-                  onClick={() => setSearchQuery(term)}
-                  className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-sidebar-accent/50 text-muted-foreground text-sm transition-colors text-left"
-                >
-                  <Clock size={16} className="opacity-60 shrink-0" />
-                  <span className="truncate">{term}</span>
-                </button>
+          ) : viewMode === 'gallery' ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filtered.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  onDelete={handleDelete}
+                  onOpen={handleOpen}
+                  onContextMenu={handleContextMenu}
+                />
               ))}
             </div>
-            <button className="mt-6 text-xs text-muted-foreground/60 hover:text-foreground px-2 transition-colors">
-              Clear history
-            </button>
-          </div>
+          ) : (
+            <DocumentTable
+              documents={filtered}
+              onDelete={handleDelete}
+              onOpen={handleOpen}
+              onContextMenu={handleContextMenu}
+            />
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Context menu */}
+      <DocumentContextMenu
+        state={contextMenu}
+        onClose={handleCloseContextMenu}
+        onOpen={handleOpen}
+        onDelete={handleDelete}
+      />
+
+      {/* Preview modal */}
+      <DocumentPreviewModal
+        document={previewDoc}
+        documents={filtered}
+        onClose={() => setPreviewDocId(null)}
+        onNavigate={(id) => setPreviewDocId(id)}
+      />
+    </DocumentUploadZone>
   );
 }

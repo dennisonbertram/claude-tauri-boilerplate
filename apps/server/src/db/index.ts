@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -27,6 +27,7 @@ export function createDb(path?: string): Database {
   migrateWorkspaceDeploymentsTable(db);
   migrateDeploymentSettingsTable(db);
   migrateTrackerTables(db);
+  migrateDocumentsTable(db);
   return db;
 }
 
@@ -166,6 +167,15 @@ export {
   updateProvisioningRunStatus,
 } from './db-workspace-provisioning';
 export type { WorkspaceProvisioningRunRow } from './db-workspace-provisioning';
+
+// ─── Documents ──────────────────────────────────────────────────────────────────
+export {
+  createDocument,
+  getDocument,
+  listDocuments,
+  updateDocument,
+  deleteDocument,
+} from './db-documents';
 
 // ─── Deployments & Settings ────────────────────────────────────────────────────
 export {
