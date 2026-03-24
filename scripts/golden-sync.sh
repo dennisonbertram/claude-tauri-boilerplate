@@ -18,6 +18,7 @@ info "Syncing golden directory at $GOLDEN_DIR"
 mkdir -p "$GOLDEN_DIR/apps/desktop"
 mkdir -p "$GOLDEN_DIR/apps/server"
 mkdir -p "$GOLDEN_DIR/packages/shared"
+mkdir -p "$GOLDEN_DIR/packages/pdf-forms"
 
 # Copy workspace configuration files
 cp "$REPO_DIR/pnpm-lock.yaml" "$GOLDEN_DIR/"
@@ -37,17 +38,24 @@ fi
 cp "$REPO_DIR/apps/desktop/package.json" "$GOLDEN_DIR/apps/desktop/"
 cp "$REPO_DIR/apps/server/package.json" "$GOLDEN_DIR/apps/server/"
 cp "$REPO_DIR/packages/shared/package.json" "$GOLDEN_DIR/packages/shared/"
+if [ -f "$REPO_DIR/packages/pdf-forms/package.json" ]; then
+  cp "$REPO_DIR/packages/pdf-forms/package.json" "$GOLDEN_DIR/packages/pdf-forms/"
+fi
 
-# The shared package exports raw TypeScript, so we need its source for resolution
+# Packages that export raw TypeScript need their source for resolution
 if [ -d "$REPO_DIR/packages/shared/src" ]; then
   mkdir -p "$GOLDEN_DIR/packages/shared/src"
   cp -R "$REPO_DIR/packages/shared/src/." "$GOLDEN_DIR/packages/shared/src/"
+fi
+if [ -d "$REPO_DIR/packages/pdf-forms/src" ]; then
+  mkdir -p "$GOLDEN_DIR/packages/pdf-forms/src"
+  cp -R "$REPO_DIR/packages/pdf-forms/src/." "$GOLDEN_DIR/packages/pdf-forms/src/"
 fi
 
 # Install dependencies in golden directory
 info "Running pnpm install in golden directory..."
 cd "$GOLDEN_DIR"
-pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+pnpm install --frozen-lockfile --force 2>/dev/null || pnpm install --force
 ok "Dependencies installed"
 
 # Write lockfile hash for cache invalidation
