@@ -1,6 +1,7 @@
 import type {
   AgentProfile,
   CreateAgentProfileRequest,
+  GenerateAgentProfileRequest,
   UpdateAgentProfileRequest,
 } from '@claude-tauri/shared';
 import { apiFetch } from './api-config';
@@ -57,6 +58,21 @@ export async function duplicateAgentProfile(id: string): Promise<AgentProfile> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to duplicate agent profile: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function generateAgentProfile(
+  data: GenerateAgentProfileRequest
+): Promise<AgentProfile> {
+  const res = await apiFetch(`/api/agent-profiles/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error || `Failed to generate agent profile: ${res.status}`);
   }
   return res.json();
 }

@@ -8,7 +8,7 @@ We never commit directly to main. Every change happens in a worktree branch, get
 
 ### 1. Start Work
 - Agent spawns with `isolation: "worktree"` on the Task tool
-- This creates a new branch in a temporary worktree
+- If you create a worktree manually, run `./init.sh` immediately after checkout so the environment is bootstrapped the standard way
 
 ### 2. Develop
 - Write tests first (TDD)
@@ -29,6 +29,10 @@ We never commit directly to main. Every change happens in a worktree branch, get
 ```bash
 # Create a worktree
 git worktree add .claude/worktrees/my-feature -b feature/my-feature
+
+# Bootstrap it the normal way
+cd .claude/worktrees/my-feature
+./init.sh
 
 # List worktrees
 git worktree list

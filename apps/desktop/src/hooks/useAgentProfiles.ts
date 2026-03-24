@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AgentProfile, CreateAgentProfileRequest, UpdateAgentProfileRequest } from '@claude-tauri/shared';
+import type {
+  AgentProfile,
+  CreateAgentProfileRequest,
+  GenerateAgentProfileRequest,
+  UpdateAgentProfileRequest,
+} from '@claude-tauri/shared';
 import * as api from '@/lib/agent-profile-api';
 
 export function useAgentProfiles() {
@@ -49,5 +54,21 @@ export function useAgentProfiles() {
     return duplicated;
   }, []);
 
-  return { profiles, loading, error, addProfile, updateProfile, removeProfile, duplicateProfile, refresh };
+  const generateProfile = useCallback(async (data: GenerateAgentProfileRequest) => {
+    const generated = await api.generateAgentProfile(data);
+    setProfiles(prev => [generated, ...prev]);
+    return generated;
+  }, []);
+
+  return {
+    profiles,
+    loading,
+    error,
+    addProfile,
+    updateProfile,
+    removeProfile,
+    duplicateProfile,
+    generateProfile,
+    refresh,
+  };
 }
