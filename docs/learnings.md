@@ -104,3 +104,44 @@
 ### Gotcha: Root Cause is Hidden
 - Errors from init.sh with a stale symlink appear to be lockfile/dependency issues, not symlink issues
 - The actual problem (wrong write path) is only visible by checking filesystem structure directly
+
+## 2026-03-24: Subagent Worktree Branches vs. Commits
+
+### Discovery: Commits Can Land on Main But Worktree Branches May Not Show as "Merged"
+- **Pattern**: When subagents create worktrees and their commits are merged to main via a parent branch (e.g., `fix/app-level-ux-bugs`), the worktree branches themselves may not be recognized as "merged" by `git branch -v --merged`
+- **Why**: Worktree branches can diverge from main before the commits land, then those commits get cherry-picked or merged via a different branch path — git doesn't see them as direct ancestors
+- **Example from this session**:
+  - Subagent created `worktree-agent-ab134706` with commits for `#350: add agent management`
+  - Those commits landed on main via `fix/app-level-ux-bugs` merge
+  - But `git branch -v --merged` still showed the worktree branch as unmerged
+  - Safe to force-remove with `git worktree remove --force` + `git branch -D`
+- **Signal**: Use `git log main..worktree-branch --oneline` to verify commits are already on main before cleanup
+
+### Why This Matters
+- **Cleanup confidence**: You can safely remove "unmerged" worktree branches if their commits are already on main (visible in the log)
+- **Parallel agent workflows**: Subagents create worktrees for isolated work, but they may not follow the same branching path back to main
+- **Don't block on false positives**: Missing "merged" status is not a blocker for cleanup if the commits are confirmed on main
+
+### Gotcha: False Positive "Unmerged" Status
+- Worktree branches can appear unmerged even when all their commits are on main
+- Always verify with `git log main..branch` before deciding a branch is truly unmerged
+- If commits show up, the branch is safe to remove — the apparent "unmerged" status is a git artifact of the branching path, not actual missing commits
+
+## 2026-03-24: Lockfile Desync When Package.json Deps Change
+
+### Discovery: Package.json Changes Don't Auto-Update pnpm-lock.yaml
+- **Problem**: When deps are added to `apps/desktop/package.json` (e.g., `@types/node@^22.15.0`, `react-router-dom@^7.13.2`, `zod@^3.23.8`), they may not appear in `pnpm-lock.yaml` if the lockfile wasn't regenerated after the change
+- **Symptom**: `init.sh` fails with `ELIFECYCLE` error during `pnpm install --frozen-lockfile` — appears to be a generic dependency issue, not a lockfile sync problem
+- **Root cause is obscured**: Error message talks about dependency resolution, not missing entries from lockfile, making this hard to diagnose
+- **Signal**: Check `pnpm-lock.yaml` for missing entries by searching for the dep name that appears in `package.json` but not the lockfile
+- **Fix**: Run `pnpm install --no-frozen-lockfile` to regenerate the lockfile, then commit the updated `pnpm-lock.yaml`
+
+### Why This Matters
+- **CI/CD impact**: Dev branches with unsynced lockfiles will fail in `--frozen-lockfile` mode, blocking PRs
+- **Monorepo complexity**: When multiple `package.json` files exist (workspace + apps), it's easy to update one but not regenerate the monorepo lockfile
+- **Prevention**: After manually editing `package.json`, always run `pnpm install` to ensure `pnpm-lock.yaml` is updated
+
+### Gotcha: Silent Propagation
+- If a lockfile-desynced branch gets merged, the synced lockfile in main masks the problem temporarily
+- But any worktree created from that branch will re-inherit the desync, causing the same failure in the next session
+- Always ensure lockfile is in sync before committing any `package.json` changes
