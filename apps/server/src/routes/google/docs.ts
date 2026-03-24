@@ -4,6 +4,18 @@ import { getGoogleOAuth } from '../../db';
 import { classifyGoogleError } from '../../services/google/auth';
 import { getDocContent } from '../../services/google/docs';
 
+function codeToHttpStatus(code: string): 400 | 401 | 403 | 404 | 429 | 500 | 502 {
+  switch (code) {
+    case 'not_found': return 404;
+    case 'forbidden': return 403;
+    case 'unauthorized': return 401;
+    case 'rate_limited': return 429;
+    case 'invalid_grant': return 401;
+    case 'server_error': return 502;
+    default: return 500;
+  }
+}
+
 export function createDocsRouter(db: Database) {
   const router = new Hono();
 
@@ -29,7 +41,7 @@ export function createDocsRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });

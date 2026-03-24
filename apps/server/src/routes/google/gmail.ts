@@ -4,6 +4,18 @@ import { getGoogleOAuth } from '../../db';
 import { classifyGoogleError } from '../../services/google/auth';
 import { listMessages, getMessage, sendMessage } from '../../services/google/gmail';
 
+function codeToHttpStatus(code: string): 400 | 401 | 403 | 404 | 429 | 500 | 502 {
+  switch (code) {
+    case 'not_found': return 404;
+    case 'forbidden': return 403;
+    case 'unauthorized': return 401;
+    case 'rate_limited': return 429;
+    case 'invalid_grant': return 401;
+    case 'server_error': return 502;
+    default: return 500;
+  }
+}
+
 export function createGmailRouter(db: Database) {
   const router = new Hono();
 
@@ -19,7 +31,7 @@ export function createGmailRouter(db: Database) {
     const maxResults = Math.min(Math.max(Number(c.req.query('maxResults') ?? 20), 1), 100);
 
     try {
-      const result = await listMessages(db, { q, pageToken, maxResults });
+      const result = await listMessages(db, q || undefined, pageToken ?? undefined, maxResults);
       return c.json(result);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -31,7 +43,7 @@ export function createGmailRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -58,7 +70,7 @@ export function createGmailRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -85,12 +97,7 @@ export function createGmailRouter(db: Database) {
     }
 
     try {
-      const result = await sendMessage(db, {
-        to: body.to,
-        subject: body.subject,
-        body: body.body,
-        threadId: body.threadId,
-      });
+      const result = await sendMessage(db, body.to, body.subject, body.body, body.threadId);
       return c.json(result);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -102,7 +109,7 @@ export function createGmailRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });

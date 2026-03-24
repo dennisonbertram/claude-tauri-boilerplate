@@ -4,6 +4,18 @@ import { getGoogleOAuth } from '../../db';
 import { classifyGoogleError } from '../../services/google/auth';
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../../services/google/calendar';
 
+function codeToHttpStatus(code: string): 400 | 401 | 403 | 404 | 429 | 500 | 502 {
+  switch (code) {
+    case 'not_found': return 404;
+    case 'forbidden': return 403;
+    case 'unauthorized': return 401;
+    case 'rate_limited': return 429;
+    case 'invalid_grant': return 401;
+    case 'server_error': return 502;
+    default: return 500;
+  }
+}
+
 export function createCalendarRouter(db: Database) {
   const router = new Hono();
 
@@ -21,7 +33,14 @@ export function createCalendarRouter(db: Database) {
     const maxResults = Math.min(Math.max(Number(c.req.query('maxResults') ?? 25), 1), 250);
 
     try {
-      const result = await listEvents(db, { calendarId, timeMin, timeMax, pageToken, maxResults });
+      const result = await listEvents(
+        db,
+        calendarId,
+        timeMin ?? undefined,
+        timeMax ?? undefined,
+        pageToken ?? undefined,
+        maxResults,
+      );
       return c.json(result);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -33,7 +52,7 @@ export function createCalendarRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -47,11 +66,11 @@ export function createCalendarRouter(db: Database) {
 
     const body = await c.req.json<{
       summary: string;
-      start: { dateTime?: string; date?: string; timeZone?: string };
-      end: { dateTime?: string; date?: string; timeZone?: string };
+      start: string;
+      end: string;
       description?: string;
       location?: string;
-      attendees?: Array<{ email: string }>;
+      attendees?: string[];
       calendarId?: string;
     }>();
 
@@ -63,15 +82,18 @@ export function createCalendarRouter(db: Database) {
     }
 
     try {
-      const result = await createEvent(db, {
-        calendarId: body.calendarId ?? 'primary',
-        summary: body.summary,
-        start: body.start,
-        end: body.end,
-        description: body.description,
-        location: body.location,
-        attendees: body.attendees,
-      });
+      const result = await createEvent(
+        db,
+        {
+          summary: body.summary,
+          start: body.start,
+          end: body.end,
+          description: body.description,
+          location: body.location,
+          attendees: body.attendees,
+        },
+        body.calendarId ?? 'primary',
+      );
       return c.json(result, 201);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -83,7 +105,7 @@ export function createCalendarRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -98,19 +120,22 @@ export function createCalendarRouter(db: Database) {
     const eventId = c.req.param('id');
     const body = await c.req.json<{
       summary?: string;
-      start?: { dateTime?: string; date?: string; timeZone?: string };
-      end?: { dateTime?: string; date?: string; timeZone?: string };
+      start?: string;
+      end?: string;
       description?: string;
       location?: string;
-      attendees?: Array<{ email: string }>;
+      attendees?: string[];
       calendarId?: string;
     }>();
 
     try {
-      const result = await updateEvent(db, eventId, {
-        calendarId: body.calendarId ?? 'primary',
-        ...body,
-      });
+      const { calendarId, ...eventFields } = body;
+      const result = await updateEvent(
+        db,
+        eventId,
+        eventFields,
+        calendarId ?? 'primary',
+      );
       return c.json(result);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -122,7 +147,7 @@ export function createCalendarRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -138,7 +163,7 @@ export function createCalendarRouter(db: Database) {
     const calendarId = c.req.query('calendarId') ?? 'primary';
 
     try {
-      await deleteEvent(db, eventId, { calendarId });
+      await deleteEvent(db, eventId, calendarId);
       return c.json({ ok: true });
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -150,7 +175,7 @@ export function createCalendarRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });

@@ -4,6 +4,18 @@ import { getGoogleOAuth } from '../../db';
 import { classifyGoogleError } from '../../services/google/auth';
 import { listFiles, getFile, getFileContent, uploadFile } from '../../services/google/drive';
 
+function codeToHttpStatus(code: string): 400 | 401 | 403 | 404 | 429 | 500 | 502 {
+  switch (code) {
+    case 'not_found': return 404;
+    case 'forbidden': return 403;
+    case 'unauthorized': return 401;
+    case 'rate_limited': return 429;
+    case 'invalid_grant': return 401;
+    case 'server_error': return 502;
+    default: return 500;
+  }
+}
+
 export function createDriveRouter(db: Database) {
   const router = new Hono();
 
@@ -19,7 +31,7 @@ export function createDriveRouter(db: Database) {
     const pageSize = Math.min(Math.max(Number(c.req.query('pageSize') ?? 25), 1), 100);
 
     try {
-      const result = await listFiles(db, { q, pageToken, pageSize });
+      const result = await listFiles(db, q || undefined, pageToken ?? undefined, pageSize);
       return c.json(result);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -31,7 +43,7 @@ export function createDriveRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -58,7 +70,7 @@ export function createDriveRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -74,7 +86,7 @@ export function createDriveRouter(db: Database) {
     const exportMimeType = c.req.query('exportMimeType');
 
     try {
-      const content = await getFileContent(db, fileId, { exportMimeType });
+      const content = await getFileContent(db, fileId, exportMimeType ?? undefined);
       return c.json(content);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -86,7 +98,7 @@ export function createDriveRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
@@ -113,12 +125,7 @@ export function createDriveRouter(db: Database) {
     }
 
     try {
-      const result = await uploadFile(db, {
-        name: body.name,
-        content: body.content,
-        mimeType: body.mimeType,
-        parentId: body.parentId,
-      });
+      const result = await uploadFile(db, body.name, body.content, body.mimeType, body.parentId);
       return c.json(result, 201);
     } catch (err) {
       const classified = classifyGoogleError(err);
@@ -130,7 +137,7 @@ export function createDriveRouter(db: Database) {
           retryable: classified.retryable,
           needsReconnect: classified.needsReconnect,
         },
-        classified.status as 400 | 401 | 403 | 404 | 429 | 500 | 502
+        codeToHttpStatus(classified.code),
       );
     }
   });
