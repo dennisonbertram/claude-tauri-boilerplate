@@ -1,0 +1,36 @@
+{
+  "story_id": "STORY-007",
+  "title": "Auto-Name Session Based on Content",
+  "result": "PARTIAL PASS",
+  "findings": [
+    {
+      "id": "007-F1",
+      "type": "ux",
+      "severity": "HIGH",
+      "description": "Majority of sessions (68%) have random adjective+noun names that provide no content context",
+      "expected": "Sessions should be named based on their content",
+      "actual": "Names like 'Fuzzy Canyon', 'Crispy Meadow', 'Swift Breeze' give no indication of conversation content"
+    },
+    {
+      "id": "007-F2",
+      "type": "ux",
+      "severity": "MEDIUM",
+      "description": "Multiple sessions named 'New Conversation' with no differentiation",
+      "expected": "Each session should have a unique, meaningful name",
+      "actual": "At least 4 sessions are named 'New Conversation'"
+    },
+    {
+      "id": "007-F3",
+      "type": "info",
+      "severity": "LOW",
+      "description": "Some sessions have content-based names suggesting auto-naming works intermittently",
+      "expected": "All sessions with content should be auto-named",
+      "actual": "Only ~23% of sessions have content-based names"
+    }
+  ],
+  "steps_completed": 2,
+  "steps_total": 3,
+  "screenshots": [
+    "screenshots/session-names-sidebar.png"
+  ]
+}

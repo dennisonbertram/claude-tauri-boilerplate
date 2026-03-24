@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-104",
+  "title": "Rename Dashboard Title",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Dashboards tab > Test Dashboard",
+  "observations": [
+    "Click to rename button visible on dashboard detail view title area",
+    "Accessible via interactive elements read"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Click to rename button"]
+}

@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-120",
+  "title": "Diff Line Count Summary",
+  "status": "partial",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "feature_present",
+      "description": "The diff view shows a changed files count (37 changed files) in the header next to the Apply button. However, there is no per-file line count summary (e.g., +120 / -45 lines) or total additions/deletions summary. File status indicators show modified (yellow dot) and added (green A) but no line-level stats.",
+      "location": "Workspace > Diff tab"
+    }
+  ],
+  "ui_elements_found": ["Changed files count (37)", "File status indicators (modified/added)", "File list"],
+  "tested_at": "2026-03-23"
+}

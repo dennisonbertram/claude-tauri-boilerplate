@@ -1,0 +1,14 @@
+{
+  "story": "STORY-037",
+  "title": "View Workspace Git History (Revisions)",
+  "status": "pass",
+  "findings": [
+    {
+      "type": "enhancement",
+      "severity": "low",
+      "title": "No dedicated commit log/history view",
+      "description": "Git history is only accessible via the diff comparison dropdowns. A dedicated History/Commits tab with a timeline showing dates, authors, and commit messages would improve discoverability.",
+      "file": "apps/desktop/src/components/workspaces/WorkspaceDiffView.tsx"
+    }
+  ]
+}

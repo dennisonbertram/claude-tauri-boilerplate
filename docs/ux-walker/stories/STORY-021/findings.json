@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-021",
+  "title": "Cost Tracking with Expandable Breakdown",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "CostDisplay component shows session total cost as a clickable badge that expands to show per-message cost breakdown with model name, input/output/cache token counts, and individual message costs",
+      "evidence": "CostDisplay.tsx: cost-badge button toggles cost-detail-panel with cost-session-total and per-message breakdown table",
+      "component": "apps/desktop/src/components/chat/CostDisplay.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "CostSegment in status bar provides always-visible cost tracking",
+      "evidence": "StatusBar.tsx line 12: imports CostSegment, passes sessionTotalCost prop",
+      "component": "apps/desktop/src/components/status-bar/CostSegment.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Cost tracking hook (useCostTracking) and pricing library exist with model-specific pricing",
+      "evidence": "hooks/useCostTracking.ts and lib/pricing.ts with tests",
+      "component": "apps/desktop/src/hooks/useCostTracking.ts"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot see live cost data on new chat screen as no messages have been sent yet. CostDisplay hides itself when messageCosts.length === 0 and sessionTotalCost === 0.",
+      "evidence": "CostDisplay.tsx lines 22-25: returns null when no costs"
+    }
+  ]
+}

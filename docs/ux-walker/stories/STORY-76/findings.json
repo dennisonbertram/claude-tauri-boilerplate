@@ -1,0 +1,22 @@
+{
+  "story_id": "STORY-076",
+  "title": "Use Permission Mode = Accept Edits for Auto-Approval",
+  "status": "partial",
+  "bugs": [
+    {
+      "severity": "critical",
+      "description": "Clicking permission mode button in status bar crashes the app",
+      "location": "status bar > permission mode button",
+      "reproduction": "Click 'Normal' in status bar"
+    }
+  ],
+  "missing_features": [
+    "Could not verify available permission mode options in dropdown"
+  ],
+  "ui_present": [
+    "Permission Mode dropdown in Settings > AI & Model > Advanced",
+    "Permission Mode dropdown in Agent Profiles > Tools tab",
+    "Status bar permission mode indicator showing 'Normal'"
+  ],
+  "ui_missing": []
+}

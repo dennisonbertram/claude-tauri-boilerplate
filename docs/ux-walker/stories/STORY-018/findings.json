@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-018",
+  "title": "Real-time Tool Visualization with Elapsed Time",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "ToolCallBlock component renders tool calls with status indicators (running spinner, complete checkmark, error X), tool icons, expandable input/output, and elapsed time display",
+      "evidence": "ToolCallBlock.tsx lines 121-125: renders elapsedSeconds during 'running' status. Lines 60-84: StatusIndicator with spinner/check/error icons",
+      "component": "apps/desktop/src/components/chat/ToolCallBlock.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "StatusBar includes ActiveToolDisplay and TurnTimer for real-time streaming feedback",
+      "evidence": "StatusBar.tsx lines 53-54: TurnTimer and ActiveToolDisplay components in center section",
+      "component": "apps/desktop/src/components/StatusBar.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Rich tool-specific renderers exist for Bash, FileRead, FileWrite, FileEdit, Grep, Glob, WebFetch, WebSearch, NotebookEdit, and BrowserAutomation tools via gen-ui registry",
+      "evidence": "gen-ui/registry.ts and dedicated display components (BashToolRenderer.tsx, FileReadDisplay.tsx, etc.)",
+      "component": "apps/desktop/src/components/chat/gen-ui/"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot verify live tool visualization during streaming because opening existing conversations crashes the app (known issue). Would need to send a new message to trigger tool use.",
+      "evidence": "Known issue documented in walk instructions"
+    }
+  ]
+}

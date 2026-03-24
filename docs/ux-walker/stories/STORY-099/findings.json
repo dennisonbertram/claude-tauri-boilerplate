@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-099",
+  "title": "Filter Diff Files by Review Status",
+  "status": "PASS",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Diff tab",
+  "observations": [
+    "Filter combobox with All files / Unreviewed / Reviewed options",
+    "Each file row has Mark reviewed button",
+    "Mark all reviewed / Mark all unreviewed bulk action button present"
+  ],
+  "issues": [],
+  "ui_elements_found": ["Filter combobox", "Mark reviewed buttons (per file)", "Mark all reviewed button"]
+}

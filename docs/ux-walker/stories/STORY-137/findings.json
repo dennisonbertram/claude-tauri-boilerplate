@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-137",
+  "title": "Review Cost Breakdown During Session",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No cost or token breakdown UI is visible in the chat interface. The status bar shows model name (Sonnet 4.6), mode (Normal), and branch (main) but no cost/token metrics.",
+      "expected": "A cost/token usage breakdown panel or indicator should be available during or after a chat session.",
+      "actual": "No cost breakdown UI exists anywhere in the new chat view or status bar.",
+      "blocked_by": null
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not yet implemented. No UI element for cost/token breakdown exists in the current chat interface."
+}

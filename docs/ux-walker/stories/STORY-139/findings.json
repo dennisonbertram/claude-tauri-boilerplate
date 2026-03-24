@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-139",
+  "title": "Monitor Active Subagent Execution",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No subagent monitoring UI is visible in the chat interface. The Agent Profiles page allows configuring sub-agents JSON (name, model, tools) but there is no runtime monitoring panel for active subagent execution.",
+      "expected": "A panel or indicator showing active subagent execution status, progress, and results.",
+      "actual": "Agent Profiles page has Sub-agents JSON config field but no runtime monitoring UI exists. Would need active conversation to fully test.",
+      "blocked_by": "Known issue: clicking existing conversations crashes the app"
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented for runtime monitoring. Sub-agent configuration exists in Agent Profiles but no execution monitoring UI."
+}

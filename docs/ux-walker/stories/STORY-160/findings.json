@@ -1,0 +1,24 @@
+[
+  {
+    "id": "F-160-001",
+    "story": "STORY-160",
+    "severity": "low",
+    "title": "Connection recovery does not auto-restore app after server comes back",
+    "description": "When the server goes down, the app shows a 'Server not reachable' page with a 'Check Connection' button. After the server comes back up, clicking 'Check Connection' shows 'Connecting...' indefinitely and does not return to the main app. A full page reload is required to recover.",
+    "expected": "Clicking 'Check Connection' when the server is available should detect the connection and transition back to the main app view automatically.",
+    "actual": "The app gets stuck on 'Connecting...' after clicking 'Check Connection', even when the server is reachable. Only a full page reload recovers the app.",
+    "steps_to_reproduce": "1. Block network to server (or stop server)\n2. Navigate in the app until 'Server not reachable' page appears\n3. Unblock network (or start server)\n4. Click 'Check Connection'\n5. Observe: stuck on 'Connecting...'",
+    "screenshot": "screenshots/05-after-recovery.png"
+  },
+  {
+    "id": "F-160-002",
+    "story": "STORY-160",
+    "severity": "info",
+    "title": "Graceful server-down page with setup instructions",
+    "description": "When the API server is unreachable, the app degrades gracefully to a 'Welcome to Claude Tauri' page showing setup instructions and a 'Server not reachable' status with a 'Check Connection' retry button. This provides clear user guidance.",
+    "expected": "N/A — this is positive behavior",
+    "actual": "App shows helpful connection setup page with retry option when server is down.",
+    "steps_to_reproduce": "1. Block network to server\n2. Navigate in the app\n3. Observe the connection setup page",
+    "screenshot": "screenshots/04-error-state.png"
+  }
+]

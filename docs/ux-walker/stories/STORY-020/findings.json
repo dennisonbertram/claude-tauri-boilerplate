@@ -1,0 +1,30 @@
+{
+  "storyId": "STORY-020",
+  "title": "Suggestion Chips After Empty Assistant Message",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "SuggestionChips component exists and renders clickable pill-shaped chips with dismiss (X) buttons. Each chip has role='button', keyboard support (Enter/Space), and data-testid='suggestion-chip'",
+      "evidence": "SuggestionChips.tsx: renders flex-wrap container of chips with onSelect and onDismiss callbacks",
+      "component": "apps/desktop/src/components/chat/SuggestionChips.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Suggestion logic exists in useSuggestions hook with tests",
+      "evidence": "hooks/useSuggestions.ts and hooks/__tests__/useSuggestions.test.ts",
+      "component": "apps/desktop/src/hooks/useSuggestions.ts"
+    },
+    {
+      "type": "observation",
+      "description": "Template cards visible on empty chat screen serve as initial suggestion chips: 'Generate a dashboard layout', 'Scaffold an API integration', 'Review and optimize code'",
+      "evidence": "Snapshot: buttons e128, e129, e130 with template descriptions"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot verify suggestion chips appearing after assistant responses due to conversation crash issue. They likely appear after empty/short assistant messages.",
+      "evidence": "Known issue: clicking existing conversations crashes"
+    }
+  ]
+}

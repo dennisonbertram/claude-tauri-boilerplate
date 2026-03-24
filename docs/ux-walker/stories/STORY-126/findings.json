@@ -1,0 +1,8 @@
+{
+  "story": "STORY-126",
+  "title": "Delete and Shutdown Teams",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Two-step inline delete confirmation works well. Cancel properly aborts deletion."
+}

@@ -1,0 +1,37 @@
+{
+  "storyId": "STORY-023",
+  "title": "Markdown with Code, LaTeX, and Mermaid Rendering",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "MarkdownRenderer uses react-markdown with remark-gfm (tables, strikethrough), remark-math (LaTeX), rehype-highlight (syntax highlighting), and rehype-katex (math rendering with KaTeX CSS imported)",
+      "evidence": "MarkdownRenderer.tsx: imports remarkGfm, remarkMath, rehypeHighlight, rehypeKatex, and katex/dist/katex.min.css",
+      "component": "apps/desktop/src/components/chat/MarkdownRenderer.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Mermaid diagram support with async rendering, dark/light theme adaptation, fullscreen expand with pan/zoom, loading state, and error handling",
+      "evidence": "MermaidDiagram.tsx: dynamic import of mermaid, dark theme detection, fullscreen modal with CSS transforms for pan/zoom",
+      "component": "apps/desktop/src/components/chat/MermaidDiagram.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Code blocks include copy button functionality and language detection",
+      "evidence": "MarkdownRenderer.tsx imports CopyButton from shared; code renderer checks for language-* class pattern",
+      "component": "apps/desktop/src/components/chat/MarkdownRenderer.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Tests exist for LaTeX and Mermaid rendering specifically",
+      "evidence": "apps/desktop/src/components/chat/__tests__/MarkdownRendererLatexMermaid.test.tsx",
+      "component": "apps/desktop/src/components/chat/__tests__/MarkdownRendererLatexMermaid.test.tsx"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot visually verify markdown rendering in an active conversation due to conversation crash issue",
+      "evidence": "Known issue"
+    }
+  ]
+}

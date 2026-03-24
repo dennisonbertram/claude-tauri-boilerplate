@@ -1,0 +1,18 @@
+{
+  "story_id": "STORY-077",
+  "title": "Handle Permission Denial and Error Recovery",
+  "status": "blocked",
+  "bugs": [],
+  "missing_features": [
+    "Cannot verify runtime permission denial UI without active session",
+    "No visible error recovery mechanism for denied permissions"
+  ],
+  "ui_present": [
+    "Block option per tool in Agent Profile",
+    "Default/Allow/Block toggle per tool"
+  ],
+  "ui_missing": [
+    "Runtime permission denial dialog (requires active session)",
+    "Error recovery / retry UI after denial"
+  ]
+}

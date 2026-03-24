@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-091",
+  "title": "Handle Linear Auth Expiration",
+  "status": "partial",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "gap",
+      "description": "No specific auth expiration detection. Generic error handling exists but expired tokens show generic error messages instead of a clear re-auth prompt."
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

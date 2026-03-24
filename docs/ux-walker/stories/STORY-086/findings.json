@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-086",
+  "title": "View Linear Issue Deep Link",
+  "status": "partial",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "gap",
+      "description": "Issue ID in LinearIssueBar opens picker instead of deep-linking to Linear.app. No external link to the actual Linear issue page."
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

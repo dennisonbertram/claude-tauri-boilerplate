@@ -3,9 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.18.1",
   "scripts": {
-    "dev": "pnpm --filter @claude-tauri/desktop dev",
-    "dev:server": "pnpm --filter @claude-tauri/server dev",
-    "dev:all": "concurrently \"pnpm dev:server\" \"pnpm dev\"",
+    "dev": "echo 'ERROR: Use ./init.sh to start dev servers. See CLAUDE.md' && exit 1",
+    "dev:server": "echo 'ERROR: Use ./init.sh to start dev servers. See CLAUDE.md' && exit 1",
+    "dev:all": "echo 'ERROR: Use ./init.sh to start dev servers. See CLAUDE.md' && exit 1",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "build:sidecar": "bun build --compile apps/server/src/index.ts --outfile apps/desktop/src-tauri/binaries/server-$(rustc -vV | grep host | cut -d' ' -f2)"

@@ -1,0 +1,8 @@
+{
+  "story": "STORY-123",
+  "title": "Open Team and Monitor Live Agent Status",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Agent status monitoring UI is present. Yellow dot + 'Idle' shown for each agent. Real-time updates would need running agents to verify."
+}

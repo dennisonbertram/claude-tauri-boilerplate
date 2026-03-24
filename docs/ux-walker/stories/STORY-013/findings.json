@@ -1,0 +1,26 @@
+{
+  "story": "STORY-013",
+  "title": "Share Session Export with Team",
+  "status": "partial",
+  "findings": [
+    {
+      "id": "013-1",
+      "type": "present",
+      "severity": "info",
+      "summary": "Export JSON and Export Markdown options exist in context menu",
+      "details": "Sessions can be exported locally as JSON or Markdown via the three-dot context menu on each session item.",
+      "component": "apps/desktop/src/components/sidebar/SessionItem.tsx"
+    },
+    {
+      "id": "013-2",
+      "type": "missing-feature",
+      "severity": "low",
+      "summary": "No share/collaboration functionality",
+      "details": "No 'Share' option, no shareable links, no team sharing. Export is local-only file download.",
+      "component": "apps/desktop/src/components/sidebar/SessionItem.tsx"
+    }
+  ],
+  "screenshots": [
+    "screenshots/01-export-options-in-menu.png"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "story": "STORY-129",
+  "title": "Handle Agent Stop from Sidebar",
+  "status": "not_testable",
+  "severity": null,
+  "findings": [
+    {
+      "type": "not_testable",
+      "description": "Per-agent stop controls not visible when agents are idle. May appear when agents are running.",
+      "expected": "Stop button per agent in sidebar",
+      "actual": "Only 'Shutdown All' button visible at team level"
+    }
+  ],
+  "notes": "Cannot test without running agents. Shutdown All button exists for team-level control."
+}

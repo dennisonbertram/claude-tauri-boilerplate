@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-144",
+  "title": "Expand and Collapse Approved Plan",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No plan expansion/collapse controls visible. This feature requires an active conversation with an approved plan. Cannot test due to known conversation crash bug.",
+      "expected": "Expand/collapse controls for viewing approved execution plans in the chat.",
+      "actual": "No plan-related UI elements visible in new chat view. Blocked from testing in active conversations.",
+      "blocked_by": "Known issue: clicking existing conversations crashes the app"
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented or blocked from testing. Requires active conversation."
+}

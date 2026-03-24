@@ -1,0 +1,13 @@
+[
+  {
+    "id": "F-051-001",
+    "severity": "high",
+    "story": "STORY-051",
+    "title": "No profile selector in new chat view",
+    "description": "There is no way to select an agent profile when creating a new chat. The chat input area has a project selector and model selector but no profile selector. Users must manage profiles separately in Agent Profiles section but cannot apply them to conversations.",
+    "steps_to_reproduce": "1. Click 'New Chat' in sidebar\n2. Look for a profile selector near the chat input area\n3. No profile selector exists",
+    "expected": "A profile selector dropdown or button should be available when creating new chats to select which agent profile to use",
+    "actual": "No profile selector is present in the chat creation flow",
+    "category": "missing-feature"
+  }
+]

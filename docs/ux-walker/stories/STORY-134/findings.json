@@ -1,0 +1,15 @@
+{
+  "story": "STORY-134",
+  "title": "Add Agent to Existing Team",
+  "status": "not_implemented",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No ability to add agents to an existing team. Add Agent only available during team creation.",
+      "expected": "Button or UI to add agents to an existing team",
+      "actual": "No add-agent controls in team workspace view"
+    }
+  ],
+  "notes": "Post-creation team modification not supported. Must delete and recreate to change agent composition."
+}

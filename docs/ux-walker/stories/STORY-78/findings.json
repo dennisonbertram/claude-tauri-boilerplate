@@ -1,0 +1,19 @@
+{
+  "story_id": "STORY-078",
+  "title": "Enable Plan Mode for Multi-Step Review Workflow",
+  "status": "fail",
+  "bugs": [],
+  "missing_features": [
+    "No plan mode toggle in chat interface",
+    "No plan mode status indicator",
+    "No multi-step review workflow UI"
+  ],
+  "ui_present": [
+    "ExitPlanMode tool in Agent Profile Tools list"
+  ],
+  "ui_missing": [
+    "Plan mode toggle button",
+    "Plan mode status indicator in status bar or chat",
+    "Step-by-step review interface"
+  ]
+}

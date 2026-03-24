@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-102",
+  "title": "View Code Review Summary with Severity Index",
+  "status": "NOT_TESTED",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Diff tab",
+  "observations": [
+    "Review initiation UI confirmed working (STORY-100/101)",
+    "Did not execute review to avoid modifying workspace state",
+    "Summary with severity index would appear after review completes"
+  ],
+  "issues": [],
+  "ui_elements_found": []
+}

@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-115",
+  "title": "Dashboard Canvas Widget Rendering",
+  "status": "not_implemented",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "feature_not_ready",
+      "description": "Dashboard canvas widget rendering is explicitly labeled as coming soon. When selecting a dashboard, the view shows DASHBOARD SPEC (LATEST REVISION) with message: interactive widget rendering is coming soon. No actual widgets are rendered.",
+      "location": "Workspace > Dashboards tab > Test Dashboard"
+    }
+  ],
+  "ui_elements_found": ["Dashboard list", "+ New button", "Show archived checkbox", "Archive button", "Regenerate button", "Dashboard spec display"],
+  "tested_at": "2026-03-23"
+}

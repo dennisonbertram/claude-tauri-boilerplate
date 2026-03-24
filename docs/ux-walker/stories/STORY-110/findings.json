@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-110",
+  "title": "Export Workspace Diff as File",
+  "status": "not_implemented",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No export/download button found in the diff view. The diff toolbar contains Unified, Side-by-side, Refresh, and Review buttons, but no export or download option.",
+      "location": "Workspace > Diff tab toolbar",
+      "expected": "An export/download button to save the diff as a .patch or .diff file",
+      "actual": "No export functionality present in the diff view"
+    }
+  ],
+  "ui_elements_found": ["Unified button", "Side-by-side button", "Refresh button", "Review button", "Compare dropdowns", "Filter dropdown", "Mark all reviewed button"],
+  "tested_at": "2026-03-23"
+}

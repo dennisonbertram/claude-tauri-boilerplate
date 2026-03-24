@@ -1,0 +1,8 @@
+{
+  "story": "STORY-132",
+  "title": "Create Team with Mixed Agent Permissions",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Four permission levels available per agent: normal, acceptEdits, dontAsk, plan. Each agent independently configurable."
+}

@@ -1,0 +1,39 @@
+{
+  "story_id": "STORY-006",
+  "title": "Delete Session with Confirmation",
+  "result": "FAIL",
+  "findings": [
+    {
+      "id": "006-F1",
+      "type": "bug",
+      "severity": "HIGH",
+      "description": "No confirmation dialog appears before session deletion",
+      "expected": "A confirmation dialog should appear asking user to confirm delete",
+      "actual": "Clicking Delete in context menu produces no confirmation dialog"
+    },
+    {
+      "id": "006-F2",
+      "type": "bug",
+      "severity": "HIGH",
+      "description": "Delete action silently fails - session remains in sidebar",
+      "expected": "Session should be removed from sidebar after delete",
+      "actual": "Session 'Crispy Meadow' remains in sidebar after clicking Delete"
+    },
+    {
+      "id": "006-F3",
+      "type": "ux",
+      "severity": "MEDIUM",
+      "description": "No user feedback after delete action - no toast, no notification",
+      "expected": "User should receive feedback about the result of the delete action",
+      "actual": "No visible feedback of any kind after clicking Delete"
+    }
+  ],
+  "steps_completed": 2,
+  "steps_total": 4,
+  "screenshots": [
+    "screenshots/initial-state.png",
+    "screenshots/hover-shows-button.png",
+    "screenshots/context-menu-with-delete.png",
+    "screenshots/after-delete-click.png"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-155",
+  "title": "Multi-View Navigation & State Persistence",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "Conversation crash fixed, all views navigate correctly",
+  "findings": [],
+  "screenshots": [
+    "01-chat-view.png",
+    "02-conversation-open.png",
+    "03-teams-view.png",
+    "04-back-to-chat.png",
+    "05-navigate-back.png",
+    "07-rapid-nav.png"
+  ]
+}

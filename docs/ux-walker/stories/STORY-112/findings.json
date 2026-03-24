@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-112",
+  "title": "Diff Comment Threads with Nested Replies",
+  "status": "not_implemented",
+  "severity": "medium",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No inline comment or threaded reply functionality found in the diff view. The diff shows a flat file list with Mark reviewed buttons per file, but no ability to add comments on specific diff lines or create threaded discussions.",
+      "location": "Workspace > Diff tab",
+      "expected": "Ability to add inline comments on diff lines with nested/threaded replies",
+      "actual": "Only file-level Mark reviewed buttons present; no inline commenting system"
+    }
+  ],
+  "ui_elements_found": ["Mark reviewed (per file)", "Mark all reviewed", "File list with status indicators"],
+  "tested_at": "2026-03-23"
+}

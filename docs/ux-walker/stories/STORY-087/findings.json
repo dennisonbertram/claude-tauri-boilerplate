@@ -1,0 +1,17 @@
+{
+  "story_id": "STORY-087",
+  "title": "Search GitHub Issues in Workspace Dialog",
+  "status": "pass",
+  "severity": null,
+  "findings": [
+    {
+      "type": "observation",
+      "description": "GitHub Issue tab exists in CreateWorkspaceDialog with search by title/number, loading states, and issue list"
+    },
+    {
+      "type": "blocker",
+      "description": "Cannot visually verify because workspace/project navigation crashes the app (known issue)"
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

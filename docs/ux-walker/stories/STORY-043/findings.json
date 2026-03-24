@@ -1,0 +1,13 @@
+[
+  {
+    "id": "F-043-001",
+    "severity": "medium",
+    "story": "STORY-043",
+    "title": "New agent profile button intermittently navigates to new chat instead of creating profile",
+    "description": "When clicking the 'New agent profile' button on the Agent Profiles page, it sometimes navigates to the New Chat view instead of creating a new profile. On retry (navigating back to Agent Profiles and clicking again), it works correctly.",
+    "steps_to_reproduce": "1. Navigate to Agent Profiles page\n2. Click 'New agent profile' button\n3. Observe that sometimes the app navigates to New Chat instead",
+    "expected": "A new agent profile should be created and shown in the editing panel",
+    "actual": "Sometimes navigates to New Chat view instead of creating profile",
+    "category": "navigation-bug"
+  }
+]

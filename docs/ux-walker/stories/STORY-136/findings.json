@@ -1,0 +1,8 @@
+{
+  "story": "STORY-136",
+  "title": "Real-Time Agent Status Updates (Future Feature)",
+  "status": "not_testable",
+  "severity": null,
+  "findings": [],
+  "notes": "Status indicator UI exists with colored dots and text labels. Cannot verify real-time update mechanism without running agents."
+}

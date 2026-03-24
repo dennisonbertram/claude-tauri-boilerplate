@@ -1,0 +1,14 @@
+{
+  "story_id": "STORY-108",
+  "title": "Generate Dashboard from Chat Message",
+  "status": "NOT_TESTED",
+  "tested_at": "2026-03-23",
+  "path": "Projects > ai-domain-registration > Investigation > Chat tab",
+  "observations": [
+    "Chat has + and / buttons near reply input",
+    "Pro tip mentions /review, /compact, /pr commands",
+    "Dashboard generation from chat may be via slash commands but not exercised"
+  ],
+  "issues": [],
+  "ui_elements_found": ["+ button", "/ button", "Reply input"]
+}

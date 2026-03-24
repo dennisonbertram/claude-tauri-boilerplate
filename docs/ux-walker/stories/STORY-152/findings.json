@@ -1,0 +1,20 @@
+[
+  {
+    "id": "F-152-001",
+    "story_id": "STORY-152",
+    "severity": "low",
+    "category": "feature-gap",
+    "criterion": "Profile selection should be accessible from the welcome screen",
+    "score": "warn",
+    "description": "WelcomeScreen component declares agentProfiles, selectedProfileId, and onSelectProfile props in its interface but destructures them away without rendering any profile selection UI. Users cannot select an agent profile when starting a new chat from the welcome screen.",
+    "expected": "A profile/agent selector dropdown or picker on the welcome screen composer, allowing users to choose an agent profile before starting a chat.",
+    "actual": "The welcome screen shows model selector and project selector but no agent profile selector. The props for profile selection exist in the TypeScript interface but are unused in the render function.",
+    "screenshot": "screenshots/welcome-screen-chat.png",
+    "suggested_fix": "Implement a profile selector dropdown in WelcomeScreen.tsx that uses the agentProfiles, selectedProfileId, and onSelectProfile props. Add it near the model selector in the composer toolbar.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/chat/WelcomeScreen.tsx",
+      "apps/desktop/src/App.tsx",
+      "apps/desktop/src/hooks/useAgentProfiles.ts"
+    ]
+  }
+]

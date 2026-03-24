@@ -1,0 +1,33 @@
+[
+  {
+    "id": "F-158-001",
+    "storyId": "STORY-158",
+    "severity": "info",
+    "category": "architecture",
+    "title": "Init sequence follows correct order: sidecar -> auth -> content",
+    "description": "The app initialization follows a logical and secure sequence: (1) useSidecarBoot waits for the backend server, (2) AuthGate checks authentication via /api/auth/status, (3) AppLayout renders only after successful auth. This prevents unauthorized access to app content.",
+    "file": "apps/desktop/src/App.tsx",
+    "line": 124
+  },
+  {
+    "id": "F-158-002",
+    "storyId": "STORY-158",
+    "severity": "info",
+    "category": "performance",
+    "title": "Dev mode loads 250 unbundled modules",
+    "description": "In Vite dev mode, the app loads ~250 individual .tsx/.ts/.js modules. This is expected for development (HMR support) but production builds should bundle these into fewer chunks for faster loading.",
+    "file": "apps/desktop/src/App.tsx",
+    "line": 1
+  },
+  {
+    "id": "F-158-003",
+    "storyId": "STORY-158",
+    "severity": "low",
+    "category": "resilience",
+    "title": "Web mode skips backend health check during init",
+    "description": "In non-Tauri (web browser) mode, useSidecarBoot sets serverReady=true immediately without checking if the backend server is actually reachable. If the server is down, the app renders normally but API calls (sessions, auth) will fail. The auth check via /api/auth/status partially catches this by showing 'Server not reachable' error.",
+    "file": "apps/desktop/src/app/useSidecarBoot.ts",
+    "line": 5,
+    "suggestion": "Consider adding a health check fetch to /api/health in web mode before setting serverReady=true, or show a connection error banner if initial API calls fail."
+  }
+]

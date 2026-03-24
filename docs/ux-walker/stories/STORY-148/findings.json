@@ -1,0 +1,20 @@
+{
+  "story": "STORY-148",
+  "title": "Server Sidecar Startup & Lifecycle",
+  "date": "2026-03-22",
+  "result": "PASS",
+  "findings": [
+    {
+      "id": "F-148-001",
+      "severity": "info",
+      "category": "ux",
+      "title": "No explicit server connection status indicator",
+      "description": "The UI does not display an explicit indicator showing that the frontend is connected to the sidecar server. The user infers connection status from the absence of errors and the presence of loaded data (conversation history, etc.). A subtle connected/disconnected indicator could improve confidence for developer/DevOps users.",
+      "location": "App shell / status bar area",
+      "steps_to_reproduce": "Launch the app and look for a server connection status indicator — none is visible.",
+      "expected": "An optional or subtle indicator showing server connection status (e.g., green dot, status text)",
+      "actual": "No explicit connection indicator; connection is inferred from working UI",
+      "screenshot": "screenshots/step-1-initial.png"
+    }
+  ]
+}

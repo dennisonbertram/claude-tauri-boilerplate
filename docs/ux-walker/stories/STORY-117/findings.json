@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-117",
+  "title": "Artifact Search and Filter by Project",
+  "status": "partial",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "feature_present",
+      "description": "Global search supports filtering by project (All Projects dropdown), file type, and time range. Search results are grouped by project with code previews. However, this is a general code search, not specifically an artifact search. No dedicated artifact search/filter was found.",
+      "location": "Sidebar > Search"
+    }
+  ],
+  "ui_elements_found": ["Search input", "All Projects filter dropdown", "File type filter", "Time range filter", "Recent searches sidebar", "Code preview with syntax highlighting"],
+  "tested_at": "2026-03-23"
+}

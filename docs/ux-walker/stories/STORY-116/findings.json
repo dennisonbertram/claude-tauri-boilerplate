@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-116",
+  "title": "Artifact Archive and Restore Workflow",
+  "status": "partial",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "feature_present",
+      "description": "Archive functionality exists for dashboards. Each dashboard has an Archive button in the top-right corner. A Show archived checkbox is available in the dashboard list sidebar to toggle visibility of archived items. A trash icon also appears on individual dashboard items. Restore workflow was not tested end-to-end.",
+      "location": "Workspace > Dashboards tab"
+    }
+  ],
+  "ui_elements_found": ["Archive button", "Show archived checkbox", "Trash icon on dashboard items", "Regenerate button"],
+  "tested_at": "2026-03-23"
+}

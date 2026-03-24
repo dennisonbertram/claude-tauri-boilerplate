@@ -1,0 +1,70 @@
+[
+  {
+    "id": "F-149-001",
+    "story": "STORY-149",
+    "severity": "low",
+    "type": "ux",
+    "title": "User avatar shows '?' fallback instead of actual initial or avatar",
+    "description": "The bottom-left of the sidebar shows a '?' icon with the label 'User' instead of the user's actual initial or avatar. Since the auth API confirms the user is authenticated with a 'pro' plan, the app should display meaningful user identity info (e.g., first initial, email, or plan badge).",
+    "element": "ActivityBar user section (bottom-left)",
+    "screenshot": "screenshots/step-3-teams.png",
+    "expected": "User avatar showing initial letter or profile image, with name or email",
+    "actual": "'?' icon with generic 'User' label"
+  },
+  {
+    "id": "F-149-002",
+    "story": "STORY-149",
+    "severity": "info",
+    "type": "ux",
+    "title": "No plan/subscription info visible in the UI",
+    "description": "The auth API returns plan='pro' but there is no visual indicator of the user's subscription plan anywhere in the UI. Adding a plan badge near the user info would help users confirm their subscription status.",
+    "element": "ActivityBar / Settings",
+    "screenshot": "screenshots/step-1-auth-state.png",
+    "expected": "Subscription plan indicator (e.g., 'Pro' badge)",
+    "actual": "No plan information displayed"
+  },
+  {
+    "id": "F-149-003",
+    "story": "STORY-149",
+    "severity": "pass",
+    "type": "functional",
+    "title": "Auth API correctly returns authenticated status with plan info",
+    "description": "GET /api/auth/status returns {\"authenticated\":true,\"plan\":\"pro\"} as expected.",
+    "element": "API endpoint",
+    "expected": "Authenticated with plan info",
+    "actual": "{\"authenticated\":true,\"plan\":\"pro\"}"
+  },
+  {
+    "id": "F-149-004",
+    "severity": "pass",
+    "story": "STORY-149",
+    "type": "functional",
+    "title": "All major navigation sections load successfully",
+    "description": "New Chat, Search, Documents, Projects, Agent Profiles, and Teams all load without errors. Each view renders its expected content.",
+    "element": "Sidebar navigation",
+    "expected": "All sections accessible and rendering",
+    "actual": "All sections load correctly"
+  },
+  {
+    "id": "F-149-005",
+    "severity": "pass",
+    "story": "STORY-149",
+    "type": "functional",
+    "title": "No console errors related to auth",
+    "description": "Browser console shows no errors. No auth timeout or error indicators observed.",
+    "element": "Browser console",
+    "expected": "No auth errors",
+    "actual": "Clean console"
+  },
+  {
+    "id": "F-149-006",
+    "severity": "pass",
+    "story": "STORY-149",
+    "type": "functional",
+    "title": "App shows main interface, not onboarding",
+    "description": "The authenticated user sees the full app with sidebar, chat area, and all navigation options. No onboarding or login gate is shown.",
+    "element": "Main layout",
+    "expected": "Authenticated main interface",
+    "actual": "Full app displayed with sidebar and content area"
+  }
+]

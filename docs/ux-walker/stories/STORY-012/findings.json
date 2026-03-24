@@ -1,0 +1,66 @@
+[
+  {
+    "id": "F-012-001",
+    "story": "STORY-012",
+    "title": "No per-message timestamps in conversation thread",
+    "severity": "medium",
+    "type": "missing-feature",
+    "status": "new",
+    "description": "Individual messages within a conversation thread do not display timestamps. Users cannot see when each message was sent or received. Timestamps are only shown on sidebar conversation entries (e.g., 'Mar 21 at 9:15 PM') for the overall session, not per message.",
+    "steps": [
+      "Open any conversation with messages",
+      "Look at individual user and assistant messages",
+      "Observe: no timestamp is shown on any message"
+    ],
+    "expected": "Each message should display a timestamp (or at least a relative time like '2 hours ago')",
+    "actual": "No timestamps on individual messages. Only sidebar shows session-level timestamps.",
+    "screenshots": ["06-scrolled-to-heading.png"],
+    "component": "MessageList / message rendering"
+  },
+  {
+    "id": "F-012-002",
+    "story": "STORY-012",
+    "title": "Scroll focus ambiguity between sidebar and message area",
+    "severity": "low",
+    "type": "ux",
+    "status": "new",
+    "description": "When scrolling with the mouse wheel or keyboard, the scroll target can be ambiguous. Sometimes the sidebar scrolls instead of the message area, depending on where the cursor/focus is. This can be disorienting when trying to scroll through a long conversation.",
+    "steps": [
+      "Open a conversation with long content",
+      "Try scrolling with mouse wheel or keyboard arrows",
+      "Observe: scroll may target sidebar instead of message area"
+    ],
+    "expected": "Scroll should consistently target the message area when a conversation is open",
+    "actual": "Scroll target depends on cursor position / focus state",
+    "screenshots": [],
+    "component": "ChatPage layout / scroll containers"
+  },
+  {
+    "id": "F-012-003",
+    "story": "STORY-012",
+    "title": "Cannot verify thinking block and tool call rendering (no test data)",
+    "severity": "info",
+    "type": "test-gap",
+    "status": "new",
+    "description": "The available conversations in the test environment do not contain thinking blocks (extended thinking) or explicit tool_use/tool_result message parts. As a result, these rendering features could not be verified. The workspace conversation showed structured content with checkmarks but not explicit tool call UI. Need conversations with extended thinking and tool use to fully validate STORY-012.",
+    "steps": [
+      "Searched through available conversations",
+      "No conversations contained thinking blocks or tool_use content blocks"
+    ],
+    "expected": "Test data should include conversations with thinking blocks and tool calls",
+    "actual": "Only simple text/markdown conversations available for testing",
+    "screenshots": ["02-workspace-conversation.png"],
+    "component": "MessageList / ThinkingBlock / ToolCallRenderer"
+  },
+  {
+    "id": "F-012-100",
+    "story": "STORY-012",
+    "title": "Message rendering works correctly — markdown, avatars, role labels all functional",
+    "severity": "info",
+    "type": "verification",
+    "status": "resolved",
+    "description": "The previously-blocking ChatPage crash has been fixed. Conversations now render correctly with: user/assistant message separation, avatar icons, role labels ('You' / 'Claude'), rich markdown (h2/h3 headings, bullet lists, ordered lists, bold text, horizontal rules, paragraphs), suggestion buttons, tab system, and reply input. All rendering is clean with no visual glitches or errors.",
+    "screenshots": ["03-cake-conversation-rendering.png", "05-message-top.png", "06-scrolled-to-heading.png"],
+    "component": "ChatPage / MessageList"
+  }
+]

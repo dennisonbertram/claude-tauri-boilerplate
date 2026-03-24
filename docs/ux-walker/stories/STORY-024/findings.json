@@ -1,0 +1,32 @@
+{
+  "storyId": "STORY-024",
+  "title": "Workflow Template Trigger (Code Review)",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "Workflow templates visible on new chat screen: 'Generate a dashboard layout', 'Scaffold an API integration', 'Review and optimize code' - each as clickable cards with descriptions",
+      "evidence": "Snapshot: buttons e128 ('Generate a dashboard layout With sidebar navigation and data grid'), e129 ('Scaffold an API integration Connect to Stripe, Supabase or any REST API'), e130 ('Review and optimize code Analyze performance and suggest improvements')",
+      "component": "Chat new message screen"
+    },
+    {
+      "type": "pass",
+      "description": "WorkflowsTab in settings allows configuring workflow templates with custom prompts, model selection, and effort levels",
+      "evidence": "settings/WorkflowsTab.tsx uses EffortSelector and workflow prompt configuration",
+      "component": "apps/desktop/src/components/settings/WorkflowsTab.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "CodeReviewDialog component exists for workspace-level code review workflow with diff viewing",
+      "evidence": "workspaces/CodeReviewDialog.tsx and CodeReviewSummary.tsx",
+      "component": "apps/desktop/src/components/workspaces/CodeReviewDialog.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Workflow prompt defaults defined in workflowPromptDefaults.ts",
+      "evidence": "lib/workflowPromptDefaults.ts with tests at lib/workflowPrompts.test.ts",
+      "component": "apps/desktop/src/lib/workflowPromptDefaults.ts"
+    }
+  ]
+}

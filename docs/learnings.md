@@ -87,3 +87,20 @@
 ### Gotchas
 - **Symlink debugging is cryptic** — failures appear as "module not found" errors in completely unrelated packages, making root cause hard to trace
 - **pnpm's internal bookkeeping relies on `node_modules` structure** — symlinks break this silently; changes appear to work locally but fail in CI
+
+## 2026-03-24: Stale Symlinks Block Architecture Refactors
+
+### Critical Pattern: Old Symlinks Persist Through Refactors
+- **Discovery**: When refactoring away from symlink-based caching (golden cache), old `node_modules` symlinks remain in the working tree even after `init.sh` changes
+- **Why it breaks**: New `init.sh` tries to run `pnpm install` to create a real `node_modules`, but the symlink is in the way — writes go to the old golden directory instead of the project
+- **Signal**: Stale symlink is discovered by checking `ls -la node_modules` — will show `node_modules -> ~/.claude-tauri/golden/./node_modules` if present
+- **Fix**: Always remove stale symlinks manually (`rm -rf node_modules`) before testing a refactored build system
+
+### Why This Matters
+- Symlink refactors can silently fail without obvious error messages
+- Testing a new architecture without cleaning up old symlinks will never show the true state
+- This is especially dangerous in monorepos where symlinks exist at workspace root and are easy to forget about
+
+### Gotcha: Root Cause is Hidden
+- Errors from init.sh with a stale symlink appear to be lockfile/dependency issues, not symlink issues
+- The actual problem (wrong write path) is only visible by checking filesystem structure directly

@@ -1,0 +1,2733 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">Component Library - Light Mode</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" vid="5">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" vid="6">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap" rel="stylesheet" vid="7">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web" vid="8"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css">
+    
+    
+    
+    <style vid="11">
+        body {
+            background-color: #fcfbf8;
+            color: #1a1816;
+            -webkit-font-smoothing: antialiased;
+        }
+        .component-section {
+            @apply mb-16 border-b border-app-border pb-12;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e8e6df;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4d1c9;
+        }
+    </style>
+
+  <style type="text/css">
+*, ::before, ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}/*
+! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
+*//*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  tab-size: 4; /* 3 */
+  font-family: Inter, sans-serif; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: JetBrains Mono, monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.pointer-events-none {
+  pointer-events: none;
+}
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.inset-0 {
+  inset: 0px;
+}
+.-bottom-1 {
+  bottom: -0.25rem;
+}
+.-top-2 {
+  top: -0.5rem;
+}
+.bottom-0 {
+  bottom: 0px;
+}
+.bottom-1\/2 {
+  bottom: 50%;
+}
+.bottom-8 {
+  bottom: 2rem;
+}
+.left-0 {
+  left: 0px;
+}
+.left-1\/2 {
+  left: 50%;
+}
+.left-\[-16px\] {
+  left: -16px;
+}
+.right-0 {
+  right: 0px;
+}
+.right-2 {
+  right: 0.5rem;
+}
+.right-3 {
+  right: 0.75rem;
+}
+.right-4 {
+  right: 1rem;
+}
+.right-6 {
+  right: 1.5rem;
+}
+.top-0 {
+  top: 0px;
+}
+.top-1\/2 {
+  top: 50%;
+}
+.top-4 {
+  top: 1rem;
+}
+.top-6 {
+  top: 1.5rem;
+}
+.top-\[-16px\] {
+  top: -16px;
+}
+.z-0 {
+  z-index: 0;
+}
+.z-10 {
+  z-index: 10;
+}
+.col-span-1 {
+  grid-column: span 1 / span 1;
+}
+.mx-2 {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+.-mb-\[1px\] {
+  margin-bottom: -1px;
+}
+.mb-0\.5 {
+  margin-bottom: 0.125rem;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-1\.5 {
+  margin-bottom: 0.375rem;
+}
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+.mb-16 {
+  margin-bottom: 4rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-20 {
+  margin-bottom: 5rem;
+}
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-5 {
+  margin-bottom: 1.25rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.mb-8 {
+  margin-bottom: 2rem;
+}
+.ml-0\.5 {
+  margin-left: 0.125rem;
+}
+.ml-12 {
+  margin-left: 3rem;
+}
+.ml-6 {
+  margin-left: 1.5rem;
+}
+.mt-0\.5 {
+  margin-top: 0.125rem;
+}
+.mt-1 {
+  margin-top: 0.25rem;
+}
+.mt-24 {
+  margin-top: 6rem;
+}
+.mt-auto {
+  margin-top: auto;
+}
+.block {
+  display: block;
+}
+.inline-block {
+  display: inline-block;
+}
+.flex {
+  display: flex;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.table {
+  display: table;
+}
+.grid {
+  display: grid;
+}
+.hidden {
+  display: none;
+}
+.h-0\.5 {
+  height: 0.125rem;
+}
+.h-1 {
+  height: 0.25rem;
+}
+.h-1\.5 {
+  height: 0.375rem;
+}
+.h-10 {
+  height: 2.5rem;
+}
+.h-12 {
+  height: 3rem;
+}
+.h-16 {
+  height: 4rem;
+}
+.h-2 {
+  height: 0.5rem;
+}
+.h-20 {
+  height: 5rem;
+}
+.h-3 {
+  height: 0.75rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.h-6 {
+  height: 1.5rem;
+}
+.h-7 {
+  height: 1.75rem;
+}
+.h-8 {
+  height: 2rem;
+}
+.h-\[400px\] {
+  height: 400px;
+}
+.h-\[500px\] {
+  height: 500px;
+}
+.h-full {
+  height: 100%;
+}
+.h-px {
+  height: 1px;
+}
+.max-h-64 {
+  max-height: 16rem;
+}
+.max-h-\[400px\] {
+  max-height: 400px;
+}
+.min-h-\[200px\] {
+  min-height: 200px;
+}
+.w-1 {
+  width: 0.25rem;
+}
+.w-1\/2 {
+  width: 50%;
+}
+.w-1\/3 {
+  width: 33.333333%;
+}
+.w-1\/4 {
+  width: 25%;
+}
+.w-1\/5 {
+  width: 20%;
+}
+.w-10 {
+  width: 2.5rem;
+}
+.w-12 {
+  width: 3rem;
+}
+.w-16 {
+  width: 4rem;
+}
+.w-2 {
+  width: 0.5rem;
+}
+.w-2\.5 {
+  width: 0.625rem;
+}
+.w-2\/3 {
+  width: 66.666667%;
+}
+.w-20 {
+  width: 5rem;
+}
+.w-3 {
+  width: 0.75rem;
+}
+.w-3\/4 {
+  width: 75%;
+}
+.w-4 {
+  width: 1rem;
+}
+.w-48 {
+  width: 12rem;
+}
+.w-5 {
+  width: 1.25rem;
+}
+.w-5\/6 {
+  width: 83.333333%;
+}
+.w-56 {
+  width: 14rem;
+}
+.w-6 {
+  width: 1.5rem;
+}
+.w-64 {
+  width: 16rem;
+}
+.w-8 {
+  width: 2rem;
+}
+.w-80 {
+  width: 20rem;
+}
+.w-\[24\%\] {
+  width: 24%;
+}
+.w-\[45\%\] {
+  width: 45%;
+}
+.w-\[60\%\] {
+  width: 60%;
+}
+.w-\[85\%\] {
+  width: 85%;
+}
+.w-fit {
+  width: fit-content;
+}
+.w-full {
+  width: 100%;
+}
+.w-px {
+  width: 1px;
+}
+.min-w-0 {
+  min-width: 0px;
+}
+.min-w-\[20px\] {
+  min-width: 20px;
+}
+.min-w-\[300px\] {
+  min-width: 300px;
+}
+.max-w-2xl {
+  max-width: 42rem;
+}
+.max-w-3xl {
+  max-width: 48rem;
+}
+.max-w-5xl {
+  max-width: 64rem;
+}
+.max-w-\[200px\] {
+  max-width: 200px;
+}
+.max-w-\[320px\] {
+  max-width: 320px;
+}
+.max-w-lg {
+  max-width: 32rem;
+}
+.max-w-md {
+  max-width: 28rem;
+}
+.max-w-xl {
+  max-width: 36rem;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
+.border-collapse {
+  border-collapse: collapse;
+}
+.origin-left {
+  transform-origin: left;
+}
+.-translate-x-1\/2 {
+  --tw-translate-x: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.-translate-y-1\/2 {
+  --tw-translate-y: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.rotate-45 {
+  --tw-rotate: 45deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.transform {
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.animate-\[scale-x_3s_linear_forwards\] {
+  animation: scale-x 3s linear forwards;
+}
+@keyframes blink {
+
+  0%, 100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+@keyframes bounce {
+
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8,0,1,1);
+  }
+
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0,0,0.2,1);
+  }
+}
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+@keyframes pulse {
+
+  50% {
+    opacity: .5;
+  }
+}
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.select-none {
+  user-select: none;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-end {
+  align-items: flex-end;
+}
+.items-center {
+  align-items: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-12 {
+  gap: 3rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.gap-6 {
+  gap: 1.5rem;
+}
+.gap-8 {
+  gap: 2rem;
+}
+.space-y-10 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(2.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(2.5rem * var(--tw-space-y-reverse));
+}
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+}
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-x-auto {
+  overflow-x: auto;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.whitespace-pre {
+  white-space: pre;
+}
+.rounded {
+  border-radius: 0.25rem;
+}
+.rounded-2xl {
+  border-radius: 1rem;
+}
+.rounded-3xl {
+  border-radius: 1.5rem;
+}
+.rounded-\[32px\] {
+  border-radius: 32px;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-md {
+  border-radius: 0.375rem;
+}
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.rounded-bl-lg {
+  border-bottom-left-radius: 0.5rem;
+}
+.border {
+  border-width: 1px;
+}
+.border-2 {
+  border-width: 2px;
+}
+.border-4 {
+  border-width: 4px;
+}
+.border-b {
+  border-bottom-width: 1px;
+}
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+.border-l {
+  border-left-width: 1px;
+}
+.border-l-2 {
+  border-left-width: 2px;
+}
+.border-r {
+  border-right-width: 1px;
+}
+.border-t {
+  border-top-width: 1px;
+}
+.border-app-border {
+  --tw-border-opacity: 1;
+  border-color: rgb(232 230 223 / var(--tw-border-opacity, 1));
+}
+.border-app-border\/50 {
+  border-color: rgb(232 230 223 / 0.5);
+}
+.border-app-error\/20 {
+  border-color: rgb(224 79 79 / 0.2);
+}
+.border-app-error\/30 {
+  border-color: rgb(224 79 79 / 0.3);
+}
+.border-app-error\/40 {
+  border-color: rgb(224 79 79 / 0.4);
+}
+.border-app-success\/20 {
+  border-color: rgb(34 160 76 / 0.2);
+}
+.border-app-text {
+  --tw-border-opacity: 1;
+  border-color: rgb(26 24 22 / var(--tw-border-opacity, 1));
+}
+.border-app-warning\/20 {
+  border-color: rgb(217 119 6 / 0.2);
+}
+.border-app-warning\/30 {
+  border-color: rgb(217 119 6 / 0.3);
+}
+.border-app-warning\/40 {
+  border-color: rgb(217 119 6 / 0.4);
+}
+.border-blue-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(219 234 254 / var(--tw-border-opacity, 1));
+}
+.border-gray-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+}
+.border-transparent {
+  border-color: transparent;
+}
+.border-white {
+  --tw-border-opacity: 1;
+  border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
+}
+.bg-\[\#1da1f2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 161 242 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 243 199 / var(--tw-bg-opacity, 1));
+}
+.bg-app-accent {
+  --tw-bg-opacity: 1;
+  background-color: rgb(237 112 45 / var(--tw-bg-opacity, 1));
+}
+.bg-app-accent\/10 {
+  background-color: rgb(237 112 45 / 0.1);
+}
+.bg-app-accent\/20 {
+  background-color: rgb(237 112 45 / 0.2);
+}
+.bg-app-bg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 251 248 / var(--tw-bg-opacity, 1));
+}
+.bg-app-border {
+  --tw-bg-opacity: 1;
+  background-color: rgb(232 230 223 / var(--tw-bg-opacity, 1));
+}
+.bg-app-border\/20 {
+  background-color: rgb(232 230 223 / 0.2);
+}
+.bg-app-border\/30 {
+  background-color: rgb(232 230 223 / 0.3);
+}
+.bg-app-border\/40 {
+  background-color: rgb(232 230 223 / 0.4);
+}
+.bg-app-border\/50 {
+  background-color: rgb(232 230 223 / 0.5);
+}
+.bg-app-codeBg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(245 244 241 / var(--tw-bg-opacity, 1));
+}
+.bg-app-error {
+  --tw-bg-opacity: 1;
+  background-color: rgb(224 79 79 / var(--tw-bg-opacity, 1));
+}
+.bg-app-error\/5 {
+  background-color: rgb(224 79 79 / 0.05);
+}
+.bg-app-errorBg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 238 238 / var(--tw-bg-opacity, 1));
+}
+.bg-app-errorBg\/30 {
+  background-color: rgb(252 238 238 / 0.3);
+}
+.bg-app-hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 242 236 / var(--tw-bg-opacity, 1));
+}
+.bg-app-hover\/50 {
+  background-color: rgb(244 242 236 / 0.5);
+}
+.bg-app-hover\/80 {
+  background-color: rgb(244 242 236 / 0.8);
+}
+.bg-app-success {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 160 76 / var(--tw-bg-opacity, 1));
+}
+.bg-app-success\/5 {
+  background-color: rgb(34 160 76 / 0.05);
+}
+.bg-app-successBg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(238 252 241 / var(--tw-bg-opacity, 1));
+}
+.bg-app-surface {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.bg-app-text {
+  --tw-bg-opacity: 1;
+  background-color: rgb(26 24 22 / var(--tw-bg-opacity, 1));
+}
+.bg-app-text\/5 {
+  background-color: rgb(26 24 22 / 0.05);
+}
+.bg-app-textSecondary {
+  --tw-bg-opacity: 1;
+  background-color: rgb(107 104 99 / var(--tw-bg-opacity, 1));
+}
+.bg-app-warning {
+  --tw-bg-opacity: 1;
+  background-color: rgb(217 119 6 / var(--tw-bg-opacity, 1));
+}
+.bg-app-warningBg {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 251 235 / var(--tw-bg-opacity, 1));
+}
+.bg-app-warningBg\/30 {
+  background-color: rgb(255 251 235 / 0.3);
+}
+.bg-app-warningBg\/50 {
+  background-color: rgb(255 251 235 / 0.5);
+}
+.bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));
+}
+.bg-blue-50\/50 {
+  background-color: rgb(239 246 255 / 0.5);
+}
+.bg-blue-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+}
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.p-0\.5 {
+  padding: 0.125rem;
+}
+.p-1 {
+  padding: 0.25rem;
+}
+.p-1\.5 {
+  padding: 0.375rem;
+}
+.p-10 {
+  padding: 2.5rem;
+}
+.p-12 {
+  padding: 3rem;
+}
+.p-2 {
+  padding: 0.5rem;
+}
+.p-2\.5 {
+  padding: 0.625rem;
+}
+.p-3 {
+  padding: 0.75rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.p-5 {
+  padding: 1.25rem;
+}
+.p-6 {
+  padding: 1.5rem;
+}
+.p-8 {
+  padding: 2rem;
+}
+.px-1\.5 {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.py-0\.5 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.py-2\.5 {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.pb-4 {
+  padding-bottom: 1rem;
+}
+.pl-3 {
+  padding-left: 0.75rem;
+}
+.pl-4 {
+  padding-left: 1rem;
+}
+.pl-8 {
+  padding-left: 2rem;
+}
+.pr-2 {
+  padding-right: 0.5rem;
+}
+.pr-20 {
+  padding-right: 5rem;
+}
+.pt-2 {
+  padding-top: 0.5rem;
+}
+.pt-4 {
+  padding-top: 1rem;
+}
+.text-left {
+  text-align: left;
+}
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.align-middle {
+  vertical-align: middle;
+}
+.font-mono {
+  font-family: JetBrains Mono, monospace;
+}
+.font-sans {
+  font-family: Inter, sans-serif;
+}
+.font-serif {
+  font-family: Newsreader, serif;
+}
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+.text-\[10px\] {
+  font-size: 10px;
+}
+.text-\[11px\] {
+  font-size: 11px;
+}
+.text-\[12px\] {
+  font-size: 12px;
+}
+.text-\[13px\] {
+  font-size: 13px;
+}
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.leading-relaxed {
+  line-height: 1.625;
+}
+.leading-snug {
+  line-height: 1.375;
+}
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+.tracking-wide {
+  letter-spacing: 0.025em;
+}
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+.text-amber-500 {
+  --tw-text-opacity: 1;
+  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
+.text-amber-700 {
+  --tw-text-opacity: 1;
+  color: rgb(180 83 9 / var(--tw-text-opacity, 1));
+}
+.text-app-accent {
+  --tw-text-opacity: 1;
+  color: rgb(237 112 45 / var(--tw-text-opacity, 1));
+}
+.text-app-error {
+  --tw-text-opacity: 1;
+  color: rgb(224 79 79 / var(--tw-text-opacity, 1));
+}
+.text-app-success {
+  --tw-text-opacity: 1;
+  color: rgb(34 160 76 / var(--tw-text-opacity, 1));
+}
+.text-app-text {
+  --tw-text-opacity: 1;
+  color: rgb(26 24 22 / var(--tw-text-opacity, 1));
+}
+.text-app-textSecondary {
+  --tw-text-opacity: 1;
+  color: rgb(107 104 99 / var(--tw-text-opacity, 1));
+}
+.text-app-textTertiary {
+  --tw-text-opacity: 1;
+  color: rgb(163 160 154 / var(--tw-text-opacity, 1));
+}
+.text-app-warning {
+  --tw-text-opacity: 1;
+  color: rgb(217 119 6 / var(--tw-text-opacity, 1));
+}
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+.text-blue-600 {
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity, 1));
+}
+.text-blue-700 {
+  --tw-text-opacity: 1;
+  color: rgb(29 78 216 / var(--tw-text-opacity, 1));
+}
+.text-pink-500 {
+  --tw-text-opacity: 1;
+  color: rgb(236 72 153 / var(--tw-text-opacity, 1));
+}
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.underline {
+  text-decoration-line: underline;
+}
+.underline-offset-4 {
+  text-underline-offset: 4px;
+}
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.accent-app-text {
+  accent-color: #1a1816;
+}
+.opacity-0 {
+  opacity: 0;
+}
+.opacity-50 {
+  opacity: 0.5;
+}
+.opacity-70 {
+  opacity: 0.7;
+}
+.opacity-80 {
+  opacity: 0.8;
+}
+.shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-modal {
+  --tw-shadow: 0 8px 32px -8px rgba(26, 24, 22, 0.1), 0 16px 48px -12px rgba(26, 24, 22, 0.05);
+  --tw-shadow-colored: 0 8px 32px -8px var(--tw-shadow-color), 0 16px 48px -12px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.shadow-soft {
+  --tw-shadow: 0 2px 8px -2px rgba(26, 24, 22, 0.05), 0 4px 16px -4px rgba(26, 24, 22, 0.02);
+  --tw-shadow-colored: 0 2px 8px -2px var(--tw-shadow-color), 0 4px 16px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.ring-2 {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.ring-4 {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.ring-app-accent\/20 {
+  --tw-ring-color: rgb(237 112 45 / 0.2);
+}
+.ring-transparent {
+  --tw-ring-color: transparent;
+}
+.blur-xl {
+  --tw-blur: blur(24px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.duration-500 {
+  transition-duration: 500ms;
+}
+.selection\:bg-app-accent\/20 *::selection {
+  background-color: rgb(237 112 45 / 0.2);
+}
+.selection\:bg-app-accent\/20::selection {
+  background-color: rgb(237 112 45 / 0.2);
+}
+.hover\:border-app-textSecondary:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(107 104 99 / var(--tw-border-opacity, 1));
+}
+.hover\:border-red-200:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 202 202 / var(--tw-border-opacity, 1));
+}
+.hover\:bg-app-errorBg:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 238 238 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-app-hover:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 242 236 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-black:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-red-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-red-600:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
+}
+.hover\:text-app-text:hover {
+  --tw-text-opacity: 1;
+  color: rgb(26 24 22 / var(--tw-text-opacity, 1));
+}
+.hover\:text-red-700:hover {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity, 1));
+}
+.hover\:underline:hover {
+  text-decoration-line: underline;
+}
+.hover\:opacity-100:hover {
+  opacity: 1;
+}
+.hover\:shadow-md:hover {
+  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.focus\:border-app-accent:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(237 112 45 / var(--tw-border-opacity, 1));
+}
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus\:ring-1:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.focus\:ring-app-accent:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(237 112 45 / var(--tw-ring-opacity, 1));
+}
+.focus\:ring-app-text:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(26 24 22 / var(--tw-ring-opacity, 1));
+}
+.group:hover .group-hover\:border-app-text {
+  --tw-border-opacity: 1;
+  border-color: rgb(26 24 22 / var(--tw-border-opacity, 1));
+}
+.group:hover .group-hover\:bg-app-text {
+  --tw-bg-opacity: 1;
+  background-color: rgb(26 24 22 / var(--tw-bg-opacity, 1));
+}
+.group:hover .group-hover\:text-app-accent {
+  --tw-text-opacity: 1;
+  color: rgb(237 112 45 / var(--tw-text-opacity, 1));
+}
+.group:hover .group-hover\:text-app-text {
+  --tw-text-opacity: 1;
+  color: rgb(26 24 22 / var(--tw-text-opacity, 1));
+}
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+.group:hover .group-hover\:ring-app-border {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(232 230 223 / var(--tw-ring-opacity, 1));
+}
+@media (min-width: 768px) {
+
+  .md\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+
+  .lg\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+
+  .xl\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}* {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  </style></head>
+<body class="p-12 font-sans selection:bg-app-accent/20" vid="12">
+
+    <header class="mb-16 max-w-5xl" vid="13">
+        <h1 class="text-4xl font-semibold mb-4 text-app-text tracking-tight" vid="14">Component Library</h1>
+        <p class="text-app-textSecondary text-lg" vid="15">Missing Components — Light Mode. Warm off-white palette (#fcfbf8), Inter + Phosphor icons.</p>
+    </header>
+
+    <h2 class="text-2xl font-semibold mb-8 flex items-center gap-3" vid="16"><span class="bg-app-text text-white w-8 h-8 rounded-full flex items-center justify-center text-sm" vid="17">1</span> Priority 1 — Core UI</h2>
+
+    <div class="component-section" vid="18">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="19">1. Modal / Dialog</h3>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 bg-app-text/5 p-10 rounded-[32px]" vid="20">
+            
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-modal w-full max-w-md mx-auto overflow-hidden" vid="21">
+                <div class="p-6" vid="22">
+                    <div class="w-10 h-10 bg-app-hover rounded-full flex items-center justify-center mb-4 border border-app-border" vid="23">
+                        <i class="ph ph-trash text-xl text-app-textSecondary" vid="24"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-2" vid="25">Delete workspace?</h4>
+                    <p class="text-app-textSecondary text-sm mb-6" vid="26">This action cannot be undone. All projects and settings within this workspace will be permanently removed.</p>
+                    <div class="flex justify-end gap-3" vid="27">
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="28">Cancel</button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-app-text text-white hover:bg-black transition-colors" vid="29">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-modal w-full max-w-md mx-auto overflow-hidden" vid="30">
+                <div class="p-6 border-b border-app-border" vid="31">
+                    <h4 class="text-lg font-semibold" vid="32">Create new project</h4>
+                </div>
+                <div class="p-6" vid="33">
+                    <div class="mb-4" vid="34">
+                        <label class="block text-sm font-medium mb-1.5" vid="35">Project Name</label>
+                        <input type="text" value="Api Gateway" class="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm focus:outline-none focus:border-app-accent focus:ring-1 focus:ring-app-accent transition-all" vid="36">
+                    </div>
+                    <div class="mb-6" vid="37">
+                        <label class="block text-sm font-medium mb-1.5" vid="38">Framework</label>
+                        <button class="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm flex justify-between items-center hover:bg-app-hover transition-colors" vid="39">
+                            <span vid="40">Next.js</span>
+                            <i class="ph ph-caret-down text-app-textSecondary" vid="41"></i>
+                        </button>
+                    </div>
+                    <div class="flex justify-end gap-3" vid="42">
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="43">Cancel</button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-app-text text-white hover:bg-black transition-colors" vid="44">Create Project</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-modal w-full max-w-md mx-auto overflow-hidden" vid="45">
+                <div class="p-6" vid="46">
+                    <div class="w-10 h-10 bg-app-errorBg rounded-full flex items-center justify-center mb-4 border border-app-error/20" vid="47">
+                        <i class="ph ph-warning-circle text-xl text-app-error" vid="48"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold text-app-error mb-2" vid="49">Revoke access keys?</h4>
+                    <p class="text-app-textSecondary text-sm mb-6" vid="50">Any applications currently using these keys will immediately lose access to the API.</p>
+                    <div class="flex justify-end gap-3" vid="51">
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="52">Cancel</button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-app-error text-white hover:bg-red-600 transition-colors" vid="53">Revoke Keys</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-modal w-full max-w-md mx-auto overflow-hidden" vid="54">
+                <div class="p-6 text-center" vid="55">
+                    <div class="w-12 h-12 bg-app-successBg rounded-full flex items-center justify-center mx-auto mb-4 border border-app-success/20" vid="56">
+                        <i class="ph ph-check text-2xl text-app-success" vid="57"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-2" vid="58">Session Exported</h4>
+                    <p class="text-app-textSecondary text-sm mb-6" vid="59">Your chat session has been successfully exported as a Markdown file to your downloads folder.</p>
+                    <button class="w-full px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="60">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="61">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="62">2. Dropdown / Context Menu</h3>
+        <div class="flex flex-wrap gap-12 bg-app-hover/50 p-10 rounded-[32px] items-start" vid="63">
+            
+            <div class="w-56 bg-app-surface border border-app-border rounded-xl shadow-soft p-1" vid="64">
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-app-hover flex items-center gap-2 transition-colors" vid="65">
+                    <i class="ph ph-pencil-simple text-app-textSecondary" vid="66"></i> Rename
+                </button>
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-app-hover flex items-center gap-2 transition-colors" vid="67">
+                    <i class="ph ph-copy text-app-textSecondary" vid="68"></i> Duplicate
+                </button>
+                <div class="h-px bg-app-border my-1 mx-2" vid="69"></div>
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm text-app-error hover:bg-app-errorBg flex items-center gap-2 transition-colors" vid="70">
+                    <i class="ph ph-trash" vid="71"></i> Delete project
+                </button>
+            </div>
+
+            <div class="w-64 bg-app-surface border border-app-border rounded-xl shadow-soft p-1" vid="72">
+                <div class="px-3 py-2 text-xs font-medium text-app-textSecondary uppercase tracking-wider" vid="73">Sort by</div>
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-app-hover flex items-center justify-between transition-colors" vid="74">
+                    <span vid="75">Last modified</span>
+                    <i class="ph-bold ph-check text-app-accent" vid="76"></i>
+                </button>
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-app-hover flex items-center justify-between transition-colors" vid="77">
+                    <span vid="78">Name (A-Z)</span>
+                </button>
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-app-hover flex items-center justify-between transition-colors" vid="79">
+                    <span vid="80">Created date</span>
+                </button>
+            </div>
+
+            <div class="w-80 bg-app-surface border border-app-border rounded-xl shadow-soft p-1" vid="81">
+                <div class="px-3 py-2 text-xs font-medium text-app-textSecondary uppercase tracking-wider" vid="82">Available Models</div>
+                
+                <button class="w-full text-left p-2 rounded-lg hover:bg-app-hover transition-colors flex items-start gap-3 bg-app-hover/50 relative" vid="83">
+                    <div class="w-8 h-8 rounded bg-white border border-app-border flex items-center justify-center shrink-0 mt-0.5" vid="84">
+                        <i class="ph-fill ph-sparkle text-app-text" vid="85"></i>
+                    </div>
+                    <div class="flex-1" vid="86">
+                        <div class="flex items-center justify-between mb-0.5" vid="87">
+                            <span class="text-sm font-medium" vid="88">Claude 3.5 Sonnet</span>
+                            <span class="text-[10px] uppercase tracking-wider font-semibold bg-app-border/50 text-app-text px-1.5 py-0.5 rounded" vid="89">Pro</span>
+                        </div>
+                        <p class="text-xs text-app-textSecondary leading-snug" vid="90">Fastest and most capable model for complex coding tasks.</p>
+                    </div>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2" vid="91">
+                        <i class="ph-bold ph-check text-app-text" vid="92"></i>
+                    </div>
+                </button>
+
+                <button class="w-full text-left p-2 rounded-lg hover:bg-app-hover transition-colors flex items-start gap-3 mt-1" vid="93">
+                    <div class="w-8 h-8 rounded bg-white border border-app-border flex items-center justify-center shrink-0 mt-0.5" vid="94">
+                        <i class="ph-fill ph-lightning text-app-textSecondary" vid="95"></i>
+                    </div>
+                    <div class="flex-1" vid="96">
+                        <div class="flex items-center justify-between mb-0.5" vid="97">
+                            <span class="text-sm font-medium" vid="98">Claude 3 Haiku</span>
+                            <span class="text-[10px] uppercase tracking-wider font-semibold bg-app-hover text-app-textSecondary px-1.5 py-0.5 rounded" vid="99">Free</span>
+                        </div>
+                        <p class="text-xs text-app-textSecondary leading-snug" vid="100">Quick responses for simple queries and edits.</p>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="101">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="102">3. Toast / Notification</h3>
+        <div class="flex flex-col gap-4 max-w-[320px]" vid="103">
+            
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-soft p-4 flex gap-3 relative overflow-hidden" vid="104">
+                <i class="ph-fill ph-check-circle text-app-success text-xl shrink-0" vid="105"></i>
+                <div vid="106">
+                    <p class="text-sm font-medium mb-0.5" vid="107">Settings saved</p>
+                    <p class="text-xs text-app-textSecondary" vid="108">Your workspace preferences have been updated.</p>
+                </div>
+                <div class="absolute bottom-0 left-0 h-1 bg-app-success w-full origin-left animate-[scale-x_3s_linear_forwards]" style="transform: scaleX(0.6)" vid="109"></div>
+            </div>
+
+            <div class="bg-app-surface border border-app-error/30 rounded-2xl shadow-soft p-4 flex gap-3 items-center" vid="110">
+                <i class="ph-fill ph-warning-circle text-app-error text-xl shrink-0" vid="111"></i>
+                <div class="flex-1" vid="112">
+                    <p class="text-sm font-medium text-app-error" vid="113">Failed to clone repository</p>
+                </div>
+                <button class="text-xs font-medium border border-app-border px-2 py-1 rounded hover:bg-app-hover" vid="114">Retry</button>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-soft p-4 flex gap-3 items-center" vid="115">
+                <i class="ph-fill ph-info text-app-textSecondary text-xl shrink-0" vid="116"></i>
+                <p class="text-sm text-app-textSecondary" vid="117">Indexing 420 files in background...</p>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl shadow-soft p-4 flex gap-3 items-start" vid="118">
+                <div class="bg-app-accent/10 p-1.5 rounded-full shrink-0" vid="119">
+                    <i class="ph-fill ph-sparkle text-app-accent" vid="120"></i>
+                </div>
+                <div class="flex-1" vid="121">
+                    <p class="text-sm font-medium mb-1" vid="122">Task completed</p>
+                    <p class="text-xs text-app-textSecondary mb-2" vid="123">Agent finished working in "Frontend Setup".</p>
+                    <button class="text-xs font-medium text-app-text hover:underline" vid="124">View results</button>
+                </div>
+                <button class="text-app-textTertiary hover:text-app-text" vid="125"><i class="ph ph-x" vid="126"></i></button>
+            </div>
+
+            <div class="bg-app-surface border border-app-warning/30 rounded-2xl shadow-soft p-4 flex gap-3 items-center bg-app-warningBg/50" vid="127">
+                <i class="ph-fill ph-warning text-app-warning text-xl shrink-0" vid="128"></i>
+                <p class="text-sm text-app-warning font-medium" vid="129">Approaching context limit (85%)</p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="130">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="131">4. Empty States</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" vid="132">
+            
+            <div class="bg-app-surface border border-app-border rounded-3xl p-10 flex flex-col items-center text-center" vid="133">
+                <div class="w-16 h-16 bg-app-hover rounded-2xl flex items-center justify-center mb-6" vid="134">
+                    <i class="ph ph-folder-dashed text-3xl text-app-textTertiary" vid="135"></i>
+                </div>
+                <h4 class="text-lg font-semibold mb-2" vid="136">No projects yet</h4>
+                <p class="text-sm text-app-textSecondary mb-6 max-w-[200px]" vid="137">Create a new project or import an existing repository to get started.</p>
+                <button class="px-4 py-2 rounded-lg text-sm font-medium bg-app-text text-white hover:bg-black transition-colors flex items-center gap-2" vid="138">
+                    <i class="ph ph-plus" vid="139"></i> Add Project
+                </button>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-3xl p-10 flex flex-col items-center text-center" vid="140">
+                <div class="w-16 h-16 bg-app-hover rounded-2xl flex items-center justify-center mb-6" vid="141">
+                    <i class="ph ph-magnifying-glass text-3xl text-app-textTertiary" vid="142"></i>
+                </div>
+                <h4 class="text-lg font-semibold mb-2" vid="143">No results found</h4>
+                <p class="text-sm text-app-textSecondary mb-6 max-w-[200px]" vid="144">We couldn't find anything matching "docker-compose.yml".</p>
+                <button class="text-sm font-medium text-app-textSecondary hover:text-app-text underline underline-offset-4" vid="145">Clear search</button>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-3xl p-10 flex flex-col items-center text-center" vid="146">
+                <div class="w-16 h-16 bg-app-hover rounded-2xl flex items-center justify-center mb-6" vid="147">
+                    <i class="ph ph-chats-circle text-3xl text-app-textTertiary" vid="148"></i>
+                </div>
+                <h4 class="text-lg font-semibold mb-2" vid="149">No active sessions</h4>
+                <p class="text-sm text-app-textSecondary mb-6 max-w-[200px]" vid="150">Your recent conversations will appear here.</p>
+                <button class="px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="151">
+                    Start a conversation
+                </button>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-3xl p-12 flex flex-col items-center text-center col-span-1 md:col-span-2 lg:col-span-2" vid="152">
+                <div class="w-20 h-20 mb-8 relative" vid="153">
+                    <div class="absolute inset-0 bg-app-accent/20 rounded-full blur-xl" vid="154"></div>
+                    <div class="relative w-full h-full bg-white border border-app-border rounded-2xl flex items-center justify-center shadow-soft" vid="155">
+                        <i class="ph-fill ph-sparkle text-4xl text-app-accent" vid="156"></i>
+                    </div>
+                </div>
+                <h2 class="font-serif text-3xl mb-3 text-app-text" vid="157">Welcome to your AI Workspace</h2>
+                <p class="text-app-textSecondary mb-8 max-w-md mx-auto" vid="158">An intelligent coding environment that builds, debugs, and understands your codebase right alongside you.</p>
+                <div class="flex gap-4" vid="159">
+                    <button class="px-6 py-3 rounded-xl text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="160">Read the docs</button>
+                    <button class="px-6 py-3 rounded-xl text-sm font-medium bg-app-text text-white hover:bg-black transition-colors flex items-center gap-2" vid="161">
+                        Configure Settings <i class="ph ph-arrow-right" vid="162"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="163">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="164">5. Loading / Skeleton States</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" vid="165">
+            
+            <div class="bg-app-surface border border-app-border rounded-2xl p-5 shadow-sm" vid="166">
+                <div class="flex items-center gap-4 mb-6" vid="167">
+                    <div class="w-10 h-10 rounded-lg bg-app-border/30 animate-pulse" vid="168"></div>
+                    <div class="space-y-2 flex-1" vid="169">
+                        <div class="h-4 bg-app-border/30 rounded w-1/3 animate-pulse" vid="170"></div>
+                        <div class="h-3 bg-app-border/30 rounded w-1/4 animate-pulse" vid="171"></div>
+                    </div>
+                </div>
+                <div class="space-y-2 mb-6" vid="172">
+                    <div class="h-3 bg-app-border/30 rounded w-full animate-pulse" vid="173"></div>
+                    <div class="h-3 bg-app-border/30 rounded w-5/6 animate-pulse" vid="174"></div>
+                </div>
+                <div class="flex gap-2" vid="175">
+                    <div class="h-6 w-16 bg-app-border/30 rounded-full animate-pulse" vid="176"></div>
+                    <div class="h-6 w-20 bg-app-border/30 rounded-full animate-pulse" vid="177"></div>
+                </div>
+            </div>
+
+            <div class="bg-app-bg p-5 rounded-2xl flex gap-4 border border-transparent" vid="178">
+                <div class="w-8 h-8 rounded-full bg-app-border/40 shrink-0 animate-pulse mt-1" vid="179"></div>
+                <div class="flex-1 space-y-3 pt-2" vid="180">
+                    <div class="h-4 bg-app-border/30 rounded w-3/4 animate-pulse" vid="181"></div>
+                    <div class="h-4 bg-app-border/30 rounded w-full animate-pulse" vid="182"></div>
+                    <div class="h-4 bg-app-border/30 rounded w-5/6 animate-pulse" vid="183"></div>
+                    <div class="h-4 bg-app-border/30 rounded w-1/2 animate-pulse" vid="184"></div>
+                </div>
+            </div>
+
+            <div class="bg-app-codeBg rounded-xl p-5 border border-app-border" vid="185">
+                <div class="flex items-center gap-2 mb-4 pb-4 border-b border-app-border/50" vid="186">
+                    <div class="h-3 w-3 rounded-full bg-app-border/50" vid="187"></div>
+                    <div class="h-3 w-3 rounded-full bg-app-border/50" vid="188"></div>
+                    <div class="h-3 w-3 rounded-full bg-app-border/50" vid="189"></div>
+                </div>
+                <div class="space-y-3" vid="190">
+                    <div class="flex gap-4" vid="191">
+                        <div class="w-4 h-4 bg-app-border/30 rounded animate-pulse" vid="192"></div>
+                        <div class="h-4 bg-app-border/40 rounded w-1/4 animate-pulse" vid="193"></div>
+                        <div class="h-4 bg-app-border/20 rounded w-1/3 animate-pulse" vid="194"></div>
+                    </div>
+                    <div class="flex gap-4 pl-8" vid="195">
+                        <div class="h-4 bg-app-border/40 rounded w-1/2 animate-pulse" vid="196"></div>
+                    </div>
+                    <div class="flex gap-4 pl-8" vid="197">
+                        <div class="h-4 bg-app-border/20 rounded w-2/3 animate-pulse" vid="198"></div>
+                    </div>
+                    <div class="flex gap-4" vid="199">
+                        <div class="h-4 bg-app-border/40 rounded w-1/5 animate-pulse" vid="200"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl flex flex-col items-center justify-center min-h-[200px]" vid="201">
+                <i class="ph ph-spinner-gap text-3xl text-app-textSecondary animate-spin mb-3" vid="202"></i>
+                <p class="text-sm font-medium text-app-textSecondary animate-pulse" vid="203">Loading workspace...</p>
+            </div>
+
+        </div>
+    </div>
+
+
+    <h2 class="text-2xl font-semibold mt-24 mb-8 flex items-center gap-3" vid="204"><span class="bg-app-text text-white w-8 h-8 rounded-full flex items-center justify-center text-sm" vid="205">2</span> Priority 2 — Chat &amp; Workspace</h2>
+
+    <div class="component-section" vid="206">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="207">6. Tool Call Card (Inline States)</h3>
+        <div class="flex flex-col gap-3 bg-white p-8 rounded-[32px] border border-app-border max-w-2xl" vid="208">
+            
+            <div class="flex items-center justify-between p-2.5 px-3 bg-app-hover border border-app-border rounded-xl shadow-sm relative overflow-hidden" vid="209">
+                <div class="flex items-center gap-3 z-10" vid="210">
+                    <i class="ph ph-file-text text-app-textSecondary text-lg" vid="211"></i>
+                    <span class="text-sm font-medium text-app-text" vid="212">Reading package.json</span>
+                </div>
+                <div class="flex items-center gap-2 z-10" vid="213">
+                    <span class="text-xs text-app-textTertiary font-mono" vid="214">1.2s</span>
+                    <i class="ph ph-spinner-gap text-app-textSecondary animate-spin" vid="215"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 px-3 bg-app-hover border border-app-border rounded-xl shadow-sm" vid="216">
+                <div class="flex items-center gap-3" vid="217">
+                    <i class="ph ph-terminal-window text-app-textSecondary text-lg" vid="218"></i>
+                    <span class="text-sm font-mono text-app-text bg-white px-1.5 py-0.5 rounded border border-app-border/50" vid="219">npm install react-router</span>
+                </div>
+                <div class="flex items-center gap-2" vid="220">
+                    <span class="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-semibold uppercase tracking-wider animate-pulse" vid="221">Running</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col p-2.5 px-3 bg-app-hover border border-app-border rounded-xl shadow-sm gap-2" vid="222">
+                <div class="flex items-center justify-between" vid="223">
+                    <div class="flex items-center gap-3" vid="224">
+                        <i class="ph ph-pencil-simple text-app-textSecondary text-lg" vid="225"></i>
+                        <span class="text-sm font-medium text-app-text" vid="226">src/components/Button.tsx</span>
+                    </div>
+                    <span class="text-xs text-app-textTertiary font-mono" vid="227">45%</span>
+                </div>
+                <div class="w-full h-1 bg-app-border rounded-full overflow-hidden" vid="228">
+                    <div class="h-full bg-app-text w-[45%] rounded-full" vid="229"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 px-3 bg-white border border-app-border rounded-xl opacity-80 hover:opacity-100 transition-opacity" vid="230">
+                <div class="flex items-center gap-3" vid="231">
+                    <i class="ph-fill ph-check-circle text-app-success text-lg" vid="232"></i>
+                    <span class="text-sm text-app-textSecondary" vid="233">Wrote <span class="font-mono text-app-text" vid="234">utils/format.js</span></span>
+                </div>
+                <span class="text-xs text-app-textTertiary font-mono" vid="235">2.3s</span>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 px-3 bg-app-warningBg/30 border border-app-warning/40 rounded-xl shadow-sm" vid="236">
+                <div class="flex items-center gap-3" vid="237">
+                    <i class="ph-fill ph-warning text-app-warning text-lg" vid="238"></i>
+                    <span class="text-sm font-medium text-app-text" vid="239">Requests shell access</span>
+                </div>
+                <div class="flex items-center gap-2" vid="240">
+                    <button class="text-xs font-medium bg-white border border-app-border px-2 py-1 rounded hover:bg-app-hover" vid="241">Deny</button>
+                    <button class="text-xs font-medium bg-app-text text-white px-2 py-1 rounded hover:bg-black" vid="242">Approve</button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 px-3 bg-app-errorBg/30 border border-app-error/40 rounded-xl shadow-sm" vid="243">
+                <div class="flex items-center gap-3" vid="244">
+                    <i class="ph-fill ph-x-circle text-app-error text-lg" vid="245"></i>
+                    <span class="text-sm font-medium text-app-error" vid="246">Command failed: EACCES permission denied</span>
+                </div>
+                <button class="text-xs text-app-textSecondary hover:text-app-text underline" vid="247">View Logs</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="248">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="249">7. Permission Dialog (Inline)</h3>
+        <div class="bg-app-surface border border-app-border rounded-2xl shadow-soft p-6 max-w-lg" vid="250">
+            <div class="flex items-start justify-between mb-4" vid="251">
+                <div class="flex items-center gap-3" vid="252">
+                    <div class="w-10 h-10 bg-app-errorBg rounded-xl flex items-center justify-center border border-app-error/20" vid="253">
+                        <i class="ph ph-terminal-window text-xl text-app-error" vid="254"></i>
+                    </div>
+                    <div vid="255">
+                        <h4 class="text-base font-semibold" vid="256">Permission Request</h4>
+                        <p class="text-sm text-app-textSecondary" vid="257">Claude wants to execute a command</p>
+                    </div>
+                </div>
+                <span class="px-2 py-1 bg-app-errorBg text-app-error border border-app-error/30 rounded-md text-[10px] font-bold uppercase tracking-wide" vid="258">Risky</span>
+            </div>
+            
+            <div class="bg-app-codeBg border border-app-border rounded-xl p-3 mb-5 font-mono text-sm overflow-x-auto" vid="259">
+                <span class="text-app-textSecondary" vid="260">$</span> <span class="text-app-text" vid="261">rm -rf ./node_modules &amp;&amp; npm cache clean --force</span>
+            </div>
+
+            <div class="flex items-center justify-between" vid="262">
+                <label class="flex items-center gap-2 text-sm text-app-textSecondary cursor-pointer group" vid="263">
+                    <input type="checkbox" class="rounded border-app-border text-app-text focus:ring-app-text accent-app-text cursor-pointer" vid="264">
+                    <span class="group-hover:text-app-text transition-colors" vid="265">Always allow for this session</span>
+                </label>
+                <div class="flex gap-2" vid="266">
+                    <button class="px-3 py-1.5 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="267">Deny</button>
+                    <button class="px-3 py-1.5 rounded-lg text-sm font-medium bg-app-text text-white hover:bg-black transition-colors" vid="268">Allow once</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="component-section" vid="269">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="270">8. Diff View Component</h3>
+        <div class="bg-app-surface border border-app-border rounded-2xl shadow-sm flex h-[400px] overflow-hidden font-mono text-sm" vid="271">
+            
+            <div class="w-64 border-r border-app-border bg-app-bg flex flex-col font-sans" vid="272">
+                <div class="p-3 border-b border-app-border text-xs font-semibold uppercase tracking-wider text-app-textSecondary" vid="273">Changed Files (2)</div>
+                <div class="flex-1 overflow-y-auto p-2" vid="274">
+                    <button class="w-full text-left px-2 py-1.5 rounded-lg hover:bg-app-hover bg-app-surface border border-app-border shadow-sm flex items-center justify-between mb-1" vid="275">
+                        <div class="flex items-center gap-2 truncate" vid="276">
+                            <i class="ph-fill ph-file-ts text-blue-500" vid="277"></i>
+                            <span class="text-sm truncate" vid="278">Button.tsx</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-mono shrink-0" vid="279">
+                            <span class="text-app-success" vid="280">+12</span>
+                            <span class="text-app-error" vid="281">-4</span>
+                        </div>
+                    </button>
+                    <button class="w-full text-left px-2 py-1.5 rounded-lg hover:bg-app-hover flex items-center justify-between text-app-textSecondary" vid="282">
+                        <div class="flex items-center gap-2 truncate" vid="283">
+                            <i class="ph-fill ph-file-css text-pink-500" vid="284"></i>
+                            <span class="text-sm truncate" vid="285">globals.css</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-mono shrink-0" vid="286">
+                            <span class="text-app-success" vid="287">+3</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col min-w-0 bg-white" vid="288">
+                <div class="p-3 border-b border-app-border flex items-center justify-between bg-app-bg font-sans" vid="289">
+                    <div class="flex items-center gap-3" vid="290">
+                        <span class="text-sm font-medium" vid="291">src/components/Button.tsx</span>
+                        <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase" vid="292">Modified</span>
+                    </div>
+                    <div class="flex gap-1 bg-app-border/50 p-0.5 rounded-lg" vid="293">
+                        <button class="px-2 py-1 text-xs font-medium bg-white rounded shadow-sm" vid="294">Unified</button>
+                        <button class="px-2 py-1 text-xs font-medium text-app-textSecondary hover:text-app-text" vid="295">Split</button>
+                    </div>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto" vid="296">
+                    <table class="w-full text-left border-collapse whitespace-pre" vid="297">
+                        <tbody class="text-[13px] leading-relaxed" vid="298">
+                            <tr class="text-app-textSecondary" vid="299">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="300">42</td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="301">42</td>
+                                <td class="pl-4" vid="302">  return (</td>
+                            </tr>
+                            <tr class="text-app-textSecondary" vid="303">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="304">43</td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="305">43</td>
+                                <td class="pl-4" vid="306">    <button vid="307"></button></td>
+                            </tr>
+                            <tr class="bg-app-errorBg text-app-text" vid="308">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-error/20 bg-app-error/5 text-app-error" vid="309">44</td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-error/20 bg-app-error/5" vid="310"></td>
+                                <td class="pl-4" vid="311"><span class="text-app-error select-none" vid="312">-</span>       className={`btn btn-${variant}`}</td>
+                            </tr>
+                            <tr class="bg-app-successBg text-app-text" vid="313">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5" vid="314"></td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5 text-app-success" vid="315">44</td>
+                                <td class="pl-4" vid="316"><span class="text-app-success select-none" vid="317">+</span>       className={cn(</td>
+                            </tr>
+                            <tr class="bg-app-successBg text-app-text" vid="318">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5" vid="319"></td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5 text-app-success" vid="320">45</td>
+                                <td class="pl-4" vid="321"><span class="text-app-success select-none" vid="322">+</span>         "inline-flex items-center justify-center rounded-md text-sm font-medium",</td>
+                            </tr>
+                            <tr class="bg-app-successBg text-app-text" vid="323">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5" vid="324"></td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5 text-app-success" vid="325">46</td>
+                                <td class="pl-4" vid="326"><span class="text-app-success select-none" vid="327">+</span>         variant === 'primary' ? 'bg-black text-white' : 'border border-gray-200',</td>
+                            </tr>
+                            <tr class="bg-app-successBg text-app-text" vid="328">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5" vid="329"></td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5 text-app-success" vid="330">47</td>
+                                <td class="pl-4" vid="331"><span class="text-app-success select-none" vid="332">+</span>         className</td>
+                            </tr>
+                            <tr class="bg-app-successBg text-app-text" vid="333">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5" vid="334"></td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-success/20 bg-app-success/5 text-app-success" vid="335">48</td>
+                                <td class="pl-4" vid="336"><span class="text-app-success select-none" vid="337">+</span>       )}</td>
+                            </tr>
+                            <tr class="text-app-textSecondary" vid="338">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="339">45</td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="340">49</td>
+                                <td class="pl-4" vid="341">      onClick={onClick}</td>
+                            </tr>
+                            <tr class="text-app-textSecondary" vid="342">
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="343">46</td>
+                                <td class="w-10 text-right pr-2 select-none border-r border-app-border bg-app-codeBg" vid="344">50</td>
+                                <td class="pl-4" vid="345">      disabled={isLoading}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="346">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="347">9. Tab Strip</h3>
+        <div class="space-y-10" vid="348">
+            
+            <div vid="349">
+                <p class="text-xs text-app-textTertiary mb-3 font-mono" vid="350">Variant 1: Standard Horizontal</p>
+                <div class="flex border-b border-app-border" vid="351">
+                    <button class="px-4 py-3 text-sm font-medium border-b-2 border-app-text text-app-text -mb-[1px]" vid="352">Chat</button>
+                    <button class="px-4 py-3 text-sm font-medium border-b-2 border-transparent text-app-textSecondary hover:text-app-text transition-colors flex items-center gap-2" vid="353">
+                        Diff <span class="bg-app-hover text-app-text text-[10px] px-1.5 py-0.5 rounded-full font-bold" vid="354">2</span>
+                    </button>
+                    <button class="px-4 py-3 text-sm font-medium border-b-2 border-transparent text-app-textSecondary hover:text-app-text transition-colors" vid="355">Terminal</button>
+                    <button class="px-4 py-3 text-sm font-medium border-b-2 border-transparent text-app-textSecondary hover:text-app-text transition-colors" vid="356">Notes</button>
+                </div>
+            </div>
+
+            <div vid="357">
+                <p class="text-xs text-app-textTertiary mb-3 font-mono" vid="358">Variant 2: Pill Group</p>
+                <div class="inline-flex bg-app-hover/80 p-1 rounded-xl border border-app-border" vid="359">
+                    <button class="px-4 py-1.5 text-sm font-medium bg-white text-app-text rounded-lg shadow-sm" vid="360">Preview</button>
+                    <button class="px-4 py-1.5 text-sm font-medium text-app-textSecondary hover:text-app-text transition-colors rounded-lg" vid="361">Code</button>
+                    <button class="px-4 py-1.5 text-sm font-medium text-app-textSecondary hover:text-app-text transition-colors rounded-lg" vid="362">Console</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="component-section" vid="363">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="364">10. Checkpoint / Rewind Timeline</h3>
+        
+        <div class="bg-white border border-app-border rounded-2xl p-8 mb-6" vid="365">
+            <p class="text-xs text-app-textTertiary mb-6 font-mono" vid="366">Horizontal (Footer/Status area)</p>
+            <div class="relative flex items-center justify-between w-full max-w-3xl mx-auto" vid="367">
+                
+                <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-app-border z-0" vid="368"></div>
+                <div class="absolute left-0 w-[60%] top-1/2 -translate-y-1/2 h-0.5 bg-app-text z-0" vid="369"></div>
+                
+                <div class="relative z-10 flex flex-col items-center group cursor-pointer" vid="370">
+                    <div class="w-4 h-4 rounded-full bg-app-text border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-app-border transition-all" vid="371"></div>
+                    <span class="absolute top-6 text-[10px] font-medium text-app-textSecondary whitespace-nowrap" vid="372">Init</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center group cursor-pointer" vid="373">
+                    <div class="w-4 h-4 rounded-full bg-app-text border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-app-border transition-all" vid="374"></div>
+                    <span class="absolute top-6 text-[10px] font-medium text-app-textSecondary whitespace-nowrap" vid="375">Installed deps</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center group cursor-pointer" vid="376">
+                    
+                    <div class="absolute bottom-8 bg-app-text text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex flex-col items-center gap-1" vid="377">
+                        <span class="font-medium" vid="378">Wrote middleware.ts</span>
+                        <span class="text-app-textTertiary" vid="379">Turn 3</span>
+                        <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-app-text rotate-45" vid="380"></div>
+                    </div>
+                    
+                    <div class="w-5 h-5 rounded-full bg-white border-4 border-app-text shadow-sm ring-4 ring-app-accent/20" vid="381"></div>
+                    <span class="absolute top-6 text-[11px] font-bold text-app-text whitespace-nowrap" vid="382">Current</span>
+                </div>
+                <div class="relative z-10 flex flex-col items-center group cursor-pointer" vid="383">
+                    <div class="w-4 h-4 rounded-full bg-white border-2 border-app-border shadow-sm group-hover:border-app-text transition-colors" vid="384"></div>
+                    <span class="absolute top-6 text-[10px] font-medium text-app-textTertiary whitespace-nowrap opacity-50" vid="385">Future</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="component-section" vid="386">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="387">11. Streaming / Live State Indicators</h3>
+        <div class="flex flex-wrap gap-12 items-end" vid="388">
+            
+            <div vid="389">
+                <p class="text-xs text-app-textTertiary mb-3 font-mono" vid="390">Thinking</p>
+                <div class="flex gap-1.5 p-3 bg-white border border-app-border rounded-xl shadow-sm w-fit" vid="391">
+                    <div class="w-2 h-2 rounded-full bg-app-textSecondary animate-bounce" style="animation-delay: 0ms" vid="392"></div>
+                    <div class="w-2 h-2 rounded-full bg-app-textSecondary animate-bounce" style="animation-delay: 150ms" vid="393"></div>
+                    <div class="w-2 h-2 rounded-full bg-app-textSecondary animate-bounce" style="animation-delay: 300ms" vid="394"></div>
+                </div>
+            </div>
+
+            <div vid="395">
+                <p class="text-xs text-app-textTertiary mb-3 font-mono" vid="396">Typing Cursor</p>
+                <div class="text-lg font-mono" vid="397">
+                    const handleUpdate = () =&gt; {<span class="inline-block w-2.5 h-5 bg-app-accent ml-0.5 align-middle animate-blink" vid="398"></span>
+                </div>
+            </div>
+
+            <div class="w-64" vid="399">
+                <p class="text-xs text-app-textTertiary mb-2 font-mono flex justify-between" vid="400">
+                    <span vid="401">Context Usage</span>
+                    <span class="text-app-warning font-medium" vid="402">85%</span>
+                </p>
+                <div class="w-full h-1.5 bg-app-border rounded-full overflow-hidden" vid="403">
+                    <div class="h-full bg-app-warning w-[85%] rounded-full transition-all duration-500" vid="404"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 min-w-[300px]" vid="405">
+                <p class="text-xs text-app-textTertiary mb-2 font-mono" vid="406">Composer (Generating)</p>
+                <div class="relative bg-app-bg border border-app-border rounded-2xl p-3 flex items-center justify-between opacity-70" vid="407">
+                    <span class="text-sm text-app-textSecondary flex items-center gap-2" vid="408">
+                        <i class="ph-fill ph-sparkle text-app-accent animate-pulse" vid="409"></i> Generating response...
+                    </span>
+                    <button class="bg-app-surface border border-app-border rounded-lg p-1.5 shadow-sm hover:bg-app-hover" vid="410">
+                        <i class="ph-bold ph-stop text-app-text" vid="411"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <h2 class="text-2xl font-semibold mt-24 mb-8 flex items-center gap-3" vid="412"><span class="bg-app-text text-white w-8 h-8 rounded-full flex items-center justify-center text-sm" vid="413">3</span> Priority 3 — Settings &amp; Config</h2>
+
+    <div class="component-section grid grid-cols-1 xl:grid-cols-2 gap-12" vid="414">
+        
+        <div vid="415">
+            <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="416">12. Onboarding Flow (Step 2)</h3>
+            <div class="bg-white border border-app-border rounded-3xl p-10 shadow-modal max-w-md mx-auto" vid="417">
+                <div class="flex justify-center gap-2 mb-10" vid="418">
+                    <div class="w-2 h-2 rounded-full bg-app-border" vid="419"></div>
+                    <div class="w-2 h-2 rounded-full bg-app-text" vid="420"></div>
+                    <div class="w-2 h-2 rounded-full bg-app-border" vid="421"></div>
+                </div>
+                <h2 class="text-2xl font-semibold mb-2 text-center" vid="422">Connect Provider</h2>
+                <p class="text-app-textSecondary text-sm text-center mb-8" vid="423">Enter your API key to enable AI features. It is stored locally and securely.</p>
+                
+                <div class="space-y-4 mb-8" vid="424">
+                    <div vid="425">
+                        <label class="block text-sm font-medium mb-1.5" vid="426">Anthropic API Key</label>
+                        <div class="relative" vid="427">
+                            <input type="password" value="sk-ant-api03-xxxxxxxxxxxxxxxx" class="w-full pl-3 pr-20 py-2.5 bg-app-bg border border-app-border rounded-xl text-sm font-mono focus:outline-none focus:border-app-accent focus:ring-1 focus:ring-app-accent" vid="428">
+                            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-app-textSecondary hover:text-app-text bg-white border border-app-border px-2 py-1 rounded shadow-sm" vid="429">Paste</button>
+                        </div>
+                    </div>
+                    <a href="#" class="text-xs text-app-textSecondary hover:text-app-text underline flex items-center gap-1 justify-center" vid="430">
+                        Where do I find this? <i class="ph ph-arrow-square-out" vid="431"></i>
+                    </a>
+                </div>
+
+                <div class="flex justify-between items-center" vid="432">
+                    <button class="px-4 py-2 rounded-xl text-sm font-medium text-app-textSecondary hover:bg-app-hover transition-colors" vid="433">Back</button>
+                    <button class="px-6 py-2 rounded-xl text-sm font-medium bg-app-text text-white hover:bg-black transition-colors flex items-center gap-2" vid="434">
+                        Continue <i class="ph ph-arrow-right" vid="435"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div vid="436">
+            <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="437">13. Workspace Creation</h3>
+            <div class="bg-white border border-app-border rounded-3xl shadow-modal overflow-hidden max-w-xl mx-auto flex flex-col h-[500px]" vid="438">
+                <div class="p-6 border-b border-app-border flex items-center justify-between bg-app-bg" vid="439">
+                    <h2 class="text-lg font-semibold" vid="440">New Workspace</h2>
+                    <button class="text-app-textSecondary hover:text-app-text" vid="441"><i class="ph ph-x text-lg" vid="442"></i></button>
+                </div>
+                
+                <div class="p-6 overflow-y-auto flex-1 bg-white" vid="443">
+                    <p class="text-sm text-app-textSecondary mb-4 font-medium" vid="444">Choose starting point</p>
+                    <div class="grid gap-3 mb-8" vid="445">
+                        <label class="border-2 border-app-text bg-app-hover/50 rounded-xl p-4 flex gap-4 cursor-pointer relative" vid="446">
+                            <input type="radio" name="ws_type" checked="" class="hidden" vid="447">
+                            <div class="w-10 h-10 rounded-full bg-white border border-app-border flex items-center justify-center shrink-0" vid="448">
+                                <i class="ph-bold ph-git-branch text-xl" vid="449"></i>
+                            </div>
+                            <div vid="450">
+                                <h4 class="font-medium mb-1" vid="451">From Scratch</h4>
+                                <p class="text-sm text-app-textSecondary" vid="452">Create a new git worktree branch to start coding immediately.</p>
+                            </div>
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2" vid="453">
+                                <i class="ph-fill ph-check-circle text-app-text text-xl" vid="454"></i>
+                            </div>
+                        </label>
+                        
+                        <label class="border border-app-border rounded-xl p-4 flex gap-4 cursor-pointer hover:bg-app-hover transition-colors" vid="455">
+                            <input type="radio" name="ws_type" class="hidden" vid="456">
+                            <div class="w-10 h-10 rounded-full bg-white border border-app-border flex items-center justify-center shrink-0" vid="457">
+                                <i class="ph-bold ph-github-logo text-xl" vid="458"></i>
+                            </div>
+                            <div vid="459">
+                                <h4 class="font-medium mb-1" vid="460">From GitHub Issue</h4>
+                                <p class="text-sm text-app-textSecondary" vid="461">Search and select an issue to automatically name and link the workspace.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="space-y-4" vid="462">
+                        <div vid="463">
+                            <label class="block text-sm font-medium mb-1.5" vid="464">Branch Name</label>
+                            <input type="text" placeholder="feature/new-button" class="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm focus:outline-none focus:border-app-accent focus:ring-1 focus:ring-app-accent" vid="465">
+                        </div>
+                        <div vid="466">
+                            <label class="block text-sm font-medium mb-1.5" vid="467">Base Branch</label>
+                            <button class="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm flex justify-between items-center hover:bg-app-hover" vid="468">
+                                <span class="flex items-center gap-2" vid="469"><i class="ph ph-git-branch text-app-textSecondary" vid="470"></i> main</span>
+                                <i class="ph ph-caret-down text-app-textSecondary" vid="471"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-app-border bg-app-bg flex justify-end gap-3 mt-auto" vid="472">
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium border border-app-border hover:bg-app-hover transition-colors" vid="473">Cancel</button>
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium bg-app-text text-white hover:bg-black transition-colors" vid="474">Create Workspace</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="component-section" vid="475">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="476">14. Status Bar</h3>
+        
+        <div class="bg-app-surface border border-app-border flex items-center h-7 text-[11px] font-medium text-app-textSecondary px-2 shadow-sm rounded-sm" vid="477">
+            
+            <div class="flex items-center gap-3 h-full" vid="478">
+                <button class="flex items-center gap-1 hover:text-app-text hover:bg-app-hover px-1.5 py-0.5 rounded transition-colors" vid="479">
+                    Claude 3.5 Sonnet <i class="ph-bold ph-caret-down" vid="480"></i>
+                </button>
+                <div class="w-px h-3 bg-app-border" vid="481"></div>
+                <button class="flex items-center gap-1 hover:text-app-text hover:bg-app-hover px-1.5 py-0.5 rounded transition-colors text-app-text" vid="482">
+                    <i class="ph-fill ph-shield-check text-app-success" vid="483"></i> Full Access
+                </button>
+                <div class="w-px h-3 bg-app-border" vid="484"></div>
+                <button class="flex items-center gap-1 hover:text-app-text hover:bg-app-hover px-1.5 py-0.5 rounded transition-colors" vid="485">
+                    <i class="ph-bold ph-git-branch" vid="486"></i> feature/auth-flow
+                </button>
+            </div>
+
+            <div class="flex-1 flex justify-center items-center gap-3 h-full" vid="487">
+                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-app-hover border border-app-border/50 text-app-text" vid="488">
+                    <i class="ph ph-spinner-gap animate-spin" vid="489"></i> Writing tests...
+                </div>
+                <span class="flex items-center gap-1 opacity-70" vid="490"><i class="ph-fill ph-robot text-[12px]" vid="491"></i> 2</span>
+                <span class="font-mono opacity-50" vid="492">00:42</span>
+            </div>
+
+            <div class="flex items-center gap-3 h-full" vid="493">
+                <div class="flex items-center gap-2 group cursor-pointer" title="Context Window Usage" vid="494">
+                    <span vid="495">24%</span>
+                    <div class="w-16 h-1.5 bg-app-border rounded-full overflow-hidden" vid="496">
+                        <div class="h-full bg-app-textSecondary w-[24%] group-hover:bg-app-text transition-colors" vid="497"></div>
+                    </div>
+                </div>
+                <div class="w-px h-3 bg-app-border" vid="498"></div>
+                <span class="font-mono" title="Session Cost" vid="499">$0.12</span>
+                <div class="w-px h-3 bg-app-border" vid="500"></div>
+                <span class="font-mono opacity-70" title="CPU Usage" vid="501">12%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="component-section" vid="502">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="503">15. Agent Profile Cards</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" vid="504">
+            
+            <div class="bg-white border-2 border-app-text rounded-2xl p-5 shadow-sm cursor-pointer relative overflow-hidden group" vid="505">
+                <div class="absolute right-4 top-4 w-5 h-5 bg-app-text text-white rounded-full flex items-center justify-center" vid="506">
+                    <i class="ph-bold ph-check text-xs" vid="507"></i>
+                </div>
+                <div class="text-3xl mb-3" vid="508">🤖</div>
+                <h4 class="font-semibold mb-1 group-hover:text-app-accent transition-colors" vid="509">General Assistant</h4>
+                <p class="text-sm text-app-textSecondary leading-snug" vid="510">Default balanced profile for general coding tasks and refactoring.</p>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl p-5 shadow-sm hover:border-app-textSecondary hover:shadow-md transition-all cursor-pointer group" vid="511">
+                <div class="text-3xl mb-3 opacity-80 group-hover:opacity-100 transition-opacity" vid="512">🎨</div>
+                <h4 class="font-semibold mb-1 group-hover:text-app-text transition-colors" vid="513">Frontend Bot</h4>
+                <p class="text-sm text-app-textSecondary leading-snug" vid="514">Specializes in React, Tailwind, and translating designs to UI components.</p>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-2xl p-5 shadow-sm hover:border-app-textSecondary hover:shadow-md transition-all cursor-pointer group" vid="515">
+                <div class="text-3xl mb-3 opacity-80 group-hover:opacity-100 transition-opacity" vid="516">⚙️</div>
+                <h4 class="font-semibold mb-1 group-hover:text-app-text transition-colors" vid="517">Backend Specialist</h4>
+                <p class="text-sm text-app-textSecondary leading-snug" vid="518">Expert in API design, database schemas, and performance optimization.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <h2 class="text-2xl font-semibold mt-24 mb-8 flex items-center gap-3" vid="519"><span class="bg-app-text text-white w-8 h-8 rounded-full flex items-center justify-center text-sm" vid="520">4</span> Priority 4 — Advanced Features</h2>
+
+    <div class="component-section grid grid-cols-1 xl:grid-cols-2 gap-12" vid="521">
+        
+        <div vid="522">
+            <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="523">16. Subagent Monitor Panel</h3>
+            <div class="bg-white border border-app-border rounded-2xl shadow-sm overflow-hidden flex flex-col max-h-[400px]" vid="524">
+                <div class="bg-app-bg px-4 py-3 border-b border-app-border flex items-center justify-between text-sm" vid="525">
+                    <div class="flex items-center gap-2 font-medium" vid="526">
+                        <i class="ph-fill ph-tree-structure text-app-textSecondary" vid="527"></i> Agent Swarm Activity
+                    </div>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider" vid="528">3 Running</span>
+                </div>
+                
+                <div class="p-2 flex-1 overflow-y-auto font-sans text-sm" vid="529">
+                    
+                    <div class="flex items-center justify-between p-2 hover:bg-app-hover rounded-lg group" vid="530">
+                        <div class="flex items-center gap-3" vid="531">
+                            <i class="ph-fill ph-check-circle text-app-success" vid="532"></i>
+                            <span class="font-medium text-app-text" vid="533">Architect Agent</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-mono text-app-textSecondary opacity-0 group-hover:opacity-100 transition-opacity" vid="534">
+                            <span vid="535">12s</span>
+                            <span vid="536">4.2k tkns</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2 hover:bg-app-hover rounded-lg group ml-6 relative" vid="537">
+                        <div class="absolute left-[-16px] top-0 bottom-1/2 border-l-2 border-b-2 border-app-border rounded-bl-lg w-3" vid="538"></div>
+                        <div class="flex items-center gap-3" vid="539">
+                            <i class="ph ph-spinner-gap text-blue-500 animate-spin" vid="540"></i>
+                            <span class="text-app-text" vid="541">Frontend Implementation</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-mono text-app-textSecondary" vid="542">
+                            <span class="text-app-text" vid="543">45s</span>
+                            <span vid="544">12.5k tkns</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2 hover:bg-app-hover rounded-lg group ml-12 relative" vid="545">
+                        <div class="absolute left-[-16px] top-0 bottom-1/2 border-l-2 border-b-2 border-app-border rounded-bl-lg w-3" vid="546"></div>
+                        <div class="flex items-center gap-3" vid="547">
+                            <i class="ph-fill ph-x-circle text-app-error" vid="548"></i>
+                            <span class="text-app-error" vid="549">Component CSS</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-mono text-app-textSecondary" vid="550">
+                            <span vid="551">Failed</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2 hover:bg-app-hover rounded-lg group ml-6 relative" vid="552">
+                        <div class="absolute left-[-16px] top-[-16px] bottom-1/2 border-l-2 border-b-2 border-app-border rounded-bl-lg w-3" vid="553"></div>
+                        <div class="flex items-center gap-3" vid="554">
+                            <i class="ph ph-spinner-gap text-blue-500 animate-spin" vid="555"></i>
+                            <span class="text-app-text" vid="556">Backend API setup</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-mono text-app-textSecondary" vid="557">
+                            <span class="text-app-text" vid="558">12s</span>
+                            <span vid="559">2.1k tkns</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div vid="560">
+            <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="561">17. Plan Review Mode</h3>
+            <div class="bg-app-bg border border-app-border rounded-2xl p-6 shadow-sm" vid="562">
+                <h4 class="font-medium text-lg mb-1" vid="563">Execution Plan</h4>
+                <p class="text-sm text-app-textSecondary mb-6" vid="564">I will create the new component and integrate it into the dashboard. Please review the steps below.</p>
+                
+                <div class="space-y-4 mb-8" vid="565">
+                    
+                    <div class="flex gap-4" vid="566">
+                        <div class="w-6 h-6 rounded-full bg-white border border-app-border flex items-center justify-center text-xs font-bold shrink-0 shadow-sm mt-0.5" vid="567">1</div>
+                        <div vid="568">
+                            <p class="text-sm font-medium mb-1" vid="569">Create Card Component</p>
+                            <div class="flex items-center gap-2 text-xs font-mono text-app-textSecondary bg-white border border-app-border px-2 py-1 rounded w-fit" vid="570">
+                                <i class="ph ph-file-plus text-app-success" vid="571"></i> src/components/Card.tsx
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4" vid="572">
+                        <div class="w-6 h-6 rounded-full bg-app-warningBg border border-app-warning/30 text-app-warning flex items-center justify-center text-xs font-bold shrink-0 shadow-sm mt-0.5" vid="573">2</div>
+                        <div vid="574">
+                            <div class="flex items-center gap-2 mb-1" vid="575">
+                                <p class="text-sm font-medium text-app-warning" vid="576">Update package dependencies</p>
+                                <span class="bg-app-warningBg text-app-warning text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-app-warning/20" vid="577">Shell Action</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-mono text-app-textSecondary bg-white border border-app-border px-2 py-1 rounded w-fit" vid="578">
+                                <i class="ph ph-terminal-window" vid="579"></i> npm install @radix-ui/react-slot
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4" vid="580">
+                        <div class="w-6 h-6 rounded-full bg-white border border-app-border flex items-center justify-center text-xs font-bold shrink-0 shadow-sm mt-0.5" vid="581">3</div>
+                        <div vid="582">
+                            <p class="text-sm font-medium mb-1" vid="583">Integrate into Dashboard</p>
+                            <div class="flex items-center gap-2 text-xs font-mono text-app-textSecondary bg-white border border-app-border px-2 py-1 rounded w-fit" vid="584">
+                                <i class="ph ph-pencil-simple text-amber-500" vid="585"></i> src/pages/Dashboard.tsx
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4 border-t border-app-border" vid="586">
+                    <button class="flex-1 py-2 rounded-xl text-sm font-medium border border-app-border hover:bg-app-hover transition-colors text-app-error hover:text-red-700 hover:border-red-200 hover:bg-red-50" vid="587">Reject Plan</button>
+                    <button class="flex-1 py-2 rounded-xl text-sm font-medium bg-app-text text-white hover:bg-black transition-colors flex items-center justify-center gap-2" vid="588">
+                        <i class="ph-bold ph-play" vid="589"></i> Approve &amp; Execute
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="component-section mb-20" vid="590">
+        <h3 class="text-sm font-semibold text-app-textSecondary uppercase tracking-wider mb-6" vid="591">18. Invite Flows (Notifications)</h3>
+        <div class="flex flex-wrap gap-8 items-start" vid="592">
+            
+            <div class="bg-white border border-app-border rounded-2xl shadow-modal w-80 overflow-hidden relative" vid="593">
+                
+                <div class="absolute -top-2 right-6 w-4 h-4 bg-white border-t border-l border-app-border rotate-45" vid="594"></div>
+                
+                <div class="p-3 border-b border-app-border flex justify-between items-center bg-app-bg" vid="595">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-app-textSecondary" vid="596">Notifications</span>
+                    <button class="text-xs text-app-textSecondary hover:text-app-text" vid="597">Mark all read</button>
+                </div>
+                
+                <div class="max-h-64 overflow-y-auto" vid="598">
+                    
+                    <div class="p-4 border-b border-app-border/50 hover:bg-app-hover transition-colors cursor-pointer bg-blue-50/50 relative" vid="599">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" vid="600"></div>
+                        <div class="flex gap-3" vid="601">
+                            <div class="w-8 h-8 rounded-full bg-[#1da1f2] text-white flex items-center justify-center font-semibold text-sm shrink-0" vid="602">S</div>
+                            <div vid="603">
+                                <p class="text-sm text-app-text mb-0.5" vid="604"><span class="font-semibold" vid="605">Sarah Jenkins</span> accepted your invite to <span class="font-medium" vid="606">Frontend Team</span>.</p>
+                                <p class="text-xs text-app-textTertiary" vid="607">2 mins ago</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 hover:bg-app-hover transition-colors cursor-pointer opacity-70" vid="608">
+                        <div class="flex gap-3" vid="609">
+                            <div class="w-8 h-8 rounded-full bg-app-surface border border-app-border flex items-center justify-center shrink-0" vid="610">
+                                <i class="ph-fill ph-rocket-launch text-app-textSecondary" vid="611"></i>
+                            </div>
+                            <div vid="612">
+                                <p class="text-sm text-app-text mb-0.5" vid="613">App update v1.4 is available. Restart to apply.</p>
+                                <p class="text-xs text-app-textTertiary" vid="614">1 day ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-app-surface border border-app-border rounded-xl p-2 shadow-sm flex flex-col w-48" vid="615">
+                <p class="text-xs text-app-textTertiary mb-2 px-2 font-mono" vid="616">Sidebar Nav Item</p>
+                <button class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-app-hover transition-colors text-sm font-medium" vid="617">
+                    <span class="flex items-center gap-2" vid="618"><i class="ph ph-users" vid="619"></i> Team</span>
+                    <span class="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center" vid="620">3</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+
+</body></html>

@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-085",
+  "title": "Create Workspace from Linear Issue",
+  "status": "pass",
+  "severity": null,
+  "findings": [
+    {
+      "type": "observation",
+      "description": "LinearIssuePicker supports full workspace creation flow with auto-named workspace from issue ID"
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

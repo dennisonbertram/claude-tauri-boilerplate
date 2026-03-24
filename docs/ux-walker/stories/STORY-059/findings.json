@@ -1,0 +1,15 @@
+{
+  "story_id": "STORY-059",
+  "title": "Manage Memory Files with Search and Edit",
+  "status": "PASS",
+  "walk_date": "2026-03-23",
+  "fix_verified": true,
+  "fix_description": "Data & Context tab no longer crashes (HookCard nullish coalescing fix)",
+  "findings": [],
+  "screenshots": [
+    "01-settings.png",
+    "02-data-context-tab.png",
+    "03-memory-section.png",
+    "05-memory-scrolled.png"
+  ]
+}

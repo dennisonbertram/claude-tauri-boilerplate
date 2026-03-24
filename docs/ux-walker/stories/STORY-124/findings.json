@@ -1,0 +1,15 @@
+{
+  "story": "STORY-124",
+  "title": "Send Direct Message Between Agents",
+  "status": "not_implemented",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "missing_feature",
+      "description": "No UI for sending direct messages between agents. Messages panel is read-only display.",
+      "expected": "Controls to send messages between agents",
+      "actual": "Read-only messages panel with 'No messages yet' placeholder"
+    }
+  ],
+  "notes": "Inter-agent messaging may be handled by the backend when agents are running. No explicit send-message UI exists."
+}

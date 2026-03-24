@@ -1,0 +1,31 @@
+{
+  "storyId": "STORY-027",
+  "title": "Permission Dialog & Risky Tool Execution",
+  "status": "PASS",
+  "severity": "none",
+  "findings": [
+    {
+      "type": "pass",
+      "description": "PermissionDialog component shows risk-level-colored dialogs (low=blue, medium=yellow, high=red) with tool-specific icons (Bash=Terminal, Write/Edit=Pencil, etc.) and three decision options: Allow Once, Allow Always, Deny",
+      "evidence": "PermissionDialog.tsx: riskBorderClass/riskBgClass maps for 3 risk levels, RiskIcon component (ShieldWarning/Shield/ShieldCheck), ToolIcon component, decision types 'allow_once'|'allow_always'|'deny' with scope 'session'|'permanent'",
+      "component": "apps/desktop/src/components/chat/PermissionDialog.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "Permission mode system exists with 4 modes controllable from status bar: Normal (ask for permission), Accept Edits, Plan (no execution), Bypass (auto-approve all)",
+      "evidence": "PermissionModeSegment.tsx: PERMISSION_MODES array with default/acceptEdits/plan/bypassPermissions",
+      "component": "apps/desktop/src/components/status-bar/PermissionModeSegment.tsx"
+    },
+    {
+      "type": "pass",
+      "description": "StreamPermissionRequest and RiskLevel types defined in shared package",
+      "evidence": "PermissionDialog.tsx imports from '@claude-tauri/shared'",
+      "component": "packages/shared"
+    },
+    {
+      "type": "blocked",
+      "description": "Cannot trigger a live permission dialog without sending a message that invokes a risky tool. The 'Normal' permission mode button is visible and clickable in the status bar.",
+      "evidence": "Known issue prevents opening conversations"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "story_id": "STORY-009",
+  "title": "Link Session to Agent Profile",
+  "result": "FAIL",
+  "findings": [
+    {
+      "id": "009-F1",
+      "type": "missing_feature",
+      "severity": "HIGH",
+      "description": "No agent profile selector in chat interface",
+      "expected": "A profile selector or dropdown should be available to link a profile to a session",
+      "actual": "Only model selector (Sonnet 4.6) and mode selector (Normal) are present"
+    },
+    {
+      "id": "009-F2",
+      "type": "missing_feature",
+      "severity": "MEDIUM",
+      "description": "No profile badges or indicators on session entries in sidebar",
+      "expected": "Sessions linked to profiles should show a profile badge/indicator",
+      "actual": "Session entries show only plain text name"
+    },
+    {
+      "id": "009-F3",
+      "type": "bug",
+      "severity": "MEDIUM",
+      "description": "Agent Profiles nav button does not navigate to a profiles page",
+      "expected": "Clicking Agent Profiles should show a profiles management page",
+      "actual": "Main content area remains unchanged after clicking"
+    },
+    {
+      "id": "009-F4",
+      "type": "missing_feature",
+      "severity": "MEDIUM",
+      "description": "No option to link/assign profile in session context menu",
+      "expected": "Context menu should include option to assign/change agent profile",
+      "actual": "Context menu only has: Rename, Fork, Export JSON, Export Markdown, Delete"
+    }
+  ],
+  "steps_completed": 3,
+  "steps_total": 3,
+  "screenshots": [
+    "screenshots/chat-interface.png",
+    "screenshots/after-agent-profiles-click.png"
+  ]
+}

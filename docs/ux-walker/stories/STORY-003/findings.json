@@ -1,0 +1,29 @@
+[
+  {
+    "id": "F-003-001",
+    "story": "STORY-003",
+    "title": "Double-clicking session crashes app with ErrorBoundary",
+    "severity": "CRITICAL",
+    "type": "crash",
+    "description": "Double-clicking a session in the sidebar causes the app to crash with a React ErrorBoundary showing 'Something went wrong. An unexpected error occurred.' This is the same known issue where clicking existing conversations crashes the app.",
+    "steps_to_reproduce": "1. Navigate to http://localhost:1927\n2. Double-click any session in the sidebar (e.g., 'Crispy Meadow')\n3. App crashes with ErrorBoundary",
+    "expected": "Double-click should either open the session or trigger inline rename",
+    "actual": "App crashes with 'Something went wrong' error boundary",
+    "impact": "BLOCKER - Cannot open any existing conversations. Blocks STORY-004 (Fork) in-conversation testing.",
+    "screenshots": ["screenshots/02-crash-on-dblclick.png"],
+    "blocker": true
+  },
+  {
+    "id": "F-003-002",
+    "story": "STORY-003",
+    "title": "No right-click context menu on session items",
+    "severity": "LOW",
+    "type": "missing-feature",
+    "description": "Right-clicking on a session item in the sidebar does not show a context menu. Only the three-dot hover menu provides access to Rename/Fork/Export/Delete actions.",
+    "steps_to_reproduce": "1. Navigate to http://localhost:1927\n2. Right-click on any session in the sidebar\n3. Observe that only the browser's default context menu appears",
+    "expected": "A custom context menu with Rename, Fork, Export, Delete options",
+    "actual": "No custom context menu appears on right-click",
+    "impact": "Low - the three-dot hover menu provides equivalent functionality",
+    "screenshots": ["screenshots/01-right-click-session.png"]
+  }
+]

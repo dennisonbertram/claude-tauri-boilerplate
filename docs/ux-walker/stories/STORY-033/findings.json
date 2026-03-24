@@ -1,0 +1,10 @@
+[
+  {
+    "id": "F-033-001",
+    "severity": "info",
+    "type": "positive",
+    "title": "Paths tab renders with Add directory button and clear labels",
+    "description": "The Paths tab displays 'Workspace settings' with 'ADDITIONAL WRITABLE DIRECTORIES' section, 'Add directory' button, and helpful description text. Currently shows 'No additional directories configured.'",
+    "screenshot": "screenshots/01-paths-tab.png"
+  }
+]

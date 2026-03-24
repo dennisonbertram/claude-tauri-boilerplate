@@ -1,0 +1,42 @@
+[
+  {
+    "id": "F-028-001",
+    "severity": "high",
+    "type": "functional",
+    "title": "New Project button does not open creation dialog",
+    "description": "The 'New Project' button at the top of the Projects view has no visible effect when clicked. No dialog, modal, or form appears. The 'New Project Import from GitHub or local' card at the bottom navigates away from Projects to the chat view instead of opening a creation flow.",
+    "steps": "1. Navigate to Projects view. 2. Click 'New Project' button at top. 3. Observe nothing happens.",
+    "expected": "A dialog or form should appear to create a new project/workspace",
+    "actual": "No dialog opens; button appears non-functional",
+    "screenshot": "screenshots/07-new-project-button-no-effect.png"
+  },
+  {
+    "id": "F-028-002",
+    "severity": "medium",
+    "type": "functional",
+    "title": "Project card click navigates away from Projects view",
+    "description": "Clicking on the project card heading in the main Projects view navigates the user away from the Projects view back to the chat/conversations view, rather than drilling into the project detail.",
+    "steps": "1. Navigate to Projects view. 2. Click on 'ai-domain-registration' heading in main area. 3. Observe navigation to chat view.",
+    "expected": "Should drill into project detail or expand workspace list",
+    "actual": "Navigates away to chat/conversations view",
+    "screenshot": "screenshots/04-project-card-navigated-away.png"
+  },
+  {
+    "id": "F-028-003",
+    "severity": "low",
+    "type": "functional",
+    "title": "Add project sidebar button has no visible effect",
+    "description": "The 'Add project' button (+ icon) in the sidebar under PROJECTS has no visible effect when clicked.",
+    "steps": "1. Navigate to Projects view. 2. Click 'Add project' button in sidebar. 3. Observe nothing happens.",
+    "expected": "Should open a project creation dialog or picker",
+    "actual": "No visible effect"
+  },
+  {
+    "id": "F-028-004",
+    "severity": "info",
+    "type": "positive",
+    "title": "Crash bug fixed -- workspace loads successfully",
+    "description": "The previously blocking crash (ChatPage sessionInfo crash) is confirmed fixed. Clicking into the Investigation workspace from the sidebar loads the full workspace view with all tabs, buttons, and chat history.",
+    "screenshot": "screenshots/06-workspace-open-no-crash.png"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "story": "STORY-069",
+  "title": "Handle Settings Persistence and Defaults Reset",
+  "status": "partial-pass",
+  "findings": [
+    {
+      "id": "STORY-069-F01",
+      "severity": "low",
+      "type": "missing-feature",
+      "summary": "No 'Reset to defaults' button in settings",
+      "details": "Settings panel has no mechanism to reset all or individual settings to their default values. Users who accidentally change settings have no easy way to restore defaults.",
+      "repro": "Open Settings > look for reset/restore defaults option"
+    }
+  ]
+}

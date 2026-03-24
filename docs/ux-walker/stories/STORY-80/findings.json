@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-080",
+  "title": "Review Risk Level in Permission Mode Settings",
+  "status": "fail",
+  "bugs": [],
+  "missing_features": [
+    "No risk level documentation in permission mode settings",
+    "No per-tool risk classification visible to users",
+    "No risk level legend or explanation"
+  ],
+  "ui_present": [
+    "Permission Mode dropdown in Settings and Agent Profiles",
+    "Description mentions 'risky operations'"
+  ],
+  "ui_missing": [
+    "Risk level breakdown",
+    "Tool risk classification",
+    "Risk documentation"
+  ]
+}

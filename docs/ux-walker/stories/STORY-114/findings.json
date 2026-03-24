@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-114",
+  "title": "Side-by-Side Diff View with Sticky Headers",
+  "status": "partial",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "feature_present",
+      "description": "Side-by-side mode toggle button exists and is clickable. The diff toolbar shows Unified and Side-by-side as toggle buttons. However, the diff view currently only shows a file list (not expanded file diffs), so sticky headers on the actual side-by-side code view could not be verified.",
+      "location": "Workspace > Diff tab toolbar"
+    },
+    {
+      "type": "ux_issue",
+      "description": "File rows in the diff list do not expand to show inline diff content when clicked. The file list appears to be display-only with Mark reviewed buttons.",
+      "location": "Workspace > Diff tab > file list"
+    }
+  ],
+  "ui_elements_found": ["Unified button", "Side-by-side button (toggle)", "File list with status icons"],
+  "tested_at": "2026-03-23"
+}

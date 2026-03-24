@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-145",
+  "title": "View Latest Turn File Changes in Diff",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No per-turn diff viewing UI visible. The top navigation has Chat/Code/Cowork tabs. The 'Code' tab may contain diff viewing but requires an active conversation. Cannot test due to known crash bug when clicking existing conversations.",
+      "expected": "A diff viewer showing file changes made by each turn in the conversation.",
+      "actual": "No diff viewer visible in new chat view. Code tab exists but untestable without active conversation.",
+      "blocked_by": "Known issue: clicking existing conversations crashes the app"
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented or blocked from testing. Code tab may contain diff features but requires active conversation."
+}

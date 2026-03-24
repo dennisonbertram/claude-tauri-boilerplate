@@ -1,0 +1,8 @@
+{
+  "story": "STORY-133",
+  "title": "View Team Metadata and Creation Info",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Team metadata shown on list card: agent count, display mode, creation date. Clear and informative."
+}

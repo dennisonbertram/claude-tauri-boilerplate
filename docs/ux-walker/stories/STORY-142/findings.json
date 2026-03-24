@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-142",
+  "title": "Pin Context Summary Under Input",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No context summary or pin feature visible near the chat input. The input toolbar has: project selector, '+' button, model selector (Sonnet 4.6), microphone button, and send button. No pinned context indicator.",
+      "expected": "A pinned context summary area below or near the chat input showing relevant context.",
+      "actual": "Input toolbar shows project/model selectors only. No context pin or summary feature.",
+      "blocked_by": null
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented. No context pinning UI near the chat input."
+}

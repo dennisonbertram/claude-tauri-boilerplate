@@ -1,0 +1,21 @@
+{
+  "story": "STORY-038",
+  "title": "Rename Workspace and Branch",
+  "status": "fail",
+  "findings": [
+    {
+      "type": "bug",
+      "severity": "high",
+      "title": "Rename branch UI exists in unused ProjectSidebar component",
+      "description": "ProjectSidebar.tsx has a complete rename-branch UI (pencil icon, inline input, Save/Cancel) but is never imported or rendered in the app. The sidebar uses ProjectsSection.tsx which lacks rename functionality entirely.",
+      "file": "apps/desktop/src/components/sidebar/ProjectsSection.tsx"
+    },
+    {
+      "type": "missing-feature",
+      "severity": "medium",
+      "title": "No workspace name rename capability",
+      "description": "There is no way to rename a workspace's display name. Only branch rename exists (in unused code). The workspace header shows a static h2 heading.",
+      "file": "apps/desktop/src/components/workspaces/WorkspacePanel.tsx"
+    }
+  ]
+}

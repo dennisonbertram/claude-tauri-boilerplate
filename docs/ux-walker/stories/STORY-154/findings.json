@@ -1,0 +1,18 @@
+[
+  {
+    "id": "F-154-001",
+    "story": "STORY-154",
+    "severity": "low",
+    "title": "No transition animations between views",
+    "description": "Switching between Chat, Teams, Documents, Agent Profiles, and Projects views is instant with no transition animation. Views mount/unmount abruptly. While functional, adding subtle fade or slide transitions would improve perceived UX polish.",
+    "steps": [
+      "Click 'Teams' in sidebar",
+      "Click 'Documents' in sidebar",
+      "Click 'New Chat' in sidebar",
+      "Observe: Each view appears instantly with no animation"
+    ],
+    "expected": "Smooth transition between views",
+    "actual": "Instant view swap with no animation",
+    "screenshot": "screenshots/03-documents-view.png"
+  }
+]

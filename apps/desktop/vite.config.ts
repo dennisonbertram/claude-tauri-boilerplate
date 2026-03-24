@@ -19,16 +19,16 @@ export default defineConfig(async () => ({
   //
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  // 2. port is configurable via VITE_PORT env var (set by init.sh)
   server: {
-    port: 1420,
-    strictPort: true,
+    port: parseInt(process.env.VITE_PORT || '1420'),
+    strictPort: !!process.env.VITE_PORT,
     host: host || false,
     hmr: host
       ? {
           protocol: "ws",
           host,
-          port: 1421,
+          port: parseInt(process.env.VITE_HMR_PORT || '1421'),
         }
       : undefined,
     watch: {

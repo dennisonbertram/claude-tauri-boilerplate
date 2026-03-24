@@ -1,0 +1,13 @@
+{
+  "story_id": "STORY-096",
+  "title": "Linear Issue Picker Offline",
+  "status": "not_implemented",
+  "severity": "low",
+  "findings": [
+    {
+      "type": "gap",
+      "description": "No offline-specific handling. Network failures show generic error. No cached issues or offline-aware UX."
+    }
+  ],
+  "tested_at": "2026-03-23T00:00:00Z"
+}

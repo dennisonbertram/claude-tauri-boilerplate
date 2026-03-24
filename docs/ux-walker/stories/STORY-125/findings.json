@@ -1,0 +1,8 @@
+{
+  "story": "STORY-125",
+  "title": "Manage Agent Tasks with Kanban Board",
+  "status": "pass",
+  "severity": null,
+  "findings": [],
+  "notes": "Kanban board present with Pending/In Progress/Completed columns. Empty state handled correctly."
+}

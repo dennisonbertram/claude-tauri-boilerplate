@@ -1,0 +1,20 @@
+{
+  "story_id": "STORY-141",
+  "title": "Review Thinking Process Before Approval",
+  "status": "not_implemented",
+  "severity": "info",
+  "category": "advanced-chat-features",
+  "tested_at": "2026-03-23T00:00:00Z",
+  "url": "http://localhost:1927/",
+  "findings": [
+    {
+      "type": "feature_missing",
+      "description": "No thinking block visibility controls found in the chat interface. No toggle or expandable section for reviewing the model's thinking process before approving actions.",
+      "expected": "A control to show/hide the model's internal thinking process, allowing review before approval.",
+      "actual": "No thinking toggle or expandable thinking blocks visible in new chat view or settings.",
+      "blocked_by": "Requires active conversation to fully verify; blocked by known crash bug"
+    }
+  ],
+  "screenshots": [],
+  "verdict": "Feature not implemented. No thinking process visibility controls found."
+}

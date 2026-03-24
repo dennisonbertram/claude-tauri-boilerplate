@@ -1,0 +1,68 @@
+[
+  {
+    "id": "F-004-001",
+    "story": "STORY-004",
+    "title": "Sidebar fork action fails silently and navigates to Projects page",
+    "severity": "high",
+    "type": "bug",
+    "status": "new",
+    "description": "Clicking 'Fork' from the sidebar context menu on a conversation does not create a forked session. Instead, the app navigates to the Projects page. No error message is shown, no new '(fork)' conversation appears in the sidebar. The fork appears to silently fail.",
+    "steps": [
+      "Open chat view with conversations in sidebar",
+      "Hover over a conversation to reveal the '...' menu button",
+      "Click the menu button, then click 'Fork'",
+      "Observe: app navigates to Projects page, no fork created"
+    ],
+    "expected": "A new forked conversation should appear in the sidebar with '(fork)' suffix, and the user should remain in the chat view",
+    "actual": "App navigates to Projects page, no forked conversation is created",
+    "screenshots": ["07-context-menu-with-fork.png", "08-after-fork.png", "10-no-fork-created.png"],
+    "component": "SessionItem context menu / fork handler"
+  },
+  {
+    "id": "F-004-002",
+    "story": "STORY-004",
+    "title": "No per-message 'Fork Here' button exists for checkpoint-based forking",
+    "severity": "medium",
+    "type": "missing-feature",
+    "status": "new",
+    "description": "The story expects a 'Fork Here' button on individual messages to create a branch from a specific point in the conversation. This UI does not exist. Fork is only available via the sidebar context menu (which forks the entire session). CheckpointTimeline and RewindDialog components exist in code but are only for code/workspace sessions with git checkpoints, not for arbitrary message-level forking in plain chat.",
+    "steps": [
+      "Open a conversation with multiple messages",
+      "Hover over individual messages looking for fork/branch controls",
+      "Observe: no per-message fork button exists"
+    ],
+    "expected": "A 'Fork Here' button on messages allowing branching from a specific point",
+    "actual": "No per-message fork UI. Fork is only in sidebar context menu (session-level).",
+    "screenshots": ["06-cake-conversation-full.png"],
+    "component": "MessageList / message rendering"
+  },
+  {
+    "id": "F-004-003",
+    "story": "STORY-004",
+    "title": "Sidebar fork does not show confirmation or RewindDialog",
+    "severity": "medium",
+    "type": "ux",
+    "status": "new",
+    "description": "When clicking Fork from the sidebar context menu, no confirmation dialog or RewindDialog is shown. The action fires immediately (though it fails). A RewindDialog component exists in the codebase but is not wired to the sidebar fork action.",
+    "steps": [
+      "Open sidebar context menu on a conversation",
+      "Click 'Fork'",
+      "Observe: no confirmation dialog appears"
+    ],
+    "expected": "A confirmation dialog or RewindDialog should appear before forking",
+    "actual": "No dialog shown; action fires immediately",
+    "screenshots": ["07-context-menu-with-fork.png"],
+    "component": "SessionItem / RewindDialog"
+  },
+  {
+    "id": "F-004-100",
+    "story": "STORY-004",
+    "title": "ChatPage crash fix verified — conversations load without error",
+    "severity": "info",
+    "type": "verification",
+    "status": "resolved",
+    "description": "The previously-blocking ChatPage crash (missing sessionInfo destructuring) has been fixed. Clicking on conversations in the sidebar now loads them correctly without triggering ErrorBoundary. Tested with 'Crispy Meadow' and 'Classic Vanilla Butter Cake Recipe' conversations. No console errors observed.",
+    "screenshots": ["02-conversation-loaded.png", "03-cake-conversation-loaded.png"],
+    "component": "ChatPage"
+  }
+]
