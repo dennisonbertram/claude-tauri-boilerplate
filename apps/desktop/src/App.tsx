@@ -58,7 +58,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [createWorkspaceProject, setCreateWorkspaceProject] = useState<Project | null>(null);
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const { handleTaskComplete, markAsRead } = useTaskNotifications();
   const subagentActiveCountRef = useRef(0);
   useEffect(() => { const h = (e: BeforeUnloadEvent) => { if (subagentActiveCountRef.current > 0) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', h); return () => window.removeEventListener('beforeunload', h); }, []);
@@ -102,14 +102,14 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
           <div className={`relative z-10 flex-1 min-h-0 flex flex-col ${activeView === 'chat' ? 'pt-14' : ''}`}>
             {activeView === 'chat' ? (
               <div className="flex flex-1 flex-col min-w-0 min-h-0">
-                {openSessionIds.length > 0 && <ChatTabsBar sessions={sessions} openSessionIds={openSessionIds} activeSessionId={activeSessionId} onActivate={handleActivateTab} onClose={handleCloseTab} onRename={renameSession} onNewTab={handleNewChat} />}
+                {openSessionIds.length > 1 && <ChatTabsBar sessions={sessions} openSessionIds={openSessionIds} activeSessionId={activeSessionId} onActivate={handleActivateTab} onClose={handleCloseTab} onRename={renameSession} onNewTab={handleNewChat} />}
                 {activeSessionId || pendingMessage ? (
                   <ChatPage key={activeSessionId ?? 'new-chat'} sessionId={activeSessionId ?? pendingWelcomeSessionId} onCreateSession={handleNewChat}
                     onExportSession={activeSessionId ? () => exportSession(activeSessionId, 'json') : undefined} onStatusChange={handleStatusChange} onAutoName={autoNameSession}
                     onToggleSidebar={() => setSidebarOpen(o => !o)} onOpenSettings={handleOpenSettings} onOpenSessions={() => { navigate('/chat'); setSidebarOpen(true); }} onOpenPullRequests={() => navigate('/teams')}
                     onTaskComplete={p => handleTaskComplete(p)} profileId={selectedProfileId} agentProfiles={agentProfiles} onSelectProfile={setSelectedProfileId}
                     initialMessage={pendingMessage} onSessionInitialized={handleSessionInitialized} onInitialMessageConsumed={handleInitialMessageConsumed} />
-                ) : <WelcomeScreen onNewChat={handleNewChat} onSubmit={handleWelcomeSubmit} agentProfiles={agentProfiles} selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId} modelDisplay={getModelDisplay(settings.model)} />}
+                ) : <WelcomeScreen onNewChat={handleNewChat} onSubmit={handleWelcomeSubmit} agentProfiles={agentProfiles} selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId} modelDisplay={getModelDisplay(settings.model)} projects={projects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} currentModel={settings.model} onSelectModel={(modelId) => updateSettings({ model: modelId })} />}
               </div>
             ) : activeView === 'workspaces' ? (
               selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} onRenameWorkspace={async (id, updates) => { await renameWorkspace(id, updates); await handleWorkspaceUpdate(); }} />

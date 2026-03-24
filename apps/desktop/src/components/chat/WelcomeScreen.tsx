@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Microphone, ArrowUpRight } from '@phosphor-icons/react';
+import { useState, useRef, useEffect } from 'react';
+import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Microphone, ArrowUpRight, Check } from '@phosphor-icons/react';
 import { ProfileSelector } from '@/components/agent-builder/shared/ProfileSelector';
-import type { AgentProfile } from '@claude-tauri/shared';
+import { AVAILABLE_MODELS } from '@/lib/models';
+import type { AgentProfile, Project } from '@claude-tauri/shared';
 
 const TEMPLATES = [
   { title: 'Generate a dashboard layout', subtitle: 'With sidebar navigation and data grid', Icon: SquaresFour },
@@ -16,6 +17,11 @@ interface WelcomeScreenProps {
   selectedProfileId?: string | null;
   onSelectProfile?: (id: string | null) => void;
   modelDisplay?: string;
+  projects?: Project[];
+  selectedProjectId?: string | null;
+  onSelectProject?: (projectId: string | null) => void;
+  currentModel?: string;
+  onSelectModel?: (modelId: string) => void;
 }
 
 export function WelcomeScreen({
@@ -25,8 +31,25 @@ export function WelcomeScreen({
   selectedProfileId,
   onSelectProfile,
   modelDisplay = 'Claude',
+  projects,
+  selectedProjectId,
+  onSelectProject,
+  currentModel,
+  onSelectModel,
 }: WelcomeScreenProps) {
   const [inputValue, setInputValue] = useState('');
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (!projectDropdownOpen && !modelDropdownOpen) return;
+    const handleClick = () => { setProjectDropdownOpen(false); setModelDropdownOpen(false); };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [projectDropdownOpen, modelDropdownOpen]);
 
   const handleSubmit = () => {
     const text = inputValue.trim();
@@ -36,6 +59,20 @@ export function WelcomeScreen({
     } else {
       onNewChat();
     }
+  };
+
+  const selectedProject = projects?.find(p => p.id === selectedProjectId);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setAttachedFiles(prev => [...prev, ...Array.from(files)]);
+    }
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -87,28 +124,114 @@ export function WelcomeScreen({
             placeholder="How can I help you build today?"
             className="px-4 py-3 min-h-[120px] max-h-[300px] text-lg text-foreground bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
           />
+
+          {/* Attached files preview */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 py-2">
+              {attachedFiles.map((file, i) => (
+                <span key={`${file.name}-${i}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent text-xs text-foreground border border-border">
+                  {file.name}
+                  <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground ml-0.5">&times;</button>
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/0 px-2">
             {/* Left toolbar */}
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors border border-transparent hover:border-border">
-                <FolderSimple size={18} />
-                <span className="font-medium">Select project</span>
-                <CaretDown size={12} className="opacity-50" />
-              </button>
+              {/* Project selector */}
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setProjectDropdownOpen(p => !p); setModelDropdownOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors border border-transparent hover:border-border"
+                >
+                  <FolderSimple size={18} />
+                  <span className="font-medium">{selectedProject?.name ?? 'Select project'}</span>
+                  <CaretDown size={12} className="opacity-50" />
+                </button>
+                {projectDropdownOpen && onSelectProject && (
+                  <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                    <button
+                      onClick={() => { onSelectProject(null); setProjectDropdownOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <FolderSimple size={16} />
+                      <span>No project (general chat)</span>
+                      {!selectedProjectId && <Check size={14} className="ml-auto text-primary" />}
+                    </button>
+                    {projects && projects.map(project => (
+                      <button
+                        key={project.id}
+                        onClick={() => { onSelectProject(project.id); setProjectDropdownOpen(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <FolderSimple size={16} className="text-muted-foreground shrink-0" />
+                        <span className="truncate">{project.name}</span>
+                        {selectedProjectId === project.id && <Check size={14} className="ml-auto text-primary shrink-0" />}
+                      </button>
+                    ))}
+                    {(!projects || projects.length === 0) && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">No projects added yet</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="w-px h-4 bg-border mx-1" />
-              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+
+              {/* Attach files button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                title="Attach files"
+              >
                 <Plus size={18} />
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
             {/* Right toolbar */}
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors">
-                <span className="font-medium">{modelDisplay}</span>
-                <CaretDown size={12} className="opacity-50" />
-              </button>
-              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+              {/* Model selector */}
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(p => !p); setProjectDropdownOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors"
+                >
+                  <span className="font-medium">{modelDisplay}</span>
+                  <CaretDown size={12} className="opacity-50" />
+                </button>
+                {modelDropdownOpen && onSelectModel && (
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-50 py-1">
+                    {AVAILABLE_MODELS.map(model => (
+                      <button
+                        key={model.id}
+                        onClick={() => { onSelectModel(model.id); setModelDropdownOpen(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <span>{model.label}</span>
+                        {currentModel === model.id && <Check size={14} className="ml-auto text-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Microphone — disabled (no speech API integration yet) */}
+              <button
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/40 cursor-not-allowed transition-colors"
+                title="Voice input coming soon"
+                disabled
+              >
                 <Microphone size={18} />
               </button>
+
               <button
                 onClick={handleSubmit}
                 className="w-8 h-8 rounded-lg flex items-center justify-center bg-foreground text-background hover:bg-[var(--app-cta)] transition-colors ml-1 shadow-sm"
