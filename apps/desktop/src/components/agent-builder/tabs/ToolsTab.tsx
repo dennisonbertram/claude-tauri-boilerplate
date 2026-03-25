@@ -118,6 +118,9 @@ export function ToolsTab({ draft, onChange }: ToolsTabProps) {
           {PERMISSION_MODES.find((m) => m.value === (draft.permissionMode ?? 'default'))
             ?.description ?? ''}
         </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          This profile overrides the global permission mode while it is active.
+        </p>
       </div>
 
       {/* Tools Configuration */}

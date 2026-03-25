@@ -32,7 +32,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
       {/* Max Tokens */}
       <SettingField
         label="Max Tokens"
-        description={`Maximum output tokens for the next chat run: ${settings.maxTokens.toLocaleString()}. Profile values can override this default.`}
+        description={`Maximum output tokens for the next chat run: ${settings.maxTokens.toLocaleString()}.`}
       >
         <input
           data-testid="max-tokens-slider"
@@ -51,7 +51,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
       {/* Temperature */}
       <SettingField
         label="Temperature"
-        description={`Default output variability for the next chat run: ${settings.temperature.toFixed(1)}. Profile values can override this default.`}
+        description={`Default output variability for the next chat run: ${settings.temperature.toFixed(1)}.`}
       >
         <input
           data-testid="temperature-slider"

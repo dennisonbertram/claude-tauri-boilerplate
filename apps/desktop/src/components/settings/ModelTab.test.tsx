@@ -32,4 +32,21 @@ describe('Settings ModelTab copy for global defaults', () => {
       screen.getByText(/Default thinking effort for the next chat run\.[\s\S]*Profile values can override this default\./)
     ).toBeInTheDocument();
   });
+
+  it('does not claim profile overrides for max tokens or temperature', () => {
+    renderSettings();
+
+    expect(
+      screen.getByText(/Maximum output tokens for the next chat run:/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Default output variability for the next chat run:/)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Maximum output tokens for the next chat run:[\s\S]*Profile values can override this default\./)
+    ).toBeNull();
+    expect(
+      screen.queryByText(/Default output variability for the next chat run:[\s\S]*Profile values can override this default\./)
+    ).toBeNull();
+  });
 });
