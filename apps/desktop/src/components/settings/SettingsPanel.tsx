@@ -140,8 +140,8 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
     if (isOpen) {
       const nextGroup = initialTab ? tabToGroup(initialTab) : 'general';
       setActiveGroup(nextGroup);
-      if (nextGroup === 'general' && initialTab) {
-        setActiveGeneralTab(initialTab as GeneralTabId);
+      if (nextGroup === 'general') {
+        setActiveGeneralTab(initialTab ? (initialTab as GeneralTabId) : 'general');
       }
     }
   }, [isOpen, initialTab]);
@@ -213,12 +213,19 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {currentGroup.id === 'general' ? (
               <>
-                <div className="rounded-lg border border-border bg-background p-1">
+                <div
+                  className="rounded-lg border border-border bg-background p-1"
+                  role="tablist"
+                  aria-label="General settings subsections"
+                >
                   <div className="grid grid-cols-3 gap-1">
                     {currentGroup.tabs.map((tab) => (
                       <button
                         key={tab.id}
                         type="button"
+                        role="tab"
+                        aria-selected={activeGeneralTab === tab.id}
+                        aria-controls={`general-subsection-panel-${tab.id}`}
                         onClick={() => setActiveGeneralTab(tab.id as GeneralTabId)}
                         className={`h-8 rounded-md px-3 text-xs font-medium transition-colors sm:text-sm ${
                           activeGeneralTab === tab.id
@@ -237,6 +244,8 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
                     tab.id === activeGeneralTab && (
                       <section
                         key={tab.id}
+                        id={`general-subsection-panel-${tab.id}`}
+                        role="tabpanel"
                         aria-labelledby={`general-subsection-${tab.id}`}
                         className="space-y-6"
                       >
