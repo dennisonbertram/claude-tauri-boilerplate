@@ -132,17 +132,30 @@ describe('SettingsPanel', () => {
     expect(tabs[4].textContent).toBe('Status');
   });
 
-  test('shows General group by default with all stacked sections', () => {
+  test('shows General group by default with the General subsection only', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} />);
     // General tab content
     expect(screen.getByText('API Key')).toBeTruthy();
-    // Appearance tab content (stacked in same group)
-    expect(screen.getByText('Theme')).toBeTruthy();
-    expect(screen.getByText('Accent Color')).toBeTruthy();
-    // Notifications tab content (stacked in same group)
-    expect(screen.getByText('Desktop Notifications')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Appearance' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
+    expect(screen.queryByText('Theme')).toBeNull();
+    expect(screen.queryByText('Desktop Notifications')).toBeNull();
+    expect(screen.queryByText('Accent Color')).toBeNull();
     // Model tab content should NOT be visible
     expect(screen.queryByText('Temperature')).toBeNull();
+  });
+
+  test('switches between General subsections for focused edits', async () => {
+    const user = userEvent.setup();
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Appearance' }));
+    expect(screen.getByText('Theme')).toBeTruthy();
+    expect(screen.queryByText('API Key')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
+    expect(screen.getByText('Desktop Notifications')).toBeTruthy();
+    expect(screen.queryByText('Theme')).toBeNull();
   });
 
   test('switches to AI & Model group on click', async () => {
@@ -299,7 +312,7 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    // Appearance is stacked in the General group, so theme-select is already visible
+    await user.click(screen.getByRole('button', { name: 'Appearance' }));
     const themeSelect = screen.getByTestId('theme-select');
     await user.selectOptions(themeSelect, 'light');
 
@@ -311,7 +324,7 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     renderWithProvider(<SettingsPanel {...defaultProps} />);
 
-    // Appearance controls are in General group (stacked), already visible
+    await user.click(screen.getByRole('button', { name: 'Appearance' }));
     await user.selectOptions(screen.getByTestId('accent-color-select'), 'emerald');
     await user.selectOptions(screen.getByTestId('chat-font-select'), 'mono');
     await user.selectOptions(screen.getByTestId('mono-font-family-select'), 'courier');
