@@ -11,6 +11,7 @@ import {
   addMessage,
   linkSessionToProfile,
   getAgentProfile,
+  copySessionMcpOverrides,
 } from '../db';
 import { generateRandomName } from '../services/name-generator';
 import { generateSessionTitle } from '../services/auto-namer';
@@ -148,6 +149,8 @@ export function createSessionsRouter(db: Database) {
     for (const msg of messagesToCopy) {
       addMessage(db, crypto.randomUUID(), newId, msg.role, msg.content);
     }
+
+    copySessionMcpOverrides(db, id, newId);
 
     // Include messageCount so the isTrulyEmpty heuristic in the frontend
     // works immediately without waiting for a sessions list refresh.

@@ -51,6 +51,9 @@ export interface StreamingContext {
   workspaceNotesContent: string | undefined;
   workspaceGithubIssuePrompt: string | undefined;
   agentProfile: AgentProfile | null;
+  mcpServerOverrides?: Record<string, unknown>;
+  /** Tool names from connector MCP servers that should be auto-allowed. */
+  connectorAllowedTools?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +88,8 @@ export function buildStreamExecute(ctx: StreamingContext) {
       workspaceNotesContent,
       workspaceGithubIssuePrompt,
       agentProfile,
+      mcpServerOverrides,
+      connectorAllowedTools,
     } = ctx;
 
     const callerSessionId = ctx.sessionId;
@@ -212,6 +217,8 @@ export function buildStreamExecute(ctx: StreamingContext) {
           cwd: workspaceCwd,
           additionalDirectories,
           agentProfile,
+          mcpServerOverrides,
+          connectorAllowedTools,
         })) {
           ensureSession();
 

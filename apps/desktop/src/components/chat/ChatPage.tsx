@@ -235,6 +235,7 @@ export function ChatPage(props: ChatPageProps) {
           ghostText={undefined}
           onAcceptSuggestion={handleAcceptGhostText}
           contextSummary={isLoading ? undefined : contextSummary}
+          sessionId={sessionId ?? undefined}
           mcpServerNames={mcpServers.map((s) => s.name)}
           modelDisplay={getModelDisplay(sessionInfo?.model ?? settings.model)}
           sessionTotalCost={sessionTotalCost}

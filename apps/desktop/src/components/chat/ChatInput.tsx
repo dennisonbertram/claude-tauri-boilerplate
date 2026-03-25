@@ -37,6 +37,7 @@ export function ChatInput({
   modelDisplay,
   sessionTotalCost,
   onCostClick,
+  sessionId,
   contextUsage,
   showCommandTip,
   onDismissCommandTip,
@@ -245,7 +246,7 @@ export function ChatInput({
               </button>
             </div>
           )}
-          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} isSubscription={isSubscription} />
+          <ChatInputToolbar inputHasContent={!!input.trim()} isLoading={isLoading} onPickFiles={handlePickFilesClick} onOpenPalette={() => onInputChange('/')} modelDisplay={modelDisplay} sessionTotalCost={sessionTotalCost} onCostClick={onCostClick} isSubscription={isSubscription} sessionId={sessionId} />
         </div>
 
         <input ref={pickerRef} type="file" data-testid="file-input" multiple className="sr-only" onChange={handlePickFilesChange} />

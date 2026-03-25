@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Microphone, ArrowUpRight, Check } from '@phosphor-icons/react';
+import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, Paperclip, Microphone, ArrowUpRight, Check } from '@phosphor-icons/react';
 import { ProfileSelector } from '@/components/agent-builder/shared/ProfileSelector';
+import { ConnectorList } from './McpStatusPill';
+import { useSessionMcpServers } from '../../hooks/useSessionMcpServers';
 import { AVAILABLE_MODELS } from '@/lib/models';
 import type { AgentProfile, Project } from '@claude-tauri/shared';
 
@@ -40,8 +42,11 @@ export function WelcomeScreen({
   const [inputValue, setInputValue] = useState('');
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const { activeCount } = useSessionMcpServers(undefined);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -50,6 +55,17 @@ export function WelcomeScreen({
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [projectDropdownOpen, modelDropdownOpen]);
+
+  useEffect(() => {
+    if (!plusMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
+        setPlusMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [plusMenuOpen]);
 
   const handleSubmit = () => {
     const text = inputValue.trim();
@@ -179,15 +195,50 @@ export function WelcomeScreen({
               </div>
 
               <div className="w-px h-4 bg-border mx-1" />
+              <div ref={plusMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setPlusMenuOpen((prev) => !prev)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors relative"
+                  title="Attach, commands, connectors"
+                >
+                  <Plus size={18} />
+                  {activeCount > 0 && (
+                    <span
+                      className="absolute top-1 right-1 h-2 w-2 rounded-full bg-green-500"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
 
-              {/* Attach files button */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                title="Attach files"
-              >
-                <Plus size={18} />
-              </button>
+                {plusMenuOpen && (
+                  <div className="absolute bottom-full left-0 z-20 mb-1.5 min-w-[240px] rounded-lg border border-border bg-popover py-1 shadow-lg">
+                    {/* File picker item */}
+                    <button
+                      type="button"
+                      onClick={() => setPlusMenuOpen(false)}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <span>Add files or photos</span>
+                    </button>
+
+                    {/* Slash commands item */}
+                    <button
+                      type="button"
+                      onClick={() => setPlusMenuOpen(false)}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center font-mono text-xs text-muted-foreground">/</span>
+                      <span>Slash commands</span>
+                    </button>
+
+                    {/* Connectors section (global defaults, no session) */}
+                    <ConnectorList sessionId={undefined} />
+                  </div>
+                )}
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"

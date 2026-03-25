@@ -234,4 +234,5 @@ export {
   migrateDocumentsAddEnrichingStatus,
   migrateDocumentPipelineTables,
   migratePlaidTables,
+  migrateSessionMcpOverrides,
 } from './migrations';

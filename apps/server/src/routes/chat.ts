@@ -30,6 +30,7 @@ import {
   canonicalizeRoots,
 } from './chat-helpers';
 import { buildStreamExecute } from './chat-streaming';
+import { resolveSessionMcpServers } from '../services/mcp-resolver';
 
 export function createChatRouter(db: Database) {
   const router = new Hono();
@@ -301,6 +302,8 @@ export function createChatRouter(db: Database) {
 
     const resolvedLinearIssue = requestLinearIssue ?? workspaceLinearIssue;
 
+    const resolvedMcp = await resolveSessionMcpServers(db, sessionId ?? undefined, agentProfile);
+
     const stream = createUIMessageStream({
       execute: buildStreamExecute({
         db,
@@ -324,6 +327,8 @@ export function createChatRouter(db: Database) {
         workspaceNotesContent,
         workspaceGithubIssuePrompt,
         agentProfile,
+        mcpServerOverrides: resolvedMcp.servers,
+        connectorAllowedTools: resolvedMcp.connectorAllowedTools,
       }),
       onError: (error) => {
         return error instanceof Error ? error.message : 'Stream error';

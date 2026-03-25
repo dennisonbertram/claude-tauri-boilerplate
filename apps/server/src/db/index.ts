@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable, migrateDocumentsAddEnrichingStatus, migrateDocumentPipelineTables, migratePlaidTables } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable, migrateDocumentsAddEnrichingStatus, migrateDocumentPipelineTables, migratePlaidTables, migrateSessionMcpOverrides } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -32,6 +32,7 @@ export function createDb(path?: string): Database {
   migrateDocumentsAddEnrichingStatus(db);
   migrateDocumentPipelineTables(db);
   migratePlaidTables(db);
+  migrateSessionMcpOverrides(db);
   return db;
 }
 
@@ -230,6 +231,14 @@ export {
   clearGoogleOAuth,
 } from './db-google';
 export type { GoogleOAuthRecord } from './db-google';
+
+// ─── Session MCP Overrides ──────────────────────────────────────────────────
+export {
+  getSessionMcpOverrides,
+  setSessionMcpOverride,
+  deleteSessionMcpOverride,
+  copySessionMcpOverrides,
+} from './db-session-mcp';
 
 // ─── Document Pipeline ──────────────────────────────────────────────────────────
 export {

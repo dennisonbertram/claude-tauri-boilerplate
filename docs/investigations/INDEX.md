@@ -6,6 +6,11 @@ Deep-dive investigations into specific technologies, libraries, and integration 
 
 | File | Description |
 |------|-------------|
+| [claude-code-connector-patterns.md](claude-code-connector-patterns.md) | Claude Code connector and MCP layering patterns for scoped server config, session activation, and tool exposure. |
+| [connector-architecture-research.md](connector-architecture-research.md) | Research on connector architecture for the app, covering in-process SDK MCP servers, session-level resolution, and implementation tradeoffs. |
+| [connector-design-proposal.md](connector-design-proposal.md) | Connector architecture proposal draft covering a shared connector model, session activation, and MCP integration. |
+| [connector-design-review-gpt54.md](connector-design-review-gpt54.md) | GPT-5.4 review of the connector proposal, highlighting over-abstraction risks and a cleaner separation of concerns. |
+| [connector-research-issues.md](connector-research-issues.md) | Issue tracker for personal-life management connector research, listing 30 connector ideas and labels. |
 | [claude-code-sdk-vercel-ai.md](claude-code-sdk-vercel-ai.md) | Claude Agent SDK + Vercel AI SDK integration research, including package rename findings and streaming patterns |
 | [tauri-v2-architecture.md](tauri-v2-architecture.md) | Tauri v2 architecture overview covering IPC, React integration, sidecar servers, SQLite, and configuration |
 | [shadcn-ai-elements-setup.md](shadcn-ai-elements-setup.md) | Setup guide for shadcn/ui v2+ with Vite/React, AI SDK Elements, Tailwind CSS v4, and Hono backend |

@@ -19,6 +19,7 @@ import { createWorkspaceNotesRouter } from './routes/workspace-notes';
 import { createCodeReviewRouter } from './routes/code-review';
 import { createArtifactsRouter, createProjectArtifactsRouter } from './routes/artifacts';
 import { createSessionThreadRouter } from './routes/sessions-thread';
+import { createSessionMcpRouter } from './routes/session-mcp';
 import { createLinearRouter } from './routes/linear';
 import { createGoogleRouter } from './routes/google';
 import { createGithubIssuesRouter } from './routes/github-issues';
@@ -37,6 +38,7 @@ import { startPipelineWorker } from './services/pipeline/runner';
 import { createPdfFormsRouter } from './routes/pdf-forms';
 import { createPlaidRouter } from './routes/plaid';
 import { createPlaidClient } from './services/plaid-client';
+import { createConnectorsRouter } from './routes/connectors';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 import { bearerAuth } from './middleware/bearer-auth';
@@ -90,6 +92,7 @@ app.route('/api/agent-profiles', createAgentProfilesRouter(db));
 app.route('/api/artifacts', createArtifactsRouter(db));
 app.route('/api/projects', createProjectArtifactsRouter(db));
 app.route('/api/sessions', createSessionThreadRouter(db));
+app.route('/api/sessions', createSessionMcpRouter(db));
 app.route('/api/system', createSystemRouter());
 app.route('/api/runtime-capabilities', createRuntimeCapabilitiesRouter());
 app.route('/api/workspace-providers', createWorkspaceProvidersRouter(db));
@@ -100,6 +103,7 @@ app.route('/api/tracker', createTrackerRouter(db));
 app.route('/api/documents', createDocumentsRouter(db));
 app.route('/api/pipeline', createPipelineRouter(db));
 app.route('/api/pdf-forms', createPdfFormsRouter(db));
+app.route('/api/connectors', createConnectorsRouter());
 
 // Plaid financial integration — only register if Plaid env vars are configured
 if (process.env.PLAID_CLIENT_ID && process.env.PLAID_SECRET) {

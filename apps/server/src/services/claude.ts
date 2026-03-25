@@ -22,6 +22,9 @@ export interface ClaudeStreamOptions {
   providerConfig?: ProviderConfig;
   runtimeEnv?: Record<string, string>;
   agentProfile?: AgentProfile | null;
+  mcpServerOverrides?: Record<string, unknown>;
+  /** MCP connector tool names to auto-allow without permission prompts. */
+  connectorAllowedTools?: string[];
 }
 
 function buildProfileQueryOptions(profile: AgentProfile): Record<string, unknown> {
@@ -140,10 +143,22 @@ export async function* streamClaude(
     queryOptions.additionalDirectories = options.additionalDirectories;
   }
 
+  if (options.mcpServerOverrides) {
+    queryOptions.mcpServers = options.mcpServerOverrides;
+  }
+
   // If agent profile provided, apply profile options (overrides individual fields)
   if (options.agentProfile) {
     const profileOpts = buildProfileQueryOptions(options.agentProfile);
     Object.assign(queryOptions, profileOpts);
+  }
+
+  // Auto-allow in-process connector MCP tools. These are our own tools running
+  // in the same process, so they don't need permission prompts. Merge with any
+  // existing allowedTools from the profile.
+  if (options.connectorAllowedTools && options.connectorAllowedTools.length > 0) {
+    const existing = (queryOptions.allowedTools as string[] | undefined) ?? [];
+    queryOptions.allowedTools = [...existing, ...options.connectorAllowedTools];
   }
 
   queryOptions.env = buildSdkRequestEnv(

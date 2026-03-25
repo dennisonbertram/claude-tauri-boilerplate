@@ -441,6 +441,14 @@ export interface MemorySearchResult {
 
 // --- MCP Server Types ---
 
+export interface SessionMcpServer {
+  name: string;
+  type: 'stdio' | 'http' | 'sse';
+  enabled: boolean;
+  globalEnabled: boolean;
+  hasSessionOverride: boolean;
+}
+
 export interface McpServerConfig {
   name: string;
   type: 'stdio' | 'http' | 'sse';
@@ -450,6 +458,14 @@ export interface McpServerConfig {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
+}
+
+export interface SessionMcpServer {
+  name: string;
+  type: 'stdio' | 'http' | 'sse';
+  enabled: boolean;
+  globalEnabled: boolean;
+  hasSessionOverride: boolean;
 }
 
 // --- Hook Types ---

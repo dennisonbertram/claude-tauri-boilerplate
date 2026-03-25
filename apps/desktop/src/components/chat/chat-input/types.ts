@@ -43,6 +43,8 @@ export interface ChatInputProps {
   showCommandTip?: boolean;
   /** Called when the user dismisses the command tip */
   onDismissCommandTip?: () => void;
+  /** Session ID for per-session MCP server activation */
+  sessionId?: string;
   /** Context usage data for token estimate display */
   contextUsage?: {
     inputTokens: number;
