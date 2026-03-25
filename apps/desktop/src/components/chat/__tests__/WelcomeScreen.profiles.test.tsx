@@ -82,8 +82,8 @@ describe('WelcomeScreen profile selector', () => {
       />,
     );
 
-    // "Start as" label should be visible
-    expect(screen.getByText('Start as')).toBeDefined();
+    // "Start as (optional)" label should be visible
+    expect(screen.getByText('Start as (optional)')).toBeDefined();
     // Profile names should be rendered
     expect(screen.getByText('Code Reviewer')).toBeDefined();
     expect(screen.getByText('Research Assistant')).toBeDefined();

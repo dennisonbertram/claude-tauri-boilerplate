@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-25: Welcome screen pre-chat selectors now explain optionality and scope
+
+**Type**: Bug Fix
+**Impact**: Medium
+**Description**: Fixed GitHub issue `#425` by adding helper copy to the welcome-screen profile, project, and model selectors so users can tell what each choice affects before sending the first message. The profile selector now explains that it is optional and sets agent behavior for the chat, the project selector is framed as optional workspace context, and the model selector clarifies that it affects the current session while updating the saved default model. The change preserves the composer as the dominant primary action and was manually verified in the live browser against the worktree dev app.
+**Regression Test**: `apps/desktop/src/components/chat/__tests__/WelcomeScreen.selectors.test.tsx`, `apps/desktop/src/components/chat/__tests__/WelcomeScreen.profiles.test.tsx`, `apps/desktop/src/components/chat/__tests__/WelcomeScreen.model.test.tsx`
+**Related Issue**: GitHub issue `#425`
+
+---
+
 ### 2026-03-25: Desktop Vitest warning cleanup for async effects and nested interactive markup
 
 **Type**: Bug Fix
