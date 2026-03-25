@@ -11,7 +11,10 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
   return (
     <>
       {/* Model */}
-      <SettingField label="Model" description="AI model to use for conversations">
+      <SettingField
+        label="Model"
+        description="Global default for the next chat run. Profile settings can override this value."
+      >
         <select
           data-testid="model-select"
           value={settings.model}
@@ -29,7 +32,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
       {/* Max Tokens */}
       <SettingField
         label="Max Tokens"
-        description={`Maximum output tokens: ${settings.maxTokens.toLocaleString()}`}
+        description={`Maximum output tokens for the next chat run: ${settings.maxTokens.toLocaleString()}. Profile values can override this default.`}
       >
         <input
           data-testid="max-tokens-slider"
@@ -48,7 +51,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
       {/* Temperature */}
       <SettingField
         label="Temperature"
-        description={`Controls randomness: ${settings.temperature.toFixed(1)}`}
+        description={`Default output variability for the next chat run: ${settings.temperature.toFixed(1)}. Profile values can override this default.`}
       >
         <input
           data-testid="temperature-slider"
@@ -82,7 +85,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
       {/* Thinking Effort */}
       <SettingField
         label="Thinking Effort"
-        description="Controls how much effort Claude puts into reasoning"
+        description="Default thinking effort for the next chat run. Profile values can override this default."
       >
         <EffortSelector
           data-testid="effort-select"
@@ -97,7 +100,7 @@ export function ModelTab({ settings, updateSettings }: TabProps) {
 
       <SettingField
         label="Thinking Budget"
-        description={`Maximum thinking tokens: ${settings.thinkingBudgetTokens.toLocaleString()}`}
+        description={`Maximum thinking tokens for the next chat run: ${settings.thinkingBudgetTokens.toLocaleString()}. Profile values can override this default.`}
       >
         <input
           data-testid="thinking-budget-input"

@@ -703,4 +703,28 @@ describe('ChatPage transport provider payload', () => {
       }),
     });
   });
+
+  it('sends profileId with the session model baseline so profile overrides are applied at runtime', async () => {
+    mockUseSettings.mockReturnValue({
+      settings: getDefaultSettings({
+        model: 'claude-sonnet-4-6',
+      }),
+      updateSettings: vi.fn(),
+      resetSettings: vi.fn(),
+    });
+
+    render(<ChatPage sessionId={null} profileId="prof-7" />);
+
+    await waitFor(() => {
+      expect(mockDefaultChatTransport).toHaveBeenCalledTimes(1);
+    });
+
+    const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      body: expect.objectContaining({
+        model: 'claude-sonnet-4-6',
+        profileId: 'prof-7',
+      }),
+    });
+  });
 });
