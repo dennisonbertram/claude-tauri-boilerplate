@@ -125,6 +125,7 @@ pnpm -r build                                      # Build all packages (no init
 ### UI Verification Rule
 
 If a task changes anything visible, clickable, navigable, or otherwise user-facing in the app, you must verify it in `agent-browser` or `claude-chrome` before you consider the task complete. Do not skip the browser pass because the change seems small or because tests already passed.
+When using `agent-browser`, include screenshot artifacts inline in the response (before/after states) so the verification is directly visible in-thread.
 
 ## Important Notes
 
