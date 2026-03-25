@@ -1,4 +1,5 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
 type EnvSnapshot = Record<string, string | undefined>;
 
@@ -48,30 +49,6 @@ function resetProviderEnv() {
 function snapshotMatches(expected: EnvSnapshot) {
   expect(envAtQueryCall).toMatchObject(expected);
 }
-
-const mockQuery = mock((args?: { options?: { env?: Record<string, unknown> } }) => {
-  envAtQueryCall = captureProviderEnv(args?.options?.env);
-  return (async function* () {
-    yield {
-      type: 'system',
-      subtype: 'init',
-      session_id: 'test-session',
-      model: 'claude-sonnet-4-6',
-      tools: [],
-      mcp_servers: [],
-      claude_code_version: '1.0.0',
-      cwd: '/tmp',
-      permissionMode: 'default',
-      apiKeySource: 'claude_ai',
-      slash_commands: [],
-      output_style: 'text',
-      skills: [],
-      plugins: [],
-    };
-  })();
-});
-
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({ query: mockQuery }));
 
 let queryArgsAtCall: unknown;
 

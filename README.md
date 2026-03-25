@@ -27,28 +27,44 @@ A desktop app boilerplate for building Claude-powered coding tools. Ships with m
 ```bash
 git clone https://github.com/dennisonbertram/claude-tauri-boilerplate
 cd claude-tauri-boilerplate
-pnpm install
+./init.sh
 ```
 
-Always use `pnpm install` from the root. Never run `bun install` inside a sub-package — it will corrupt the pnpm workspace hoisting.
+`./init.sh` is the supported bootstrap entrypoint. It checks prerequisites, installs workspace dependencies with `pnpm install --frozen-lockfile`, creates `.env` if needed, starts the backend and frontend, and writes `.init-state` with the live URLs.
+
+Never run `bun install` inside a sub-package — it will corrupt the pnpm workspace hoisting.
 
 ## Running (web dev mode)
 
-The fastest way to iterate — runs the app in your browser without building the Tauri shell:
+The supported way to run the web app is through `init.sh`:
 
 ```bash
-# Terminal 1 — backend
-pnpm dev:server
-
-# Terminal 2 — frontend
-pnpm dev
-
-# Or both at once
-pnpm dev:all
+./init.sh
 ```
 
-- Frontend: http://localhost:1420
-- Backend API: http://localhost:3131
+This starts both services, health-checks them, and prints the assigned URLs. By default it picks free ports so multiple worktrees can run at once without colliding.
+
+For background/worktree usage:
+
+```bash
+INIT_DAEMONIZE=1 ./init.sh
+source .init-state
+
+echo "$SERVER_URL"
+echo "$FRONTEND_URL"
+```
+
+To stop a daemonized environment:
+
+```bash
+./init.sh stop
+```
+
+If you need fixed ports for a tool that cannot read `.init-state`:
+
+```bash
+INIT_SERVER_PORT=3131 INIT_VITE_PORT=1420 ./init.sh
+```
 
 ## Running (Tauri desktop app)
 
@@ -56,7 +72,7 @@ pnpm dev:all
 pnpm --filter @claude-tauri/desktop tauri dev
 ```
 
-This builds the Rust shell and launches the native window. Requires Rust installed.
+This builds the Rust shell and launches the native window. Requires Rust installed. For browser-based iteration and worktree-safe startup, prefer `./init.sh`.
 
 ## Tests
 

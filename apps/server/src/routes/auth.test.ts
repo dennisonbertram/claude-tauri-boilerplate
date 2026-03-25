@@ -1,25 +1,8 @@
 import { describe, test, expect, mock, beforeEach } from 'bun:test';
 import type { AuthStatus } from '@claude-tauri/shared';
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
 let envAtQueryCall: string | undefined;
-
-// We mock the claude-agent-sdk module before importing the auth service
-const mockQuery = mock((args?: { options?: { env?: Record<string, string | undefined> } }) => {
-  envAtQueryCall = args?.options?.env?.ANTHROPIC_API_KEY;
-  // Default: returns an async generator that yields an init event
-  return (async function* () {
-    yield {
-      type: 'system',
-      subtype: 'init',
-      session_id: 'test-session-123',
-      accountInfo: { email: 'user@example.com', plan: 'pro' },
-    };
-  })();
-});
-
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
-  query: mockQuery,
-}));
 
 // Import AFTER mocking
 const { getAuthStatus } = await import('../services/auth');

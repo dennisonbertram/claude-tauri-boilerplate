@@ -1,32 +1,7 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import type { PermissionResponse } from '@claude-tauri/shared';
-
-// Mock the claude-agent-sdk before importing anything that uses it
-const mockQuery = mock(() => {
-  return (async function* () {
-    yield {
-      type: 'system',
-      subtype: 'init',
-      session_id: 'test-session',
-      model: 'claude-opus-4-6',
-      tools: ['Read', 'Edit'],
-      mcp_servers: [],
-      claude_code_version: '2.1.39',
-      cwd: '/project',
-      permissionMode: 'default',
-      apiKeySource: 'env',
-      slash_commands: [],
-      output_style: 'text',
-      skills: [],
-      plugins: [],
-    };
-  })();
-});
-
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
-  query: mockQuery,
-}));
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
 // Import AFTER mocking
 const { createPermissionRouter } = await import('./permission');

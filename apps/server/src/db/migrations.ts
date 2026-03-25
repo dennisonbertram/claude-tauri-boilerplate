@@ -757,6 +757,8 @@ export function migratePlaidTables(db: import('bun:sqlite').Database): void {
     )
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_sync_jobs_item ON plaid_sync_jobs(item_id, created_at DESC)`);
+}
+
 export function migrateSessionMcpOverrides(db: import('bun:sqlite').Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS session_mcp_overrides (

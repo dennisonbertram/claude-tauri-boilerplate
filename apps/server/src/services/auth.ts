@@ -1,7 +1,6 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { AuthStatus } from '@claude-tauri/shared';
 import { buildSubscriptionSdkEnv } from './sdk-env';
-import { userInfo } from 'node:os';
 
 const AUTH_TIMEOUT_MS = 10_000;
 
@@ -32,11 +31,9 @@ async function detectAuth(): Promise<AuthStatus> {
   for await (const event of stream) {
     if (event.type === 'system' && event.subtype === 'init') {
       const info = (event as any).accountInfo;
-      // SDK doesn't expose email via accountInfo — fall back to OS username
-      const email = info?.email ?? getDisplayName();
       return {
         authenticated: true,
-        email,
+        email: info?.email,
         plan: info?.plan ?? 'pro',
       };
     }
@@ -48,25 +45,13 @@ async function detectAuth(): Promise<AuthStatus> {
   };
 }
 
-function getDisplayName(): string | undefined {
-  try {
-    const info = userInfo();
-    return info.username || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function timeout(ms: number): Promise<AuthStatus> {
   return new Promise((resolve) =>
     setTimeout(
       () =>
         resolve({
-          // Even on timeout, if we can detect a local dev environment,
-          // treat as authenticated with OS username
-          authenticated: true,
-          email: getDisplayName(),
-          plan: 'pro',
+          authenticated: false,
+          error: `Auth check timed out after ${Math.round(ms / 1000)}s`,
         }),
       ms
     )

@@ -11,43 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
-
-// Mock the claude-agent-sdk before importing anything that uses it
-const mockQuery = mock(() => {
-  return (async function* () {
-    yield {
-      type: 'system',
-      subtype: 'init',
-      session_id: 'test-ws-session',
-      model: 'claude-opus-4-6',
-      tools: [],
-      mcp_servers: [],
-      claude_code_version: '2.1.39',
-      cwd: '/project',
-      permissionMode: 'bypassPermissions',
-      apiKeySource: 'env',
-      slash_commands: [],
-      output_style: 'text',
-      skills: [],
-      plugins: [],
-    };
-    yield {
-      type: 'stream_event',
-      event: {
-        type: 'content_block_delta',
-        delta: { type: 'text_delta', text: 'Hello from workspace' },
-        index: 0,
-      },
-      parent_tool_use_id: null,
-      uuid: 'uuid-1',
-      session_id: 'test-ws-session',
-    };
-  })();
-});
-
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
-  query: mockQuery,
-}));
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
 // Import AFTER mocking
 const { streamClaude } = await import('../services/claude');

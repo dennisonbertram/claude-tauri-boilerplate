@@ -27,6 +27,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-25: Release readiness cleanup for build, auth, and test stability
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Cleared a pre-push release blocker sweep across server and desktop. Fixed a syntax error in `apps/server/src/db/migrations.ts` that broke builds, aligned auth fallback behavior with the documented unauthenticated timeout/error contract in `apps/server/src/services/auth.ts`, repaired outdated desktop test fixtures so TypeScript and workspace/profile typing compile cleanly, and consolidated Claude SDK route/service tests onto a shared module mock helper to avoid cross-file mocking instability under Bun. Also corrected an over-specific prompt expectation in `apps/server/src/routes/chat.test.ts` so grouped chat-route runs match actual prompt assembly behavior.
+**Regression Test**: `apps/server/src/routes/chat-commands.test.ts`, `apps/server/src/routes/chat-workspace.test.ts`, `apps/server/src/routes/chat.test.ts`, `apps/server/src/routes/chat-errors.test.ts`
+**Related Issue**: N/A
+
+---
+
 ### 2026-03-22: Browser testing process moved to agent-browser
 
 **Type**: Technical Decision

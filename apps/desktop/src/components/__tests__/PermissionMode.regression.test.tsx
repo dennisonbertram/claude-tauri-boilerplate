@@ -110,7 +110,6 @@ describe('PermissionModeSegment regression (#348)', () => {
 
     fireEvent.click(getPermissionButton());
 
-    const options = screen.getAllByRole('button', { name: /Normal|Accept Edits|Plan|Bypass/ });
     // 4 dropdown options + the toggle button itself (which contains "Normal")
     // Filter to just the dropdown options by checking they are inside the dropdown
     const segment = screen.getByTestId('permission-mode-segment');

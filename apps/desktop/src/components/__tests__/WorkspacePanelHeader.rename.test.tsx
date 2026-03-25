@@ -25,7 +25,9 @@ const mockWorkspace: Workspace = {
   branch: 'feature/my-branch',
   baseBranch: 'main',
   worktreePath: '/path/to/worktree',
+  worktreePathCanonical: '/path/to/worktree',
   status: 'ready',
+  additionalDirectories: [],
   createdAt: '2026-03-20T00:00:00Z',
   updatedAt: '2026-03-20T00:00:00Z',
 };

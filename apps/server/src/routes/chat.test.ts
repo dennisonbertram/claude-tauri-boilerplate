@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChatRequest, StreamEvent } from '@claude-tauri/shared';
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
 type EnvSnapshot = Record<string, string | undefined>;
 const providerEnvKeys = [
@@ -38,54 +39,51 @@ function resetProviderEnv() {
 
 let envAtQueryCall: EnvSnapshot | undefined;
 
-// Mock the claude-agent-sdk before importing anything that uses it
-const mockQuery = mock((args?: { options?: { env?: Record<string, unknown> } }) => {
-  envAtQueryCall = captureProviderEnv(args?.options?.env);
-  return (async function* () {
-    yield {
-      type: 'system',
-      subtype: 'init',
-      session_id: 'test-session-abc',
-      model: 'claude-opus-4-6',
-      tools: ['Read', 'Edit'],
-      mcp_servers: [],
-      claude_code_version: '2.1.39',
-      cwd: '/project',
-      permissionMode: 'bypassPermissions',
-      apiKeySource: 'env',
-      slash_commands: [],
-      output_style: 'text',
-      skills: [],
-      plugins: [],
-    };
-    yield {
-      type: 'stream_event',
-      event: {
-        type: 'content_block_delta',
-        delta: { type: 'text_delta', text: 'Hello' },
-        index: 0,
-      },
-      parent_tool_use_id: null,
-      uuid: 'uuid-1',
-      session_id: 'test-session-abc',
-    };
-    yield {
-      type: 'stream_event',
-      event: {
-        type: 'content_block_delta',
-        delta: { type: 'text_delta', text: ' world' },
-        index: 0,
-      },
-      parent_tool_use_id: null,
-      uuid: 'uuid-2',
-      session_id: 'test-session-abc',
-    };
-  })();
-});
-
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
-  query: mockQuery,
-}));
+function installDefaultChatMock() {
+  mockQuery.mockImplementation((args?: { options?: { env?: Record<string, unknown> } }) => {
+    envAtQueryCall = captureProviderEnv(args?.options?.env);
+    return (async function* () {
+      yield {
+        type: 'system',
+        subtype: 'init',
+        session_id: 'test-session-abc',
+        model: 'claude-opus-4-6',
+        tools: ['Read', 'Edit'],
+        mcp_servers: [],
+        claude_code_version: '2.1.39',
+        cwd: '/project',
+        permissionMode: 'bypassPermissions',
+        apiKeySource: 'env',
+        slash_commands: [],
+        output_style: 'text',
+        skills: [],
+        plugins: [],
+      };
+      yield {
+        type: 'stream_event',
+        event: {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'Hello' },
+          index: 0,
+        },
+        parent_tool_use_id: null,
+        uuid: 'uuid-1',
+        session_id: 'test-session-abc',
+      };
+      yield {
+        type: 'stream_event',
+        event: {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: ' world' },
+          index: 0,
+        },
+        parent_tool_use_id: null,
+        uuid: 'uuid-2',
+        session_id: 'test-session-abc',
+      };
+    })();
+  });
+}
 
 // Import AFTER mocking
 const { streamClaude } = await import('../services/claude');
@@ -168,6 +166,7 @@ function restoreInstructionEnv() {
 describe('Claude Service - streamClaude()', () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    installDefaultChatMock();
   });
 
   test('yields session:init event with sessionId from init', async () => {
@@ -503,6 +502,7 @@ describe('Chat Route - POST /chat', () => {
   beforeEach(() => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
+    installDefaultChatMock();
     resetProviderEnv();
     setBlankInstructionEnv();
     db = createDb(':memory:');
@@ -863,6 +863,7 @@ describe('Chat Route - POST /chat', () => {
     expect(callArgs.prompt).toContain('Human: Earlier user prompt');
     expect(callArgs.prompt).toContain('Assistant: Earlier assistant reply');
     expect(callArgs.prompt).toContain('\n</previous_conversation>\n\nHuman: New turn message');
+    expect(callArgs.prompt).toContain('\nHuman: New turn message');
     expect(callArgs.options.resume).toBeUndefined();
   });
 
@@ -1363,6 +1364,7 @@ describe('Chat Route - Message Persistence', () => {
   beforeEach(() => {
     mockQuery.mockReset();
     envAtQueryCall = undefined;
+    installDefaultChatMock();
     resetProviderEnv();
     setBlankInstructionEnv();
     db = createDb(':memory:');
