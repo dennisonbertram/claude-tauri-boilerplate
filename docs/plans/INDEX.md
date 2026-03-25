@@ -6,6 +6,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 
 | File | Description |
 |------|-------------|
+| [active-plan.md](active-plan.md) | Active Plaid financial data integration plan with current milestone notes, key decisions, and task ledger. |
 | [browser-testing-agent-browser.md](browser-testing-agent-browser.md) | Plan and completion checklist for switching the default browser testing workflow from Playwright MCP to the `agent-browser` CLI while keeping `agentation` separate. |
 | [agent-profile-ai-generation-modal.md](agent-profile-ai-generation-modal.md) | Agent Builder create-flow plan for adding a modal that offers blank-profile creation or AI-assisted agent generation, including the server endpoint, client hook, and manual verification steps. |
 | [runtime-hardening-pass-top-3.md](runtime-hardening-pass-top-3.md) | Completed top-three hardening pass for the current Claude-based boilerplate, covering issues #231-#233: request-scoped env isolation, safe-by-default logging, and workspace path boundary enforcement. |

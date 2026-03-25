@@ -6,7 +6,7 @@ Documents that new agents should read to get up to speed on the project. Start h
 
 | File | Description |
 |------|-------------|
-| *No context documents yet* | |
+| [current-intent.md](current-intent.md) | Current feature context for the Plaid financial data integration work, including the active milestone and why it matters. |
 
 ## Reading Order for New Agents
 
