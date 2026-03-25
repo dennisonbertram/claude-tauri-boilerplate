@@ -6,6 +6,7 @@ import {
   listTrackerProjects,
   getTrackerProject,
   getTrackerProjectBySlug,
+  getTrackerProjectByProjectId,
   getTrackerProjectWithDetails,
   updateTrackerProject,
   deleteTrackerProject,
@@ -106,6 +107,11 @@ const createCommentSchema = z.object({
   author: z.string().max(255).optional(),
 });
 
+const ensureProjectSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().min(1).max(255),
+});
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function validationError(parsed: z.SafeParseError<unknown>) {
@@ -181,6 +187,43 @@ export function createTrackerRouter(db: Database) {
     if (!getTrackerProject(db, id)) return c.json(notFound('Project'), 404);
     deleteTrackerProject(db, id);
     return c.json({ ok: true });
+  });
+
+  // GET /projects/by-project/:projectId — Get tracker project linked to a workspace project
+  router.get('/projects/by-project/:projectId', async (c) => {
+    const projectId = c.req.param('projectId');
+    const trackerProject = getTrackerProjectByProjectId(db, projectId);
+    if (!trackerProject) return c.json(notFound('Tracker project'), 404);
+    const withDetails = getTrackerProjectWithDetails(db, trackerProject.id);
+    return c.json(withDetails);
+  });
+
+  // POST /projects/ensure — Ensure a tracker project exists for a workspace project
+  router.post('/projects/ensure', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = ensureProjectSchema.safeParse(body);
+    if (!parsed.success) validationError(parsed);
+
+    const { projectId, name } = parsed.data!;
+
+    // Check if tracker project already exists for this workspace project
+    const existing = getTrackerProjectByProjectId(db, projectId);
+    if (existing) {
+      const withDetails = getTrackerProjectWithDetails(db, existing.id);
+      return c.json(withDetails, 200);
+    }
+
+    // Generate slug from name
+    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    // Check slug uniqueness; if collision, append first 6 chars of projectId
+    if (getTrackerProjectBySlug(db, slug)) {
+      slug = `${slug}-${projectId.slice(0, 6)}`;
+    }
+
+    const project = createTrackerProject(db, { name, slug, projectId });
+    const withDetails = getTrackerProjectWithDetails(db, project.id);
+    return c.json(withDetails, 201);
   });
 
   // ── Issues ─────────────────────────────────────────────────────────────────

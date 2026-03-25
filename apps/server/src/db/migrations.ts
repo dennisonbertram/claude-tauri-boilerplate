@@ -353,6 +353,7 @@ export function migrateTrackerTables(db: import('bun:sqlite').Database): void {
     )
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_projects_slug ON tracker_projects(slug)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tracker_projects_project_id ON tracker_projects(project_id)`);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS tracker_statuses (

@@ -179,6 +179,7 @@ Every frontend change MUST be manually verified using the `agent-browser` CLI. T
 4. **Read page state** with `agent-browser snapshot -i`, `agent-browser get text <selector>`, or `agent-browser get url`
 5. **Check for console errors** with `agent-browser console` and `agent-browser errors` -- there should be zero unexpected errors
 6. **Take a final screenshot** to confirm the feature looks correct after interaction
+7. **Return screenshots inline in the response** (in-chat image links) for before/after UI state verification.
 
 **What to verify for each frontend change:**
 - Component renders without console errors

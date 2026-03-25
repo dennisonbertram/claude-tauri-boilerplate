@@ -201,6 +201,7 @@ export {
   listTrackerProjects,
   getTrackerProject,
   getTrackerProjectBySlug,
+  getTrackerProjectByProjectId,
   getTrackerProjectWithDetails,
   updateTrackerProject,
   deleteTrackerProject,

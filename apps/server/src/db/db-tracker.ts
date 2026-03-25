@@ -208,6 +208,11 @@ export function getTrackerProjectBySlug(db: Database, slug: string) {
   return row ? mapTrackerProject(row) : null;
 }
 
+export function getTrackerProjectByProjectId(db: Database, projectId: string) {
+  const row = db.prepare(`SELECT * FROM tracker_projects WHERE project_id = ?`).get(projectId) as TrackerProjectRow | null;
+  return row ? mapTrackerProject(row) : null;
+}
+
 export function getTrackerProjectWithDetails(db: Database, id: string) {
   const project = getTrackerProject(db, id);
   if (!project) return null;
