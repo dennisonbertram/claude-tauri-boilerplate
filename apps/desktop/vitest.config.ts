@@ -19,9 +19,14 @@ export default defineConfig({
     },
   },
   test: {
+    dir: './src',
+    include: ['**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['../src-tauri/**', '../dist/**'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
+    maxWorkers: 4,
+    minWorkers: 1,
     css: false,
     server: {
       deps: {

@@ -5,13 +5,14 @@ import { mockQuery } from '../test-utils/claude-sdk-mock';
 let envAtQueryCall: string | undefined;
 
 // Import AFTER mocking
-const { getAuthStatus } = await import('../services/auth');
+const { getAuthStatus, __resetAuthStatusCacheForTests } = await import('../services/auth');
 const { authRouter } = await import('./auth');
 const { Hono } = await import('hono');
 
 describe('Auth Service - getAuthStatus()', () => {
   beforeEach(() => {
     mockQuery.mockReset();
+    __resetAuthStatusCacheForTests();
     envAtQueryCall = undefined;
     process.env.ANTHROPIC_API_KEY = 'sk-ant-fake-key-for-testing';
   });
@@ -98,7 +99,7 @@ describe('Auth Service - getAuthStatus()', () => {
     expect(result.error).toBe('No authentication info received');
   });
 
-  test('handles timeout after 10 seconds', async () => {
+  test('handles timeout after 15 seconds', async () => {
     mockQuery.mockImplementation(() =>
       (async function* () {
         // Simulate a stream that never yields an init event and hangs
@@ -113,9 +114,64 @@ describe('Auth Service - getAuthStatus()', () => {
 
     expect(result.authenticated).toBe(false);
     expect(result.error).toContain('timed out');
-    // Should resolve around 10s, not 30s
-    expect(elapsed).toBeLessThan(15_000);
+    // Should resolve around 15s, not 30s
+    expect(elapsed).toBeLessThan(16_000);
+  }, 25_000);
+
+  test('returns cached authenticated status when a follow-up auth check times out', async () => {
+    let callCount = 0;
+    mockQuery.mockImplementation(() => {
+      callCount += 1;
+
+      if (callCount === 1) {
+        return (async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'cached-session',
+            accountInfo: { email: 'user@example.com', plan: 'pro' },
+          };
+        })();
+      }
+
+      return (async function* () {
+        await new Promise((resolve) => setTimeout(resolve, 30_000));
+        yield { type: 'system', subtype: 'init', session_id: 'late-session' };
+      })();
+    });
+
+    const first = await getAuthStatus();
+    const second = await getAuthStatus();
+
+    expect(first).toEqual({
+      authenticated: true,
+      email: 'user@example.com',
+      plan: 'pro',
+    });
+    expect(second).toEqual(first);
   }, 20_000);
+
+  test('reuses a single in-flight auth check for concurrent callers', async () => {
+    let callCount = 0;
+    mockQuery.mockImplementation(() => {
+      callCount += 1;
+      return (async function* () {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        yield {
+          type: 'system',
+          subtype: 'init',
+          session_id: 'shared-session',
+          accountInfo: { email: 'user@example.com', plan: 'pro' },
+        };
+      })();
+    });
+
+    const [first, second] = await Promise.all([getAuthStatus(), getAuthStatus()]);
+
+    expect(callCount).toBe(1);
+    expect(first).toEqual(second);
+    expect(first.authenticated).toBe(true);
+  });
 });
 
 describe('Auth Route - GET /status', () => {
@@ -123,6 +179,7 @@ describe('Auth Route - GET /status', () => {
 
   beforeEach(() => {
     mockQuery.mockReset();
+    __resetAuthStatusCacheForTests();
     testApp = new Hono();
     testApp.route('/api/auth', authRouter);
   });

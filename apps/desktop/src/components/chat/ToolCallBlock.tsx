@@ -20,6 +20,7 @@ import {
   formatToolResultForDisplay,
   sanitizeDisplayText,
 } from './gen-ui/toolData';
+import './gen-ui/defaultRenderers';
 import { BrowserAutomationDisplay, isBrowserAutomationTool } from './BrowserAutomationDisplay';
 
 /**

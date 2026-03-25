@@ -1,11 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { Database } from 'bun:sqlite';
 import { createDb } from '../db';
 import { errorHandler } from '../middleware/error-handler';
+import { mockQuery } from '../test-utils/claude-sdk-mock';
 
-const mockStreamClaude = mock((options?: { prompt?: string; model?: string; effort?: string; permissionMode?: string }) => {
-  const generated = `\`\`\`json
+const generated = `\`\`\`json
 {
   "name": "Research Scout",
   "description": "A fast, detail-oriented agent for gathering context and summarizing findings.",
@@ -27,14 +27,6 @@ const mockStreamClaude = mock((options?: { prompt?: string; model?: string; effo
 }
 \`\`\``;
 
-  return (async function* () {
-    yield { type: 'text:delta', text: generated, blockIndex: 0 };
-  })();
-});
-
-mock.module('../services/claude', () => ({
-  streamClaude: mockStreamClaude,
-}));
 const { createAgentProfilesRouter } = await import('./agent-profiles');
 
 describe('POST /api/agent-profiles/generate', () => {
@@ -46,7 +38,39 @@ describe('POST /api/agent-profiles/generate', () => {
     app = new Hono();
     app.onError(errorHandler);
     app.route('/api/agent-profiles', createAgentProfilesRouter(db));
-    mockStreamClaude.mockClear();
+    mockQuery.mockReset();
+    mockQuery.mockImplementation(
+      (_args?: { prompt?: string; options?: Record<string, unknown> }) =>
+        (async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'agent-profile-generation-session',
+            model: 'claude-sonnet-4-20250514',
+            tools: [],
+            mcp_servers: [],
+            claude_code_version: '2.1.39',
+            cwd: '/project',
+            permissionMode: 'dontAsk',
+            apiKeySource: 'env',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+          };
+          yield {
+            type: 'stream_event',
+            event: {
+              type: 'content_block_delta',
+              delta: { type: 'text_delta', text: generated },
+              index: 0,
+            },
+            parent_tool_use_id: null,
+            uuid: 'uuid-agent-profile-1',
+            session_id: 'agent-profile-generation-session',
+          };
+        })()
+    );
   });
 
   afterEach(() => {
@@ -81,13 +105,15 @@ describe('POST /api/agent-profiles/generate', () => {
     expect(body.additionalDirectories).toEqual(['/tmp/research']);
     expect(body.agentsJson).toBe('[]');
 
-    expect(mockStreamClaude).toHaveBeenCalledTimes(1);
-    const call = mockStreamClaude.mock.calls[0]?.[0];
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    const call = mockQuery.mock.calls[0]?.[0] as
+      | { prompt?: string; options?: { model?: string; effort?: string; permissionMode?: string } }
+      | undefined;
     expect(call).toBeDefined();
     expect(call?.prompt).toContain('You are an agent profile generator');
-    expect(call?.model).toBe('claude-sonnet-4-20250514');
-    expect(call?.effort).toBe('low');
-    expect(call?.permissionMode).toBe('dontAsk');
+    expect(call?.options?.model).toBe('claude-sonnet-4-20250514');
+    expect(call?.options?.effort).toBe('low');
+    expect(call?.options?.permissionMode).toBe('dontAsk');
   });
 
   test('rejects an empty prompt', async () => {

@@ -20,14 +20,12 @@
  * contracts and demonstrate the circular reference problem directly.
  */
 import { describe, it, expect } from 'vitest';
+import { ChatInput } from '../ChatInput';
 
 describe('ChatInput serialization safety (Issue #296)', () => {
-  it('onSubmit prop type is () => void — does not accept FormEvent', async () => {
-    // Dynamically import the ChatInput module to verify it exports correctly.
-    const source = await import('../ChatInput');
-
+  it('onSubmit prop type is () => void — does not accept FormEvent', () => {
     // ChatInput should be exported as a function component
-    expect(typeof source.ChatInput).toBe('function');
+    expect(typeof ChatInput).toBe('function');
   });
 
   it('a plain submit payload survives JSON.stringify without circular reference errors', () => {
