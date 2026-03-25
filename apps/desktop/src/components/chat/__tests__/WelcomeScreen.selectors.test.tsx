@@ -68,6 +68,9 @@ describe('WelcomeScreen selector helper copy', () => {
     expect(
       screen.getByText(/start typing now/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/optional setup controls first if you want this chat to start/i),
+    ).toBeInTheDocument();
 
     const composer = screen.getByRole('textbox', { name: 'Start your first message' });
     const templatesHeading = screen.getByText('Start with a template');
@@ -101,6 +104,22 @@ describe('WelcomeScreen selector helper copy', () => {
     expect(screen.getByText(/Model \(optional\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Model choice updates the default for new chats/i)).toBeInTheDocument();
     expect(screen.getByText(/A selected profile can still override it for this run/i)).toBeInTheDocument();
+  });
+
+  it('shows a collapsed summary when persisted setup state is active', () => {
+    render(
+      <WelcomeScreen
+        {...defaultProps}
+        selectedProfileId="prof-1"
+        selectedProjectId="project-1"
+        modelDisplay="Opus 4.6"
+        currentModel="claude-opus-4-6"
+      />
+    );
+
+    expect(
+      screen.getByText(/Active for the next chat: Profile: Code Reviewer · Project: Alpha Demo · Model: Opus 4.6/i),
+    ).toBeInTheDocument();
   });
 
   it('keeps composer as the main first action before template suggestions', () => {

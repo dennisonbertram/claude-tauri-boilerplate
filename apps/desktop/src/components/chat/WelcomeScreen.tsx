@@ -3,7 +3,7 @@ import { Sparkle, SquaresFour, Plugs, MagicWand, FolderSimple, CaretDown, Plus, 
 import { ProfileSelector } from '@/components/agent-builder/shared/ProfileSelector';
 import { ConnectorList } from './McpStatusPill';
 import { useSessionMcpServers } from '../../hooks/useSessionMcpServers';
-import { AVAILABLE_MODELS } from '@/lib/models';
+import { AVAILABLE_MODELS, DEFAULT_MODEL } from '@/lib/models';
 import type { AgentProfile, Project } from '@claude-tauri/shared';
 
 const TEMPLATES = [
@@ -84,6 +84,13 @@ export function WelcomeScreen({
   };
 
   const selectedProject = projects?.find(p => p.id === selectedProjectId);
+  const selectedProfile = agentProfiles?.find((profile) => profile.id === selectedProfileId);
+  const showModelSummary = currentModel ? currentModel !== DEFAULT_MODEL.id : modelDisplay !== DEFAULT_MODEL.label;
+  const collapsedSummaries = [
+    selectedProfile ? `Profile: ${selectedProfile.name}` : null,
+    selectedProject ? `Project: ${selectedProject.name}` : null,
+    showModelSummary ? `Model: ${modelDisplay}` : null,
+  ].filter(Boolean) as string[];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -124,7 +131,7 @@ export function WelcomeScreen({
             </a>
           </p>
           <p className="text-sm text-muted-foreground/90 mt-3 max-w-xl">
-            Start typing now. You can begin a chat immediately and open optional settings after your first message.
+            Start typing now, or expand the optional setup controls first if you want this chat to start with a specific profile, project, or model.
           </p>
         </div>
 
@@ -244,8 +251,13 @@ export function WelcomeScreen({
               />
             </button>
             <p className="text-xs text-muted-foreground/80 mt-2 px-1">
-              Expand when you want to set profile, project, or model preferences.
+              Expand when you want to set profile, project, or model preferences before sending the first message.
             </p>
+            {!advancedControlsOpen && collapsedSummaries.length > 0 && (
+              <p className="text-xs text-muted-foreground/85 mt-2 px-1">
+                Active for the next chat: {collapsedSummaries.join(' · ')}
+              </p>
+            )}
 
             {advancedControlsOpen && (
               <div
