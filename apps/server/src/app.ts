@@ -35,6 +35,8 @@ import { createDocumentsRouter } from './routes/documents';
 import { createPipelineRouter } from './routes/pipeline';
 import { startPipelineWorker } from './services/pipeline/runner';
 import { createPdfFormsRouter } from './routes/pdf-forms';
+import { createPlaidRouter } from './routes/plaid';
+import { createPlaidClient } from './services/plaid-client';
 import { createDb } from './db';
 import { errorHandler } from './middleware/error-handler';
 import { bearerAuth } from './middleware/bearer-auth';
@@ -98,6 +100,25 @@ app.route('/api/tracker', createTrackerRouter(db));
 app.route('/api/documents', createDocumentsRouter(db));
 app.route('/api/pipeline', createPipelineRouter(db));
 app.route('/api/pdf-forms', createPdfFormsRouter(db));
+
+// Plaid financial integration — only register if Plaid env vars are configured
+if (process.env.PLAID_CLIENT_ID && process.env.PLAID_SECRET) {
+  try {
+    const plaidClient = createPlaidClient();
+    app.route('/api/plaid', createPlaidRouter(db, plaidClient));
+    console.log('Plaid routes registered at /api/plaid');
+  } catch (err) {
+    console.warn('Plaid routes not registered:', err instanceof Error ? err.message : err);
+  }
+} else {
+  // Return 503 for any Plaid requests when not configured
+  app.all('/api/plaid/*', (c) =>
+    c.json(
+      { error: 'Plaid integration not configured. Set PLAID_CLIENT_ID and PLAID_SECRET.', code: 'PLAID_NOT_CONFIGURED' },
+      503,
+    ),
+  );
+}
 
 // Checkpoints are nested under sessions: /api/sessions/:sessionId/checkpoints
 // We mount a sub-router that receives sessionId as a param.

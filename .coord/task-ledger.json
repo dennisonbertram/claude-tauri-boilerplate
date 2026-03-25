@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TASK-001",
+    "title": "Add model context window limits",
+    "status": "pending",
+    "type": "feature",
+    "dependencies": []
+  },
+  {
+    "id": "TASK-002",
+    "title": "Create ContextVisualizationModal component",
+    "status": "pending",
+    "type": "feature",
+    "dependencies": ["TASK-001"]
+  },
+  {
+    "id": "TASK-003",
+    "title": "Add context button to toolbar + wire up modal",
+    "status": "pending",
+    "type": "feature",
+    "dependencies": ["TASK-002"]
+  },
+  {
+    "id": "TASK-004",
+    "title": "Enhance inline context display",
+    "status": "pending",
+    "type": "feature",
+    "dependencies": ["TASK-002"]
+  },
+  {
+    "id": "TASK-005",
+    "title": "Integration wiring in ChatPage",
+    "status": "pending",
+    "type": "feature",
+    "dependencies": ["TASK-003", "TASK-004"]
+  }
+]

@@ -12,6 +12,7 @@ import {
   CaretRight,
   MagnifyingGlass,
   FileText,
+  CurrencyDollar,
 } from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { groupSessionsByDate } from '@/components/sidebar/date-utils';
@@ -53,6 +54,7 @@ const navItems: { view: ActiveView; icon: typeof ChatCircle; label: string }[] =
   { view: 'workspaces', icon: FolderOpen, label: 'Projects' },
   { view: 'agents', icon: Robot, label: 'Agent Profiles' },
   { view: 'teams', icon: UsersThree, label: 'Teams' },
+  { view: 'finance', icon: CurrencyDollar, label: 'Finance' },
 ];
 
 const navItemClass = (active: boolean) =>

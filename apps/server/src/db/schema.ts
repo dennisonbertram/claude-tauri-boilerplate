@@ -233,4 +233,5 @@ export {
   migrateGoogleOAuthTable,
   migrateDocumentsAddEnrichingStatus,
   migrateDocumentPipelineTables,
+  migratePlaidTables,
 } from './migrations';

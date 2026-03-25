@@ -643,3 +643,118 @@ export function migrateDocumentPipelineTables(db: import('bun:sqlite').Database)
     )
   `);
 }
+
+/**
+ * Create Plaid integration tables: link sessions, items, accounts,
+ * transactions, and sync jobs. Idempotent — uses CREATE TABLE IF NOT EXISTS.
+ */
+export function migratePlaidTables(db: import('bun:sqlite').Database): void {
+  // Link sessions for state correlation and replay protection
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plaid_link_sessions (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      state TEXT NOT NULL UNIQUE,
+      link_token TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'initiated',
+      hosted_link_url TEXT,
+      callback_payload TEXT,
+      error_code TEXT,
+      error_message TEXT,
+      expires_at TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_link_sessions_user ON plaid_link_sessions(user_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_link_sessions_state ON plaid_link_sessions(state)`);
+
+  // Plaid linked items (one per institution connection)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plaid_items (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      access_token TEXT NOT NULL,
+      item_id TEXT NOT NULL UNIQUE,
+      institution_id TEXT,
+      institution_name TEXT,
+      institution_logo_url TEXT,
+      institution_color TEXT,
+      consent_expiration TEXT,
+      error_code TEXT,
+      error_message TEXT,
+      sync_cursor TEXT,
+      last_synced_at TEXT,
+      last_successful_sync_at TEXT,
+      last_sync_error TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_items_user ON plaid_items(user_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_items_item_id_user ON plaid_items(item_id, user_id)`);
+
+  // Cached account metadata
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plaid_accounts (
+      id TEXT PRIMARY KEY,
+      item_id TEXT NOT NULL REFERENCES plaid_items(item_id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      official_name TEXT,
+      type TEXT NOT NULL,
+      subtype TEXT,
+      mask TEXT,
+      current_balance REAL,
+      available_balance REAL,
+      currency_code TEXT DEFAULT 'USD',
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_accounts_item_id ON plaid_accounts(item_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_accounts_user_id ON plaid_accounts(user_id)`);
+
+  // Transaction cache
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plaid_transactions (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL REFERENCES plaid_accounts(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      amount REAL NOT NULL,
+      date TEXT NOT NULL,
+      authorized_date TEXT,
+      name TEXT NOT NULL,
+      merchant_name TEXT,
+      merchant_entity_id TEXT,
+      category TEXT,
+      personal_finance_category TEXT,
+      pending INTEGER DEFAULT 0,
+      pending_transaction_id TEXT,
+      payment_channel TEXT,
+      removed INTEGER DEFAULT 0,
+      raw_json TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_transactions_account_date ON plaid_transactions(account_id, date DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_transactions_user_date ON plaid_transactions(user_id, date DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_transactions_account_pending_date ON plaid_transactions(account_id, pending, date DESC)`);
+
+  // Sync job tracking for idempotency and retry
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plaid_sync_jobs (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      item_id TEXT NOT NULL REFERENCES plaid_items(item_id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      added_count INTEGER DEFAULT 0,
+      modified_count INTEGER DEFAULT 0,
+      removed_count INTEGER DEFAULT 0,
+      error_message TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_plaid_sync_jobs_item ON plaid_sync_jobs(item_id, created_at DESC)`);
+}

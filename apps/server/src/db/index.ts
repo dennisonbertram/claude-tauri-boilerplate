@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable, migrateDocumentsAddEnrichingStatus, migrateDocumentPipelineTables } from './schema';
+import { SCHEMA, migrateSessionsWorkspaceId, migrateLinearIssueColumns, migrateSessionModelColumn, migrateWorkspaceAdditionalDirectories, migrateGithubIssueColumns, migrateSessionsProfileId, migrateWorkspaceProvenance, migrateWorkspaceEvents, migrateWorkspaceReview, migrateWorkspaceProviders, migrateWorkspaceDeploymentsTable, migrateDeploymentSettingsTable, migrateTrackerTables, migrateDocumentsTable, migrateGoogleOAuthTable, migrateDocumentsAddEnrichingStatus, migrateDocumentPipelineTables, migratePlaidTables } from './schema';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
@@ -31,6 +31,7 @@ export function createDb(path?: string): Database {
   migrateGoogleOAuthTable(db);
   migrateDocumentsAddEnrichingStatus(db);
   migrateDocumentPipelineTables(db);
+  migratePlaidTables(db);
   return db;
 }
 
@@ -255,3 +256,30 @@ export {
   deleteEntitiesForDocument,
   cleanupDocumentEnrichment,
 } from './db-pipeline';
+
+// ─── Plaid ──────────────────────────────────────────────────────────────────────
+export {
+  createLinkSession,
+  getLinkSessionByState,
+  updateLinkSessionStatus,
+  expireOldLinkSessions,
+  insertPlaidItem,
+  getPlaidItemsByUser,
+  getPlaidItemByItemId,
+  updatePlaidItemError,
+  updatePlaidItemSyncCursor,
+  deletePlaidItem,
+  upsertPlaidAccounts,
+  getAccountsByUser,
+  getAccountsByItemId,
+  upsertPlaidTransactions,
+  markTransactionsRemoved,
+  getTransactionsByAccount,
+  getTransactionsByUser,
+  getTransactionCountByUser,
+  createSyncJob,
+  updateSyncJob,
+  getLatestSyncJob,
+  hasPendingSyncJob,
+} from './db-plaid';
+export type { TransactionFilters } from './db-plaid';

@@ -17,6 +17,8 @@
       ]
     },
     "shell:allow-kill",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "deep-link:default",
+    "core:event:allow-listen"
   ]
 }

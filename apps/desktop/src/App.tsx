@@ -11,6 +11,8 @@ import { TeamsView } from '@/components/teams/TeamsView';
 import { AgentBuilderView } from '@/components/agent-builder';
 import { DocumentsView } from '@/components/documents/DocumentsView';
 import { TrackerView } from '@/components/tracker/TrackerView';
+import { FinanceDashboard } from '@/components/finance/FinanceDashboard';
+import { usePlaidDeepLink } from '@/hooks/usePlaidDeepLink';
 import { AppSidebar } from '@/components/AppSidebar';
 import { WorkspacePanel } from '@/components/workspaces/WorkspacePanel';
 import { ProjectsGridView } from '@/components/workspaces/ProjectsGridView';
@@ -33,6 +35,7 @@ import { ThemedToaster, useSidecarBoot, ViewSwitcherHeader, useAppKeyboardShortc
 
 function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   useTheme();
+  usePlaidDeepLink();
   const navigate = useNavigate();
   const location = useLocation();
   const activeView = pathToView(location.pathname);
@@ -81,7 +84,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
   const handleAddProject = useCallback(async (p: string) => { const proj = await addProject(p); setSelectedProjectId(proj.id); }, [addProject]);
   const handleCreateWorkspace = useCallback(async (name: string, base?: string, src?: string, issue?: import('@/lib/workspace-api').GithubIssue) => { const ws = await addWorkspace(name, base, src, undefined, settings.workspaceBranchPrefix, issue ? { number: issue.number, title: issue.title, url: issue.url } : undefined); if (ws) setSelectedWorkspace(ws); }, [addWorkspace, settings.workspaceBranchPrefix]);
   const handleWorkspaceUpdate = useCallback(async () => { const u = await refreshWorkspaces(); if (selectedWorkspace) setSelectedWorkspace(u?.find((w) => w.id === selectedWorkspace.id) ?? null); }, [refreshWorkspaces, selectedWorkspace]);
-  const handleSwitchView = useCallback((v: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker') => { navigate('/' + v); if (v === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [navigate, selectedProjectId, projects]);
+  const handleSwitchView = useCallback((v: 'chat' | 'teams' | 'workspaces' | 'agents' | 'documents' | 'tracker' | 'finance') => { navigate('/' + v); if (v === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [navigate, selectedProjectId, projects]);
   useEffect(() => { if (activeSessionId) setOpenSessionIds((p) => p.includes(activeSessionId) ? p : [...p, activeSessionId]); }, [activeSessionId]);
   useEffect(() => { setOpenSessionIds((p) => p.filter((id) => sessions.some((s) => s.id === id))); }, [sessions]);
   useEffect(() => { if (activeView === 'workspaces' && !selectedProjectId && projects.length > 0) setSelectedProjectId(projects[0].id); }, [activeView, selectedProjectId, projects]);
@@ -114,7 +117,7 @@ function AppLayout({ email, plan }: { email?: string; plan?: string }) {
             ) : activeView === 'workspaces' ? (
               selectedWorkspace ? <WorkspacePanel workspace={selectedWorkspace} onStatusChange={handleStatusChange} onWorkspaceUpdate={handleWorkspaceUpdate} onOpenSettings={handleOpenSettings} onTaskComplete={handleWorkspaceTaskComplete} onRenameWorkspace={async (id, updates) => { await renameWorkspace(id, updates); await handleWorkspaceUpdate(); }} />
                 : <ProjectsGridView projects={projects} workspacesByProject={workspacesByProject} onAddProject={() => setAddProjectOpen(true)} onSelectWorkspace={handleSelectWorkspace} onSelectProject={(id) => setSelectedProjectId(id)} />
-            ) : activeView === 'tracker' ? <TrackerView /> : activeView === 'documents' ? <DocumentsView /> : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
+            ) : activeView === 'tracker' ? <TrackerView /> : activeView === 'documents' ? <DocumentsView /> : activeView === 'finance' ? <FinanceDashboard /> : activeView === 'agents' ? <AgentBuilderView /> : <TeamsView />}
           </div>
         </div>
         <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} initialTab={settingsInitialTab as any}
