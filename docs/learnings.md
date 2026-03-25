@@ -440,3 +440,130 @@ Each pass targets a distinct category of code quality issues:
 - If multiple code review runs are scheduled, ensure deduplication checks work correctly
 - Issue title must be deterministic across runs for dedup to work
 - Always search for open issues before filing, not just recently-closed ones
+
+## 2026-03-24: Connector Architecture Design & SDK MCP Framework
+
+### Discovery: `createSdkMcpServer()` is the Right Choice for Per-Session Tool Filtering
+- **Problem explored**: How to implement per-session tool availability toggle?
+- **Options evaluated**:
+  1. Subprocess stdio MCP (one per connector) — 22 child processes for all connectors, process churn
+  2. HTTP MCP sidecar — network overhead, unnecessary complexity
+  3. Direct `tools` param on SDK `query()` — not supported; SDK only accepts MCP servers for custom tools
+  4. **`createSdkMcpServer()` in-process** — zero overhead, runs tools in same Bun process, fully supports per-session filtering
+- **Key insight**: The SDK explicitly designed `createSdkMcpServer()` for this use case. Using subprocess MCP would have been over-engineering.
+- **Pattern for future**: When building custom tools in a web app, always check if SDK provides `createSdkMcpServer()` before reaching for subprocess MCP or HTTP sidecars.
+
+### Gotcha: Tool Names Can Drift Across Server Versions
+- **Initial plan mistake**: Using cached `tool_names` array for enforcement (storing tool list in DB, checking against it at query time)
+- **Problem**: If an MCP server updates and renames/removes tools, your cached list becomes stale → runtime failures
+- **Lesson learned**: Control tool availability by **including/excluding entire servers from `mcpServers`**, not by maintaining separate tool name allow/block lists
+- **Pattern for future**: Never cache tool names as an enforcement mechanism. Use server-level toggles (include/exclude the server) instead.
+
+### Non-Obvious Design Choice: Over-Engineering Early vs. Pragmatism
+- **Initial proposal mistake**: Universal "connector" abstraction forcing OAuth, MCP servers, and builtin tools into one registry table
+- **GPT-5.4 feedback saved 40% of planned work**: "Skip the `connectors` registry for v1. Just add `session_mcp_servers` and get 70-80% of the value with minimal schema."
+- **Lesson learned**: When designing multi-layer systems, resist the urge to unify everything at once. Start minimal (`session_mcp_servers` only), and unify at the **UI layer** (single "Connectors" panel in frontend) while keeping backends separate.
+- **Pattern for future**: Ask an external reviewer (or GPT-5.4) to challenge over-unified schemas. The savings are often dramatic.
+
+### Pattern: Per-Session Query-Time Resolver vs. Pre-computed State
+- **What we built**: `resolveSessionMcpServers()` — pure function that:
+  1. Reads global `.mcp.json` servers
+  2. Reads session overrides from `session_mcp_overrides` table
+  3. Reads profile MCP config (if profile selected)
+  4. Merges with precedence: profile additions > session activation > global defaults
+  5. Returns only enabled servers to pass to `query()`
+- **Why this is better than pre-computed state**:
+  - No stale data (resolver runs at query time, always reflects current config)
+  - Simple merge logic (profile > session > global is clear and testable)
+  - No sync issues (if user disables a server in settings, it automatically applies to all existing sessions)
+  - Efficient (only computes when needed, no materialized state to maintain)
+- **Pattern for future**: For feature toggles that need global + per-session + profile layers, use a resolver function rather than storing computed state.
+
+### Gotcha: Lazy Session Initialization Saves Schema Rows
+- **Initial assumption**: Every new session gets rows in `session_mcp_overrides` for all configured servers
+- **Optimization**: New sessions don't create any rows; users inherit global defaults until they explicitly toggle one → only then do rows materialize
+- **Result**: For typical sessions with 10-20 servers, most sessions have 0 rows in the table (since most users don't toggle anything)
+- **Pattern for future**: For toggle tables with global defaults, use lazy initialization (null = use global default) rather than eager materialization.
+
+### Implementation Detail: Connector Proof-of-Concept (Weather) Validated the Framework
+- **Built**: Weather connector using OpenWeather? No — used **National Weather Service API** (free, no key needed)
+- **Included**: Geocoding via Nominatim with 30-minute in-memory cache (avoids repeated geolocation API calls)
+- **Testing**: 14 weather tests + 13 registry tests, all passing (mocked HTTP, no external dependencies)
+- **Key insight**: Proof-of-concepts should use **real, free APIs** (NWS, Nominatim) rather than mocks, so the framework can be validated end-to-end.
+
+### Pattern: Connector Module Structure Discovered
+Each connector is a self-contained module exporting:
+```
+connectors/weather/
+  ├── index.ts (ConnectorDefinition + exports)
+  ├── api.ts (external API client + caching)
+  ├── tools.ts (SDK tool definitions)
+  └── weather.test.ts (all tests for this connector)
+```
+The registry `connectors/index.ts` handles discovery and filtering. To add a connector: create new folder, export `ConnectorDefinition`, register in index. Framework handles the rest.
+
+### Lesson: Parallel Implementation Agents Saved 3x Development Time
+- **Setup**: Backend agent (DB migrations, API routes, resolver wiring) and frontend agent (hooks, UI component) ran in parallel
+- **Separation of concerns**: Agents had clear handoff point (API contract), minimal blocking
+- **Result**: Both completed independently, zero conflicts (frontend agent paused waiting for backend contract; backend completed independently)
+- **Pattern for future**: When feature has clear frontend/backend split, always launch parallel agents with a defined API contract between them.
+
+
+## 2026-03-24: Claude Code Agent Configuration & Multi-Agent Architecture Design
+
+### Discovery: Agent Tool Restrictions Are Declaratively Defined via Agent Files
+- **Key insight**: Custom agents can restrict their own tool access via `tools:` field in agent file frontmatter
+- **Mechanism**: `~/.claude/agents/coordinator.md` with YAML frontmatter declares which tools an agent can access (e.g., `tools: Agent, Read, Glob, Grep`)
+- **Why this matters**: Allows creating role-specific agents without runtime permission prompts — a coordinator agent literally cannot call Edit, Write, or Bash even if it wanted to
+- **Use case**: Coordinator agents should only have access to delegation tools (Agent, Read, Glob, Grep) — implementation is delegated to worker subagents
+
+### Three-Scope Deployment Model for Agent Definitions
+- **Personal scope** (`~/.claude/agents/coordinator.md`): Agent available across all projects, not version-controlled
+- **Project scope** (`.claude/agents/coordinator.md`): Agent checked into git, shared by team, versioned with codebase
+- **Plugin scope** (`plugin/agents/coordinator.md`): Distributable agent bundled with plugin, maximum reusability
+- **Implication**: For team workflows, prefer project scope so agent definitions evolve with the codebase (e.g., new tool restrictions as features change)
+
+### Coordinator Architecture Requires Multiple Layers Beyond Agent Definition
+- **Agent file** (`coordinator.md` + `worker.md` + `reviewer.md`): Defines tool restrictions and basic identity
+- **State layer** (`.coord/` directory): Task ledger, learning inbox, milestone tracking (plain JSON files, no special tooling)
+- **Hook scripts**: Pre-task, post-task, extract-learnings, request-review (Claude Code hooks that fire around tool calls)
+- **System prompt**: The "big one" — encodes state machine, task contracts, delegation rules, efficiency rules
+- **None of these are built-in** — they're all user-defined infrastructure for a multi-agent control plane
+- **Critical pattern**: Coordinator agent cannot implement tasks directly (no Edit/Write/Bash), only delegate and coordinate
+
+### Non-Obvious Insight: The Distinction Between "Agent Type" and "Agent Role"
+- **Agent type** (`subagent_type` parameter): Category of agent available (general-purpose, Plan, Explore, etc.) — built into Claude Code
+- **Agent role** (custom agent file): User-defined role within a specific project (coordinator, worker, reviewer, researcher)
+- **Implication**: You cannot create a new agent *type*, but you can create unlimited agent *roles* by writing `.md` files with tool restrictions and system prompts
+- **Workflow insight**: Multi-agent systems should combine both: use built-in agents (Plan, Explore) for research/analysis, custom agents (coordinator, worker) for orchestration/implementation
+
+### Gotcha: Custom Agent System Prompt Goes in the .md File Itself
+- **Structure**: Agent file is YAML frontmatter + full Markdown system prompt below
+- **Example**: `coordinator.md` contains "You are a session coordinator operating as a state machine..." followed by the full coordinator prompt
+- **Why this matters**: System prompt cannot be injected via CLI or environment — it lives in the agent definition file
+- **Maintenance**: If coordinator prompt needs updating, edit `.claude/agents/coordinator.md`, not CLAUDE.md or a separate config file
+
+## 2026-03-19: Connector Menu Component Discovery (Session Routing vs Welcome Page)
+
+### Key Discovery: UI Components are Route-Specific, Not Global
+- **Issue**: Built connector panel with `+` button in toolbar, but it wasn't appearing on the home/welcome page — only inside active chat sessions
+- **Root cause**: The app uses different input components for different routes:
+  - `WelcomeScreen.tsx` — home/welcome page input (no toolbar, no connector menu)
+  - `ChatInput.tsx` with toolbar — renders only inside `ChatPage.tsx` (session-specific)
+- **Why it matters**: This revealed a UX design decision: connector toggles are session-scoped (you choose which tools per conversation), not global settings
+
+### Technical Insight
+- Home page input component is completely separate from chat page input
+- The toolbar/connector menu is in `ChatInput.tsx`, which only renders inside `ChatPage` route
+- This isn't a bug — it's intentional: different entry points need different UI
+- If connectors should be pre-configurable before starting a chat, requires separate connector settings on `WelcomeScreen` or in app settings
+
+### Non-Obvious Pattern
+- **Route-based component duplication is common in React routing** — components that appear in multiple routes often have slightly different versions
+- When debugging "component not rendering", check not just CSS/visibility but whether the parent component actually exists in the current route
+- `ChatPage` and home page are separate routes, so toolbar code in `ChatPage` never executes on home
+
+### Patterns for Future Work
+- If adding features that should work across multiple routes (e.g., connector toggle on welcome screen), can't just add to one component — need parallel implementation
+- Consider extracting connector toggle into reusable component that can be placed in both `WelcomeScreen` and `ChatInput`
+- For session-specific settings, confirm they should truly be per-session or if they're better as global user preferences
