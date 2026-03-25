@@ -65,11 +65,18 @@ describe('WelcomeScreen selector helper copy', () => {
     render(<WelcomeScreen {...defaultProps} />);
 
     expect(screen.getByText(/start as \(optional\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Profile selection is optional/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Choose one to apply its behavior to this chat/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Project \(optional\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Optional workspace context only/i)).toBeInTheDocument();
     expect(screen.getByText(/Model \(optional\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Model choice is applied to this session/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Model choice updates the default for new chats/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/A selected profile can still override it for this run/i),
+    ).toBeInTheDocument();
   });
 
   it('keeps composer as the main first action before template suggestions', () => {
@@ -82,4 +89,3 @@ describe('WelcomeScreen selector helper copy', () => {
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });
-

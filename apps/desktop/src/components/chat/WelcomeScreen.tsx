@@ -124,7 +124,7 @@ export function WelcomeScreen({
           <div className="w-full max-w-3xl mb-4">
             <div className="text-xs text-muted-foreground px-1 mb-1.5">Start as (optional)</div>
             <p className="text-[11px] text-muted-foreground/85 px-1 mb-2">
-              Profile selection is optional. It sets the agent behavior for this chat; if skipped, your default profile is used.
+              Profile selection is optional. Choose one to apply its behavior to this chat, or skip it to start without a profile override.
             </p>
             <ProfileSelector
               profiles={agentProfiles}
@@ -260,7 +260,7 @@ export function WelcomeScreen({
               <div className="relative">
                 <div className="text-[11px] text-muted-foreground mb-1.5">Model (optional)</div>
                 <p className="text-[11px] text-muted-foreground/80 mb-1.5">
-                  Model choice is applied to this session and updates your default model for future chats.
+                  Model choice updates the default for new chats. A selected profile can still override it for this run.
                 </p>
                 <button
                   onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(p => !p); setProjectDropdownOpen(false); }}
