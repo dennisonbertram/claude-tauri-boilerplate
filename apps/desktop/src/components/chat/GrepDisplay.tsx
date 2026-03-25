@@ -237,29 +237,30 @@ function FileGroupView({ group }: { group: FileGroup }) {
       className="border-b border-border/30 last:border-b-0"
     >
       {/* File header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-muted/30 transition-colors"
-      >
-        {isExpanded ? (
-          <CaretDown className="h-3 w-3 text-muted-foreground shrink-0" />
-        ) : (
-          <CaretRight className="h-3 w-3 text-muted-foreground shrink-0" />
-        )}
-        <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-        <span className="font-mono text-xs text-foreground/90 truncate">
-          {group.file}
-        </span>
-        <span
-          data-testid="grep-file-match-count"
-          className="text-xs text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-mono"
+      <div className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/30 transition-colors">
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
-          {group.matches.length}
-        </span>
-        <span className="ml-auto">
-          <CopyPathButton path={group.file} />
-        </span>
-      </button>
+          {isExpanded ? (
+            <CaretDown className="h-3 w-3 text-muted-foreground shrink-0" />
+          ) : (
+            <CaretRight className="h-3 w-3 text-muted-foreground shrink-0" />
+          )}
+          <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+          <span className="font-mono text-xs text-foreground/90 truncate">
+            {group.file}
+          </span>
+          <span
+            data-testid="grep-file-match-count"
+            className="text-xs text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-mono"
+          >
+            {group.matches.length}
+          </span>
+        </button>
+        <CopyPathButton path={group.file} />
+      </div>
 
       {/* Match lines */}
       {isExpanded && (

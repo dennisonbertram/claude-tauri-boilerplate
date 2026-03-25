@@ -8,6 +8,20 @@ import type { StatusBarProps } from '../StatusBar';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 
+vi.mock('../status-bar/GitBranchSegment', () => ({
+  GitBranchSegment: () => <div data-testid="git-branch-segment">main</div>,
+}));
+
+vi.mock('@/lib/workflowPrompts', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/workflowPrompts')>(
+    '@/lib/workflowPrompts',
+  );
+  return {
+    ...actual,
+    loadRepoWorkflowPrompts: vi.fn().mockResolvedValue({}),
+  };
+});
+
 function wrapper({ children }: { children: ReactNode }) {
   return <SettingsProvider>{children}</SettingsProvider>;
 }

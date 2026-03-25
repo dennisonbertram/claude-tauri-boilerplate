@@ -257,6 +257,9 @@ describe('ProjectSidebar', () => {
     expect(screen.getByText('feature-workspace')).toBeTruthy();
     // Project name still renders
     expect(screen.getByText('Test Project')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockFetchWorkspaceStatus).toHaveBeenCalledWith('/tmp/workspace-1');
+    });
   });
 
   // TODO: #267 — quarantined, git status display location changed

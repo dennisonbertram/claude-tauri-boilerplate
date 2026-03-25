@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor, act } from '@testing-library/react';
 import { AgentProfileEditor } from '../AgentProfileEditor';
 import type { AgentProfile, UpdateAgentProfileRequest } from '@claude-tauri/shared';
 
@@ -62,13 +62,15 @@ describe('AgentProfileEditor Cmd/Ctrl+S shortcut', () => {
     const event = new KeyboardEvent('keydown', { key: 's', metaKey: true });
     const preventDefault = vi.spyOn(event, 'preventDefault');
 
-    document.dispatchEvent(event);
+    await act(async () => {
+      document.dispatchEvent(event);
+    });
 
     expect(preventDefault).toHaveBeenCalled();
-    expect(onSave).toHaveBeenCalledOnce();
-    expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Updated profile name' })
-    );
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledOnce();
+    });
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Updated profile name' }));
   });
 
   it('prevents default even when there are no draft changes', async () => {

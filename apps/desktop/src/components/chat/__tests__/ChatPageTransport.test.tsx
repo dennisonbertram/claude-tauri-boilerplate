@@ -659,7 +659,7 @@ describe('ChatPage transport provider payload', () => {
       'Implement this approved plan'
     );
   });
-  it('forces effort=low when fastMode is enabled', () => {
+  it('forces effort=low when fastMode is enabled', async () => {
     mockUseSettings.mockReturnValue({
       settings: getDefaultSettings({
         effort: 'high',
@@ -671,7 +671,9 @@ describe('ChatPage transport provider payload', () => {
 
     render(<ChatPage sessionId={null} />);
 
-    expect(mockDefaultChatTransport).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockDefaultChatTransport).toHaveBeenCalledTimes(1);
+    });
     const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
     expect(call).toMatchObject({
       body: expect.objectContaining({
@@ -680,7 +682,7 @@ describe('ChatPage transport provider payload', () => {
     });
   });
 
-  it('includes thinking budget tokens in the chat transport payload', () => {
+  it('includes thinking budget tokens in the chat transport payload', async () => {
     mockUseSettings.mockReturnValue({
       settings: getDefaultSettings({
         thinkingBudgetTokens: 24000,
@@ -691,6 +693,9 @@ describe('ChatPage transport provider payload', () => {
 
     render(<ChatPage sessionId={null} />);
 
+    await waitFor(() => {
+      expect(mockDefaultChatTransport).toHaveBeenCalledTimes(1);
+    });
     const call = mockDefaultChatTransport.mock.calls.at(-1)?.[0];
     expect(call).toMatchObject({
       body: expect.objectContaining({
@@ -698,5 +703,4 @@ describe('ChatPage transport provider payload', () => {
       }),
     });
   });
-
 });

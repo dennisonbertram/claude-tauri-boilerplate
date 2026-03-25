@@ -152,6 +152,7 @@ function setupUseChat(overrides: Partial<typeof useChatReturn> = {}) {
 describe('ChatPage - ErrorBanner integration (Bug #35)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     setupUseChat();
   });
 

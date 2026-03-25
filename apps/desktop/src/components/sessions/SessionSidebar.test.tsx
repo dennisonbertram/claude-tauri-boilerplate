@@ -123,7 +123,7 @@ describe('SessionSidebar', () => {
     render(<SessionSidebar {...defaultProps} />);
 
     // The "..." / more button should appear on the session items
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     // Should have a menu trigger (three dots or similar)
@@ -134,7 +134,7 @@ describe('SessionSidebar', () => {
   test('opens context menu with right-click on session item', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.contextMenu(sessionItem);
 
     await waitFor(() => {
@@ -146,7 +146,7 @@ describe('SessionSidebar', () => {
   test('context menu contains Rename option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -160,7 +160,7 @@ describe('SessionSidebar', () => {
   test('context menu contains Fork option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -174,7 +174,7 @@ describe('SessionSidebar', () => {
   test('context menu contains Export as JSON option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -188,7 +188,7 @@ describe('SessionSidebar', () => {
   test('context menu contains Export as Markdown option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -202,7 +202,7 @@ describe('SessionSidebar', () => {
   test('context menu contains Delete option', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -218,7 +218,7 @@ describe('SessionSidebar', () => {
   test('clicking Rename enters inline edit mode', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -238,7 +238,7 @@ describe('SessionSidebar', () => {
     const user = userEvent.setup();
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -263,7 +263,7 @@ describe('SessionSidebar', () => {
     const user = userEvent.setup();
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -290,7 +290,7 @@ describe('SessionSidebar', () => {
   test('clicking Fork calls onForkSession with session id', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -308,7 +308,7 @@ describe('SessionSidebar', () => {
   test('clicking Export JSON calls onExportSession with json format', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -327,7 +327,7 @@ describe('SessionSidebar', () => {
   test('clicking Export Markdown calls onExportSession with md format', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -348,7 +348,7 @@ describe('SessionSidebar', () => {
   test('clicking Delete shows inline confirmation within the session row', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -370,7 +370,7 @@ describe('SessionSidebar', () => {
   test('confirming delete calls onDeleteSession', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -392,7 +392,7 @@ describe('SessionSidebar', () => {
   test('clicking Delete then Cancel does not remove the session', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;
@@ -417,7 +417,7 @@ describe('SessionSidebar', () => {
   test('the confirmation is contained within the session row, not a separate floating menu', async () => {
     render(<SessionSidebar {...defaultProps} />);
 
-    const sessionItem = screen.getByText('First Chat').closest('button')!;
+    const sessionItem = screen.getByTestId('session-item-session-1');
     fireEvent.mouseEnter(sessionItem);
 
     const menuButton = sessionItem.querySelector('[data-testid="session-menu-trigger"]')!;

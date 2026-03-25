@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { FileReadDisplay } from '../FileReadDisplay';
 import { FileEditDisplay } from '../FileEditDisplay';
 import { FileWriteDisplay } from '../FileWriteDisplay';
@@ -582,10 +582,14 @@ describe('Language detection from file extension', () => {
 // Copy path functionality
 // =====================================================================
 describe('Copy path functionality', () => {
+  let writeTextMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
+    writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: writeTextMock,
       },
     });
   });
@@ -600,8 +604,11 @@ describe('Copy path functionality', () => {
         })}
       />
     );
-    fireEvent.click(screen.getByLabelText('Copy file path'));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/src/app.ts');
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Copy file path'));
+      await Promise.resolve();
+    });
+    expect(writeTextMock).toHaveBeenCalledWith('/src/app.ts');
   });
 
   it('copies file path to clipboard on Edit display', async () => {
@@ -617,8 +624,11 @@ describe('Copy path functionality', () => {
         })}
       />
     );
-    fireEvent.click(screen.getByLabelText('Copy file path'));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/src/app.ts');
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Copy file path'));
+      await Promise.resolve();
+    });
+    expect(writeTextMock).toHaveBeenCalledWith('/src/app.ts');
   });
 
   it('copies file path to clipboard on Write display', async () => {
@@ -633,7 +643,10 @@ describe('Copy path functionality', () => {
         })}
       />
     );
-    fireEvent.click(screen.getByLabelText('Copy file path'));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/src/new.ts');
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Copy file path'));
+      await Promise.resolve();
+    });
+    expect(writeTextMock).toHaveBeenCalledWith('/src/new.ts');
   });
 });

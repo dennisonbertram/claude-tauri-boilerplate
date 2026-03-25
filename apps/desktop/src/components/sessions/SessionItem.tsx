@@ -116,8 +116,8 @@ export function SessionItem({
   };
 
   return (
-    <button
-      onClick={confirmDelete ? undefined : onSelect}
+    <div
+      data-testid={`session-item-${session.id}`}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -144,6 +144,7 @@ export function SessionItem({
           </span>
           <div className="flex gap-1 shrink-0">
             <button
+              type="button"
               data-testid="confirm-delete-button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -154,6 +155,7 @@ export function SessionItem({
               Delete
             </button>
             <button
+              type="button"
               data-testid="cancel-delete-button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -180,15 +182,20 @@ export function SessionItem({
                 className="text-sm font-medium flex-1 bg-background border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring"
               />
             ) : (
-              <span className="text-sm font-medium truncate flex-1">
-                {session.title || 'New Chat'}
-              </span>
+              <button
+                type="button"
+                onClick={onSelect}
+                className="min-w-0 flex-1 text-left"
+              >
+                <span className="block truncate text-sm font-medium">
+                  {session.title || 'New Chat'}
+                </span>
+              </button>
             )}
             {hovering && !isRenaming && (
-              <div
+              <button
+                type="button"
                 data-testid="session-menu-trigger"
-                role="button"
-                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(!menuOpen);
@@ -206,7 +213,7 @@ export function SessionItem({
                   <circle cx="12" cy="12" r="1" />
                   <circle cx="12" cy="19" r="1" />
                 </svg>
-              </div>
+              </button>
             )}
           </div>
           <div className="flex items-center gap-1.5">
@@ -280,6 +287,6 @@ export function SessionItem({
           )}
         </>
       )}
-    </button>
+    </div>
   );
 }

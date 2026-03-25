@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { DiffViewer } from '../DiffViewer';
 
 describe('DiffViewer', () => {
+  let writeTextMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
+    writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: writeTextMock,
       },
     });
   });
@@ -137,17 +141,20 @@ describe('DiffViewer', () => {
       expect(screen.getByLabelText('Copy diff')).toBeInTheDocument();
     });
 
-    it('copies unified diff text to clipboard when clicked', () => {
+    it('copies unified diff text to clipboard when clicked', async () => {
       render(
         <DiffViewer
           oldString="old line"
           newString="new line"
         />
       );
-      fireEvent.click(screen.getByLabelText('Copy diff'));
-      expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        fireEvent.click(screen.getByLabelText('Copy diff'));
+        await Promise.resolve();
+      });
+      expect(writeTextMock).toHaveBeenCalledTimes(1);
       // The copied text should contain the diff content
-      const copiedText = (navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+      const copiedText = writeTextMock.mock.calls[0][0] as string;
       expect(copiedText).toContain('-old line');
       expect(copiedText).toContain('+new line');
     });

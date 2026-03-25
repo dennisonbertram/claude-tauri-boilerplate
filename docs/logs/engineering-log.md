@@ -17,6 +17,16 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-25: Desktop Vitest warning cleanup for async effects and nested interactive markup
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Cleaned up the remaining noisy desktop frontend Vitest output without masking real issues. Fixed two actual nested-button bugs by restructuring the session delete confirmation row and the grep file-header copy control so interactive elements are siblings instead of nested buttons. Reduced async warning noise by isolating unrelated status/settings fetch work in focused tests, adding a scroll-area test double that preserves viewport refs while avoiding Base UI mount chatter, skipping repeated secure-credential fallback warnings during tests, and updating copy/shortcut/session hook tests to await state changes correctly. Also prevented `ProjectSidebar` from scheduling empty workspace-status updates when no workspaces are present.
+**Regression Test**: `apps/desktop/src/components/__tests__/StatusBar.test.tsx`, `apps/desktop/src/components/__tests__/PermissionMode.regression.test.tsx`, `apps/desktop/src/components/settings/SettingsPanel.test.tsx`, `apps/desktop/src/components/sessions/SessionSidebar.test.tsx`, `apps/desktop/src/components/chat/__tests__/FileOperations.test.tsx`, `apps/desktop/src/components/chat/__tests__/DiffViewer.test.tsx`, `apps/desktop/src/components/chat/__tests__/ChatPageTransport.test.tsx`, `apps/desktop/src/hooks/useSessions.test.ts`
+**Related Issue**: N/A
+
+---
+
 ### 2026-03-22: Welcome message should auto-send only once
 
 **Type**: Bug Fix

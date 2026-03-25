@@ -4,6 +4,47 @@ import userEvent from '@testing-library/user-event';
 import { SettingsPanel } from './SettingsPanel';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 
+vi.mock('@/components/settings/InstructionsPanel', () => ({
+  InstructionsPanel: () => <div>Instructions</div>,
+}));
+
+vi.mock('@/components/settings/MemoryPanel', () => ({
+  MemoryPanel: () => <div>Memory</div>,
+}));
+
+vi.mock('@/components/settings/McpPanel', () => ({
+  McpPanel: () => <div>MCP</div>,
+}));
+
+vi.mock('@/components/settings/HooksPanel', () => ({
+  HooksPanel: () => <div>Hooks</div>,
+}));
+
+vi.mock('@/components/settings/LinearPanel', () => ({
+  LinearPanel: () => (
+    <div>
+      <div>Linear Integration</div>
+      <button data-testid="linear-connect-button" type="button">
+        Connect Linear
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('@/components/settings/GooglePanel', () => ({
+  GooglePanel: () => <div>Google Integration</div>,
+}));
+
+vi.mock('@/lib/workflowPrompts', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/workflowPrompts')>(
+    '@/lib/workflowPrompts',
+  );
+  return {
+    ...actual,
+    loadRepoWorkflowPrompts: vi.fn().mockResolvedValue({}),
+  };
+});
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -174,8 +215,10 @@ describe('SettingsPanel', () => {
 
   test('initialTab="memory" opens Data & Context group', () => {
     renderWithProvider(<SettingsPanel {...defaultProps} initialTab="memory" />);
-    expect(screen.getByText('Memory')).toBeTruthy();
-    expect(screen.getByText('Instructions')).toBeTruthy();
+    const headings = screen.getAllByRole('heading', { level: 3 });
+    const headingTexts = headings.map((heading) => heading.textContent);
+    expect(headingTexts).toContain('Memory');
+    expect(headingTexts).toContain('Instructions');
   });
 
   test('initialTab="linear" opens Integrations group', () => {

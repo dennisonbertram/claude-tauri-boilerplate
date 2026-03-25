@@ -158,8 +158,12 @@ describe('useSessions', () => {
     );
   });
 
-  it('loads sessions using initial search query', () => {
+  it('loads sessions using initial search query', async () => {
     renderHook(() => useSessions('alpha thread'));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(mockFetch).toHaveBeenCalledWith(
       'http://localhost:3131/api/sessions?q=alpha%20thread',

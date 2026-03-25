@@ -23,6 +23,7 @@
  */
 
 const CREDENTIAL_STORE_KEY = '__credential_store';
+let hasWarnedAboutDevStorage = false;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,6 +31,10 @@ const CREDENTIAL_STORE_KEY = '__credential_store';
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI__' in window;
+}
+
+function isTestEnvironment(): boolean {
+  return Boolean(globalThis.process?.env?.VITEST);
 }
 
 /** Read the entire credential map from storage. */
@@ -56,7 +61,8 @@ function writeStore(store: Record<string, string>): void {
  * Store a credential. Empty/null values are treated as deletions.
  */
 export async function setCredential(key: string, value: string): Promise<void> {
-  if (!isTauri()) {
+  if (!isTauri() && !isTestEnvironment() && !hasWarnedAboutDevStorage) {
+    hasWarnedAboutDevStorage = true;
     console.warn(
       '[secure-credentials] Not running in Tauri \u2014 credentials stored in localStorage (dev only).',
     );

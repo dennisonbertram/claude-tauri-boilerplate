@@ -60,6 +60,10 @@ export function ProjectSidebar({
     const controller = new AbortController();
 
     const loadStatuses = async () => {
+      if (allWorkspaces.length === 0) {
+        return;
+      }
+
       const nextStatus: Record<string, GitStatus | null> = {};
       for (const workspace of allWorkspaces) {
         try {
