@@ -43,10 +43,16 @@ export function WelcomeScreen({
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [advancedControlsOpen, setAdvancedControlsOpen] = useState(false);
   const plusMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const { activeCount } = useSessionMcpServers(undefined);
+
+  const hasProfileControls = Boolean(onSelectProfile && agentProfiles && agentProfiles.length > 0);
+  const hasProjectControls = Boolean(onSelectProject);
+  const hasModelControls = Boolean(onSelectModel);
+  const hasAdvancedControls = hasProfileControls || hasProjectControls || hasModelControls;
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -117,26 +123,15 @@ export function WelcomeScreen({
               Learn how to use it.
             </a>
           </p>
+          <p className="text-sm text-muted-foreground/90 mt-3 max-w-xl">
+            Start typing now. You can begin a chat immediately and open optional settings after your first message.
+          </p>
         </div>
-
-        {/* Profile selector */}
-        {agentProfiles && agentProfiles.length > 0 && onSelectProfile && (
-          <div className="w-full max-w-3xl mb-4">
-            <div className="text-xs text-muted-foreground px-1 mb-1.5">Start as (optional)</div>
-            <p className="text-[11px] text-muted-foreground/85 px-1 mb-2">
-              Profile selection is optional. Choose one to apply its behavior to this chat, or skip it to start without a profile override.
-            </p>
-            <ProfileSelector
-              profiles={agentProfiles}
-              selectedProfileId={selectedProfileId ?? null}
-              onSelectProfile={onSelectProfile}
-            />
-          </div>
-        )}
 
         {/* Large card composer */}
         <div className="w-full max-w-3xl bg-card rounded-[28px] shadow-[0_8px_30px_-6px_rgba(0,0,0,0.04),0_4px_12px_-4px_rgba(0,0,0,0.02)] border border-border p-3 flex flex-col mb-16 transition-all duration-300 focus-within:shadow-[0_8px_40px_-6px_rgba(0,0,0,0.08),0_4px_12px_-4px_rgba(0,0,0,0.04)] focus-within:border-border/80">
           <textarea
+            aria-label="Start your first message"
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}}
@@ -159,49 +154,6 @@ export function WelcomeScreen({
           <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/0 px-2">
             {/* Left toolbar */}
             <div className="flex items-center gap-2">
-              {/* Project selector */}
-              <div className="relative">
-                <div className="text-[11px] text-muted-foreground mb-1.5">Project (optional)</div>
-                <p className="text-[11px] text-muted-foreground/80 mb-1.5 max-w-[16rem]">
-                  Optional workspace context only. You can start a message without choosing a project.
-                </p>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setProjectDropdownOpen(p => !p); setModelDropdownOpen(false); }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors border border-transparent hover:border-border"
-                >
-                  <FolderSimple size={18} />
-                  <span className="font-medium">{selectedProject?.name ?? 'Select project'}</span>
-                  <CaretDown size={12} className="opacity-50" />
-                </button>
-                {projectDropdownOpen && onSelectProject && (
-                  <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
-                    <button
-                      onClick={() => { onSelectProject(null); setProjectDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                    >
-                      <FolderSimple size={16} />
-                      <span>No project (general chat)</span>
-                      {!selectedProjectId && <Check size={14} className="ml-auto text-primary" />}
-                    </button>
-                    {projects && projects.map(project => (
-                      <button
-                        key={project.id}
-                        onClick={() => { onSelectProject(project.id); setProjectDropdownOpen(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <FolderSimple size={16} className="text-muted-foreground shrink-0" />
-                        <span className="truncate">{project.name}</span>
-                        {selectedProjectId === project.id && <Check size={14} className="ml-auto text-primary shrink-0" />}
-                      </button>
-                    ))}
-                    {(!projects || projects.length === 0) && (
-                      <div className="px-3 py-2 text-sm text-muted-foreground">No projects added yet</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="w-px h-4 bg-border mx-1" />
               <div ref={plusMenuRef} className="relative">
                 <button
                   type="button"
@@ -256,35 +208,6 @@ export function WelcomeScreen({
             </div>
             {/* Right toolbar */}
             <div className="flex items-center gap-2">
-              {/* Model selector */}
-              <div className="relative">
-                <div className="text-[11px] text-muted-foreground mb-1.5">Model (optional)</div>
-                <p className="text-[11px] text-muted-foreground/80 mb-1.5">
-                  Model choice updates the default for new chats. A selected profile can still override it for this run.
-                </p>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(p => !p); setProjectDropdownOpen(false); }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-muted-foreground text-sm transition-colors"
-                >
-                  <span className="font-medium">{modelDisplay}</span>
-                  <CaretDown size={12} className="opacity-50" />
-                </button>
-                {modelDropdownOpen && onSelectModel && (
-                  <div className="absolute top-full right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-50 py-1">
-                    {AVAILABLE_MODELS.map(model => (
-                      <button
-                        key={model.id}
-                        onClick={() => { onSelectModel(model.id); setModelDropdownOpen(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <span>{model.label}</span>
-                        {currentModel === model.id && <Check size={14} className="ml-auto text-primary" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Microphone — disabled (no speech API integration yet) */}
               <button
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/40 cursor-not-allowed transition-colors"
@@ -303,6 +226,122 @@ export function WelcomeScreen({
             </div>
           </div>
         </div>
+
+        {hasAdvancedControls && (
+          <div className="w-full max-w-3xl mb-10">
+            <button
+              type="button"
+              onClick={() => setAdvancedControlsOpen((prev) => !prev)}
+              aria-expanded={advancedControlsOpen}
+              aria-controls="welcome-screen-optional-controls"
+              className="group flex w-full items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-accent/50"
+            >
+              <span>Optional setup controls</span>
+              <CaretDown
+                size={16}
+                className={`transition-transform duration-200 ${advancedControlsOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+            <p className="text-xs text-muted-foreground/80 mt-2 px-1">
+              Expand when you want to set profile, project, or model preferences.
+            </p>
+
+            {advancedControlsOpen && (
+              <div
+                id="welcome-screen-optional-controls"
+                className="mt-3 rounded-2xl border border-border/60 bg-card/75 p-4 text-sm"
+              >
+                {hasProfileControls && (
+                  <div className="mb-5">
+                    <div className="text-xs text-muted-foreground px-1 mb-1.5">Start as (optional)</div>
+                    <p className="text-[11px] text-muted-foreground/85 px-1 mb-2">
+                      Profile selection is optional. Choose one to apply its behavior to this chat, or skip it to start without a profile override.
+                    </p>
+                    <ProfileSelector
+                      profiles={agentProfiles}
+                      selectedProfileId={selectedProfileId ?? null}
+                      onSelectProfile={onSelectProfile}
+                    />
+                  </div>
+                )}
+
+                {hasProjectControls && (
+                  <div className="relative">
+                    <div className="text-[11px] text-muted-foreground mb-1.5">Project (optional)</div>
+                    <p className="text-[11px] text-muted-foreground/80 mb-1.5 max-w-[16rem]">
+                      Optional workspace context only. You can start a message without choosing a project.
+                    </p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setProjectDropdownOpen(p => !p); setModelDropdownOpen(false); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent/70 text-muted-foreground text-sm transition-colors border border-border/80 hover:border-border"
+                    >
+                      <FolderSimple size={18} />
+                      <span className="font-medium">{selectedProject?.name ?? 'Select project'}</span>
+                      <CaretDown size={12} className="opacity-60" />
+                    </button>
+                    {projectDropdownOpen && onSelectProject && (
+                      <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                        <button
+                          onClick={() => { onSelectProject(null); setProjectDropdownOpen(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        >
+                          <FolderSimple size={16} />
+                          <span>No project (general chat)</span>
+                          {!selectedProjectId && <Check size={14} className="ml-auto text-primary" />}
+                        </button>
+                        {projects && projects.map(project => (
+                          <button
+                            key={project.id}
+                            onClick={() => { onSelectProject(project.id); setProjectDropdownOpen(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                          >
+                            <FolderSimple size={16} className="text-muted-foreground shrink-0" />
+                            <span className="truncate">{project.name}</span>
+                            {selectedProjectId === project.id && <Check size={14} className="ml-auto text-primary shrink-0" />}
+                          </button>
+                        ))}
+                        {(!projects || projects.length === 0) && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">No projects added yet</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {hasModelControls && (
+                  <div className={`relative ${hasProjectControls ? 'mt-5 pt-5 border-t border-border/50' : ''}`}>
+                    <div className="text-[11px] text-muted-foreground mb-1.5">Model (optional)</div>
+                    <p className="text-[11px] text-muted-foreground/80 mb-1.5">
+                      Model choice updates the default for new chats. A selected profile can still override it for this run.
+                    </p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(p => !p); setProjectDropdownOpen(false); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent/70 text-muted-foreground text-sm transition-colors border border-border/80 hover:border-border"
+                    >
+                      <span className="font-medium">{modelDisplay}</span>
+                      <CaretDown size={12} className="opacity-60" />
+                    </button>
+                    {modelDropdownOpen && onSelectModel && (
+                      <div className="absolute top-full right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-50 py-1">
+                        {AVAILABLE_MODELS.map(model => (
+                          <button
+                            key={model.id}
+                            onClick={() => { onSelectModel(model.id); setModelDropdownOpen(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                          >
+                            <span>{model.label}</span>
+                            {currentModel === model.id && <Check size={14} className="ml-auto text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Template suggestions */}
         <div className="w-full max-w-3xl">
