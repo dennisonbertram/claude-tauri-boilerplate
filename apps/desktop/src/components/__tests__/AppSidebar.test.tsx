@@ -19,6 +19,7 @@ vi.mock('@phosphor-icons/react', () => {
     CaretLeft: Icon,
     CaretRight: Icon,
     MagnifyingGlass: Icon,
+    CurrencyDollar: Icon,
   };
 });
 
@@ -91,7 +92,7 @@ function renderSidebar(overrides: Partial<ComponentProps<typeof AppSidebar>> = {
 
 function renderSidebarWithControlledView() {
   function ControlledSidebar() {
-    const [activeView, setActiveView] = useState<'chat' | 'workspaces' | 'teams' | 'agents' | 'documents' | 'tracker'>('workspaces');
+    const [activeView, setActiveView] = useState<'chat' | 'workspaces' | 'teams' | 'agents' | 'documents' | 'tracker' | 'finance'>('workspaces');
     return (
       <AppSidebar
         activeView={activeView}

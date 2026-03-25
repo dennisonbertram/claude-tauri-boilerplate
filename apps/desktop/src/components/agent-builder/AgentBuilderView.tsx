@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAgentProfiles } from '@/hooks/useAgentProfiles';
 import { AgentProfileSidebar } from './AgentProfileSidebar';
 import { AgentProfileEditor } from './AgentProfileEditor';
+import { AgentCreateModal } from './AgentCreateModal';
 
 export function AgentBuilderView() {
   const {
@@ -11,26 +12,68 @@ export function AgentBuilderView() {
     updateProfile,
     removeProfile,
     duplicateProfile,
+    generateProfile,
   } = useAgentProfiles();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [editorIsDirty, setEditorIsDirty] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalLoading, setCreateModalLoading] = useState(false);
+  const [createModalError, setCreateModalError] = useState<string | null>(null);
 
   const selectedProfile = profiles.find((p) => p.id === selectedProfileId) ?? null;
 
-  const handleCreateProfile = async () => {
+  const canDiscardCurrentDraft = () => {
     if (editorIsDirty) {
       if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
     }
+    return true;
+  };
+
+  const handleOpenCreateModal = () => {
+    setCreateModalError(null);
+    setCreateModalOpen(true);
+  };
+
+  const handleCreateBlankProfile = async () => {
+    setCreateModalError(null);
+    if (!canDiscardCurrentDraft()) return;
+
     // If an unsaved profile with the default name already exists, select it instead
     const existing = profiles.find((p) => p.name === 'New Agent Profile');
     if (existing) {
       setSelectedProfileId(existing.id);
       setEditorIsDirty(false);
+      setCreateModalOpen(false);
       return;
     }
-    const profile = await addProfile({ name: 'New Agent Profile' });
-    setSelectedProfileId(profile.id);
-    setEditorIsDirty(false);
+    if (!canDiscardCurrentDraft()) return;
+    setCreateModalLoading(true);
+    try {
+      const profile = await addProfile({ name: 'New Agent Profile' });
+      setSelectedProfileId(profile.id);
+      setEditorIsDirty(false);
+      setCreateModalOpen(false);
+    } catch (err) {
+      setCreateModalError(err instanceof Error ? err.message : 'Failed to create profile');
+    } finally {
+      setCreateModalLoading(false);
+    }
+  };
+
+  const handleGenerateProfile = async (prompt: string) => {
+    setCreateModalError(null);
+    if (!canDiscardCurrentDraft()) return;
+    setCreateModalLoading(true);
+    try {
+      const profile = await generateProfile({ prompt });
+      setSelectedProfileId(profile.id);
+      setEditorIsDirty(false);
+      setCreateModalOpen(false);
+    } catch (err) {
+      setCreateModalError(err instanceof Error ? err.message : 'Failed to generate profile');
+    } finally {
+      setCreateModalLoading(false);
+    }
   };
 
   return (
@@ -45,7 +88,7 @@ export function AgentBuilderView() {
           setSelectedProfileId(id);
           setEditorIsDirty(false);
         }}
-        onCreateProfile={handleCreateProfile}
+        onCreateProfile={handleOpenCreateModal}
         onDuplicateProfile={async (id) => {
           const dup = await duplicateProfile(id);
           setSelectedProfileId(dup.id);
@@ -101,6 +144,18 @@ export function AgentBuilderView() {
           </div>
         )}
       </div>
+      <AgentCreateModal
+        isOpen={createModalOpen}
+        isLoading={createModalLoading}
+        error={createModalError}
+        onClose={() => {
+          if (createModalLoading) return;
+          setCreateModalOpen(false);
+          setCreateModalError(null);
+        }}
+        onCreateBlank={handleCreateBlankProfile}
+        onGenerate={handleGenerateProfile}
+      />
     </div>
   );
 }

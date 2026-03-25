@@ -1037,6 +1037,11 @@ export interface CreateAgentProfileRequest {
   agentsJson?: string;
 }
 
+export interface GenerateAgentProfileRequest {
+  prompt: string;
+  model?: string;
+}
+
 export interface UpdateAgentProfileRequest extends Partial<CreateAgentProfileRequest> {
   sortOrder?: number;
   hooksCanvasJson?: string | null;

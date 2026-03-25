@@ -23,6 +23,13 @@
       "csp": "default-src 'self' customprotocol: asset:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost blob: data:; font-src 'self' data:; connect-src ipc: http://ipc.localhost http://localhost:3131; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     }
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["claudetauri"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

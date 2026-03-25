@@ -7,6 +7,7 @@ export const routes = {
     profileId ? `/agents/${profileId}` : '/agents',
   documents: '/documents',
   tracker: '/tracker',
+  finance: '/finance',
 } as const;
 
 export type ActiveView =
@@ -15,7 +16,8 @@ export type ActiveView =
   | 'workspaces'
   | 'agents'
   | 'documents'
-  | 'tracker';
+  | 'tracker'
+  | 'finance';
 
 export function pathToView(pathname: string): ActiveView {
   if (pathname.startsWith('/workspaces')) return 'workspaces';
@@ -23,5 +25,6 @@ export function pathToView(pathname: string): ActiveView {
   if (pathname.startsWith('/agents')) return 'agents';
   if (pathname.startsWith('/documents')) return 'documents';
   if (pathname.startsWith('/tracker')) return 'tracker';
+  if (pathname.startsWith('/finance')) return 'finance';
   return 'chat';
 }
