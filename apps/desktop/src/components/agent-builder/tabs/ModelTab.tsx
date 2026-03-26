@@ -34,8 +34,8 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
           ))}
         </select>
         <p className="text-xs text-muted-foreground mt-1">
-          Override the model used when this profile is active. Leave empty to
-          use the session default.
+          This profile override is used when this profile is active.
+          Leave empty to use global defaults.
         </p>
       </div>
 
@@ -49,10 +49,10 @@ export function ModelTab({ draft, onChange }: ModelTabProps) {
           onChange={(val) => onChange({ effort: val })}
         />
         <p className="text-xs text-muted-foreground mt-1">
-          {EFFORT_OPTIONS.find(o => o.value === currentEffort)?.description}
+          {EFFORT_OPTIONS.find((o) => o.value === currentEffort)?.description}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          The Effort setting automatically adjusts the thinking budget. Override the budget manually below.
+          Profile controls are overrides for this chat run.
         </p>
       </div>
 

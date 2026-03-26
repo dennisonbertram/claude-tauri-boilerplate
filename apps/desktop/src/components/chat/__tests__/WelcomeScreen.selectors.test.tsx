@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { WelcomeScreen } from '../WelcomeScreen';
 import type { AgentProfile, Project } from '@claude-tauri/shared';
 
@@ -61,28 +62,70 @@ describe('WelcomeScreen selector helper copy', () => {
     onSelectModel: vi.fn(),
   };
 
-  it('shows optional helper copy for all selectors', () => {
+  it('shows composer-first guidance', () => {
     render(<WelcomeScreen {...defaultProps} />);
+
+    expect(
+      screen.getByText(/start typing now/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/optional setup controls first if you want this chat to start/i),
+    ).toBeInTheDocument();
+
+    const composer = screen.getByRole('textbox', { name: 'Start your first message' });
+    const templatesHeading = screen.getByText('Start with a template');
+    expect(
+      composer.compareDocumentPosition(templatesHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('hides optional setup helpers until optional controls are expanded', () => {
+    render(<WelcomeScreen {...defaultProps} />);
+
+    expect(screen.queryByText(/start as \(optional\)/i)).toBeNull();
+    expect(screen.queryByText(/Model \(optional\)/i)).toBeNull();
+    expect(screen.queryByText(/project \(optional\)/i)).toBeNull();
+  });
+
+  it('shows optional helper copy for all selectors when expanded', async () => {
+    const user = userEvent.setup();
+    render(<WelcomeScreen {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: /optional setup controls/i }));
 
     expect(screen.getByText(/start as \(optional\)/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Choose one to apply its behavior to this chat/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Project \(optional\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Project \(optional\)/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Optional workspace context only/i)).toBeInTheDocument();
     expect(screen.getByText(/Model \(optional\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Model choice updates the default for new chats/i)).toBeInTheDocument();
+    expect(screen.getByText(/A selected profile can still override it for this run/i)).toBeInTheDocument();
+  });
+
+  it('shows a collapsed summary when persisted setup state is active', () => {
+    render(
+      <WelcomeScreen
+        {...defaultProps}
+        selectedProfileId="prof-1"
+        selectedProjectId="project-1"
+        modelDisplay="Opus 4.6"
+        currentModel="claude-opus-4-6"
+      />
+    );
+
     expect(
-      screen.getByText(/Model choice updates the default for new chats/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/A selected profile can still override it for this run/i),
+      screen.getByText(/Active for the next chat: Profile: Code Reviewer · Project: Alpha Demo · Model: Opus 4.6/i),
     ).toBeInTheDocument();
   });
 
   it('keeps composer as the main first action before template suggestions', () => {
     render(<WelcomeScreen {...defaultProps} />);
 
-    const composer = screen.getByRole('textbox', { name: '' });
+    const composer = screen.getByRole('textbox', { name: 'Start your first message' });
     const templatesHeading = screen.getByText('Start with a template');
     expect(
       composer.compareDocumentPosition(templatesHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
