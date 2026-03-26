@@ -9,7 +9,7 @@ export function AdvancedTab({ settings, updateSettings }: TabProps) {
       {/* Permission Mode */}
       <SettingField
         label="Permission Mode"
-        description="How Claude handles actions that need approval"
+        description="Global default for how Claude handles actions that need approval. Profile settings can override this value."
       >
         <select
           data-testid="permission-mode-select"
