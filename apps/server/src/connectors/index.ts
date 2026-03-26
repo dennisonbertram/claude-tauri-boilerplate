@@ -14,6 +14,10 @@ import { googleMapsConnector } from './google-maps';
 import { googlePhotosConnectorFactory } from './google-photos';
 import { contactsConnectorFactory } from './contacts';
 import { stravaConnectorFactory } from './strava';
+import { discordConnectorFactory } from './discord';
+import { ynabConnectorFactory } from './ynab';
+import { dropboxConnectorFactory } from './dropbox';
+import { telegramConnectorFactory } from './telegram';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -35,6 +39,10 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   googlePhotosConnectorFactory,
   contactsConnectorFactory,
   stravaConnectorFactory,
+  discordConnectorFactory,
+  ynabConnectorFactory,
+  dropboxConnectorFactory,
+  telegramConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
