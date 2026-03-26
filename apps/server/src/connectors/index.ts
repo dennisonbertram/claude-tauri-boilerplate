@@ -2,6 +2,7 @@ import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition, ConnectorFactory } from './types';
 import { weatherConnector } from './weather';
+import { gmailConnectorFactory } from './gmail';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -11,7 +12,7 @@ import { weatherConnector } from './weather';
 const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector];
 
 /** Factory connectors (need db injection). Add new factory connectors here. */
-const CONNECTOR_FACTORIES: ConnectorFactory[] = [];
+const CONNECTOR_FACTORIES: ConnectorFactory[] = [gmailConnectorFactory];
 
 /** All initialized connectors (static + factory-created). */
 let allConnectors: ConnectorDefinition[] = [...STATIC_CONNECTORS];
