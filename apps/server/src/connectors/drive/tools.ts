@@ -3,7 +3,7 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listFiles, getFile, getFileContent, uploadFile } from '../../services/google/drive';
-import { sanitizeError } from '../utils';
+import { sanitizeError, fenceUntrustedContent } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -110,7 +110,7 @@ function createSearchFilesTool(db: Database) {
         ];
 
         for (const file of files) {
-          lines.push(`Name: ${file.name}`);
+          lines.push(`Name: ${fenceUntrustedContent(file.name, 'Google Drive')}`);
           lines.push(`  ID: ${file.id}`);
           lines.push(`  Type: ${formatMimeType(file.mimeType)}`);
           lines.push(`  Modified: ${formatModifiedTime(file.modifiedTime)}`);
@@ -161,7 +161,7 @@ function createGetFileTool(db: Database) {
         const file = await getFile(db, args.fileId);
 
         const lines = [
-          `File: ${file.name}`,
+          `File: ${fenceUntrustedContent(file.name, 'Google Drive')}`,
           `ID: ${file.id}`,
           `Type: ${formatMimeType(file.mimeType)} (${file.mimeType})`,
           `Size: ${formatFileSize(file.size)}`,
@@ -224,7 +224,7 @@ function createReadFileTool(db: Database) {
           content: [
             {
               type: 'text' as const,
-              text: header + text,
+              text: header + fenceUntrustedContent(text, 'Google Drive'),
             },
           ],
         };

@@ -7,7 +7,7 @@ import {
   getPlaidItemsByUser,
   getTransactionsByUser,
 } from '../../db/db-plaid';
-import { sanitizeError } from '../utils';
+import { sanitizeError, fenceUntrustedContent } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Single-user desktop assumption
@@ -275,7 +275,8 @@ function createSearchTransactionsTool(db: Database) {
         ];
 
         for (const txn of transactions) {
-          const displayName = txn.merchantName ?? txn.name;
+          const rawName = txn.merchantName ?? txn.name;
+          const displayName = fenceUntrustedContent(rawName, 'Plaid');
           const pendingStr = txn.pending ? ' (pending)' : '';
           const categoryStr = txn.personalFinanceCategory ?? txn.category ?? 'Uncategorized';
           lines.push(`${txn.date}  ${displayName}${pendingStr}`);

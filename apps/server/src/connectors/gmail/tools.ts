@@ -3,7 +3,7 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listMessages, getMessage, sendMessage } from '../../services/google/gmail';
-import { sanitizeError } from '../utils';
+import { sanitizeError, fenceUntrustedContent } from '../utils';
 
 // ---------------------------------------------------------------------------
 // gmail_list_messages
@@ -56,9 +56,9 @@ function createListMessagesTool(db: Database) {
           lines.push(
             `ID: ${msg.id}`,
             `From: ${msg.from}`,
-            `Subject: ${msg.subject}`,
+            `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
             `Date: ${msg.date}`,
-            `Snippet: ${msg.snippet}`,
+            `Snippet: ${fenceUntrustedContent(msg.snippet, 'Gmail')}`,
             ''
           );
         }
@@ -111,12 +111,12 @@ function createGetMessageTool(db: Database) {
           `Thread ID: ${msg.threadId}`,
           `From: ${msg.from}`,
           `To: ${msg.to}`,
-          `Subject: ${msg.subject}`,
+          `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
           `Date: ${msg.date}`,
           `Labels: ${msg.labelIds.join(', ') || 'none'}`,
           '',
           '--- Body ---',
-          bodyText,
+          fenceUntrustedContent(bodyText, 'Gmail'),
         ];
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };

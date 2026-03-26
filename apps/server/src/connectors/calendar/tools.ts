@@ -3,7 +3,7 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../../services/google/calendar';
-import { sanitizeError } from '../utils';
+import { sanitizeError, fenceUntrustedContent } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,8 +76,8 @@ function createListEventsTool(db: Database) {
           lines.push(`Title: ${event.summary}`);
           lines.push(`Start: ${formatEventTime(event.start)}`);
           lines.push(`End:   ${formatEventTime(event.end)}`);
-          if (event.location) lines.push(`Location: ${event.location}`);
-          if (event.description) lines.push(`Description: ${event.description}`);
+          if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+          if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
           if (event.attendees && event.attendees.length > 0) {
             lines.push(`Attendees: ${event.attendees.map((a) => a.email).join(', ')}`);
           }
