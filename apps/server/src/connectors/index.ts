@@ -18,6 +18,10 @@ import { discordConnectorFactory } from './discord';
 import { ynabConnectorFactory } from './ynab';
 import { dropboxConnectorFactory } from './dropbox';
 import { telegramConnectorFactory } from './telegram';
+import { appleRemindersConnectorFactory } from './apple-reminders';
+import { appleNotesConnectorFactory } from './apple-notes';
+import { obsidianConnectorFactory } from './obsidian';
+import { imessageConnectorFactory } from './imessage';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -43,6 +47,10 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   ynabConnectorFactory,
   dropboxConnectorFactory,
   telegramConnectorFactory,
+  appleRemindersConnectorFactory,
+  appleNotesConnectorFactory,
+  obsidianConnectorFactory,
+  imessageConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
