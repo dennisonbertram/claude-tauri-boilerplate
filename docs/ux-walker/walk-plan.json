@@ -1,1136 +1,132 @@
 {
-  "timestamp": "2026-03-22T00:00:00.000Z",
-  "total_stories": 161,
-  "walking": 161,
-  "skipping": 0,
+  "timestamp": "2026-03-25T16:35:00Z",
+  "catalog": "docs/ux-paths/catalog.md",
+  "total_stories": 24,
+  "walking": 8,
+  "skipping": 16,
   "re_verifying": 0,
   "order": [
     {
-      "id": "STORY-147",
-      "title": "App Launch & Window Initialization",
+      "id": "CHAT-01",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Highest-leverage baseline for first-prompt friction"
     },
     {
-      "id": "STORY-148",
-      "title": "Server Sidecar Startup & Lifecycle",
+      "id": "CHAT-02",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Validates visible pre-chat context controls"
     },
     {
-      "id": "STORY-149",
-      "title": "Authentication Gate & Subscription Check",
+      "id": "ACE-01",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Core focused path from modal to editor"
     },
     {
-      "id": "STORY-150",
-      "title": "Onboarding Flow for New Users",
+      "id": "ACE-02",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Generate-with-AI path is central to agent creation UX"
     },
     {
-      "id": "STORY-151",
-      "title": "Platform Detection & OS-Specific Behaviors",
+      "id": "ACE-04",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Directly targets repeated settings across surfaces"
     },
     {
-      "id": "STORY-152",
-      "title": "Welcome Screen with Profile Selection",
+      "id": "SET-01",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Fastest way to evaluate settings discoverability"
     },
     {
-      "id": "STORY-153",
-      "title": "Error Boundary Recovery & Crash Handling",
+      "id": "SET-02",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
+      "reason": "Direct comparison of global and profile model controls"
     },
     {
-      "id": "STORY-154",
-      "title": "Loading State During Server Startup Delay",
+      "id": "SET-04",
       "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-155",
-      "title": "Multi-View Navigation & State Persistence",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-156",
-      "title": "Settings Panel Access & Quick Open",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-157",
-      "title": "Quit Confirmation for Running Agents",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-158",
-      "title": "App Startup Sequence & Initialization Order",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-159",
-      "title": "Window State Recovery & Restore on Reopen",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-160",
-      "title": "Error Recovery & Graceful Degradation",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-161",
-      "title": "Performance & Resource Cleanup on View Switch",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": []
-    },
-    {
-      "id": "STORY-001",
-      "title": "Create First Chat Session",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-002",
-      "title": "Search Sessions by Topic",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-003",
-      "title": "Rename Session After Conversation",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-004",
-      "title": "Fork Session at Checkpoint",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-005",
-      "title": "Export Session to Markdown",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-006",
-      "title": "Delete Session with Confirmation",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-007",
-      "title": "Auto-Name Session Based on Content",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-008",
-      "title": "View Session Context Summary",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-009",
-      "title": "Link Session to Agent Profile",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-010",
-      "title": "List and Organize Sessions by Date",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-011",
-      "title": "Recover Recently Deleted Session",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-012",
-      "title": "Browse Full Session Thread with Message Parts",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-013",
-      "title": "Share Session Export with Team",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-014",
-      "title": "Session Persistence Across App Restart",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-015",
-      "title": "Handle Session with Profile Badge",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-028",
-      "title": "Create a Basic Workspace Manually",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-029",
-      "title": "Create Workspace from GitHub Issue",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-030",
-      "title": "Create Workspace from Branch",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-031",
-      "title": "Monitor Workspace Creation Status",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-032",
-      "title": "View Workspace Diff and Changed Files",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-033",
-      "title": "Add Additional Directories to Workspace",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-034",
-      "title": "Merge Workspace Back to Base Branch",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-035",
-      "title": "Discard Workspace (Destructive)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-036",
-      "title": "Add Code Review Comments to Diff",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-037",
-      "title": "View Workspace Git History (Revisions)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-038",
-      "title": "Rename Workspace and Branch",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-039",
-      "title": "View Workspace Notes with Preview",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-040",
-      "title": "Filter and Search Workspaces in Sidebar",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-041",
-      "title": "Open Workspace in IDE",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-042",
-      "title": "Handle Workspace Status Errors and Recovery",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-043",
-      "title": "Create New Agent Profile",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-044",
-      "title": "Configure Profile Metadata",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-045",
-      "title": "Configure System Prompt",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-046",
-      "title": "Select Model & Effort Level",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-047",
-      "title": "Configure Tool Permissions",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-048",
-      "title": "Configure MCP Servers",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-049",
-      "title": "Visual Hook Editor (XY Flow Canvas)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-050",
-      "title": "Configure Sandbox Environment",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-051",
-      "title": "Profile Selector in Chat",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-052",
-      "title": "Delete Profile with Confirmation",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-053",
-      "title": "Import/Export Profile Configuration",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-054",
-      "title": "Manage Advanced Settings",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-016",
-      "title": "First Message with Image Attachment",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-017",
-      "title": "Effort Picker Flow with Thinking Budget Trade-off",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-018",
-      "title": "Real-time Tool Visualization with Elapsed Time",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-019",
-      "title": "Model & Effort Selector with Fast Mode Toggle",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-020",
-      "title": "Suggestion Chips After Empty Assistant Message",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-021",
-      "title": "Cost Tracking with Expandable Breakdown",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-022",
-      "title": "Context Indicator Nearing Limit",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-023",
-      "title": "Markdown with Code, LaTeX, and Mermaid Rendering",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-024",
-      "title": "Workflow Template Trigger (Code Review)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-025",
-      "title": "Rewind Dialog and Checkpoint Timeline",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-026",
-      "title": "Thinking Block Expansion & Collapse Toggle",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-027",
-      "title": "Permission Dialog & Risky Tool Execution",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-055",
-      "title": "Toggle Theme Preference",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-056",
-      "title": "Customize Chat Appearance with Font & Density",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-057",
-      "title": "Configure Workspace Branch Prefix",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-058",
-      "title": "Enable and Test Notification Sounds",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-059",
-      "title": "Manage Memory Files with Search and Edit",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-060",
-      "title": "Add MCP Server with Preset",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-061",
-      "title": "Create and Edit Custom Instructions File",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-062",
-      "title": "Configure Advanced Model Parameters",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-063",
-      "title": "Configure Hooks for Automated Workflows",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-064",
-      "title": "Set Git Provider Credentials (Bedrock/Vertex)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
+      "reason": "Hooks and MCP scope overlap is a core focus area"
+    }
+  ],
+  "skipped": [
     {
-      "id": "STORY-065",
-      "title": "Request Browser Notification Permission",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-066",
-      "title": "Workflow Template Customization",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-067",
-      "title": "View System Status and Runtime Info",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-068",
-      "title": "Search and Navigate Settings Tabs Efficiently",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-069",
-      "title": "Handle Settings Persistence and Defaults Reset",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-043"]
-    },
-    {
-      "id": "STORY-070",
-      "title": "Request Permission to Run Bash Command",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-071",
-      "title": "Manage Tool Permissions in Agent Profile",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-072",
-      "title": "Review and Approve a Workspace Plan",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-073",
-      "title": "Identify Risk Level of Requested Tool",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-074",
-      "title": "Set Up Session-Scoped vs. Permanent Permissions",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-075",
-      "title": "Handle File Write Permission with Content Preview",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-076",
-      "title": "Use Permission Mode = \"Accept Edits\" for Auto-Approval",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-077",
-      "title": "Handle Permission Denial and Error Recovery",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-078",
-      "title": "Enable Plan Mode for Multi-Step Review Workflow",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-079",
-      "title": "Configure Sandbox for Tool Isolation",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-080",
-      "title": "Review Risk Level in Permission Mode Settings",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-081",
-      "title": "Recover from Permission Timeout or Disconnection",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-001"]
-    },
-    {
-      "id": "STORY-082",
-      "title": "Connect Linear OAuth",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-083",
-      "title": "Browse Linear Issues in Modal",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-084",
-      "title": "Attach Linear Issue to Chat",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-085",
-      "title": "Create Workspace from Linear Issue",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-086",
-      "title": "View Linear Issue Deep Link",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-087",
-      "title": "Search GitHub Issues in Workspace Dialog",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-088",
-      "title": "Auto-Fill Workspace Name from GitHub Issue",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-089",
-      "title": "Create Workspace from GitHub Issue",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-090",
-      "title": "Disconnect Linear",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-091",
-      "title": "Handle Linear Auth Expiration",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-092",
-      "title": "Multi-Issue Workspace Context",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-093",
-      "title": "Linear Issue Status Sync",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-094",
-      "title": "GitHub Issue Body Preview",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-095",
-      "title": "Issue Search History",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-096",
-      "title": "Linear Issue Picker Offline",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-097",
-      "title": "View Workspace Diff with Unified Layout",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-098",
-      "title": "Comment on Specific Diff Line",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-099",
-      "title": "Filter Diff Files by Review Status",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-100",
-      "title": "Start AI Code Review",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-101",
-      "title": "Right-Click Review Customization",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-102",
-      "title": "View Code Review Summary with Severity Index",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-103",
-      "title": "Create New Dashboard with Prompt",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-104",
-      "title": "Rename Dashboard Title",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-105",
-      "title": "Archive and Restore Dashboard Visibility",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-106",
-      "title": "Regenerate Dashboard with Different Prompt",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-107",
-      "title": "View Artifact Revision History",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-108",
-      "title": "Generate Dashboard from Chat Message",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-109",
-      "title": "Copy Diff to Clipboard",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-110",
-      "title": "Export Workspace Diff as File",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-111",
-      "title": "View Workspace Notes Panel",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-112",
-      "title": "Diff Comment Threads with Nested Replies",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-113",
-      "title": "Export Code Review to Issue",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-114",
-      "title": "Side-by-Side Diff View with Sticky Headers",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-115",
-      "title": "Dashboard Canvas Widget Rendering",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-116",
-      "title": "Artifact Archive and Restore Workflow",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-117",
-      "title": "Artifact Search and Filter by Project",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-118",
-      "title": "Code Review Severity Breakdown",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
+      "id": "ACE-03",
+      "action": "skip",
+      "reason": "Deferred after focused coverage of creation and overlap stories"
     },
     {
-      "id": "STORY-119",
-      "title": "Dashboard Prompt History",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-120",
-      "title": "Diff Line Count Summary",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-121",
-      "title": "Inline Code Syntax Highlighting in Diff",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-028"]
-    },
-    {
-      "id": "STORY-122",
-      "title": "Create Team with Multiple Agents",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-123",
-      "title": "Open Team and Monitor Live Agent Status",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-124",
-      "title": "Send Direct Message Between Agents",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-125",
-      "title": "Manage Agent Tasks with Kanban Board",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-126",
-      "title": "Delete and Shutdown Teams",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-127",
-      "title": "Expand Agent Details and View Tools",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-128",
-      "title": "Change Team Display Mode",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-129",
-      "title": "Handle Agent Stop from Sidebar",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-130",
-      "title": "Filter Messages by Agent Name",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-131",
-      "title": "Shutdown Team with Confirmation Flow",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
-    },
-    {
-      "id": "STORY-132",
-      "title": "Create Team with Mixed Agent Permissions",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
+      "id": "ACE-05",
+      "action": "skip",
+      "reason": "Lower priority than creation and settings overlap"
     },
     {
-      "id": "STORY-133",
-      "title": "View Team Metadata and Creation Info",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
+      "id": "SET-03",
+      "action": "skip",
+      "reason": "Substantially covered by SET-01 and SET-04"
     },
     {
-      "id": "STORY-134",
-      "title": "Add Agent to Existing Team",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
+      "id": "CHAT-03",
+      "action": "skip",
+      "reason": "Plus-menu interactions were noisy under the dev overlay; baseline welcome-state evidence captured already"
     },
     {
-      "id": "STORY-135",
-      "title": "Navigate Between Team List and Workspace",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
+      "id": "CHAT-04",
+      "action": "skip",
+      "reason": "Recovery paths can be revisited after first focused run"
     },
     {
-      "id": "STORY-136",
-      "title": "Real-Time Agent Status Updates (Future Feature)",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-147"]
+      "id": "NAV-01",
+      "action": "skip",
+      "reason": "Lower priority than direct findings on agent creation and settings"
     },
     {
-      "id": "STORY-137",
-      "title": "Review Cost Breakdown During Session",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "NAV-02",
+      "action": "skip",
+      "reason": "Deferred for a dedicated navigation run"
     },
     {
-      "id": "STORY-138",
-      "title": "Rewind Conversation to Earlier Checkpoint",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "NAV-03",
+      "action": "skip",
+      "reason": "Deferred for a dedicated navigation run"
     },
     {
-      "id": "STORY-139",
-      "title": "Monitor Active Subagent Execution",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "NAV-04",
+      "action": "skip",
+      "reason": "Partially covered by settings entry observations"
     },
     {
-      "id": "STORY-140",
-      "title": "Accept Suggestion Chip for Next Action",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "PERM-01",
+      "action": "skip",
+      "reason": "Would require a clean live tool-approval flow after auth/rate-limit conditions stabilize"
     },
     {
-      "id": "STORY-141",
-      "title": "Review Thinking Process Before Approval",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "PERM-02",
+      "action": "skip",
+      "reason": "Runtime indicators were visible, but full permission/run feedback was not isolated cleanly in this pass"
     },
     {
-      "id": "STORY-142",
-      "title": "Pin Context Summary Under Input",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "PERM-03",
+      "action": "skip",
+      "reason": "Partially covered by ACE-04 and SET-02; defer full permissions run"
     },
     {
-      "id": "STORY-143",
-      "title": "Monitor Token Usage While Typing",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "WS-01",
+      "action": "skip",
+      "reason": "Project-picker interaction was noisy under the dev overlay; defer for dedicated workspace run"
     },
     {
-      "id": "STORY-144",
-      "title": "Expand and Collapse Approved Plan",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "WS-02",
+      "action": "skip",
+      "reason": "Deferred until workspace handoff run"
     },
     {
-      "id": "STORY-145",
-      "title": "View Latest Turn File Changes in Diff",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "WS-03",
+      "action": "skip",
+      "reason": "Deferred until workspace handoff run"
     },
     {
-      "id": "STORY-146",
-      "title": "Provide Feedback While Approving Plan",
-      "action": "walk",
-      "reason": "never walked",
-      "dependencies": ["STORY-016"]
+      "id": "WS-04",
+      "action": "skip",
+      "reason": "Deferred until workspace handoff run"
     }
   ]
 }

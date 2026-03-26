@@ -31,6 +31,22 @@
       "stories_failed": 2,
       "stories_blocked": 4,
       "notes": "Post-fix re-walk after merging PRs #342 and #343. All 5 fixes verified working. Navigation bug is primary remaining blocker."
+    },
+    {
+      "run": 3,
+      "timestamp": "2026-03-25T16:35:00Z",
+      "url": "http://localhost:1420",
+      "stories_walked": 8,
+      "stories_skipped": 16,
+      "stories_re_verified": 0,
+      "findings_total": 6,
+      "quick_fixes_applied": 0,
+      "issues_filed": 0,
+      "prs_created": 0,
+      "stories_passed": 1,
+      "stories_failed": 1,
+      "stories_blocked": 0,
+      "notes": "Focused ux-walker run using the new catalog. Main findings: silent AI agent-generation failure state, repeated scope controls, and high pre-chat/settings density."
     }
   ],
   "stories": {}

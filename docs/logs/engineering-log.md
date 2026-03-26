@@ -17,6 +17,24 @@ Each entry follows this format:
 
 ---
 
+### 2026-03-25: Plaid hosted-link flow rejected invalid delivery_method
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Reproduced the Finance `Connect Bank Account` flow against live Plaid sandbox credentials and found two separate Plaid integration bugs. First, link token creation was failing with Plaid `INVALID_FIELD` because the server sent `hosted_link.delivery_method: 'DELIVERY_METHOD_HOSTED'` for both initial connect and reauth. Second, the frontend API layer expected camelCase link-session fields while the server returned snake_case fields, which could open a blank popup by calling `window.open(undefined, '_blank')`; the finalize call also sent `publicToken` while the server required `public_token`. Added regression coverage for both server and desktop API behavior, removed the invalid hosted-link delivery field from both Plaid route payloads, normalized link-session responses to camelCase in the desktop API layer, and changed finalize requests to send `public_token`. Manual verification confirmed the live API now returns a hosted Plaid URL and the frontend connect flow issues `POST /api/plaid/link/start` successfully.
+**Regression Test**: `apps/server/src/routes/plaid.test.ts`, `apps/server/src/services/plaid-encryption.test.ts`, `apps/desktop/src/lib/api/plaid-api.test.ts`, `apps/desktop/src/components/finance/__tests__/ConnectBankButton.test.tsx`
+**Related Issue**: GitHub issue `#435`
+
+### 2026-03-25: Plaid browser callback finalizes from state-only redirects
+
+**Type**: Bug Fix
+**Impact**: High
+**Description**: Fixed the remaining browser/dev-mode Plaid Hosted Link handoff so the app works after account confirmation instead of landing on an empty callback shell. The server now appends the generated session `state` to custom browser callback URIs, and `/api/plaid/link/finalize` can resolve the `public_token` from Plaid `link/token/get` when Hosted Link redirects back without it. The desktop callback parser and finalize client were updated to allow state-only browser callbacks, and the Plaid sandbox testing doc plus agent guidance now point to the working `agent-browser` flow and sandbox credentials.
+**Regression Test**: `apps/server/src/routes/plaid.test.ts`, `apps/desktop/src/lib/__tests__/plaid-link.test.ts`, `apps/desktop/src/lib/api/plaid-api.test.ts`
+**Related Issue**: GitHub issue `#435`
+
+---
+
 ### 2026-03-25: Welcome screen pre-chat selectors now explain optionality and scope
 
 **Type**: Bug Fix

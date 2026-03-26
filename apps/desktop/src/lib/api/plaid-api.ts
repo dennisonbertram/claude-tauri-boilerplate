@@ -10,26 +10,53 @@ import type {
   PaginatedResponse,
 } from '@claude-tauri/shared';
 
+function normalizeLinkSessionResponse(raw: any): CreateLinkSessionResponse {
+  return {
+    hostedLinkUrl: raw.hostedLinkUrl ?? raw.hosted_link_url,
+    sessionId: raw.sessionId ?? raw.session_id,
+    state: raw.state,
+  };
+}
+
+function normalizePlaidItem(raw: any): PlaidItem {
+  return {
+    ...raw,
+    accounts: Array.isArray(raw.accounts) ? raw.accounts : [],
+  };
+}
+
 // --- Link Flow ---
 
-export async function startLinkSession(institutionId?: string): Promise<CreateLinkSessionResponse> {
+export async function startLinkSession(
+  institutionId?: string,
+  completionRedirectUri?: string,
+): Promise<CreateLinkSessionResponse> {
   const res = await apiFetch('/api/plaid/link/start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(institutionId ? { institutionId } : {}),
+    body: JSON.stringify({
+      ...(institutionId ? { institutionId } : {}),
+      ...(completionRedirectUri ? { completion_redirect_uri: completionRedirectUri } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to start link session: ${res.status}`);
   }
-  return res.json();
+  return normalizeLinkSessionResponse(await res.json());
 }
 
-export async function finalizeLinkSession(state: string, publicToken: string): Promise<FinalizeLinkResponse> {
+export async function finalizeLinkSession(
+  state: string,
+  publicToken?: string,
+): Promise<FinalizeLinkResponse> {
   const res = await apiFetch('/api/plaid/link/finalize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ state, publicToken }),
+    body: JSON.stringify({
+      state,
+      ...(publicToken ? { public_token: publicToken } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
@@ -55,7 +82,7 @@ export async function fetchPlaidItems(): Promise<PlaidItem[]> {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to fetch items: ${res.status}`);
   }
-  return res.json();
+  return (await res.json()).map(normalizePlaidItem);
 }
 
 export async function deletePlaidItem(itemId: string): Promise<void> {
@@ -66,13 +93,22 @@ export async function deletePlaidItem(itemId: string): Promise<void> {
   }
 }
 
-export async function reauthPlaidItem(itemId: string): Promise<CreateLinkSessionResponse> {
-  const res = await apiFetch(`/api/plaid/items/${itemId}/reauth`, { method: 'POST' });
+export async function reauthPlaidItem(
+  itemId: string,
+  completionRedirectUri?: string,
+): Promise<CreateLinkSessionResponse> {
+  const res = await apiFetch(`/api/plaid/items/${itemId}/reauth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(
+      completionRedirectUri ? { completion_redirect_uri: completionRedirectUri } : {},
+    ),
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || `Failed to start reauth: ${res.status}`);
   }
-  return res.json();
+  return normalizeLinkSessionResponse(await res.json());
 }
 
 // --- Accounts ---

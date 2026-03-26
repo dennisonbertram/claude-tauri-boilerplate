@@ -1,149 +1,80 @@
-# UX Walker Report — Run #2 (Post-Fix Re-Walk)
+# UX Walker Report — Run #3
 
 | Field | Value |
 |-------|-------|
-| **Run** | #2 (post-fix re-walk) |
-| **Date** | 2026-03-23 |
-| **URLs** | http://localhost:1927 (frontend) / http://localhost:3846 (server) |
-| **Session** | `ux-walker-localhost` |
-| **Fixes merged before this run** | PR #342 (ChatPage sessionInfo crash), PR #343 (HookCard crash, ErrorBoundary reload, aria-labels, profile delete) |
-| **Stories re-walked** | 47 of 161 (105 skipped — previously passed) |
+| Run | #3 |
+| Date | 2026-03-25 |
+| Frontend URL | http://localhost:1420 |
+| Server URL | http://localhost:3131 |
+| Catalog | `docs/ux-paths/catalog.md` |
+| Focus | Agent creation, settings information architecture, and pre-chat information density |
+| Stories walked | 8 |
+| Stories skipped | 16 |
 
----
+## Environment Notes
 
-## Stories Re-Walked
+- The local app was started with `./init.sh` in `tmux` on ports `1420` and `3131`.
+- This dev build includes an `Agentation` overlay. I disabled its interaction blocker, but it still added visual/debug chrome and occasionally surfaced annotation UI during the walk.
+- The browser walkthrough used `agent-browser`, per repository instructions.
 
-### Chat Sessions (2 stories)
-
-| Story | Result | Notes |
-|-------|--------|-------|
-| STORY-004 | **PARTIAL** | Fork action navigates to Projects instead of forking (HIGH) — Issue #352 |
-| STORY-012 | **PASS** | Messages render correctly, markdown works, avatars and roles visible |
-
-### Workspace 028–035 (8 stories)
+## Stories Walked
 
 | Story | Result | Notes |
 |-------|--------|-------|
-| STORY-028 | **PARTIAL** | New Project button broken — navigates to chat (HIGH) — Issue #353 |
-| STORY-029 | **BLOCKED** | Can't create workspace (New Project broken) |
-| STORY-030 | **BLOCKED** | Same blocker |
-| STORY-031 | **PASS** | Status badges render correctly |
-| STORY-032 | **PASS** | Diff tab with comparison controls works |
-| STORY-033 | **PASS** | Paths tab with Add Directory works |
-| STORY-034 | **FAIL** | Merge button navigates away (part of navigation bug) |
-| STORY-035 | **PARTIAL** | Discard exists but confirmation UX could improve |
+| CHAT-01 | PARTIAL | Welcome screen is usable, but visually dense before the first prompt |
+| CHAT-02 | PARTIAL | Profile, project, and model controls are visible, but their scopes are not explained clearly |
+| ACE-01 | PASS | Blank-profile path works from modal to editor |
+| ACE-02 | FAIL | Generate-with-AI fires backend requests but does not surface the returned error state clearly |
+| ACE-04 | PARTIAL | Repeated configuration concepts are visible across profile and settings surfaces |
+| SET-01 | PARTIAL | Finding a simple setting is possible, but the pane is long and mixed-purpose |
+| SET-02 | PARTIAL | Global and per-profile model controls are both present, with weak precedence cues |
+| SET-04 | PARTIAL | Data & Context mixes instructions, memory, MCP, hooks, and logs into one dense pane |
 
-### Workspace 036–042 (6 stories)
+## Findings By Severity
 
-| Story | Result | Notes |
-|-------|--------|-------|
-| STORY-036 | **PARTIAL** | Comment button non-functional (MEDIUM) — Issue #355 |
-| STORY-037 | **PASS** | Revision selectors work in diff view |
-| STORY-038 | **FAIL** | Rename UI unreachable (HIGH) — Issue #354 |
-| STORY-039 | **PASS** | Notes with markdown preview work great |
-| STORY-041 | **PASS** | Open In IDE button works (9 IDEs supported) |
-| STORY-042 | **PASS** | ErrorBoundary now has both Try Again and Reload Page |
+### High
 
-### Settings / Profiles / Desktop Shell (6 stories)
+1. **ACE-02 silent failure on AI-generated agent creation**
+   The browser fired `POST /api/agent-profiles/generate`, and a direct curl to the same endpoint returned `{"error":"Assistant error: rate_limit","code":"GENERATION_ERROR"}`. In the UI, the modal mainly looked disabled/busy and did not surface a clear inline explanation during the observed failure state.
 
-| Story | Result | Notes |
-|-------|--------|-------|
-| STORY-052 | **PASS** | Delete with two-step confirmation works (fix verified) |
-| STORY-059 | **PASS** | Data & Context tab loads (HookCard fix verified) |
-| STORY-060 | **PASS** | MCP server config accessible (fix verified) |
-| STORY-063 | **PASS** | Hooks section renders (fix verified) |
-| STORY-153 | **PASS** | ErrorBoundary has Reload button (fix verified) |
-| STORY-155 | **PASS** | Navigation state persistence works (crash fix verified) |
+### Medium
 
-### Code Review 097–109 (13 stories)
+1. **CHAT-01 welcome screen asks for too many decisions before first value**
+   The first screen presents profile, project, model, templates, attachments/connectors, and learning copy at once. The composer remains visible, but the screen reads more like a setup surface than a simple “ask your first question” surface.
 
-| Story | Result | Notes |
-|-------|--------|-------|
-| STORY-097 | **PASS** | Unified diff view renders |
-| STORY-098 | **NOT FOUND** | Inline diff commenting not implemented |
-| STORY-099 | **PASS** | File filtering by review status works |
-| STORY-100 | **PASS** | AI Code Review with custom prompt/model/effort |
-| STORY-101 | **PASS** | Right-click customization in review modal |
-| STORY-102 | **NOT TESTED** | No review data to verify severity |
-| STORY-103 | **PASS** | Dashboard creation with prompt works |
-| STORY-104 | **PASS** | Dashboard rename works |
-| STORY-105 | **PASS** | Archive/restore visibility works |
-| STORY-106 | **PASS** | Regenerate with different prompt works |
-| STORY-107 | **PARTIAL** | Revision metadata shown but no browser |
-| STORY-108 | **NOT TESTED** | Requires chat-to-dashboard flow |
-| STORY-109 | **NOT FOUND** | No copy-to-clipboard button |
+2. **CHAT-02 scope of pre-chat controls is under-explained**
+   The app shows profile, project, and model selectors before chat begins, but does not strongly explain what each choice changes for the first turn versus later runtime behavior.
 
-### Code Review 110–121 (12 stories)
+3. **ACE-04 / SET-02 repeated model and behavior controls across surfaces**
+   Model, effort, and related behavior controls exist in both the profile editor and global settings. The UI exposes both well, but it does not strongly answer “which one wins next?”
 
-| Story | Result | Notes |
-|-------|--------|-------|
-| STORY-110 | **NOT IMPLEMENTED** | No diff export |
-| STORY-111 | **PASS** | Notes panel fully functional |
-| STORY-112 | **NOT IMPLEMENTED** | No nested comment threads |
-| STORY-113 | **NOT IMPLEMENTED** | No review-to-issue export |
-| STORY-114 | **PARTIAL** | Toggle exists but inline diff doesn't expand |
-| STORY-115 | **NOT IMPLEMENTED** | Dashboard widgets "coming soon" |
-| STORY-116 | **PARTIAL** | Archive works, restore UI unclear |
-| STORY-117 | **PARTIAL** | Search exists but filter limited |
-| STORY-118 | **NOT IMPLEMENTED** | No severity breakdown |
-| STORY-119 | **NOT IMPLEMENTED** | No prompt history |
-| STORY-120 | **PARTIAL** | File count shown, no line counts |
-| STORY-121 | **CANNOT VERIFY** | No inline diff to check syntax highlighting |
+4. **SET-01 mixed-purpose settings groups increase scan cost**
+   The General group includes account/provider, runtime environment, IDE settings, appearance, and notifications in one long right-hand pane. This is workable for experts but slow for quick changes.
 
----
+5. **SET-04 Data & Context is especially dense**
+   Instructions, CLAUDE.md files, Memory, MCP, Hooks, Event Reference, and Execution Log all render in one pane. The density makes this feel like a control center rather than a focused task flow.
 
-## Issues Filed This Run (5 new)
+6. **SET-04 duplicated headings reduce clarity**
+   The Data & Context pane visibly repeats headings like `Memory` and `Hooks`, which makes the structure feel more crowded than it needs to.
 
-| Issue | Severity | Title |
-|-------|----------|-------|
-| #352 | HIGH | Fork session navigates to Projects |
-| #353 | HIGH | New Project button navigates to chat |
-| #354 | HIGH | Workspace rename UI unreachable |
-| #355 | MEDIUM | Diff comment button non-functional |
-| #356 | MEDIUM | Code Review features incomplete |
+## Quick Fixes Applied
 
-## Combined Issue Totals (Run 1 + Run 2)
+None. This run was review-only.
 
-- **Total issues filed**: 13 (#344–#356)
-- **PRs merged**: 2 (#342, #343) — both verified working
-- Critical: 1 | High: 6 | Medium: 6
+## Issues Filed
 
----
+None in this run. The findings are actionable, but I kept this pass focused on evidence capture and report generation.
 
-## Fixes Verified This Run
+## Overall Assessment
 
-All 5 fixes from PRs #342 and #343 confirmed working:
+The app already has strong surface coverage and a lot of capability, but the focused browser pass reinforced the same pattern across the product: power is arriving before clarity. Agent creation works on the blank path, yet the jump into the full editor is abrupt. Settings is comprehensive, yet broad groups still collapse many concepts into long panes. The welcome screen is attractive and capable, but it asks users to mentally model the system before they have received the first bit of value.
 
-1. **ChatPage sessionInfo crash** — conversations load normally
-2. **HookCard handler type crash** — Settings Data & Context tab loads
-3. **ErrorBoundary Reload Page button** — present and functional
-4. **Sidebar aria-labels** — all buttons have accessible names
-5. **Profile delete error handling** — two-step confirmation works
+The biggest concrete defect from this run is the AI-generated agent flow failing without strong in-context error communication when generation hits a backend rate limit. The biggest product-level theme is repeated configuration scope: the app needs more help answering “global default or profile override?” in plain UI language.
 
----
+## Top Recommendations
 
-## Overall Results Across Both Runs (161 stories)
-
-| Status | Run 1 | Run 2 Delta | Combined |
-|--------|-------|-------------|----------|
-| Pass | ~65 | +20 | ~85 |
-| Partial | ~20 | +9 | ~22 |
-| Fail | ~15 | -10 (fixed) | ~7 |
-| Blocked | ~50 | -48 (unblocked) | ~4 |
-| Not Impl | ~15 | +8 discovered | ~23 |
-
----
-
-## Top 5 Recommendations
-
-1. **Fix navigation bug** (#353) — Multiple buttons (New Project, Merge, project cards) navigate to chat instead of performing their action. Likely one root cause.
-2. **Wire up fork action** (#352) — Fork exists in context menu but doesn't work. Connect to RewindDialog.
-3. **Render ProjectSidebar** (#354) — Rename workspace UI is built but the component isn't imported. Simple wiring fix.
-4. **Fix diff comment click** (#355) — DiffCommentComposer exists but button click doesn't open it. Likely state binding issue.
-5. **Prioritize Code Review features** (#356) — Many features are stub/placeholder. Inline diff with commenting would be highest impact.
-
----
-
-## Assessment
-
-Run #2 dramatically improved the picture. The two critical crash fixes (PRs #342, #343) unblocked 48 previously-blocked stories and converted ~10 failures to passes. The app now has a solid, mostly-functional core: chat sessions, agent profiles, teams, settings, workspace diff viewing, AI code review, dashboard creation, and Linear/GitHub integration all work. The main gaps are now in polish features (inline diff comments, revision history browser, dashboard widgets) and a pervasive navigation bug that affects project creation and workspace actions.
+1. Surface backend generation failures inline in the create-agent modal with explicit retry guidance.
+2. Add scope language for repeated controls such as model, permissions, hooks, and MCP.
+3. Reduce first-prompt cognitive load by visually downgrading optional welcome-screen controls.
+4. Split or progressively disclose long settings panes, especially Data & Context.
+5. Clean up repeated headings and section framing so dense panes feel structured instead of stacked.

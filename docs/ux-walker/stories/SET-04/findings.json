@@ -1,0 +1,40 @@
+[
+  {
+    "id": "F-SET-04-01",
+    "story_id": "SET-04",
+    "severity": "medium",
+    "category": "density",
+    "description": "The Data & Context settings pane mixes too many related but distinct tasks into one continuous surface.",
+    "expected": "Users should be able to work on instructions, memory, MCP, or hooks without mentally parsing a control center.",
+    "actual": "Instructions, Memory, MCP, Hooks, Event Reference, and Execution Log all appear in one dense pane.",
+    "evidence": {
+      "screenshot": "screenshots/settings-data-context-group.png"
+    },
+    "suggested_fix": "Split the pane into narrower subsections or add progressive disclosure for the lower-frequency sections.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/settings/SettingsPanel.tsx",
+      "apps/desktop/src/components/settings/InstructionsPanel.tsx",
+      "apps/desktop/src/components/settings/MemoryPanel.tsx",
+      "apps/desktop/src/components/settings/McpPanel.tsx",
+      "apps/desktop/src/components/settings/HooksPanel.tsx"
+    ]
+  },
+  {
+    "id": "F-SET-04-02",
+    "story_id": "SET-04",
+    "severity": "medium",
+    "category": "hierarchy",
+    "description": "Repeated headings such as `Memory` and `Hooks` make the already dense pane feel less structured.",
+    "expected": "Section headings should clarify structure and reduce scan effort.",
+    "actual": "The pane visibly repeats section headings, which makes the hierarchy feel stacked rather than grouped.",
+    "evidence": {
+      "screenshot": "screenshots/settings-data-context-group.png"
+    },
+    "suggested_fix": "Tighten heading hierarchy and avoid repeated section labels unless they represent clearly separate subsections.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/settings/SettingsPanel.tsx",
+      "apps/desktop/src/components/settings/MemoryPanel.tsx",
+      "apps/desktop/src/components/settings/HooksPanel.tsx"
+    ]
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "F-SET-01-01",
+    "story_id": "SET-01",
+    "severity": "medium",
+    "category": "information-architecture",
+    "description": "The General settings group combines multiple types of tasks into one long pane, increasing scan cost for quick changes.",
+    "expected": "A user changing one default should be able to isolate the right subsection quickly.",
+    "actual": "Provider/auth, runtime environment, IDE, appearance, and notifications are stacked together in a single scrollable pane.",
+    "evidence": {
+      "screenshot": "screenshots/settings-general-group.png"
+    },
+    "suggested_fix": "Split the group further or add stronger subsection framing and stickier in-pane navigation.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/settings/SettingsPanel.tsx",
+      "apps/desktop/src/components/settings/GeneralTab.tsx",
+      "apps/desktop/src/components/settings/AppearanceTab.tsx",
+      "apps/desktop/src/components/settings/NotificationsTab.tsx"
+    ]
+  }
+]

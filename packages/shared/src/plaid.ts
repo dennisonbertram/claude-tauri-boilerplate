@@ -82,6 +82,8 @@ export type PlaidItemHealth = 'healthy' | 'error' | 'reauth_required' | 'consent
 export interface CreateLinkSessionRequest {
   /** Optional institution ID to pre-select in Plaid Link */
   institutionId?: string;
+  /** Optional browser-safe redirect URI for non-Tauri testing flows */
+  completionRedirectUri?: string;
 }
 
 export interface CreateLinkSessionResponse {
@@ -92,7 +94,7 @@ export interface CreateLinkSessionResponse {
 
 export interface FinalizeLinkRequest {
   state: string;
-  publicToken: string;
+  publicToken?: string;
 }
 
 export interface FinalizeLinkResponse {

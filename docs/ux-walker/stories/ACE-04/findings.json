@@ -1,0 +1,21 @@
+[
+  {
+    "id": "F-ACE-04-01",
+    "story_id": "ACE-04",
+    "severity": "medium",
+    "category": "scope",
+    "description": "Model and related behavior controls appear in both the profile editor and global settings without strong UI language explaining precedence or override behavior.",
+    "expected": "Users should be able to answer 'global default or profile override?' from the UI itself.",
+    "actual": "Both surfaces are easy to find, but users must infer which setting will apply next.",
+    "evidence": {
+      "screenshot": "screenshots/profile-model-tab.png"
+    },
+    "suggested_fix": "Add explicit scope labels such as 'Default for all chats' and 'Overrides when this profile is selected.'",
+    "files_likely_involved": [
+      "apps/desktop/src/components/agent-builder/AgentProfileEditor.tsx",
+      "apps/desktop/src/components/agent-builder/tabs/ModelTab.tsx",
+      "apps/desktop/src/components/settings/SettingsPanel.tsx",
+      "apps/desktop/src/components/settings/ModelTab.tsx"
+    ]
+  }
+]

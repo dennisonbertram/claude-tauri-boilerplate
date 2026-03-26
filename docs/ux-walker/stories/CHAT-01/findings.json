@@ -1,0 +1,18 @@
+[
+  {
+    "id": "F-CHAT-01-01",
+    "story_id": "CHAT-01",
+    "severity": "medium",
+    "category": "information-architecture",
+    "description": "The welcome screen presents profile, project, model, templates, and extra affordances before the first prompt, making the opening experience feel more like setup than immediate progress.",
+    "expected": "A first-time user should be able to recognize the optional controls quickly and feel invited to type immediately.",
+    "actual": "The main composer is visible, but the surrounding controls compete for attention and raise the cost of understanding the first step.",
+    "evidence": {
+      "screenshot": "screenshots/baseline-welcome.png"
+    },
+    "suggested_fix": "Visually downgrade optional controls and make the composer/readiness state more dominant.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/chat/WelcomeScreen.tsx"
+    ]
+  }
+]

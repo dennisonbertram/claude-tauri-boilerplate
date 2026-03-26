@@ -1,0 +1,20 @@
+[
+  {
+    "id": "F-ACE-02-01",
+    "story_id": "ACE-02",
+    "severity": "high",
+    "category": "error-handling",
+    "description": "The generate-agent flow issues the backend request, but the observed failure state does not clearly surface the backend error to the user in the modal.",
+    "expected": "If generation fails, the modal should show an explicit inline error with retry guidance.",
+    "actual": "The modal entered a disabled/busy-looking state while the backend returned `GENERATION_ERROR` with `Assistant error: rate_limit`, and the failure was not clearly explained in-context during the walk.",
+    "evidence": {
+      "screenshot": "screenshots/generate-modal-filled.png"
+    },
+    "suggested_fix": "Render the returned backend error inline in the modal and restore the form with a clear retry path immediately.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/agent-builder/AgentCreateModal.tsx",
+      "apps/desktop/src/components/agent-builder/AgentBuilderView.tsx",
+      "apps/server/src/routes/agent-profiles.ts"
+    ]
+  }
+]

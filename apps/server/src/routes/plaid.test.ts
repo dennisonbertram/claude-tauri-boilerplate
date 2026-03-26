@@ -95,6 +95,24 @@ function createMockPlaidClient(): PlaidApi {
       }),
     ),
     itemRemove: mock(() => Promise.resolve({ data: {} })),
+    linkTokenGet: mock(() =>
+      Promise.resolve({
+        data: {
+          link_sessions: [
+            {
+              finished_at: '2099-01-01T00:00:00Z',
+              results: {
+                item_add_results: [
+                  {
+                    public_token: 'public-sandbox-from-link-token-get',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      }),
+    ),
     transactionsSync: mock(() =>
       Promise.resolve({
         data: {
@@ -171,6 +189,20 @@ describe('POST /plaid/link/start', () => {
     expect(mockPlaid.linkTokenCreate).toHaveBeenCalledTimes(1);
   });
 
+  test('does not send hosted_link.delivery_method for hosted browser flow', async () => {
+    const res = await app.request('/plaid/link/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+
+    expect(res.status).toBe(200);
+    const callArgs = (mockPlaid.linkTokenCreate as any).mock.calls[0][0];
+    expect(callArgs.hosted_link).toBeTruthy();
+    expect(callArgs.hosted_link.delivery_method).toBeUndefined();
+    expect(callArgs.hosted_link.url_lifetime_seconds).toBe(600);
+  });
+
   test('accepts custom products list', async () => {
     const res = await app.request('/plaid/link/start', {
       method: 'POST',
@@ -181,6 +213,56 @@ describe('POST /plaid/link/start', () => {
     expect(res.status).toBe(200);
     const callArgs = (mockPlaid.linkTokenCreate as any).mock.calls[0][0];
     expect(callArgs.products).toEqual(['transactions', 'auth']);
+  });
+
+  test('uses a provided browser completion redirect URI', async () => {
+    const res = await app.request('/plaid/link/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        completion_redirect_uri: 'http://localhost:1757/#/finance/callback',
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const callArgs = (mockPlaid.linkTokenCreate as any).mock.calls[0][0];
+    expect(callArgs.hosted_link.completion_redirect_uri).toMatch(
+      /^http:\/\/localhost:1757\/#\/finance\/callback\?state=/,
+    );
+  });
+});
+
+describe('POST /plaid/items/:itemId/reauth', () => {
+  test('does not send hosted_link.delivery_method for hosted reauth flow', async () => {
+    seedItem({ itemId: 'item-reauth-1' });
+
+    const res = await app.request('/plaid/items/item-reauth-1/reauth', {
+      method: 'POST',
+    });
+
+    expect(res.status).toBe(200);
+    const callArgs = (mockPlaid.linkTokenCreate as any).mock.calls[0][0];
+    expect(callArgs.hosted_link).toBeTruthy();
+    expect(callArgs.hosted_link.delivery_method).toBeUndefined();
+    expect(callArgs.hosted_link.url_lifetime_seconds).toBe(600);
+  });
+
+  test('uses a provided browser completion redirect URI for reauth', async () => {
+    seedItem({ itemId: 'item-reauth-browser' });
+
+    const res = await app.request('/plaid/items/item-reauth-browser/reauth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        completion_redirect_uri: 'http://localhost:1757/#/finance/callback',
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const callArgs = (mockPlaid.linkTokenCreate as any).mock.calls[0][0];
+    expect(callArgs.hosted_link.completion_redirect_uri).toMatch(
+      /^http:\/\/localhost:1757\/#\/finance\/callback\?state=/,
+    );
   });
 });
 
@@ -259,7 +341,7 @@ describe('POST /plaid/link/finalize', () => {
     expect(body.code).toBe('INVALID_SESSION');
   });
 
-  test('rejects missing required fields with 400', async () => {
+  test('rejects missing state with 400', async () => {
     const res = await app.request('/plaid/link/finalize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -268,6 +350,24 @@ describe('POST /plaid/link/finalize', () => {
 
     // Validation error from zod — thrown as error with status 400
     expect(res.status).toBe(400);
+  });
+
+  test('supports hosted-link finalization via stored link token when public_token is absent', async () => {
+    seedSession({ state: 'hosted-link-state' });
+
+    const res = await app.request('/plaid/link/finalize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        state: 'hosted-link-state',
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockPlaid.linkTokenGet).toHaveBeenCalledTimes(1);
+    expect(mockPlaid.itemPublicTokenExchange).toHaveBeenCalledWith({
+      public_token: 'public-sandbox-from-link-token-get',
+    });
   });
 });
 
@@ -314,6 +414,16 @@ describe('GET /plaid/items', () => {
   test('returns user items without access tokens', async () => {
     seedItem({ itemId: 'item-list-1', institutionName: 'Bank A' });
     seedItem({ itemId: 'item-list-2', institutionName: 'Bank B' });
+    upsertPlaidAccounts(db, USER_ID, [
+      {
+        id: 'acct-list-1',
+        itemId: 'item-list-1',
+        name: 'Checking',
+        type: 'depository',
+        currentBalance: 1250,
+        currencyCode: 'USD',
+      },
+    ]);
 
     const res = await app.request('/plaid/items');
     expect(res.status).toBe(200);
@@ -323,7 +433,9 @@ describe('GET /plaid/items', () => {
     // Should NOT include accessToken
     for (const item of body) {
       expect(item.accessToken).toBeUndefined();
+      expect(Array.isArray(item.accounts)).toBe(true);
     }
+    expect(body.find((item: any) => item.itemId === 'item-list-1')?.accounts).toHaveLength(1);
   });
 
   test('returns empty array when no items', async () => {

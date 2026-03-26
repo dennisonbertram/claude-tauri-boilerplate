@@ -42,11 +42,13 @@ const LINK_SESSION_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const linkStartSchema = z.object({
   /** Optional: products to request (defaults to transactions) */
   products: z.array(z.string()).optional(),
+  /** Optional browser-safe callback URI for non-Tauri flows */
+  completion_redirect_uri: z.string().url().optional(),
 });
 
 const linkFinalizeSchema = z.object({
   state: z.string().min(1, 'state is required'),
-  public_token: z.string().min(1, 'public_token is required'),
+  public_token: z.string().min(1, 'public_token is required').optional(),
 });
 
 const syncSchema = z.object({
@@ -83,6 +85,32 @@ function paginated<T>(items: T[], total: number, limit: number, offset: number) 
     offset,
     hasMore: offset + items.length < total,
   };
+}
+
+function appendStateToRedirectUri(rawUri: string, state: string): string {
+  const [base, fragment = ''] = rawUri.split('#', 2);
+  const [pathPart, queryPart = ''] = fragment.split('?', 2);
+  const params = new URLSearchParams(queryPart);
+  params.set('state', state);
+  const nextFragment = pathPart ? `${pathPart}?${params.toString()}` : `?${params.toString()}`;
+  return `${base}#${nextFragment}`;
+}
+
+async function resolveHostedLinkPublicToken(plaidClient: PlaidApi, linkToken: string) {
+  const response = await plaidClient.linkTokenGet({ link_token: linkToken });
+  const sessions = response.data.link_sessions ?? [];
+
+  for (let index = sessions.length - 1; index >= 0; index -= 1) {
+    const session = sessions[index];
+    const itemAddPublicToken = session.results?.item_add_results?.find((result) => result.public_token)
+      ?.public_token;
+    if (itemAddPublicToken) return itemAddPublicToken;
+
+    const legacyPublicToken = session.results?.on_success?.public_token;
+    if (legacyPublicToken) return legacyPublicToken;
+  }
+
+  plaidApiError('Hosted link did not return a public token', 502, 'PLAID_PUBLIC_TOKEN_MISSING');
 }
 
 /**
@@ -211,6 +239,10 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
     const expiresAt = new Date(Date.now() + LINK_SESSION_TTL_MS).toISOString();
 
     try {
+      const completionRedirectUri = parsed.data?.completion_redirect_uri
+        ? appendStateToRedirectUri(parsed.data.completion_redirect_uri, state)
+        : `claudetauri://plaid-callback?state=${state}`;
+
       const response = await plaidClient.linkTokenCreate({
         user: { client_user_id: userId },
         client_name: 'Claude Tauri',
@@ -218,9 +250,8 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
         country_codes: [CountryCode.Us],
         language: 'en',
         hosted_link: {
-          delivery_method: 'DELIVERY_METHOD_HOSTED' as any,
           url_lifetime_seconds: 600,
-          completion_redirect_uri: `claudetauri://plaid-callback?state=${state}`,
+          completion_redirect_uri: completionRedirectUri,
         },
       });
 
@@ -277,9 +308,11 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
     }
 
     try {
+      const publicToken = public_token ?? (await resolveHostedLinkPublicToken(plaidClient, session.linkToken));
+
       // 2. Exchange public_token → access_token
       const exchangeResponse = await plaidClient.itemPublicTokenExchange({
-        public_token,
+        public_token: publicToken,
       });
       const { access_token, item_id } = exchangeResponse.data;
 
@@ -415,8 +448,11 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
   // GET /items — List user's connected institutions
   router.get('/items', async (c) => {
     const items = getPlaidItemsByUser(db, userId);
-    // Strip access tokens from response
-    const safeItems = items.map(({ accessToken, ...rest }) => rest);
+    // Strip access tokens from response and attach cached account summaries.
+    const safeItems = items.map(({ accessToken, ...rest }) => ({
+      ...rest,
+      accounts: getAccountsByItemId(db, rest.itemId, userId),
+    }));
     return c.json(safeItems);
   });
 
@@ -477,11 +513,18 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
       return c.json({ error: 'Item not found', code: 'NOT_FOUND' }, 404);
     }
 
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = linkStartSchema.safeParse(body);
+    if (!parsed.success) validationError(parsed);
+
     const state = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + LINK_SESSION_TTL_MS).toISOString();
 
     try {
       const accessToken = decrypt(item.accessToken);
+      const completionRedirectUri = parsed.data?.completion_redirect_uri
+        ? appendStateToRedirectUri(parsed.data.completion_redirect_uri, state)
+        : `claudetauri://plaid-callback?state=${state}`;
       const response = await plaidClient.linkTokenCreate({
         user: { client_user_id: userId },
         client_name: 'Claude Tauri',
@@ -489,9 +532,8 @@ export function createPlaidRouter(db: Database, plaidClient: PlaidApi) {
         country_codes: [CountryCode.Us],
         language: 'en',
         hosted_link: {
-          delivery_method: 'DELIVERY_METHOD_HOSTED' as any,
           url_lifetime_seconds: 600,
-          completion_redirect_uri: `claudetauri://plaid-callback?state=${state}`,
+          completion_redirect_uri: completionRedirectUri,
         },
       });
 

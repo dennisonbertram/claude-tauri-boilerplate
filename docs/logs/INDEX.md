@@ -6,6 +6,6 @@ Project logs for tracking engineering work, observations, and system documentati
 
 | File | Description |
 |------|-------------|
-| [engineering-log.md](engineering-log.md) | Bugs found, fixes applied, technical decisions — the development record |
+| [engineering-log.md](engineering-log.md) | Bugs found, fixes applied, and technical decisions, including recent Plaid hosted-link troubleshooting and fixes |
 | [observational-log.md](observational-log.md) | Patterns noticed, performance observations, things worth tracking |
 | [systems-log.md](systems-log.md) | Architecture reference — each system, how they interact, what to know |

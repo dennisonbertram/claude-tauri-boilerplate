@@ -166,6 +166,8 @@ Verify: correct status codes, response shapes match shared types, error cases re
 
 Every frontend change MUST be manually verified using the `agent-browser` CLI. This catches visual bugs, layout issues, and interaction problems that unit tests miss.
 
+For Plaid-specific manual verification, use [docs/testing/plaid-sandbox-testing.md](/Users/dennisonbertram/Develop/claude-tauri-boilerplate/docs/testing/plaid-sandbox-testing.md) as the source of truth for sandbox credentials, browser callback behavior, and the recommended hosted-link workflow.
+
 **Setup:**
 1. Start the dev environment: `pnpm dev:all`
 2. Install the browser once if needed: `agent-browser install`

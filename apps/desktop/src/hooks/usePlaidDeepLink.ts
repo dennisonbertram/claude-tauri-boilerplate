@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { isTauri } from '@/lib/platform';
 import { finalizeLinkSession } from '@/lib/api/plaid-api';
+import { parsePlaidCallbackParams } from '@/lib/plaid-link';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
  * Handles Plaid deep link callbacks (claudetauri://plaid-callback?state=...&public_token=...).
@@ -11,6 +13,8 @@ import { finalizeLinkSession } from '@/lib/api/plaid-api';
  */
 export function usePlaidDeepLink(onFinalized?: () => void) {
   const handledStates = useRef(new Set<string>());
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleCallback = useCallback(async (urlString: string) => {
     try {
@@ -27,16 +31,34 @@ export function usePlaidDeepLink(onFinalized?: () => void) {
       if (handledStates.current.has(state)) return;
       handledStates.current.add(state);
 
-      if (publicToken) {
-        await finalizeLinkSession(state, publicToken);
-        onFinalized?.();
-      } else {
-        console.warn('Plaid callback missing public_token — may need manual finalization');
-      }
+      await finalizeLinkSession(state, publicToken ?? undefined);
+      onFinalized?.();
     } catch (err) {
       console.error('Failed to handle Plaid callback:', err);
     }
   }, [onFinalized]);
+
+  useEffect(() => {
+    if (isTauri()) return;
+
+    const params = parsePlaidCallbackParams({
+      pathname: location.pathname,
+      search: location.search,
+      hash: window.location.hash,
+    });
+
+    if (!params || handledStates.current.has(params.state)) return;
+
+    handledStates.current.add(params.state);
+    void finalizeLinkSession(params.state, params.publicToken)
+      .then(() => {
+        onFinalized?.();
+        navigate('/finance', { replace: true });
+      })
+      .catch((err) => {
+        console.error('Failed to handle browser Plaid callback:', err);
+      });
+  }, [location.pathname, location.search, navigate, onFinalized]);
 
   useEffect(() => {
     if (!isTauri()) return;

@@ -21,6 +21,8 @@ import {
   triggerSync,
   refreshBalances,
 } from '@/lib/api/plaid-api';
+import { isTauri } from '@/lib/platform';
+import { getBrowserPlaidCompletionRedirectUri } from '@/lib/plaid-link';
 
 // ---------------------------------------------------------------------------
 // usePlaidItems — fetch connected institutions
@@ -144,7 +146,10 @@ export function useConnectBank() {
     try {
       setIsConnecting(true);
       setError(null);
-      const linkSession = await startLinkSession(institutionId);
+      const completionRedirectUri = isTauri()
+        ? undefined
+        : getBrowserPlaidCompletionRedirectUri(window.location.origin);
+      const linkSession = await startLinkSession(institutionId, completionRedirectUri);
       setSession(linkSession);
 
       // Open the hosted link URL in the system browser via Tauri shell
@@ -205,7 +210,10 @@ export function useReauthBank() {
     try {
       setIsReauthing(true);
       setError(null);
-      const linkSession = await reauthPlaidItem(itemId);
+      const completionRedirectUri = isTauri()
+        ? undefined
+        : getBrowserPlaidCompletionRedirectUri(window.location.origin);
+      const linkSession = await reauthPlaidItem(itemId, completionRedirectUri);
 
       try {
         const { open } = await import('@tauri-apps/plugin-shell');

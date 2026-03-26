@@ -19,3 +19,4 @@ Overview of the project documentation structure. Each folder has its own INDEX.m
 | [runbooks/](runbooks/INDEX.md) | Operational runbooks for testing, deployment, worktree workflow |
 | [devlog/](devlog/INDEX.md) | Chronological developer log entries |
 | [context/](context/INDEX.md) | Critical context documents for onboarding new agents |
+| [ux-paths/](ux-paths/INDEX.md) | Repository-grounded UX story catalogs and topic walk-throughs |

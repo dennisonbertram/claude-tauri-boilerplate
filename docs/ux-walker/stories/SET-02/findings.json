@@ -1,0 +1,19 @@
+[
+  {
+    "id": "F-SET-02-01",
+    "story_id": "SET-02",
+    "severity": "medium",
+    "category": "scope",
+    "description": "Global settings and profile settings both expose model, effort, and related behavior controls, but the UI does not strongly explain precedence.",
+    "expected": "Users should understand whether global settings are defaults and whether profile settings override them.",
+    "actual": "The overlap is visible, but the precedence model is mostly implicit.",
+    "evidence": {
+      "screenshot": "screenshots/settings-ai-model-group.png"
+    },
+    "suggested_fix": "Add explicit scope descriptions and override language adjacent to repeated controls.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/settings/ModelTab.tsx",
+      "apps/desktop/src/components/agent-builder/tabs/ModelTab.tsx"
+    ]
+  }
+]

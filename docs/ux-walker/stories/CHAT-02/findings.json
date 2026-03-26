@@ -1,0 +1,18 @@
+[
+  {
+    "id": "F-CHAT-02-01",
+    "story_id": "CHAT-02",
+    "severity": "medium",
+    "category": "clarity",
+    "description": "The welcome screen exposes profile, project, and model choices before the first message without clearly explaining the scope or consequence of each selection.",
+    "expected": "Users should understand what each pre-chat choice changes and whether it is optional.",
+    "actual": "The controls are visible but mostly self-labeled, leaving users to infer whether they affect defaults, the next turn only, or deeper runtime behavior.",
+    "evidence": {
+      "screenshot": "../CHAT-01/screenshots/baseline-welcome.png"
+    },
+    "suggested_fix": "Add short scope labels or inline helper text for profile, project, and model selectors on the welcome screen.",
+    "files_likely_involved": [
+      "apps/desktop/src/components/chat/WelcomeScreen.tsx"
+    ]
+  }
+]

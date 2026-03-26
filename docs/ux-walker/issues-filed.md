@@ -15,6 +15,12 @@
 | #354 | STORY-038 | high | Workspace rename UI unreachable (ProjectSidebar not rendered) | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/354 |
 | #355 | STORY-036 | medium | Diff line comment button click has no effect | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/355 |
 | #356 | STORY-097+ | medium | Code Review features incomplete (export, comments, severity) | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/356 |
+| #425 | CHAT-02 | medium | Clarify what profile, project, and model selectors change before the first chat turn | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/425 |
+| #426 | ACE-02 | high | Surface agent-generation failures inline in the create-agent modal | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/426 |
+| #427 | ACE-04 / SET-02 | medium | Clarify precedence between global settings and profile overrides for model and behavior controls | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/427 |
+| #428 | SET-01 | medium | Reduce scan cost in the General settings group | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/428 |
+| #429 | CHAT-01 | medium | Reduce first-prompt cognitive load on the welcome screen | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/429 |
+| #430 | SET-04 | medium | Restructure the Data & Context settings pane to reduce density and repeated headings | https://github.com/dennisonbertram/claude-tauri-boilerplate/issues/430 |
 
 ## PRs Created
 
