@@ -23,10 +23,14 @@ const DEFAULT_USER_ID = 'default';
 
 function formatCurrency(amount: number | null, currencyCode = 'USD'): string {
   if (amount === null) return 'N/A';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currencyCode || 'USD'}`;
+  }
 }
 
 function formatAccountType(type: string, subtype: string | null): string {
@@ -100,7 +104,7 @@ function createListAccountsTool(db: Database) {
       annotations: {
         title: 'List Bank Accounts',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -201,7 +205,7 @@ function createGetBalanceTool(db: Database) {
       annotations: {
         title: 'Get Account Balance',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -242,6 +246,7 @@ function createSearchTransactionsTool(db: Database) {
         .describe('Maximum transaction amount (in dollars)'),
       limit: z
         .number()
+        .int()
         .min(1)
         .max(100)
         .optional()
@@ -303,7 +308,7 @@ function createSearchTransactionsTool(db: Database) {
       annotations: {
         title: 'Search Transactions',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -408,7 +413,7 @@ function createGetSpendingSummaryTool(db: Database) {
       annotations: {
         title: 'Spending Summary',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -475,7 +480,7 @@ function createListInstitutionsTool(db: Database) {
       annotations: {
         title: 'List Financial Institutions',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );

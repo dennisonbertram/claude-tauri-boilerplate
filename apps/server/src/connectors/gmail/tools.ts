@@ -22,6 +22,7 @@ function createListMessagesTool(db: Database) {
         ),
       maxResults: z
         .number()
+        .int()
         .min(1)
         .max(50)
         .optional()
@@ -79,7 +80,7 @@ function createListMessagesTool(db: Database) {
       annotations: {
         title: 'List Gmail Messages',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -131,7 +132,7 @@ function createGetMessageTool(db: Database) {
       annotations: {
         title: 'Get Gmail Message',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );
@@ -190,7 +191,7 @@ function createSendMessageTool(db: Database) {
         title: 'Send Gmail Message',
         readOnlyHint: false,
         destructiveHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     }
   );

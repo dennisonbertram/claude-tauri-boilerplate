@@ -45,6 +45,7 @@ function createListEventsTool(db: Database) {
         .describe('End of time range as ISO 8601 string (e.g. "2025-01-31T23:59:59Z")'),
       maxResults: z
         .number()
+        .int()
         .min(1)
         .max(100)
         .optional()
@@ -101,7 +102,7 @@ function createListEventsTool(db: Database) {
       annotations: {
         title: 'List Calendar Events',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -173,7 +174,7 @@ function createCreateEventTool(db: Database) {
       annotations: {
         title: 'Create Calendar Event',
         readOnlyHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -241,7 +242,7 @@ function createUpdateEventTool(db: Database) {
       annotations: {
         title: 'Update Calendar Event',
         readOnlyHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -284,7 +285,7 @@ function createDeleteEventTool(db: Database) {
       annotations: {
         title: 'Delete Calendar Event',
         readOnlyHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
         destructiveHint: true,
       },
     },

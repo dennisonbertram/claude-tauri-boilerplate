@@ -139,7 +139,7 @@ function createSearchFilesTool(db: Database) {
       annotations: {
         title: 'Search Drive Files',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -186,7 +186,7 @@ function createGetFileTool(db: Database) {
       annotations: {
         title: 'Get Drive File',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -239,7 +239,7 @@ function createReadFileTool(db: Database) {
       annotations: {
         title: 'Read Drive File',
         readOnlyHint: true,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
@@ -301,7 +301,7 @@ function createUploadFileTool(db: Database) {
       annotations: {
         title: 'Upload Drive File',
         readOnlyHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
   );
