@@ -55,7 +55,7 @@ function createListMessagesTool(db: Database) {
         for (const msg of messages) {
           lines.push(
             `ID: ${msg.id}`,
-            `From: ${msg.from}`,
+            `From: ${fenceUntrustedContent(msg.from, 'Gmail')}`,
             `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
             `Date: ${msg.date}`,
             `Snippet: ${fenceUntrustedContent(msg.snippet, 'Gmail')}`,
@@ -109,11 +109,11 @@ function createGetMessageTool(db: Database) {
         const lines = [
           `Message ID: ${msg.id}`,
           `Thread ID: ${msg.threadId}`,
-          `From: ${msg.from}`,
-          `To: ${msg.to}`,
+          `From: ${fenceUntrustedContent(msg.from, 'Gmail')}`,
+          `To: ${fenceUntrustedContent(msg.to, 'Gmail')}`,
           `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
           `Date: ${msg.date}`,
-          `Labels: ${msg.labelIds.join(', ') || 'none'}`,
+          `Labels: ${fenceUntrustedContent(msg.labelIds.join(', ') || 'none', 'Gmail')}`,
           '',
           '--- Body ---',
           fenceUntrustedContent(bodyText, 'Gmail'),

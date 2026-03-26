@@ -116,7 +116,7 @@ function createSearchFilesTool(db: Database) {
           lines.push(`  Modified: ${formatModifiedTime(file.modifiedTime)}`);
           lines.push(`  Size: ${formatFileSize(file.size)}`);
           if (file.webViewLink) {
-            lines.push(`  Link: ${file.webViewLink}`);
+            lines.push(`  Link: ${fenceUntrustedContent(file.webViewLink, 'Google Drive')}`);
           }
           lines.push('');
         }
@@ -169,7 +169,7 @@ function createGetFileTool(db: Database) {
         ];
 
         if (file.webViewLink) {
-          lines.push(`Link: ${file.webViewLink}`);
+          lines.push(`Link: ${fenceUntrustedContent(file.webViewLink, 'Google Drive')}`);
         }
 
         return {

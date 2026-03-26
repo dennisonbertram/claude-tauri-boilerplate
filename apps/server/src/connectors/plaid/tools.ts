@@ -71,7 +71,7 @@ function createListAccountsTool(db: Database) {
         ];
 
         for (const acct of accounts) {
-          const displayName = acct.officialName ?? acct.name;
+          const displayName = fenceUntrustedContent(acct.officialName ?? acct.name, 'Plaid');
           const maskStr = acct.mask ? ` ••••${acct.mask}` : '';
           const typeStr = formatAccountType(acct.type, acct.subtype);
           lines.push(`Account: ${displayName}${maskStr}`);
@@ -157,7 +157,7 @@ function createGetBalanceTool(db: Database) {
         const totalsByCurrency = new Map<string, number>();
 
         for (const acct of filtered) {
-          const displayName = acct.officialName ?? acct.name;
+          const displayName = fenceUntrustedContent(acct.officialName ?? acct.name, 'Plaid');
           const maskStr = acct.mask ? ` ••••${acct.mask}` : '';
           lines.push(`${displayName}${maskStr}`);
           lines.push(
@@ -278,7 +278,7 @@ function createSearchTransactionsTool(db: Database) {
           const rawName = txn.merchantName ?? txn.name;
           const displayName = fenceUntrustedContent(rawName, 'Plaid');
           const pendingStr = txn.pending ? ' (pending)' : '';
-          const categoryStr = txn.personalFinanceCategory ?? txn.category ?? 'Uncategorized';
+          const categoryStr = fenceUntrustedContent(txn.personalFinanceCategory ?? txn.category ?? 'Uncategorized', 'Plaid');
           lines.push(`${txn.date}  ${displayName}${pendingStr}`);
           lines.push(`  Amount: ${formatCurrency(txn.amount)}`);
           lines.push(`  Category: ${categoryStr}`);
@@ -383,7 +383,10 @@ function createGetSpendingSummaryTool(db: Database) {
 
         for (const [category, amount] of sorted) {
           const pct = totalSpending > 0 ? ((amount / totalSpending) * 100).toFixed(1) : '0.0';
-          const formattedCategory = category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+          const formattedCategory = fenceUntrustedContent(
+            category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+            'Plaid'
+          );
           lines.push(`${formattedCategory}: ${formatCurrency(amount)} (${pct}%)`);
         }
 
@@ -441,7 +444,7 @@ function createListInstitutionsTool(db: Database) {
         ];
 
         for (const item of items) {
-          const name = item.institutionName ?? 'Unknown Institution';
+          const name = fenceUntrustedContent(item.institutionName ?? 'Unknown Institution', 'Plaid');
           lines.push(`Institution: ${name}`);
           if (item.institutionId) {
             lines.push(`  Institution ID: ${item.institutionId}`);

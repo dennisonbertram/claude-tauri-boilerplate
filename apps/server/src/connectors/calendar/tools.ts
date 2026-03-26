@@ -73,15 +73,15 @@ function createListEventsTool(db: Database) {
 
         const lines: string[] = [`Found ${result.items.length} event(s):`, ''];
         for (const event of result.items) {
-          lines.push(`Title: ${event.summary}`);
+          lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
           lines.push(`Start: ${formatEventTime(event.start)}`);
           lines.push(`End:   ${formatEventTime(event.end)}`);
           if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
           if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
           if (event.attendees && event.attendees.length > 0) {
-            lines.push(`Attendees: ${event.attendees.map((a) => a.email).join(', ')}`);
+            lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
           }
-          if (event.htmlLink) lines.push(`Link: ${event.htmlLink}`);
+          if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
           lines.push('');
         }
 
@@ -150,16 +150,16 @@ function createCreateEventTool(db: Database) {
         );
 
         const lines: string[] = ['Event created successfully:', ''];
-        lines.push(`Title: ${event.summary}`);
+        lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
         lines.push(`Start: ${formatEventTime(event.start)}`);
         lines.push(`End:   ${formatEventTime(event.end)}`);
-        if (event.location) lines.push(`Location: ${event.location}`);
-        if (event.description) lines.push(`Description: ${event.description}`);
+        if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+        if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
         if (event.attendees && event.attendees.length > 0) {
-          lines.push(`Attendees: ${event.attendees.map((a) => a.email).join(', ')}`);
+          lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
         }
         lines.push(`Event ID: ${event.id}`);
-        if (event.htmlLink) lines.push(`Link: ${event.htmlLink}`);
+        if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
@@ -218,16 +218,16 @@ function createUpdateEventTool(db: Database) {
         const event = await updateEvent(db, eventId, cleanUpdates, calendarId);
 
         const lines: string[] = ['Event updated successfully:', ''];
-        lines.push(`Title: ${event.summary}`);
+        lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
         lines.push(`Start: ${formatEventTime(event.start)}`);
         lines.push(`End:   ${formatEventTime(event.end)}`);
-        if (event.location) lines.push(`Location: ${event.location}`);
-        if (event.description) lines.push(`Description: ${event.description}`);
+        if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+        if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
         if (event.attendees && event.attendees.length > 0) {
-          lines.push(`Attendees: ${event.attendees.map((a) => a.email).join(', ')}`);
+          lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
         }
         lines.push(`Event ID: ${event.id}`);
-        if (event.htmlLink) lines.push(`Link: ${event.htmlLink}`);
+        if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
