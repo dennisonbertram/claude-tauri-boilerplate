@@ -6,6 +6,10 @@ import { gmailConnectorFactory } from './gmail';
 import { calendarConnectorFactory } from './calendar';
 import { driveConnectorFactory } from './drive';
 import { plaidConnectorFactory } from './plaid';
+import { todoistConnectorFactory } from './todoist';
+import { notionConnectorFactory } from './notion';
+import { slackConnectorFactory } from './slack';
+import { blueskyConnectorFactory } from './bluesky';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -20,6 +24,10 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   calendarConnectorFactory,
   driveConnectorFactory,
   plaidConnectorFactory,
+  todoistConnectorFactory,
+  notionConnectorFactory,
+  slackConnectorFactory,
+  blueskyConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
