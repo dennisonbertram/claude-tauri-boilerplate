@@ -60,7 +60,7 @@ function createListAccountsTool(db: Database) {
 
         if (accounts.length === 0) {
           const text = args.type
-            ? `No ${args.type} accounts found.`
+            ? `No ${fenceUntrustedContent(args.type, 'plaid.accountType')} accounts found.`
             : 'No connected bank accounts found. Connect an account via the Finance settings.';
           return { content: [{ type: 'text' as const, text }] };
         }
@@ -144,7 +144,7 @@ function createGetBalanceTool(db: Database) {
             content: [
               {
                 type: 'text' as const,
-                text: `Account not found: ${args.accountId}`,
+                text: `Account not found: ${fenceUntrustedContent(args.accountId!, 'plaid.accountId')}`,
               },
             ],
             isError: true,
@@ -453,7 +453,7 @@ function createListInstitutionsTool(db: Database) {
             lines.push(`  Last Synced: ${item.lastSuccessfulSyncAt}`);
           }
           if (item.errorCode) {
-            lines.push(`  Status: Error — ${item.errorCode}: ${item.errorMessage ?? 'unknown'}`);
+            lines.push(`  Status: Error — ${fenceUntrustedContent(item.errorCode, 'plaid.errorCode')}: ${fenceUntrustedContent(item.errorMessage ?? 'unknown', 'plaid.errorMessage')}`);
           } else {
             lines.push(`  Status: Connected`);
           }

@@ -171,7 +171,9 @@ describe('plaid_list_accounts', () => {
     const result = await invokeTool('plaid_list_accounts', { type: 'investment' });
     const text = result.content[0].text as string;
 
-    expect(text).toContain('No investment accounts found');
+    // The type filter value is fenced as untrusted content
+    expect(text).toContain('investment');
+    expect(text).toContain('accounts found');
   });
 
   test('passes type filter to getAccountsByUser', async () => {

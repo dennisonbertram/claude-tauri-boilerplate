@@ -97,7 +97,7 @@ function createSearchFilesTool(db: Database) {
               {
                 type: 'text' as const,
                 text: args.query
-                  ? `No files found matching query: ${args.query}`
+                  ? `No files found matching query: ${fenceUntrustedContent(args.query, 'drive.query')}`
                   : 'No files found in Google Drive.',
               },
             ],
@@ -163,7 +163,7 @@ function createGetFileTool(db: Database) {
         const lines = [
           `File: ${fenceUntrustedContent(file.name, 'Google Drive')}`,
           `ID: ${file.id}`,
-          `Type: ${formatMimeType(file.mimeType)} (${file.mimeType})`,
+          `Type: ${formatMimeType(file.mimeType)} (${fenceUntrustedContent(file.mimeType, 'drive.mimetype')})`,
           `Size: ${formatFileSize(file.size)}`,
           `Modified: ${formatModifiedTime(file.modifiedTime)}`,
         ];
@@ -276,15 +276,15 @@ function createUploadFileTool(db: Database) {
 
         const lines = [
           `File uploaded successfully.`,
-          `Name: ${file.name}`,
+          `Name: ${fenceUntrustedContent(file.name, 'drive.filename')}`,
           `ID: ${file.id}`,
-          `Type: ${formatMimeType(file.mimeType)} (${file.mimeType})`,
+          `Type: ${formatMimeType(file.mimeType)} (${fenceUntrustedContent(file.mimeType, 'drive.mimetype')})`,
           `Size: ${formatFileSize(file.size)}`,
           `Modified: ${formatModifiedTime(file.modifiedTime)}`,
         ];
 
         if (file.webViewLink) {
-          lines.push(`Link: ${file.webViewLink}`);
+          lines.push(`Link: ${fenceUntrustedContent(file.webViewLink, 'drive.link')}`);
         }
 
         return {

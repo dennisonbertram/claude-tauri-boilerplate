@@ -42,13 +42,13 @@ function createListMessagesTool(db: Database) {
 
         if (messages.length === 0) {
           const text = args.query
-            ? `No messages found matching query: "${args.query}"`
+            ? `No messages found matching query: "${fenceUntrustedContent(args.query, 'gmail.query')}"`
             : 'No messages found.';
           return { content: [{ type: 'text' as const, text }] };
         }
 
         const lines: string[] = [
-          `Found ${messages.length} message${messages.length !== 1 ? 's' : ''}${args.query ? ` matching "${args.query}"` : ''}:`,
+          `Found ${messages.length} message${messages.length !== 1 ? 's' : ''}${args.query ? ` matching "${fenceUntrustedContent(args.query, 'gmail.query')}"` : ''}:`,
           '',
         ];
 
@@ -57,7 +57,7 @@ function createListMessagesTool(db: Database) {
             `ID: ${msg.id}`,
             `From: ${fenceUntrustedContent(msg.from, 'Gmail')}`,
             `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
-            `Date: ${msg.date}`,
+            `Date: ${fenceUntrustedContent(msg.date, 'Gmail')}`,
             `Snippet: ${fenceUntrustedContent(msg.snippet, 'Gmail')}`,
             ''
           );
@@ -112,7 +112,7 @@ function createGetMessageTool(db: Database) {
           `From: ${fenceUntrustedContent(msg.from, 'Gmail')}`,
           `To: ${fenceUntrustedContent(msg.to, 'Gmail')}`,
           `Subject: ${fenceUntrustedContent(msg.subject, 'Gmail')}`,
-          `Date: ${msg.date}`,
+          `Date: ${fenceUntrustedContent(msg.date, 'Gmail')}`,
           `Labels: ${fenceUntrustedContent(msg.labelIds.join(', ') || 'none', 'Gmail')}`,
           '',
           '--- Body ---',
