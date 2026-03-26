@@ -3,6 +3,9 @@ import type { Database } from 'bun:sqlite';
 import type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition, ConnectorFactory } from './types';
 import { weatherConnector } from './weather';
 import { gmailConnectorFactory } from './gmail';
+import { calendarConnectorFactory } from './calendar';
+import { driveConnectorFactory } from './drive';
+import { plaidConnectorFactory } from './plaid';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -12,7 +15,12 @@ import { gmailConnectorFactory } from './gmail';
 const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector];
 
 /** Factory connectors (need db injection). Add new factory connectors here. */
-const CONNECTOR_FACTORIES: ConnectorFactory[] = [gmailConnectorFactory];
+const CONNECTOR_FACTORIES: ConnectorFactory[] = [
+  gmailConnectorFactory,
+  calendarConnectorFactory,
+  driveConnectorFactory,
+  plaidConnectorFactory,
+];
 
 /** All initialized connectors (static + factory-created). */
 let allConnectors: ConnectorDefinition[] = [...STATIC_CONNECTORS];
