@@ -22,6 +22,10 @@ import { appleRemindersConnectorFactory } from './apple-reminders';
 import { appleNotesConnectorFactory } from './apple-notes';
 import { obsidianConnectorFactory } from './obsidian';
 import { imessageConnectorFactory } from './imessage';
+import { coinbaseConnectorFactory } from './coinbase';
+import { twitterConnectorFactory } from './twitter';
+import { homeAssistantConnectorFactory } from './home-assistant';
+import { subscriptionsConnectorFactory } from './subscriptions';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -51,6 +55,10 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   appleNotesConnectorFactory,
   obsidianConnectorFactory,
   imessageConnectorFactory,
+  coinbaseConnectorFactory,
+  twitterConnectorFactory,
+  homeAssistantConnectorFactory,
+  subscriptionsConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
