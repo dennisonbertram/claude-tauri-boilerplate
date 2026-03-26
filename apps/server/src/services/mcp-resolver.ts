@@ -7,7 +7,7 @@ import { getSessionMcpOverrides } from '../db';
  * Default connectors that are enabled for all sessions unless overridden.
  * In the future this will come from DB/user settings.
  */
-const DEFAULT_ENABLED_CONNECTORS = ['weather', 'gmail', 'calendar', 'drive', 'plaid', 'todoist', 'notion', 'slack', 'bluesky', 'google-maps', 'google-photos', 'contacts', 'strava', 'discord', 'ynab', 'dropbox', 'telegram', 'apple-reminders', 'apple-notes', 'obsidian', 'imessage', 'coinbase', 'twitter', 'home-assistant', 'subscriptions'];
+const DEFAULT_ENABLED_CONNECTORS = ['weather', 'gmail', 'calendar', 'drive', 'plaid', 'todoist', 'notion', 'slack', 'bluesky', 'google-maps', 'google-photos', 'contacts', 'strava', 'discord', 'ynab', 'dropbox', 'telegram', 'apple-reminders', 'apple-notes', 'obsidian', 'imessage', 'coinbase', 'twitter', 'home-assistant', 'subscriptions', 'apple-health', 'whatsapp', 'tripit', 'amazon-orders'];
 
 /** The MCP server name used for in-process connectors. */
 const CONNECTOR_SERVER_NAME = 'connectors';

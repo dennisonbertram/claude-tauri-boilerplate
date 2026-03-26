@@ -26,6 +26,10 @@ import { coinbaseConnectorFactory } from './coinbase';
 import { twitterConnectorFactory } from './twitter';
 import { homeAssistantConnectorFactory } from './home-assistant';
 import { subscriptionsConnectorFactory } from './subscriptions';
+import { appleHealthConnectorFactory } from './apple-health';
+import { whatsappConnectorFactory } from './whatsapp';
+import { tripitConnectorFactory } from './tripit';
+import { amazonOrdersConnectorFactory } from './amazon-orders';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -59,6 +63,10 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   twitterConnectorFactory,
   homeAssistantConnectorFactory,
   subscriptionsConnectorFactory,
+  appleHealthConnectorFactory,
+  whatsappConnectorFactory,
+  tripitConnectorFactory,
+  amazonOrdersConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
