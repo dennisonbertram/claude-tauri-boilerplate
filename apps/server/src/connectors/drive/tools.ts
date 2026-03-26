@@ -201,12 +201,18 @@ function createReadFileTool(db: Database) {
       try {
         const fileContent = await getFileContent(db, args.fileId, args.exportMimeType);
 
+        const MAX_CONTENT_LENGTH = 100_000; // ~100KB
+        let text = fileContent.content;
+        if (text.length > MAX_CONTENT_LENGTH) {
+          text = text.slice(0, MAX_CONTENT_LENGTH) + `\n\n[Content truncated — showing first ${MAX_CONTENT_LENGTH} characters of ${fileContent.content.length}]`;
+        }
+
         const header = `[Content-Type: ${fileContent.mimeType}]\n\n`;
         return {
           content: [
             {
               type: 'text' as const,
-              text: header + fileContent.content,
+              text: header + text,
             },
           ],
         };

@@ -134,10 +134,10 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: finance_list_accounts
+// Tests: plaid_list_accounts
 // ---------------------------------------------------------------------------
 
-describe('finance_list_accounts', () => {
+describe('plaid_list_accounts', () => {
   test('returns formatted account list when accounts exist', async () => {
     const accounts = [
       makeAccount({ id: 'acct-001', name: 'Checking', currentBalance: 1500, mask: '1234' }),
@@ -145,7 +145,7 @@ describe('finance_list_accounts', () => {
     ];
     mockGetAccountsByUser.mockReturnValue(accounts);
 
-    const result = await invokeTool('finance_list_accounts', {});
+    const result = await invokeTool('plaid_list_accounts', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('2 accounts');
@@ -159,7 +159,7 @@ describe('finance_list_accounts', () => {
   test('returns message when no accounts found', async () => {
     mockGetAccountsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_list_accounts', {});
+    const result = await invokeTool('plaid_list_accounts', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No connected bank accounts found');
@@ -168,7 +168,7 @@ describe('finance_list_accounts', () => {
   test('returns message when type filter yields no results', async () => {
     mockGetAccountsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_list_accounts', { type: 'investment' });
+    const result = await invokeTool('plaid_list_accounts', { type: 'investment' });
     const text = result.content[0].text as string;
 
     expect(text).toContain('No investment accounts found');
@@ -177,7 +177,7 @@ describe('finance_list_accounts', () => {
   test('passes type filter to getAccountsByUser', async () => {
     mockGetAccountsByUser.mockReturnValue([]);
 
-    await invokeTool('finance_list_accounts', { type: 'credit' });
+    await invokeTool('plaid_list_accounts', { type: 'credit' });
 
     expect(mockGetAccountsByUser).toHaveBeenCalledWith(fakeDb, 'default', { type: 'credit' });
   });
@@ -187,7 +187,7 @@ describe('finance_list_accounts', () => {
       makeAccount({ currentBalance: 1000, availableBalance: 900 }),
     ]);
 
-    const result = await invokeTool('finance_list_accounts', {});
+    const result = await invokeTool('plaid_list_accounts', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Available Balance: $900.00');
@@ -198,7 +198,7 @@ describe('finance_list_accounts', () => {
       makeAccount({ type: 'depository', subtype: 'checking' }),
     ]);
 
-    const result = await invokeTool('finance_list_accounts', {});
+    const result = await invokeTool('plaid_list_accounts', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('depository (checking)');
@@ -209,7 +209,7 @@ describe('finance_list_accounts', () => {
       throw new Error('DB connection error');
     });
 
-    const result = await invokeTool('finance_list_accounts', {});
+    const result = await invokeTool('plaid_list_accounts', {});
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('DB connection error');
@@ -217,17 +217,17 @@ describe('finance_list_accounts', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: finance_get_balance
+// Tests: plaid_get_balance
 // ---------------------------------------------------------------------------
 
-describe('finance_get_balance', () => {
+describe('plaid_get_balance', () => {
   test('returns balance for all accounts when no accountId given', async () => {
     mockGetAccountsByUser.mockReturnValue([
       makeAccount({ id: 'acct-001', name: 'Checking', currentBalance: 1500 }),
       makeAccount({ id: 'acct-002', name: 'Savings', currentBalance: 5000, officialName: 'Savings' }),
     ]);
 
-    const result = await invokeTool('finance_get_balance', {});
+    const result = await invokeTool('plaid_get_balance', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('$1,500.00');
@@ -243,7 +243,7 @@ describe('finance_get_balance', () => {
     ];
     mockGetAccountsByUser.mockReturnValue(accounts);
 
-    const result = await invokeTool('finance_get_balance', { accountId: 'acct-001' });
+    const result = await invokeTool('plaid_get_balance', { accountId: 'acct-001' });
     const text = result.content[0].text as string;
 
     expect(text).toContain('$1,500.00');
@@ -255,7 +255,7 @@ describe('finance_get_balance', () => {
       makeAccount({ id: 'acct-001' }),
     ]);
 
-    const result = await invokeTool('finance_get_balance', { accountId: 'nonexistent' });
+    const result = await invokeTool('plaid_get_balance', { accountId: 'nonexistent' });
     const text = result.content[0].text as string;
 
     expect(text).toContain('Account not found');
@@ -265,7 +265,7 @@ describe('finance_get_balance', () => {
   test('returns message when no accounts found', async () => {
     mockGetAccountsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_get_balance', {});
+    const result = await invokeTool('plaid_get_balance', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No connected bank accounts found');
@@ -276,7 +276,7 @@ describe('finance_get_balance', () => {
       makeAccount({ currentBalance: 1500 }),
     ]);
 
-    const result = await invokeTool('finance_get_balance', {});
+    const result = await invokeTool('plaid_get_balance', {});
     const text = result.content[0].text as string;
 
     expect(text).not.toContain('Total across all accounts');
@@ -288,7 +288,7 @@ describe('finance_get_balance', () => {
       makeAccount({ id: 'acct-002', currentBalance: null }),
     ]);
 
-    const result = await invokeTool('finance_get_balance', {});
+    const result = await invokeTool('plaid_get_balance', {});
     const text = result.content[0].text as string;
 
     // Total should only count non-null balances
@@ -297,17 +297,17 @@ describe('finance_get_balance', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: finance_search_transactions
+// Tests: plaid_search_transactions
 // ---------------------------------------------------------------------------
 
-describe('finance_search_transactions', () => {
+describe('plaid_search_transactions', () => {
   test('returns formatted transaction list', async () => {
     mockGetTransactionsByUser.mockReturnValue([
       makeTransaction({ id: 'txn-001', name: 'Starbucks', amount: 5.50, date: '2024-01-15', personalFinanceCategory: 'FOOD_AND_DRINK' }),
       makeTransaction({ id: 'txn-002', name: 'Amazon', merchantName: 'Amazon', amount: 29.99, date: '2024-01-14', personalFinanceCategory: 'SHOPPING' }),
     ]);
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('2 transaction');
@@ -322,7 +322,7 @@ describe('finance_search_transactions', () => {
   test('returns message when no transactions found', async () => {
     mockGetTransactionsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No transactions found');
@@ -331,7 +331,7 @@ describe('finance_search_transactions', () => {
   test('passes filters to getTransactionsByUser', async () => {
     mockGetTransactionsByUser.mockReturnValue([]);
 
-    await invokeTool('finance_search_transactions', {
+    await invokeTool('plaid_search_transactions', {
       search: 'coffee',
       startDate: '2024-01-01',
       endDate: '2024-01-31',
@@ -361,7 +361,7 @@ describe('finance_search_transactions', () => {
   test('uses default limit of 25 when not specified', async () => {
     mockGetTransactionsByUser.mockReturnValue([]);
 
-    await invokeTool('finance_search_transactions', {});
+    await invokeTool('plaid_search_transactions', {});
 
     expect(mockGetTransactionsByUser).toHaveBeenCalledWith(
       fakeDb,
@@ -375,7 +375,7 @@ describe('finance_search_transactions', () => {
       makeTransaction({ pending: true, name: 'Coffee Shop' }),
     ]);
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('(pending)');
@@ -386,7 +386,7 @@ describe('finance_search_transactions', () => {
       makeTransaction({ name: 'SBUX', merchantName: 'Starbucks' }),
     ]);
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Starbucks');
@@ -397,7 +397,7 @@ describe('finance_search_transactions', () => {
       makeTransaction({ personalFinanceCategory: null, category: 'Food and Drink' }),
     ]);
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Food and Drink');
@@ -408,7 +408,7 @@ describe('finance_search_transactions', () => {
       throw new Error('Query failed');
     });
 
-    const result = await invokeTool('finance_search_transactions', {});
+    const result = await invokeTool('plaid_search_transactions', {});
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Query failed');
@@ -416,10 +416,10 @@ describe('finance_search_transactions', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: finance_get_spending_summary
+// Tests: plaid_get_spending_summary
 // ---------------------------------------------------------------------------
 
-describe('finance_get_spending_summary', () => {
+describe('plaid_get_spending_summary', () => {
   test('aggregates transactions by personalFinanceCategory', async () => {
     mockGetTransactionsByUser.mockReturnValue([
       makeTransaction({ amount: 10.0, personalFinanceCategory: 'FOOD_AND_DRINK' }),
@@ -428,7 +428,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: 20.0, personalFinanceCategory: 'TRANSPORTATION' }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Spending Summary');
@@ -447,7 +447,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: 30.0, personalFinanceCategory: 'TRANSPORTATION' }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
     const lines = text.split('\n').filter((l) => l.trim());
 
@@ -466,7 +466,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: -1000.0, personalFinanceCategory: 'INCOME' }), // credit/income
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     // Only spending (positive amounts) included
@@ -479,7 +479,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: 25.0, personalFinanceCategory: null, category: 'Food' }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Food');
@@ -490,7 +490,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: 25.0, personalFinanceCategory: null, category: null }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Uncategorized');
@@ -499,7 +499,7 @@ describe('finance_get_spending_summary', () => {
   test('passes date range to getTransactionsByUser', async () => {
     mockGetTransactionsByUser.mockReturnValue([]);
 
-    await invokeTool('finance_get_spending_summary', {
+    await invokeTool('plaid_get_spending_summary', {
       startDate: '2024-01-01',
       endDate: '2024-01-31',
     });
@@ -514,10 +514,22 @@ describe('finance_get_spending_summary', () => {
     );
   });
 
+  test('passes limit of 10000 to getTransactionsByUser', async () => {
+    mockGetTransactionsByUser.mockReturnValue([]);
+
+    await invokeTool('plaid_get_spending_summary', {});
+
+    expect(mockGetTransactionsByUser).toHaveBeenCalledWith(
+      fakeDb,
+      'default',
+      expect.objectContaining({ limit: 10000 })
+    );
+  });
+
   test('returns message when no transactions found', async () => {
     mockGetTransactionsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No transactions found');
@@ -529,7 +541,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: -200.0, personalFinanceCategory: 'TRANSFER_IN' }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No spending transactions found');
@@ -541,7 +553,7 @@ describe('finance_get_spending_summary', () => {
       makeTransaction({ amount: 25.0, personalFinanceCategory: 'TRANSPORTATION' }),
     ]);
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('75.0%');
@@ -553,7 +565,7 @@ describe('finance_get_spending_summary', () => {
       throw new Error('Database error');
     });
 
-    const result = await invokeTool('finance_get_spending_summary', {});
+    const result = await invokeTool('plaid_get_spending_summary', {});
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Database error');
@@ -561,17 +573,17 @@ describe('finance_get_spending_summary', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: finance_list_institutions
+// Tests: plaid_list_institutions
 // ---------------------------------------------------------------------------
 
-describe('finance_list_institutions', () => {
+describe('plaid_list_institutions', () => {
   test('returns formatted institution list', async () => {
     mockGetPlaidItemsByUser.mockReturnValue([
       makePlaidItem({ institutionName: 'Chase', institutionId: 'ins_001', lastSuccessfulSyncAt: '2024-01-15T10:00:00Z' }),
       makePlaidItem({ id: 'item-002', institutionName: 'Bank of America', institutionId: 'ins_002', lastSuccessfulSyncAt: null }),
     ]);
 
-    const result = await invokeTool('finance_list_institutions', {});
+    const result = await invokeTool('plaid_list_institutions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('2');
@@ -585,7 +597,7 @@ describe('finance_list_institutions', () => {
   test('returns message when no institutions connected', async () => {
     mockGetPlaidItemsByUser.mockReturnValue([]);
 
-    const result = await invokeTool('finance_list_institutions', {});
+    const result = await invokeTool('plaid_list_institutions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('No financial institutions connected');
@@ -596,7 +608,7 @@ describe('finance_list_institutions', () => {
       makePlaidItem({ errorCode: 'ITEM_LOGIN_REQUIRED', errorMessage: 'Login expired' }),
     ]);
 
-    const result = await invokeTool('finance_list_institutions', {});
+    const result = await invokeTool('plaid_list_institutions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Error');
@@ -609,7 +621,7 @@ describe('finance_list_institutions', () => {
       makePlaidItem({ institutionName: null }),
     ]);
 
-    const result = await invokeTool('finance_list_institutions', {});
+    const result = await invokeTool('plaid_list_institutions', {});
     const text = result.content[0].text as string;
 
     expect(text).toContain('Unknown Institution');
@@ -618,7 +630,7 @@ describe('finance_list_institutions', () => {
   test('passes correct userId to getPlaidItemsByUser', async () => {
     mockGetPlaidItemsByUser.mockReturnValue([]);
 
-    await invokeTool('finance_list_institutions', {});
+    await invokeTool('plaid_list_institutions', {});
 
     expect(mockGetPlaidItemsByUser).toHaveBeenCalledWith(fakeDb, 'default');
   });
@@ -628,7 +640,7 @@ describe('finance_list_institutions', () => {
       throw new Error('DB error');
     });
 
-    const result = await invokeTool('finance_list_institutions', {});
+    const result = await invokeTool('plaid_list_institutions', {});
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('DB error');
@@ -660,10 +672,10 @@ describe('createPlaidTools', () => {
     const tools = createPlaidTools(fakeDb);
     const names = tools.map((t) => t.name);
 
-    expect(names).toContain('finance_list_accounts');
-    expect(names).toContain('finance_get_balance');
-    expect(names).toContain('finance_search_transactions');
-    expect(names).toContain('finance_get_spending_summary');
-    expect(names).toContain('finance_list_institutions');
+    expect(names).toContain('plaid_list_accounts');
+    expect(names).toContain('plaid_get_balance');
+    expect(names).toContain('plaid_search_transactions');
+    expect(names).toContain('plaid_get_spending_summary');
+    expect(names).toContain('plaid_list_institutions');
   });
 });

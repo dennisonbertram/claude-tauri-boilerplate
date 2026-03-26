@@ -36,12 +36,12 @@ function formatAccountType(type: string, subtype: string | null): string {
 }
 
 // ---------------------------------------------------------------------------
-// finance_list_accounts
+// plaid_list_accounts
 // ---------------------------------------------------------------------------
 
 function createListAccountsTool(db: Database) {
   return tool(
-    'finance_list_accounts',
+    'plaid_list_accounts',
     'List all connected bank accounts with their current balances and account details.',
     {
       type: z
@@ -107,12 +107,12 @@ function createListAccountsTool(db: Database) {
 }
 
 // ---------------------------------------------------------------------------
-// finance_get_balance
+// plaid_get_balance
 // ---------------------------------------------------------------------------
 
 function createGetBalanceTool(db: Database) {
   return tool(
-    'finance_get_balance',
+    'plaid_get_balance',
     'Get the current balance for a specific account or all accounts.',
     {
       accountId: z
@@ -200,12 +200,12 @@ function createGetBalanceTool(db: Database) {
 }
 
 // ---------------------------------------------------------------------------
-// finance_search_transactions
+// plaid_search_transactions
 // ---------------------------------------------------------------------------
 
 function createSearchTransactionsTool(db: Database) {
   return tool(
-    'finance_search_transactions',
+    'plaid_search_transactions',
     'Search and filter transactions across all connected financial accounts.',
     {
       search: z
@@ -302,12 +302,12 @@ function createSearchTransactionsTool(db: Database) {
 }
 
 // ---------------------------------------------------------------------------
-// finance_get_spending_summary
+// plaid_get_spending_summary
 // ---------------------------------------------------------------------------
 
 function createGetSpendingSummaryTool(db: Database) {
   return tool(
-    'finance_get_spending_summary',
+    'plaid_get_spending_summary',
     'Get a spending summary grouped by category for a date range. Aggregates transaction amounts by personalFinanceCategory.',
     {
       startDate: z
@@ -324,7 +324,7 @@ function createGetSpendingSummaryTool(db: Database) {
         const transactions = getTransactionsByUser(db, DEFAULT_USER_ID, {
           startDate: args.startDate,
           endDate: args.endDate,
-          // No limit — we need all transactions for aggregation
+          limit: 10000, // Cap at 10K transactions for summary
         });
 
         if (transactions.length === 0) {
@@ -405,12 +405,12 @@ function createGetSpendingSummaryTool(db: Database) {
 }
 
 // ---------------------------------------------------------------------------
-// finance_list_institutions
+// plaid_list_institutions
 // ---------------------------------------------------------------------------
 
 function createListInstitutionsTool(db: Database) {
   return tool(
-    'finance_list_institutions',
+    'plaid_list_institutions',
     'List all connected financial institutions (banks and other institutions linked via Plaid).',
     {},
     async (_args) => {
@@ -479,27 +479,27 @@ function createListInstitutionsTool(db: Database) {
 export function createPlaidTools(db: Database): ConnectorToolDefinition[] {
   return [
     {
-      name: 'finance_list_accounts',
+      name: 'plaid_list_accounts',
       description: 'List all connected bank accounts with balances',
       sdkTool: createListAccountsTool(db),
     },
     {
-      name: 'finance_get_balance',
+      name: 'plaid_get_balance',
       description: 'Get balance for a specific account or all accounts',
       sdkTool: createGetBalanceTool(db),
     },
     {
-      name: 'finance_search_transactions',
+      name: 'plaid_search_transactions',
       description: 'Search transactions with filters (date, category, amount, keyword)',
       sdkTool: createSearchTransactionsTool(db),
     },
     {
-      name: 'finance_get_spending_summary',
+      name: 'plaid_get_spending_summary',
       description: 'Get spending summary by category for a date range',
       sdkTool: createGetSpendingSummaryTool(db),
     },
     {
-      name: 'finance_list_institutions',
+      name: 'plaid_list_institutions',
       description: 'List connected financial institutions',
       sdkTool: createListInstitutionsTool(db),
     },

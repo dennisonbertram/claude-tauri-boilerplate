@@ -249,6 +249,49 @@ describe('Gmail Connector Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Message not found');
     });
+
+    test('truncates email body exceeding 50KB', async () => {
+      const longBody = 'x'.repeat(60_000);
+      mockGetMessage.mockResolvedValueOnce({
+        id: 'msg-long',
+        threadId: 'thread1',
+        from: 'sender@example.com',
+        to: 'me@example.com',
+        subject: 'Big Email',
+        snippet: '',
+        date: '',
+        labelIds: [],
+        body: longBody,
+      });
+
+      const result = await callTool(tools, 'gmail_get_message', { messageId: 'msg-long' });
+
+      const text: string = result.content[0].text;
+      expect(text).toContain('[Email body truncated');
+      // Should not contain the full 60K body
+      expect(text.length).toBeLessThan(60_000 + 500); // header + truncation notice, not full body
+    });
+
+    test('does not truncate email body under 50KB', async () => {
+      const shortBody = 'Short email body.';
+      mockGetMessage.mockResolvedValueOnce({
+        id: 'msg-short',
+        threadId: 'thread1',
+        from: 'sender@example.com',
+        to: 'me@example.com',
+        subject: 'Small Email',
+        snippet: '',
+        date: '',
+        labelIds: [],
+        body: shortBody,
+      });
+
+      const result = await callTool(tools, 'gmail_get_message', { messageId: 'msg-short' });
+
+      const text: string = result.content[0].text;
+      expect(text).not.toContain('[Email body truncated');
+      expect(text).toContain(shortBody);
+    });
   });
 
   // ---------- gmail_send_message ----------
@@ -318,6 +361,45 @@ describe('Gmail Connector Tools', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Auth token expired');
+    });
+
+    test('rejects invalid email address without calling sendMessage', async () => {
+      mockSendMessage.mockClear();
+
+      const result = await callTool(tools, 'gmail_send_message', {
+        to: 'not-an-email',
+        subject: 'Test',
+        body: 'Body',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid email address');
+      expect(result.content[0].text).toContain('not-an-email');
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    test('rejects email missing @ symbol', async () => {
+      const result = await callTool(tools, 'gmail_send_message', {
+        to: 'noatsign.com',
+        subject: 'Test',
+        body: 'Body',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid email address');
+    });
+
+    test('accepts valid email address', async () => {
+      mockSendMessage.mockResolvedValueOnce({ id: 'sent1', threadId: 'thread1' });
+
+      const result = await callTool(tools, 'gmail_send_message', {
+        to: 'valid@example.com',
+        subject: 'Test',
+        body: 'Body',
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockSendMessage).toHaveBeenCalled();
     });
   });
 });

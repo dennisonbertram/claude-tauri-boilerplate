@@ -214,6 +214,32 @@ describe('drive connector tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error:');
     });
+
+    test('truncates content exceeding 100KB', async () => {
+      const largeContent = 'a'.repeat(120_000);
+      mockGetFileContent.mockResolvedValueOnce({ content: largeContent, mimeType: 'text/plain' });
+
+      const result = await callTool('drive_read_file', { fileId: 'large-file' });
+
+      expect(result.isError).toBeFalsy();
+      const text: string = result.content[0].text;
+      expect(text).toContain('[Content truncated');
+      expect(text).toContain('120000'); // original length in truncation notice
+      // Total length should be header + 100K + truncation notice, not full 120K
+      expect(text.length).toBeLessThan(120_000 + 500);
+    });
+
+    test('does not truncate content under 100KB', async () => {
+      const smallContent = 'Small file content.';
+      mockGetFileContent.mockResolvedValueOnce({ content: smallContent, mimeType: 'text/plain' });
+
+      const result = await callTool('drive_read_file', { fileId: 'small-file' });
+
+      expect(result.isError).toBeFalsy();
+      const text: string = result.content[0].text;
+      expect(text).not.toContain('[Content truncated');
+      expect(text).toContain(smallContent);
+    });
   });
 
   // ---------- drive_upload_file ----------

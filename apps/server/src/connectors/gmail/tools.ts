@@ -100,6 +100,12 @@ function createGetMessageTool(db: Database) {
       try {
         const msg = await getMessage(db, args.messageId);
 
+        const MAX_BODY_LENGTH = 50_000; // ~50KB
+        let bodyText = msg.body || '(no body)';
+        if (bodyText.length > MAX_BODY_LENGTH) {
+          bodyText = bodyText.slice(0, MAX_BODY_LENGTH) + `\n\n[Email body truncated — showing first ${MAX_BODY_LENGTH} characters]`;
+        }
+
         const lines = [
           `Message ID: ${msg.id}`,
           `Thread ID: ${msg.threadId}`,
@@ -110,7 +116,7 @@ function createGetMessageTool(db: Database) {
           `Labels: ${msg.labelIds.join(', ') || 'none'}`,
           '',
           '--- Body ---',
-          msg.body || '(no body)',
+          bodyText,
         ];
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
@@ -151,6 +157,15 @@ function createSendMessageTool(db: Database) {
     },
     async (args) => {
       try {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(args.to)) {
+          return {
+            content: [{ type: 'text' as const, text: `Error: Invalid email address "${args.to}". Please provide a valid email.` }],
+            isError: true,
+          };
+        }
+
         const result = await sendMessage(db, args.to, args.subject, args.body, args.threadId);
 
         const text = [
