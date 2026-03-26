@@ -30,6 +30,8 @@ import { appleHealthConnectorFactory } from './apple-health';
 import { whatsappConnectorFactory } from './whatsapp';
 import { tripitConnectorFactory } from './tripit';
 import { amazonOrdersConnectorFactory } from './amazon-orders';
+import { linkedinConnectorFactory } from './linkedin';
+import { uberLyftConnectorFactory } from './uber-lyft';
 
 // ---------------------------------------------------------------------------
 // Connector registry
@@ -67,6 +69,8 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   whatsappConnectorFactory,
   tripitConnectorFactory,
   amazonOrdersConnectorFactory,
+  linkedinConnectorFactory,
+  uberLyftConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
