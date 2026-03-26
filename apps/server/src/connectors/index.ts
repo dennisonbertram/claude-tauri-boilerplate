@@ -68,7 +68,8 @@ export function getConnectorTools(
   for (const name of enabledConnectorNames) {
     const connector = connectorMap.get(name);
     if (connector) {
-      tools.push(...connector.tools);
+      // Tag each tool with its connector name so callers can filter by connector
+      tools.push(...connector.tools.map((t) => ({ ...t, connectorName: connector.name })));
     }
   }
   return tools;

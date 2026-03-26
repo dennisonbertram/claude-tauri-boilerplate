@@ -3,6 +3,7 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listMessages, getMessage, sendMessage } from '../../services/google/gmail';
+import { sanitizeError } from '../utils';
 
 // ---------------------------------------------------------------------------
 // gmail_list_messages
@@ -68,9 +69,8 @@ function createListMessagesTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error listing messages: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error listing messages: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -121,9 +121,8 @@ function createGetMessageTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error retrieving message: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error retrieving message: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -148,8 +147,8 @@ function createSendMessageTool(db: Database) {
     'Send an email via Gmail. This action sends a real email — use with care and always confirm with the user before calling.',
     {
       to: z.string().describe('Recipient email address (e.g. "someone@example.com")'),
-      subject: z.string().describe('Email subject line'),
-      body: z.string().describe('Plain-text email body'),
+      subject: z.string().max(500).describe('Email subject line'),
+      body: z.string().max(50000).describe('Plain-text email body'),
       threadId: z
         .string()
         .optional()
@@ -166,7 +165,11 @@ function createSendMessageTool(db: Database) {
           };
         }
 
-        const result = await sendMessage(db, args.to, args.subject, args.body, args.threadId);
+        // Sanitize header fields to prevent CRLF injection
+        const sanitizedTo = args.to.replace(/[\r\n]/g, '');
+        const sanitizedSubject = args.subject.replace(/[\r\n]/g, '');
+
+        const result = await sendMessage(db, sanitizedTo, sanitizedSubject, args.body, args.threadId);
 
         const text = [
           'Email sent successfully.',
@@ -176,9 +179,8 @@ function createSendMessageTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error sending email: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error sending email: ${sanitizeError(error)}` }],
           isError: true,
         };
       }

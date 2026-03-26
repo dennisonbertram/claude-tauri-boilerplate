@@ -3,6 +3,20 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listFiles, getFile, getFileContent, uploadFile } from '../../services/google/drive';
+import { sanitizeError } from '../utils';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const ALLOWED_EXPORT_TYPES = [
+  'text/plain',
+  'text/csv',
+  'text/html',
+  'text/tab-separated-values',
+  'application/json',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+] as const;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -115,9 +129,8 @@ function createSearchFilesTool(db: Database) {
           content: [{ type: 'text' as const, text: lines.join('\n') }],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -163,9 +176,8 @@ function createGetFileTool(db: Database) {
           content: [{ type: 'text' as const, text: lines.join('\n') }],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -191,10 +203,10 @@ function createReadFileTool(db: Database) {
     {
       fileId: z.string().describe('The Google Drive file ID'),
       exportMimeType: z
-        .string()
+        .enum(ALLOWED_EXPORT_TYPES)
         .optional()
         .describe(
-          'MIME type to export Google Workspace files as (e.g. "text/plain", "text/csv", "application/pdf"). Only used for Google Docs, Sheets, Slides, etc.',
+          `MIME type to export Google Workspace files as. Allowed values: ${ALLOWED_EXPORT_TYPES.join(', ')}. Only used for Google Docs, Sheets, Slides, etc.`,
         ),
     },
     async (args) => {
@@ -217,9 +229,8 @@ function createReadFileTool(db: Database) {
           ],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -244,7 +255,7 @@ function createUploadFileTool(db: Database) {
     'Upload a new file to Google Drive. Provide the file name, content as a string, and MIME type. Optionally specify a parent folder ID.',
     {
       name: z.string().describe('The name for the new file'),
-      content: z.string().describe('The file content as a string'),
+      content: z.string().max(1_000_000).describe('The file content as a string'),
       mimeType: z
         .string()
         .describe('MIME type of the file (e.g. "text/plain", "text/csv", "application/json")'),
@@ -280,9 +291,8 @@ function createUploadFileTool(db: Database) {
           content: [{ type: 'text' as const, text: lines.join('\n') }],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error: ${sanitizeError(error)}` }],
           isError: true,
         };
       }

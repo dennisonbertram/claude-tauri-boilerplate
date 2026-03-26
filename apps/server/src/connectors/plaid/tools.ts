@@ -7,6 +7,7 @@ import {
   getPlaidItemsByUser,
   getTransactionsByUser,
 } from '../../db/db-plaid';
+import { sanitizeError } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Single-user desktop assumption
@@ -89,9 +90,8 @@ function createListAccountsTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error listing accounts: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error listing accounts: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -147,6 +147,7 @@ function createGetBalanceTool(db: Database) {
                 text: `Account not found: ${args.accountId}`,
               },
             ],
+            isError: true,
           };
         }
 
@@ -182,9 +183,8 @@ function createGetBalanceTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error getting balance: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error getting balance: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -282,10 +282,9 @@ function createSearchTransactionsTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
           content: [
-            { type: 'text' as const, text: `Error searching transactions: ${message}` },
+            { type: 'text' as const, text: `Error searching transactions: ${sanitizeError(error)}` },
           ],
           isError: true,
         };
@@ -385,10 +384,9 @@ function createGetSpendingSummaryTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
           content: [
-            { type: 'text' as const, text: `Error generating spending summary: ${message}` },
+            { type: 'text' as const, text: `Error generating spending summary: ${sanitizeError(error)}` },
           ],
           isError: true,
         };
@@ -453,10 +451,9 @@ function createListInstitutionsTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
           content: [
-            { type: 'text' as const, text: `Error listing institutions: ${message}` },
+            { type: 'text' as const, text: `Error listing institutions: ${sanitizeError(error)}` },
           ],
           isError: true,
         };

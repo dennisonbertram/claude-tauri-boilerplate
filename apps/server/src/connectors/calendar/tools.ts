@@ -3,6 +3,7 @@ import { tool } from '@anthropic-ai/claude-agent-sdk';
 import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../../services/google/calendar';
+import { sanitizeError } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,9 +91,8 @@ function createListEventsTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error listing events: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error listing events: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -116,15 +116,15 @@ function createCreateEventTool(db: Database) {
     'calendar_create_event',
     'Create a new event on Google Calendar.',
     {
-      summary: z.string().describe('Event title/summary'),
+      summary: z.string().max(200).describe('Event title/summary'),
       start: z
         .string()
         .describe('Event start time as ISO 8601 string or date (e.g. "2025-06-01T10:00:00-07:00")'),
       end: z
         .string()
         .describe('Event end time as ISO 8601 string or date (e.g. "2025-06-01T11:00:00-07:00")'),
-      description: z.string().optional().describe('Event description or notes'),
-      location: z.string().optional().describe('Event location or address'),
+      description: z.string().max(5000).optional().describe('Event description or notes'),
+      location: z.string().max(500).optional().describe('Event location or address'),
       attendees: z
         .array(z.string())
         .optional()
@@ -163,9 +163,8 @@ function createCreateEventTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error creating event: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error creating event: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -190,11 +189,11 @@ function createUpdateEventTool(db: Database) {
     'Update an existing Google Calendar event. Only provided fields will be changed.',
     {
       eventId: z.string().describe('The ID of the event to update'),
-      summary: z.string().optional().describe('New event title/summary'),
+      summary: z.string().max(200).optional().describe('New event title/summary'),
       start: z.string().optional().describe('New start time as ISO 8601 string'),
       end: z.string().optional().describe('New end time as ISO 8601 string'),
-      description: z.string().optional().describe('New event description or notes'),
-      location: z.string().optional().describe('New event location or address'),
+      description: z.string().max(5000).optional().describe('New event description or notes'),
+      location: z.string().max(500).optional().describe('New event location or address'),
       calendarId: z
         .string()
         .optional()
@@ -203,7 +202,20 @@ function createUpdateEventTool(db: Database) {
     async (args) => {
       try {
         const { eventId, calendarId, ...updates } = args;
-        const event = await updateEvent(db, eventId, updates, calendarId);
+
+        // Filter out undefined values so we don't send empty patches
+        const cleanUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([, v]) => v !== undefined)
+        );
+
+        if (Object.keys(cleanUpdates).length === 0) {
+          return {
+            content: [{ type: 'text' as const, text: 'Error: At least one field (summary, start, end, description, location) must be provided to update.' }],
+            isError: true,
+          };
+        }
+
+        const event = await updateEvent(db, eventId, cleanUpdates, calendarId);
 
         const lines: string[] = ['Event updated successfully:', ''];
         lines.push(`Title: ${event.summary}`);
@@ -219,9 +231,8 @@ function createUpdateEventTool(db: Database) {
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error updating event: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error updating event: ${sanitizeError(error)}` }],
           isError: true,
         };
       }
@@ -263,9 +274,8 @@ function createDeleteEventTool(db: Database) {
           ],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: 'text' as const, text: `Error deleting event: ${message}` }],
+          content: [{ type: 'text' as const, text: `Error deleting event: ${sanitizeError(error)}` }],
           isError: true,
         };
       }

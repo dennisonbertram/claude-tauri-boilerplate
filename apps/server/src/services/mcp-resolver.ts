@@ -71,12 +71,18 @@ export async function resolveSessionMcpServers(
 
       // Collect tool names so they can be auto-allowed in the SDK permission
       // system. The SDK names MCP tools as `mcp__<serverName>__<toolName>`.
-      // Only auto-allow read-only tools — write/destructive tools require
-      // explicit user confirmation via the SDK's normal permission flow.
+      // Only auto-allow read-only tools from non-sensitive connectors (e.g.,
+      // weather). Sensitive connectors like gmail, calendar, drive, and plaid
+      // must always go through the SDK's normal permission flow even for
+      // read-only operations, because they access private user data.
+      const AUTO_ALLOW_CONNECTORS = new Set(['weather']);
       const tools = getConnectorTools(DEFAULT_ENABLED_CONNECTORS);
       for (const t of tools) {
         const annotations = (t.sdkTool as any).annotations;
-        if (annotations?.readOnlyHint === true) {
+        if (
+          annotations?.readOnlyHint === true &&
+          AUTO_ALLOW_CONNECTORS.has(t.connectorName ?? '')
+        ) {
           connectorAllowedTools.push(`mcp__${CONNECTOR_SERVER_NAME}__${t.name}`);
         }
       }

@@ -19,6 +19,8 @@ export interface ConnectorToolDefinition {
   description: string;
   /** The actual SDK tool definition passed to createSdkMcpServer */
   sdkTool: SdkMcpToolDefinition<any>;
+  /** The name of the connector this tool belongs to (e.g. 'weather', 'gmail') */
+  connectorName?: string;
 }
 
 /**
