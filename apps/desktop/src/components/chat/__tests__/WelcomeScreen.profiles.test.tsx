@@ -71,7 +71,13 @@ const defaultProps = {
 };
 
 describe('WelcomeScreen profile selector', () => {
-  it('renders profile selector when agentProfiles is non-empty and onSelectProfile provided', () => {
+  const openOptionalControls = async () => {
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /optional setup controls/i }));
+    return user;
+  };
+
+  it('renders profile selector when agentProfiles is non-empty and onSelectProfile provided', async () => {
     const onSelectProfile = vi.fn();
     render(
       <WelcomeScreen
@@ -81,6 +87,8 @@ describe('WelcomeScreen profile selector', () => {
         onSelectProfile={onSelectProfile}
       />,
     );
+
+    await openOptionalControls();
 
     // "Start as (optional)" label should be visible
     expect(screen.getByText('Start as (optional)')).toBeDefined();
@@ -116,6 +124,7 @@ describe('WelcomeScreen profile selector', () => {
         onSelectProfile={onSelectProfile}
       />,
     );
+    await openOptionalControls();
 
     await user.click(screen.getByText('Code Reviewer'));
     expect(onSelectProfile).toHaveBeenCalledWith('prof-1');
@@ -124,7 +133,7 @@ describe('WelcomeScreen profile selector', () => {
     expect(onSelectProfile).toHaveBeenCalledWith('prof-2');
   });
 
-  it('visually indicates the selected profile', () => {
+  it('visually indicates the selected profile', async () => {
     render(
       <WelcomeScreen
         {...defaultProps}
@@ -133,6 +142,7 @@ describe('WelcomeScreen profile selector', () => {
         onSelectProfile={vi.fn()}
       />,
     );
+    await openOptionalControls();
 
     const selectedButton = screen.getByText('Code Reviewer').closest('button')!;
     const unselectedButton = screen.getByText('Research Assistant').closest('button')!;
