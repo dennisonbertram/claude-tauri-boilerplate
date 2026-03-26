@@ -33,6 +33,7 @@ type TabId =
   | 'status';
 
 type GroupId = 'general' | 'ai-model' | 'data-context' | 'integrations' | 'status';
+type GeneralTabId = 'general' | 'appearance' | 'notifications';
 
 interface SettingsGroup {
   id: GroupId;
@@ -129,9 +130,20 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
   const [activeGroup, setActiveGroup] = useState<GroupId>(
     initialTab ? tabToGroup(initialTab) : 'general'
   );
+  const [activeGeneralTab, setActiveGeneralTab] = useState<GeneralTabId>(
+    initialTab && tabToGroup(initialTab) === 'general'
+      ? (initialTab as GeneralTabId)
+      : 'general'
+  );
 
   useEffect(() => {
-    if (isOpen) setActiveGroup(initialTab ? tabToGroup(initialTab) : 'general');
+    if (isOpen) {
+      const nextGroup = initialTab ? tabToGroup(initialTab) : 'general';
+      setActiveGroup(nextGroup);
+      if (nextGroup === 'general') {
+        setActiveGeneralTab(initialTab ? (initialTab as GeneralTabId) : 'general');
+      }
+    }
   }, [isOpen, initialTab]);
   const [showApiKey, setShowApiKey] = useState(false);
   const { settings, updateSettings } = useSettings();
@@ -199,24 +211,84 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
 
           {/* Right content area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {currentGroup.tabs.map((tab, idx) => (
-              <div key={tab.id}>
-                {idx > 0 && <hr className="border-border mb-6" />}
-                <h3 className="text-sm font-semibold text-foreground mb-4">{tab.label}</h3>
-                <div className="space-y-6">
-                  <TabContent
-                    tabId={tab.id}
-                    settings={settings}
-                    updateSettings={updateSettings}
-                    showApiKey={showApiKey}
-                    onToggleApiKey={() => setShowApiKey(!showApiKey)}
-                    sessionInfo={sessionInfo}
-                    email={email}
-                    plan={plan}
-                  />
+            {currentGroup.id === 'general' ? (
+              <>
+                <div
+                  className="rounded-lg border border-border bg-background p-1"
+                  role="tablist"
+                  aria-label="General settings subsections"
+                >
+                  <div className="grid grid-cols-3 gap-1">
+                    {currentGroup.tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeGeneralTab === tab.id}
+                        aria-controls={`general-subsection-panel-${tab.id}`}
+                        onClick={() => setActiveGeneralTab(tab.id as GeneralTabId)}
+                        className={`h-8 rounded-md px-3 text-xs font-medium transition-colors sm:text-sm ${
+                          activeGeneralTab === tab.id
+                            ? 'bg-accent text-foreground'
+                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+
+                {currentGroup.tabs.map(
+                  (tab) =>
+                    tab.id === activeGeneralTab && (
+                      <section
+                        key={tab.id}
+                        id={`general-subsection-panel-${tab.id}`}
+                        role="tabpanel"
+                        aria-labelledby={`general-subsection-${tab.id}`}
+                        className="space-y-6"
+                      >
+                        <h3
+                          id={`general-subsection-${tab.id}`}
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          {tab.label}
+                        </h3>
+                        <TabContent
+                          tabId={tab.id}
+                          settings={settings}
+                          updateSettings={updateSettings}
+                          showApiKey={showApiKey}
+                          onToggleApiKey={() => setShowApiKey(!showApiKey)}
+                          sessionInfo={sessionInfo}
+                          email={email}
+                          plan={plan}
+                        />
+                      </section>
+                    )
+                )}
+              </>
+            ) : (
+              currentGroup.tabs.map((tab, idx) => (
+                <div key={tab.id}>
+                  {idx > 0 && <hr className="border-border mb-6" />}
+                  <h3 className="text-sm font-semibold text-foreground mb-4">{tab.label}</h3>
+                  <div className="space-y-6">
+                    <TabContent
+                      tabId={tab.id}
+                      settings={settings}
+                      updateSettings={updateSettings}
+                      showApiKey={showApiKey}
+                      onToggleApiKey={() => setShowApiKey(!showApiKey)}
+                      sessionInfo={sessionInfo}
+                      email={email}
+                      plan={plan}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
