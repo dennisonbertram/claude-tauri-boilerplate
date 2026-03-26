@@ -63,7 +63,8 @@ export async function resolveSessionMcpServers(
 
   // 2. In-process connector MCP server (lazy import to avoid module graph issues in tests)
   try {
-    const { createConnectorMcpServer, getConnectorTools } = await import('../connectors');
+    const { createConnectorMcpServer, getConnectorTools, initConnectors } = await import('../connectors');
+    initConnectors(db);
     const connectorServer = createConnectorMcpServer(DEFAULT_ENABLED_CONNECTORS);
     if (connectorServer) {
       result[CONNECTOR_SERVER_NAME] = connectorServer;
