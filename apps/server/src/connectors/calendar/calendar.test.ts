@@ -258,10 +258,22 @@ describe('calendar_update_event', () => {
 
     const result = await invokeTool('calendar_update_event', {
       eventId: 'nonexistent',
+      summary: 'Updated',
     });
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Event not found');
+  });
+
+  test('returns error when no update fields provided', async () => {
+    const result = await invokeTool('calendar_update_event', {
+      eventId: 'evt-001',
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('At least one field');
+    // The service should NOT have been called
+    expect(mockUpdateEvent).not.toHaveBeenCalled();
   });
 });
 

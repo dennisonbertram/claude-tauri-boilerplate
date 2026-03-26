@@ -153,8 +153,8 @@ function createGetBalanceTool(db: Database) {
 
         const lines: string[] = ['Account Balances:', ''];
 
-        let totalBalance = 0;
-        let hasTotal = false;
+        // Group totals by currency code for multi-currency support
+        const totalsByCurrency = new Map<string, number>();
 
         for (const acct of filtered) {
           const displayName = acct.officialName ?? acct.name;
@@ -172,13 +172,21 @@ function createGetBalanceTool(db: Database) {
           lines.push('');
 
           if (acct.currentBalance !== null) {
-            totalBalance += acct.currentBalance;
-            hasTotal = true;
+            const currency = acct.currencyCode ?? 'USD';
+            totalsByCurrency.set(currency, (totalsByCurrency.get(currency) ?? 0) + acct.currentBalance);
           }
         }
 
-        if (!args.accountId && filtered.length > 1 && hasTotal) {
-          lines.push(`Total across all accounts: ${formatCurrency(totalBalance)}`);
+        if (!args.accountId && filtered.length > 1 && totalsByCurrency.size > 0) {
+          if (totalsByCurrency.size === 1) {
+            const [[currency, total]] = Array.from(totalsByCurrency.entries());
+            lines.push(`Total across all accounts: ${formatCurrency(total, currency)}`);
+          } else {
+            const parts = Array.from(totalsByCurrency.entries())
+              .map(([currency, total]) => `${formatCurrency(total, currency)} ${currency}`)
+              .join(', ');
+            lines.push(`Total across all accounts: ${parts}`);
+          }
         }
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
