@@ -6,7 +6,15 @@ export type ConnectorCategory =
   | 'productivity'
   | 'finance'
   | 'lifestyle'
-  | 'developer';
+  | 'developer'
+  | 'social-media'
+  | 'travel'
+  | 'storage'
+  | 'smart-home'
+  | 'shopping'
+  | 'health'
+  | 'subscriptions'
+  | 'contacts';
 
 /**
  * A tool definition within a connector.
