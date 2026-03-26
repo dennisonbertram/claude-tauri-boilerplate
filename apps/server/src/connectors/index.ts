@@ -10,13 +10,17 @@ import { todoistConnectorFactory } from './todoist';
 import { notionConnectorFactory } from './notion';
 import { slackConnectorFactory } from './slack';
 import { blueskyConnectorFactory } from './bluesky';
+import { googleMapsConnector } from './google-maps';
+import { googlePhotosConnectorFactory } from './google-photos';
+import { contactsConnectorFactory } from './contacts';
+import { stravaConnectorFactory } from './strava';
 
 // ---------------------------------------------------------------------------
 // Connector registry
 // ---------------------------------------------------------------------------
 
 /** Static connectors (no dependencies needed). */
-const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector];
+const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector, googleMapsConnector];
 
 /** Factory connectors (need db injection). Add new factory connectors here. */
 const CONNECTOR_FACTORIES: ConnectorFactory[] = [
@@ -28,6 +32,9 @@ const CONNECTOR_FACTORIES: ConnectorFactory[] = [
   notionConnectorFactory,
   slackConnectorFactory,
   blueskyConnectorFactory,
+  googlePhotosConnectorFactory,
+  contactsConnectorFactory,
+  stravaConnectorFactory,
 ];
 
 /** All initialized connectors (static + factory-created). */
