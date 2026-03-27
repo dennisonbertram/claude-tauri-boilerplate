@@ -10,7 +10,7 @@ import { todoistConnectorFactory } from './todoist';
 import { notionConnectorFactory } from './notion';
 import { slackConnectorFactory } from './slack';
 import { blueskyConnectorFactory } from './bluesky';
-import { googleMapsConnector } from './google-maps';
+import { googleMapsConnectorFactory } from './google-maps';
 import { googlePhotosConnectorFactory } from './google-photos';
 import { contactsConnectorFactory } from './contacts';
 import { stravaConnectorFactory } from './strava';
@@ -38,10 +38,11 @@ import { uberLyftConnectorFactory } from './uber-lyft';
 // ---------------------------------------------------------------------------
 
 /** Static connectors (no dependencies needed). */
-const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector, googleMapsConnector];
+const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector];
 
 /** Factory connectors (need db injection). Add new factory connectors here. */
 const CONNECTOR_FACTORIES: ConnectorFactory[] = [
+  googleMapsConnectorFactory,
   gmailConnectorFactory,
   calendarConnectorFactory,
   driveConnectorFactory,

@@ -61,7 +61,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   return {
     lat: first.geometry.location.lat,
     lng: first.geometry.location.lng,
-    formattedAddress: first.formatted_address,
+    formattedAddress: fenceUntrustedContent(first.formatted_address, 'google-maps'),
     placeId: first.place_id,
   };
 }
@@ -121,10 +121,10 @@ export async function getDirections(
   const data = (await res.json()) as {
     routes?: Array<{
       distanceMeters?: number;
-      duration?: { seconds?: string; text?: string };
+      duration?: string;
       description?: string;
       legs?: Array<{
-        duration?: { seconds?: string; text?: string };
+        duration?: string;
         distanceMeters?: number;
         steps?: Array<{
           navigationInstruction?: { instructions?: string };
@@ -139,15 +139,26 @@ export async function getDirections(
   }
 
   return {
-    routes: data.routes.map((r) => ({
-      distanceMeters: r.distanceMeters ?? 0,
-      duration: r.duration?.text ?? r.duration?.seconds ?? 'Unknown',
-      description: r.description ?? '',
-      steps: (r.legs?.[0]?.steps ?? []).map((s) => ({
-        instruction: s.navigationInstruction?.instructions ?? '',
-        distance: s.localizedValues?.distance?.text ?? '',
-      })),
-    })),
+    routes: data.routes.map((r) => {
+      const rawDuration = r.duration ?? '';
+      const durationSeconds = rawDuration.endsWith('s')
+        ? parseInt(rawDuration.replace('s', ''), 10)
+        : NaN;
+      const durationDisplay = !isNaN(durationSeconds)
+        ? `${Math.round(durationSeconds / 60)} mins`
+        : rawDuration || 'Unknown';
+      return {
+        distanceMeters: r.distanceMeters ?? 0,
+        duration: durationDisplay,
+        description: r.description ? fenceUntrustedContent(r.description, 'google-maps') : '',
+        steps: (r.legs?.[0]?.steps ?? []).map((s) => ({
+          instruction: s.navigationInstruction?.instructions
+            ? fenceUntrustedContent(s.navigationInstruction.instructions, 'google-maps')
+            : '',
+          distance: s.localizedValues?.distance?.text ?? '',
+        })),
+      };
+    }),
   };
 }
 
@@ -541,3 +552,11 @@ export const googleMapsTools: ConnectorToolDefinition[] = [
     sdkTool: placeDetailsTool,
   },
 ];
+
+/**
+ * Factory function that returns a fresh set of Google Maps tool definitions.
+ * Used by googleMapsConnectorFactory.
+ */
+export function createTools(): ConnectorToolDefinition[] {
+  return googleMapsTools;
+}

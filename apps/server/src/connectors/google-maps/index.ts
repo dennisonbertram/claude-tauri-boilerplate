@@ -1,7 +1,7 @@
-import type { ConnectorDefinition } from '../types';
-import { googleMapsTools } from './tools';
+import type { ConnectorFactory } from '../types';
+import { createTools } from './tools';
 
-export const googleMapsConnector: ConnectorDefinition = {
+export const googleMapsConnectorFactory: ConnectorFactory = (_db) => ({
   name: 'google-maps',
   displayName: 'Google Maps',
   description:
@@ -9,8 +9,5 @@ export const googleMapsConnector: ConnectorDefinition = {
   icon: '🗺️',
   category: 'travel',
   requiresAuth: true,
-  tools: googleMapsTools,
-};
-
-// Named export matching the task contract alias
-export { googleMapsConnector as googleMapsConnectorFactory };
+  tools: createTools(),
+});

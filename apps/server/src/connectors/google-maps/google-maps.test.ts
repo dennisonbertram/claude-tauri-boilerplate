@@ -62,12 +62,12 @@ function makeDirectionsResponse(status = 'OK') {
   return {
     routes: [
       {
-        duration: { seconds: '1800', text: '30 mins' },
+        duration: '1800s',
         distanceMeters: 25000,
         description: 'Via I-280 N',
         legs: [
           {
-            duration: { seconds: '1800', text: '30 mins' },
+            duration: '1800s',
             distanceMeters: 25000,
             steps: [
               {
@@ -199,6 +199,7 @@ import {
   searchPlaces,
   getPlaceDetails,
 } from './tools';
+import { googleMapsConnectorFactory } from './index';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -438,6 +439,85 @@ describe('Google Maps Tools', () => {
       );
       const result = await getPlaceDetails('ChIJN1t_tDeuEmsRUsoyG83frY4');
       expect(result.openNow).toBeNull();
+    });
+  });
+
+  // ---------- factory export ----------
+
+  describe('googleMapsConnectorFactory', () => {
+    test('is a function (ConnectorFactory)', () => {
+      expect(typeof googleMapsConnectorFactory).toBe('function');
+    });
+
+    test('returns a ConnectorDefinition when called with a db-like argument', () => {
+      const connector = googleMapsConnectorFactory(null as any);
+      expect(connector.name).toBe('google-maps');
+      expect(connector.displayName).toBe('Google Maps');
+      expect(connector.category).toBe('travel');
+      expect(connector.requiresAuth).toBe(true);
+      expect(Array.isArray(connector.tools)).toBe(true);
+      expect(connector.tools.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ---------- duration parsing ----------
+
+  describe('getDirections — duration parsing', () => {
+    test('parses "1800s" duration string to human-readable minutes', async () => {
+      mockFetch(createMockRouter());
+      const result = await getDirections('A', 'B', 'DRIVE');
+      // 1800 seconds = 30 minutes
+      expect(result.routes[0].duration).toContain('30');
+    });
+
+    test('parses arbitrary "Xs" duration string correctly', async () => {
+      mockFetch(
+        createMockRouter({
+          directionsBody: {
+            routes: [
+              {
+                duration: '3600s',
+                distanceMeters: 10000,
+                description: 'Via Main St',
+                legs: [{ steps: [] }],
+              },
+            ],
+          },
+        })
+      );
+      const result = await getDirections('A', 'B', 'DRIVE');
+      // 3600 seconds = 60 minutes
+      expect(result.routes[0].duration).toContain('60');
+    });
+  });
+
+  // ---------- fencing ----------
+
+  describe('geocodeAddress — fencing', () => {
+    test('fences formatted address in geocode result', async () => {
+      mockFetch(createMockRouter());
+      const result = await geocodeAddress('1600 Amphitheatre Pkwy, Mountain View, CA');
+      expect(typeof result.formattedAddress).toBe('string');
+      expect(result.formattedAddress).toContain('Mountain View');
+      // Should contain fence markers (UNTRUSTED_BEGIN)
+      expect(result.formattedAddress).toContain('UNTRUSTED_BEGIN');
+    });
+  });
+
+  describe('getDirections — fencing', () => {
+    test('fences route description', async () => {
+      mockFetch(createMockRouter());
+      const result = await getDirections('A', 'B', 'DRIVE');
+      expect(result.routes[0].description).toContain('I-280');
+      expect(result.routes[0].description).toContain('UNTRUSTED_BEGIN');
+    });
+
+    test('fences step instructions', async () => {
+      mockFetch(createMockRouter());
+      const result = await getDirections('A', 'B', 'DRIVE');
+      const step = result.routes[0].steps[0];
+      expect(step.instruction).toContain('Turn left');
+      expect(step.instruction).toContain('UNTRUSTED_BEGIN');
     });
   });
 });
