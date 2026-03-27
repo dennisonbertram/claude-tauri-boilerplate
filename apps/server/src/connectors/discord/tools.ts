@@ -10,6 +10,18 @@ import { sanitizeError, fenceUntrustedContent } from '../utils';
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 
+// ---------------------------------------------------------------------------
+// Snowflake validation
+// ---------------------------------------------------------------------------
+
+const SNOWFLAKE_REGEX = /^\d{17,20}$/;
+
+function validateSnowflake(id: string, name: string): void {
+  if (!SNOWFLAKE_REGEX.test(id)) {
+    throw new Error(`Invalid ${name}: must be a Discord snowflake ID (17-20 digits)`);
+  }
+}
+
 function getToken(): string {
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) {
@@ -137,10 +149,12 @@ function createListChannelsTool(_db: Database) {
     'discord_list_channels',
     'List channels in a Discord guild (server).',
     {
-      guild_id: z.string().describe('The Discord guild (server) ID'),
+      guild_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord guild (server) ID'),
     },
     async (args) => {
       try {
+        validateSnowflake(args.guild_id, 'guild_id');
+
         interface DiscordChannel {
           id: string;
           name?: string;
@@ -150,7 +164,7 @@ function createListChannelsTool(_db: Database) {
           parent_id?: string;
         }
 
-        const channels = await discordGet<DiscordChannel[]>(`/guilds/${args.guild_id}/channels`);
+        const channels = await discordGet<DiscordChannel[]>(`/guilds/${encodeURIComponent(args.guild_id)}/channels`);
 
         if (!channels || channels.length === 0) {
           return { content: [{ type: 'text' as const, text: 'No channels found in this guild.' }] };
@@ -216,7 +230,7 @@ function createGetMessagesTool(_db: Database) {
     'discord_get_messages',
     'Get recent messages from a Discord channel.',
     {
-      channel_id: z.string().describe('The Discord channel ID'),
+      channel_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord channel ID'),
       limit: z
         .number()
         .int()
@@ -226,11 +240,15 @@ function createGetMessagesTool(_db: Database) {
         .describe('Number of messages to retrieve (1–100, default 50)'),
       before: z
         .string()
+        .regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID')
         .optional()
         .describe('Retrieve messages before this message ID (for pagination)'),
     },
     async (args) => {
       try {
+        validateSnowflake(args.channel_id, 'channel_id');
+        if (args.before !== undefined) validateSnowflake(args.before, 'before');
+
         interface DiscordMessage {
           id: string;
           content: string;
@@ -245,8 +263,8 @@ function createGetMessagesTool(_db: Database) {
         }
 
         const limit = args.limit ?? 50;
-        let path = `/channels/${args.channel_id}/messages?limit=${limit}`;
-        if (args.before) path += `&before=${args.before}`;
+        let path = `/channels/${encodeURIComponent(args.channel_id)}/messages?limit=${encodeURIComponent(String(limit))}`;
+        if (args.before) path += `&before=${encodeURIComponent(args.before)}`;
 
         const messages = await discordGet<DiscordMessage[]>(path);
 
@@ -299,7 +317,7 @@ function createSendMessageTool(_db: Database) {
     'discord_send_message',
     'Send a message to a Discord channel. This sends a real message — confirm with the user before calling.',
     {
-      channel_id: z.string().describe('The Discord channel ID to send the message to'),
+      channel_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord channel ID to send the message to'),
       content: z
         .string()
         .max(2000)
@@ -307,13 +325,15 @@ function createSendMessageTool(_db: Database) {
     },
     async (args) => {
       try {
+        validateSnowflake(args.channel_id, 'channel_id');
+
         interface DiscordMessage {
           id: string;
           channel_id: string;
           timestamp: string;
         }
 
-        const data = await discordPost<DiscordMessage>(`/channels/${args.channel_id}/messages`, {
+        const data = await discordPost<DiscordMessage>(`/channels/${encodeURIComponent(args.channel_id)}/messages`, {
           content: args.content,
         });
 
@@ -352,8 +372,8 @@ function createAddReactionTool(_db: Database) {
     'discord_add_reaction',
     'Add an emoji reaction to a Discord message.',
     {
-      channel_id: z.string().describe('The Discord channel ID where the message is'),
-      message_id: z.string().describe('The Discord message ID to react to'),
+      channel_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord channel ID where the message is'),
+      message_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord message ID to react to'),
       emoji: z
         .string()
         .describe(
@@ -362,10 +382,13 @@ function createAddReactionTool(_db: Database) {
     },
     async (args) => {
       try {
+        validateSnowflake(args.channel_id, 'channel_id');
+        validateSnowflake(args.message_id, 'message_id');
+
         // URL-encode the emoji for the path
         const encodedEmoji = encodeURIComponent(args.emoji);
         await discordPut(
-          `/channels/${args.channel_id}/messages/${args.message_id}/reactions/${encodedEmoji}/@me`
+          `/channels/${encodeURIComponent(args.channel_id)}/messages/${encodeURIComponent(args.message_id)}/reactions/${encodedEmoji}/@me`
         );
 
         return {
@@ -403,10 +426,12 @@ function createGetUserTool(_db: Database) {
     'discord_get_user',
     'Get information about a Discord user by their user ID.',
     {
-      user_id: z.string().describe('The Discord user ID to look up'),
+      user_id: z.string().regex(/^\d{17,20}$/, 'Must be a Discord snowflake ID').describe('The Discord user ID to look up'),
     },
     async (args) => {
       try {
+        validateSnowflake(args.user_id, 'user_id');
+
         interface DiscordUser {
           id: string;
           username: string;
@@ -416,7 +441,7 @@ function createGetUserTool(_db: Database) {
           avatar?: string;
         }
 
-        const user = await discordGet<DiscordUser>(`/users/${args.user_id}`);
+        const user = await discordGet<DiscordUser>(`/users/${encodeURIComponent(args.user_id)}`);
 
         const lines: string[] = [
           `User ID: ${user.id}`,
