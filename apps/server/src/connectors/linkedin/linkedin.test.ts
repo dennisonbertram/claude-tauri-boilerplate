@@ -46,7 +46,7 @@ mock.module('../../services/google/gmail', () => ({
 // Import tools after mocking
 // ---------------------------------------------------------------------------
 
-const { createLinkedinTools } = await import('./tools');
+const { createLinkedinTools, sanitizeGmailQuery } = await import('./tools');
 const { linkedinConnectorFactory } = await import('./index');
 
 // ---------------------------------------------------------------------------
@@ -571,5 +571,85 @@ describe('LinkedIn Connector', () => {
 
       expect(result.content[0].text).not.toContain('test-linkedin-token');
     });
+  });
+
+  // ---------- linkedin_share_post destructiveHint ----------
+
+  describe('linkedin_share_post annotations', () => {
+    test('has destructiveHint: true', () => {
+      const shareTool = tools.find((t) => t.name === 'linkedin_share_post');
+      expect(shareTool).toBeDefined();
+      expect((shareTool!.sdkTool as any).annotations?.destructiveHint).toBe(true);
+    });
+
+    test('has readOnlyHint: false', () => {
+      const shareTool = tools.find((t) => t.name === 'linkedin_share_post');
+      expect((shareTool!.sdkTool as any).annotations?.readOnlyHint).toBe(false);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sanitizeGmailQuery — Gmail injection prevention
+// ---------------------------------------------------------------------------
+
+describe('sanitizeGmailQuery', () => {
+  test('passes through plain text unchanged', () => {
+    expect(sanitizeGmailQuery('connection request')).toBe('connection request');
+  });
+
+  test('removes colon operator (field injection)', () => {
+    const result = sanitizeGmailQuery('from:evil@attacker.com');
+    expect(result).not.toContain(':');
+  });
+
+  test('removes double-quote phrase grouping', () => {
+    const result = sanitizeGmailQuery('"inject query"');
+    expect(result).not.toContain('"');
+  });
+
+  test('removes curly braces (label grouping)', () => {
+    const result = sanitizeGmailQuery('{label:inbox}');
+    expect(result).not.toContain('{');
+    expect(result).not.toContain('}');
+  });
+
+  test('removes parentheses (boolean grouping)', () => {
+    const result = sanitizeGmailQuery('(OR something)');
+    expect(result).not.toContain('(');
+    expect(result).not.toContain(')');
+  });
+
+  test('removes OR boolean keyword', () => {
+    const result = sanitizeGmailQuery('hello OR from:evil');
+    expect(result).not.toContain('OR');
+  });
+
+  test('removes AND boolean keyword', () => {
+    const result = sanitizeGmailQuery('hello AND from:evil');
+    expect(result).not.toContain('AND');
+  });
+
+  test('removes leading hyphen negation', () => {
+    const result = sanitizeGmailQuery('-label:spam');
+    expect(result).not.toContain('-label');
+  });
+
+  test('prevents Gmail query injection via from: operator', () => {
+    const malicious = 'test from:attacker@evil.com OR label:all';
+    const result = sanitizeGmailQuery(malicious);
+    // Should not contain operator characters that would escape the scope
+    expect(result).not.toContain(':');
+    expect(result).not.toContain('OR');
+  });
+
+  test('collapses multiple spaces', () => {
+    const result = sanitizeGmailQuery('hello   world');
+    expect(result).toBe('hello world');
+  });
+
+  test('trims whitespace', () => {
+    const result = sanitizeGmailQuery('  hello  ');
+    expect(result).toBe('hello');
   });
 });

@@ -63,6 +63,46 @@ async function linkedinPost<T = unknown>(
 }
 
 // ---------------------------------------------------------------------------
+// Gmail query sanitization
+// ---------------------------------------------------------------------------
+
+/**
+ * Strips Gmail search operators from user-supplied input to prevent query injection.
+ *
+ * Gmail supports operators like `from:`, `subject:`, `label:`, boolean operators
+ * (OR, AND), grouping characters ({}, ()), negation (-), and quoted phrases.
+ * A malicious user could inject these to escape the intended
+ * `from:notifications@linkedin.com` scope and search arbitrary mailboxes.
+ *
+ * This function removes:
+ * - Colon `:` (field operators: from:, subject:, label:, etc.)
+ * - Double-quote `"` (phrase grouping)
+ * - Curly braces `{` and `}` (label grouping)
+ * - Parentheses `(` and `)` (boolean grouping)
+ * - Hyphen/minus `-` at word boundaries (negation operator)
+ * - Bare `OR` and `AND` boolean keywords
+ */
+export function sanitizeGmailQuery(input: string): string {
+  return input
+    // Remove Gmail field operators (e.g. "from:", "subject:", "label:")
+    .replace(/:/g, '')
+    // Remove phrase-grouping quotes
+    .replace(/"/g, '')
+    // Remove curly braces used for label grouping
+    .replace(/[{}]/g, '')
+    // Remove parentheses used for boolean grouping
+    .replace(/[()]/g, '')
+    // Remove standalone boolean NOT operator (leading hyphen before a word)
+    .replace(/-(?=\S)/g, '')
+    // Remove bare OR / AND boolean keywords (case-sensitive per Gmail spec)
+    .replace(/\bOR\b/g, '')
+    .replace(/\bAND\b/g, '')
+    // Collapse multiple spaces left behind by removals
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+// ---------------------------------------------------------------------------
 // linkedin_get_profile
 // ---------------------------------------------------------------------------
 
@@ -267,6 +307,7 @@ function createSharePostTool(_db: Database) {
       annotations: {
         title: 'Share LinkedIn Post',
         readOnlyHint: false,
+        destructiveHint: true,
         openWorldHint: true,
       },
     }
@@ -299,8 +340,12 @@ function createSearchEmailsTool(db: Database) {
     async (args) => {
       try {
         const baseQuery = 'from:notifications@linkedin.com';
-        const fullQuery = args.query
-          ? `${baseQuery} ${args.query}`
+        // Sanitize user-supplied query to prevent Gmail operator injection.
+        // Without this, a user could inject operators like `from:`, `OR`, `-label:`,
+        // etc. to escape the intended scope and search arbitrary mailbox content.
+        const safeUserQuery = args.query ? sanitizeGmailQuery(args.query) : undefined;
+        const fullQuery = safeUserQuery
+          ? `${baseQuery} ${safeUserQuery}`
           : baseQuery;
 
         const { messages, nextPageToken } = await listMessages(

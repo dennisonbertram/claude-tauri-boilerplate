@@ -55,8 +55,8 @@ function createListEntitiesTool(_db: Database) {
         for (const entity of states) {
           const friendlyName = entity.attributes?.friendly_name ?? '';
           lines.push(
-            `Entity ID: ${entity.entity_id}`,
-            `State: ${entity.state}`,
+            `Entity ID: ${fenceUntrustedContent(entity.entity_id, 'home-assistant')}`,
+            `State: ${fenceUntrustedContent(entity.state, 'home-assistant')}`,
             friendlyName
               ? `Friendly Name: ${fenceUntrustedContent(friendlyName, 'home-assistant')}`
               : 'Friendly Name: (none)',
@@ -122,12 +122,12 @@ function createGetStateTool(_db: Database) {
         const friendlyName = attrs.friendly_name ?? '';
         const otherAttrs = Object.entries(attrs)
           .filter(([k]) => k !== 'friendly_name')
-          .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
+          .map(([k, v]) => `  ${k}: ${fenceUntrustedContent(JSON.stringify(v), 'home-assistant')}`)
           .join('\n');
 
         const lines = [
-          `Entity ID: ${entity.entity_id}`,
-          `State: ${entity.state}`,
+          `Entity ID: ${fenceUntrustedContent(entity.entity_id, 'home-assistant')}`,
+          `State: ${fenceUntrustedContent(entity.state, 'home-assistant')}`,
           friendlyName
             ? `Friendly Name: ${fenceUntrustedContent(String(friendlyName), 'home-assistant')}`
             : 'Friendly Name: (none)',
@@ -329,11 +329,11 @@ function createGetHistoryTool(_db: Database) {
         }
 
         const lines: string[] = [
-          `History for "${args.entity_id}" (${entityHistory.length} entries):`,
+          `History for "${fenceUntrustedContent(args.entity_id, 'home-assistant')}" (${entityHistory.length} entries):`,
           '',
         ];
         for (const entry of entityHistory) {
-          lines.push(`  ${entry.last_changed}: ${entry.state}`);
+          lines.push(`  ${entry.last_changed}: ${fenceUntrustedContent(entry.state, 'home-assistant')}`);
         }
 
         return { content: [{ type: 'text' as const, text: lines.join('\n') }] };

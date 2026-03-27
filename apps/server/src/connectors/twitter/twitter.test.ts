@@ -32,9 +32,11 @@ function errorResponse(status: number, body: string): Response {
 // ---------------------------------------------------------------------------
 
 const ORIGINAL_ENV = process.env.TWITTER_BEARER_TOKEN;
+const ORIGINAL_USER_TOKEN = process.env.TWITTER_USER_ACCESS_TOKEN;
 
 beforeEach(() => {
   process.env.TWITTER_BEARER_TOKEN = 'test-bearer-token';
+  process.env.TWITTER_USER_ACCESS_TOKEN = 'test-user-access-token';
 });
 
 afterEach(() => {
@@ -43,6 +45,11 @@ afterEach(() => {
     delete process.env.TWITTER_BEARER_TOKEN;
   } else {
     process.env.TWITTER_BEARER_TOKEN = ORIGINAL_ENV;
+  }
+  if (ORIGINAL_USER_TOKEN === undefined) {
+    delete process.env.TWITTER_USER_ACCESS_TOKEN;
+  } else {
+    process.env.TWITTER_USER_ACCESS_TOKEN = ORIGINAL_USER_TOKEN;
   }
 });
 
@@ -398,6 +405,13 @@ describe('twitter_create_tweet', () => {
     const result = await callTool('twitter_create_tweet', { text: 'Hello' }) as any;
     const text: string = result.content[0].text;
     expect(text).toContain('UNTRUSTED_BEGIN');
+  });
+
+  test('returns error when TWITTER_USER_ACCESS_TOKEN is not set', async () => {
+    delete process.env.TWITTER_USER_ACCESS_TOKEN;
+    const result = await callTool('twitter_create_tweet', { text: 'Hello' }) as any;
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('user-context authentication');
   });
 });
 

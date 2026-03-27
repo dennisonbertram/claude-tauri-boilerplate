@@ -17,6 +17,38 @@ function getBearerToken(): string {
   return token;
 }
 
+/**
+ * Checks whether OAuth 2.0 user-context tokens are configured for write operations.
+ * Returns the token if available, or null if not.
+ */
+function getUserAccessToken(): string | null {
+  return process.env.TWITTER_USER_ACCESS_TOKEN ?? null;
+}
+
+/**
+ * Returns a clear error result when write tools are called without user-context auth.
+ * Bearer tokens (app-only) only support read operations on Twitter API v2.
+ */
+function writeAuthError(): { content: Array<{ type: 'text'; text: string }>; isError: true } {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: [
+          'This write operation requires OAuth 2.0 user-context authentication.',
+          '',
+          'Bearer tokens (app-only auth) only support read operations.',
+          'Write operations (posting tweets, liking, retweeting) must act on behalf of',
+          'a specific Twitter user and require user-context tokens.',
+          '',
+          'To enable write operations, set: TWITTER_USER_ACCESS_TOKEN',
+        ].join('\n'),
+      },
+    ],
+    isError: true as const,
+  };
+}
+
 async function twitterFetch(path: string, init?: RequestInit): Promise<unknown> {
   const token = getBearerToken();
   const url = `${TWITTER_API_BASE}${path}`;
@@ -340,6 +372,11 @@ const createTweetTool = tool(
   },
   async (args) => {
     try {
+      const userToken = getUserAccessToken();
+      if (!userToken) {
+        return writeAuthError();
+      }
+
       const body: Record<string, unknown> = { text: args.text };
       if (args.replyToTweetId) {
         body.reply = { in_reply_to_tweet_id: args.replyToTweetId };
