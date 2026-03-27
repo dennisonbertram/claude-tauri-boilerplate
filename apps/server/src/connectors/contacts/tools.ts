@@ -4,6 +4,7 @@ import type { Database } from 'bun:sqlite';
 import type { ConnectorToolDefinition } from '../types';
 import { sanitizeError, fenceUntrustedContent } from '../utils';
 import { runJxa } from './jxa';
+import { getAuthenticatedClient } from '../../services/google/auth';
 
 // ---------------------------------------------------------------------------
 // Google People API helper
@@ -45,10 +46,16 @@ export async function listGoogleContactGroups(accessToken: string): Promise<Goog
   return data.contactGroups ?? [];
 }
 
+const RESOURCE_NAME_RE = /^people\/[a-zA-Z0-9]+$/;
+
 export async function getGoogleContact(
   accessToken: string,
   resourceName: string
 ): Promise<GooglePerson> {
+  if (!RESOURCE_NAME_RE.test(resourceName)) {
+    throw new Error(`Invalid resourceName: ${JSON.stringify(resourceName)}`);
+  }
+
   const url =
     `https://people.googleapis.com/v1/${resourceName}` +
     `?personFields=names,emailAddresses,phoneNumbers,organizations,addresses,birthdays,biographies`;
@@ -88,13 +95,27 @@ interface GoogleContactGroup {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: try to get Google access token from auth infrastructure
+// ---------------------------------------------------------------------------
+
+async function tryGetGoogleAccessToken(db: Database): Promise<string | null> {
+  try {
+    const client = getAuthenticatedClient(db);
+    const { token } = await client.getAccessToken();
+    return token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // contacts_search
 // ---------------------------------------------------------------------------
 
-function createSearchTool(_db: Database) {
+function createSearchTool(db: Database) {
   return tool(
     'contacts_search',
-    'Search contacts by name, email, or phone number. Uses Apple Contacts on macOS via osascript, or Google Contacts via the People API as an alternative.',
+    'Search contacts by name, email, or phone number. Uses Apple Contacts on macOS via osascript, or Google Contacts via the People API if Google account is connected.',
     {
       query: z.string().describe('Search term: a name, email address, or phone number'),
       maxResults: z
@@ -104,18 +125,15 @@ function createSearchTool(_db: Database) {
         .max(50)
         .optional()
         .describe('Maximum results to return (1-50, default 20)'),
-      googleAccessToken: z
-        .string()
-        .optional()
-        .describe('Google OAuth access token. If provided, uses Google Contacts instead of Apple Contacts.'),
     },
     async (args) => {
       try {
         const max = args.maxResults ?? 20;
+        const googleToken = await tryGetGoogleAccessToken(db);
 
-        if (args.googleAccessToken) {
+        if (googleToken) {
           // --- Google People API path ---
-          const people = await searchGoogleContacts(args.googleAccessToken, args.query, max);
+          const people = await searchGoogleContacts(googleToken, args.query, max);
 
           if (people.length === 0) {
             return {
@@ -255,7 +273,7 @@ function createSearchTool(_db: Database) {
 // contacts_get
 // ---------------------------------------------------------------------------
 
-function createGetTool(_db: Database) {
+function createGetTool(db: Database) {
   return tool(
     'contacts_get',
     'Get full contact details by ID (Apple Contacts UUID or Google resourceName) or by name. Returns all available fields.',
@@ -265,10 +283,6 @@ function createGetTool(_db: Database) {
         .optional()
         .describe('Apple Contacts UUID or Google People resourceName (e.g. "people/c12345")'),
       name: z.string().optional().describe('Contact name to look up (used if id is not provided)'),
-      googleAccessToken: z
-        .string()
-        .optional()
-        .describe('Google OAuth access token. Required when looking up a Google contact by resourceName.'),
     },
     async (args) => {
       if (!args.id && !args.name) {
@@ -279,30 +293,34 @@ function createGetTool(_db: Database) {
       }
 
       try {
-        if (args.googleAccessToken && args.id) {
-          // --- Google People API path ---
-          const p = await getGoogleContact(args.googleAccessToken, args.id);
+        // If id looks like a Google resourceName, try Google People API first
+        const isGoogleId = args.id && RESOURCE_NAME_RE.test(args.id);
+        if (isGoogleId) {
+          const googleToken = await tryGetGoogleAccessToken(db);
+          if (googleToken) {
+            const p = await getGoogleContact(googleToken, args.id!);
 
-          const name = p.names?.[0]?.displayName ?? '(unknown)';
-          const emails = p.emailAddresses?.map((e) => `${e.value ?? ''} (${e.type ?? 'other'})`).join(', ') ?? '';
-          const phones = p.phoneNumbers?.map((ph) => `${ph.value ?? ''} (${ph.type ?? 'other'})`).join(', ') ?? '';
-          const org = p.organizations?.[0]?.name ?? '';
-          const title = p.organizations?.[0]?.title ?? '';
-          const address = p.addresses?.[0]?.formattedValue ?? '';
-          const bio = p.biographies?.[0]?.value ?? '';
+            const name = p.names?.[0]?.displayName ?? '(unknown)';
+            const emails = p.emailAddresses?.map((e) => `${e.value ?? ''} (${e.type ?? 'other'})`).join(', ') ?? '';
+            const phones = p.phoneNumbers?.map((ph) => `${ph.value ?? ''} (${ph.type ?? 'other'})`).join(', ') ?? '';
+            const org = p.organizations?.[0]?.name ?? '';
+            const title = p.organizations?.[0]?.title ?? '';
+            const address = p.addresses?.[0]?.formattedValue ?? '';
+            const bio = p.biographies?.[0]?.value ?? '';
 
-          const lines = [
-            `ID: ${fenceUntrustedContent(p.resourceName ?? '', 'contacts')}`,
-            `Name: ${fenceUntrustedContent(name, 'contacts')}`,
-            ...(emails ? [`Email: ${fenceUntrustedContent(emails, 'contacts')}`] : []),
-            ...(phones ? [`Phone: ${fenceUntrustedContent(phones, 'contacts')}`] : []),
-            ...(org ? [`Organization: ${fenceUntrustedContent(org, 'contacts')}`] : []),
-            ...(title ? [`Title: ${fenceUntrustedContent(title, 'contacts')}`] : []),
-            ...(address ? [`Address: ${fenceUntrustedContent(address, 'contacts')}`] : []),
-            ...(bio ? [`Bio: ${fenceUntrustedContent(bio, 'contacts')}`] : []),
-          ];
+            const lines = [
+              `ID: ${fenceUntrustedContent(p.resourceName ?? '', 'contacts')}`,
+              `Name: ${fenceUntrustedContent(name, 'contacts')}`,
+              ...(emails ? [`Email: ${fenceUntrustedContent(emails, 'contacts')}`] : []),
+              ...(phones ? [`Phone: ${fenceUntrustedContent(phones, 'contacts')}`] : []),
+              ...(org ? [`Organization: ${fenceUntrustedContent(org, 'contacts')}`] : []),
+              ...(title ? [`Title: ${fenceUntrustedContent(title, 'contacts')}`] : []),
+              ...(address ? [`Address: ${fenceUntrustedContent(address, 'contacts')}`] : []),
+              ...(bio ? [`Bio: ${fenceUntrustedContent(bio, 'contacts')}`] : []),
+            ];
 
-          return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+            return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+          }
         }
 
         // --- Apple Contacts via JXA ---
@@ -424,21 +442,18 @@ function createGetTool(_db: Database) {
 // contacts_list_groups
 // ---------------------------------------------------------------------------
 
-function createListGroupsTool(_db: Database) {
+function createListGroupsTool(db: Database) {
   return tool(
     'contacts_list_groups',
     'List contact groups (Apple Contacts groups or Google Contact labels). Returns group names and member counts where available.',
-    {
-      googleAccessToken: z
-        .string()
-        .optional()
-        .describe('Google OAuth access token. If provided, lists Google Contact labels instead of Apple groups.'),
-    },
-    async (args) => {
+    {},
+    async (_args) => {
       try {
-        if (args.googleAccessToken) {
+        const googleToken = await tryGetGoogleAccessToken(db);
+
+        if (googleToken) {
           // --- Google People API path ---
-          const groups = await listGoogleContactGroups(args.googleAccessToken);
+          const groups = await listGoogleContactGroups(googleToken);
 
           if (groups.length === 0) {
             return {

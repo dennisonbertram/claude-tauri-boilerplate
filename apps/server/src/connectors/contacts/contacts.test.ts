@@ -13,6 +13,24 @@ mock.module('./jxa', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock Google auth infrastructure
+// ---------------------------------------------------------------------------
+
+// Controls whether tests simulate a connected Google account.
+let _googleToken: string | null = null;
+
+mock.module('../../services/google/auth', () => ({
+  getAuthenticatedClient: (_db: Database) => {
+    if (!_googleToken) {
+      throw new Error('No Google OAuth credentials stored — user must connect first');
+    }
+    return {
+      getAccessToken: async () => ({ token: _googleToken }),
+    };
+  },
+}));
+
+// ---------------------------------------------------------------------------
 // Mock fetch for Google People API
 // ---------------------------------------------------------------------------
 
@@ -58,6 +76,10 @@ function setJxaError(message: string) {
   };
 }
 
+function setGoogleToken(token: string | null) {
+  _googleToken = token;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -72,6 +94,7 @@ describe('Contacts Connector Tools', () => {
   afterEach(() => {
     restoreFetch();
     setJxaResult([]);
+    setGoogleToken(null);
   });
 
   // ---------- Tool registration ----------
@@ -116,6 +139,27 @@ describe('Contacts Connector Tools', () => {
       for (const t of tools) {
         expect((t.sdkTool as any).annotations?.openWorldHint).toBe(true);
       }
+    });
+
+    test('contacts_search schema does not expose googleAccessToken', () => {
+      const t = tools.find((t) => t.name === 'contacts_search')!;
+      const inputSchema = (t.sdkTool as any).input_schema ?? (t.sdkTool as any).inputSchema;
+      const properties = inputSchema?.properties ?? {};
+      expect(properties).not.toHaveProperty('googleAccessToken');
+    });
+
+    test('contacts_get schema does not expose googleAccessToken', () => {
+      const t = tools.find((t) => t.name === 'contacts_get')!;
+      const inputSchema = (t.sdkTool as any).input_schema ?? (t.sdkTool as any).inputSchema;
+      const properties = inputSchema?.properties ?? {};
+      expect(properties).not.toHaveProperty('googleAccessToken');
+    });
+
+    test('contacts_list_groups schema does not expose googleAccessToken', () => {
+      const t = tools.find((t) => t.name === 'contacts_list_groups')!;
+      const inputSchema = (t.sdkTool as any).input_schema ?? (t.sdkTool as any).inputSchema;
+      const properties = inputSchema?.properties ?? {};
+      expect(properties).not.toHaveProperty('googleAccessToken');
     });
   });
 
@@ -194,7 +238,8 @@ describe('Contacts Connector Tools', () => {
   // ---------- contacts_search (Google Contacts) ----------
 
   describe('contacts_search — Google Contacts', () => {
-    test('calls Google People API and formats results', async () => {
+    test('calls Google People API and formats results when Google token is available', async () => {
+      setGoogleToken('fake-token');
       mockFetch(() =>
         new Response(
           JSON.stringify({
@@ -214,10 +259,7 @@ describe('Contacts Connector Tools', () => {
         )
       );
 
-      const result = await callTool(tools, 'contacts_search', {
-        query: 'Bob',
-        googleAccessToken: 'fake-token',
-      });
+      const result = await callTool(tools, 'contacts_search', { query: 'Bob' });
 
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text as string;
@@ -227,29 +269,26 @@ describe('Contacts Connector Tools', () => {
     });
 
     test('returns empty message when Google returns no results', async () => {
+      setGoogleToken('fake-token');
       mockFetch(() => new Response(JSON.stringify({ results: [] }), { status: 200 }));
 
-      const result = await callTool(tools, 'contacts_search', {
-        query: 'Nobody',
-        googleAccessToken: 'fake-token',
-      });
+      const result = await callTool(tools, 'contacts_search', { query: 'Nobody' });
 
       expect(result.content[0].text).toContain('No contacts found');
     });
 
     test('returns error when Google People API returns HTTP error', async () => {
+      setGoogleToken('bad-token');
       mockFetch(() => new Response('Unauthorized', { status: 401 }));
 
-      const result = await callTool(tools, 'contacts_search', {
-        query: 'Alice',
-        googleAccessToken: 'bad-token',
-      });
+      const result = await callTool(tools, 'contacts_search', { query: 'Alice' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error searching contacts');
     });
 
     test('fences Google contact fields', async () => {
+      setGoogleToken('fake-token');
       mockFetch(() =>
         new Response(
           JSON.stringify({
@@ -269,14 +308,22 @@ describe('Contacts Connector Tools', () => {
         )
       );
 
-      const result = await callTool(tools, 'contacts_search', {
-        query: 'Injected',
-        googleAccessToken: 'fake-token',
-      });
+      const result = await callTool(tools, 'contacts_search', { query: 'Injected' });
 
       const text = result.content[0].text as string;
       expect(text).toContain('UNTRUSTED_BEGIN');
       expect(text).toContain('<b>Injected Name</b>');
+    });
+
+    test('falls back to Apple Contacts when no Google token is present', async () => {
+      // No setGoogleToken call — _googleToken remains null
+      setJxaResult([
+        { id: 'apple-1', name: 'Apple User', emails: ['apple@example.com'], phones: [], organization: '' },
+      ]);
+
+      const result = await callTool(tools, 'contacts_search', { query: 'Apple' });
+      const text = result.content[0].text as string;
+      expect(text).toContain('Apple User');
     });
   });
 
@@ -360,7 +407,8 @@ describe('Contacts Connector Tools', () => {
       expect(result.content[0].text).toContain('Error retrieving contact');
     });
 
-    test('uses Google People API when googleAccessToken is provided', async () => {
+    test('uses Google People API when Google token is available and id matches people/ pattern', async () => {
+      setGoogleToken('fake-token');
       mockFetch(() =>
         new Response(
           JSON.stringify({
@@ -374,15 +422,21 @@ describe('Contacts Connector Tools', () => {
         )
       );
 
-      const result = await callTool(tools, 'contacts_get', {
-        id: 'people/c123',
-        googleAccessToken: 'fake-token',
-      });
+      const result = await callTool(tools, 'contacts_get', { id: 'people/c123' });
 
       expect(result.content[0].type).toBe('text');
       const text = result.content[0].text as string;
       expect(text).toContain('Carol White');
       expect(text).toContain('carol@example.com');
+    });
+
+    test('rejects invalid resourceName to prevent path traversal', async () => {
+      setGoogleToken('fake-token');
+
+      const result = await callTool(tools, 'contacts_get', { id: 'people/../admin' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error retrieving contact');
     });
   });
 
@@ -431,7 +485,8 @@ describe('Contacts Connector Tools', () => {
       expect(result.content[0].text).toContain('Error listing contact groups');
     });
 
-    test('uses Google People API when googleAccessToken provided', async () => {
+    test('uses Google People API when Google token is available', async () => {
+      setGoogleToken('fake-token');
       mockFetch(() =>
         new Response(
           JSON.stringify({
@@ -456,9 +511,7 @@ describe('Contacts Connector Tools', () => {
         )
       );
 
-      const result = await callTool(tools, 'contacts_list_groups', {
-        googleAccessToken: 'fake-token',
-      });
+      const result = await callTool(tools, 'contacts_list_groups', {});
 
       const text = result.content[0].text as string;
       expect(text).toContain('Starred');
