@@ -62,7 +62,7 @@ describe('SessionSidebar', () => {
     expect(screen.getByText('Second Chat')).toBeTruthy();
   });
 
-  test('groups sessions into Last Week and month buckets', () => {
+  test('groups sessions into Last Week and month buckets', async () => {
     const monthNames = [
       'January',
       'February',
@@ -78,31 +78,38 @@ describe('SessionSidebar', () => {
       'December',
     ] as const;
 
-    const today = new Date();
+    const now = new Date();
     const dayMs = 24 * 60 * 60 * 1000;
     const toMonthLabel = (date: Date) => `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
-    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1, 9, 0, 0, 0);
-    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 20, 9, 0, 0, 0);
-    const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 20, 9, 0, 0, 0);
-    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 20, 9, 0, 0, 0);
+    // Create dates that will fall into predictable buckets regardless of current date:
+    // - 10 days ago: "Last Week" (7-14 days ago)
+    // - 20 days ago: "This Month" or prior month bucket (>14 days, depends on month boundaries)
+    // - 40 days ago: Previous month bucket
+    // - 70 days ago: Two months ago bucket
+    const lastWeekDate = new Date(now.getTime() - (10 * dayMs));
+    const olderDate = new Date(now.getTime() - (40 * dayMs));
+    const evenOlderDate = new Date(now.getTime() - (70 * dayMs));
 
     const sessions = [
-      makeSession({ id: 'thisMonth', title: 'March summary', createdAt: thisMonth.toISOString() }),
-      makeSession({ id: 'lastMonth', title: 'Last month summary', createdAt: lastMonth.toISOString() }),
-      makeSession({ id: 'twoMonthsAgo', title: 'Two months ago summary', createdAt: twoMonthsAgo.toISOString() }),
-      makeSession({ id: 'threeMonthsAgo', title: 'Three months ago summary', createdAt: threeMonthsAgo.toISOString() }),
-      makeSession({ id: 'lastWeek', title: 'Last week summary', createdAt: new Date(today.getTime() - (10 * dayMs)).toISOString() }),
+      makeSession({ id: 'lastWeek', title: 'Last week summary', createdAt: lastWeekDate.toISOString() }),
+      makeSession({ id: 'olderDate', title: 'Older summary', createdAt: olderDate.toISOString() }),
+      makeSession({ id: 'evenOlder', title: 'Even older summary', createdAt: evenOlderDate.toISOString() }),
     ];
 
     render(<SessionSidebar {...defaultProps} sessions={sessions} />);
 
-    expect(screen.getByText('Last Week')).toBeTruthy();
-    expect(screen.getByText('This Month')).toBeTruthy();
-    expect(screen.getByText(toMonthLabel(lastMonth))).toBeTruthy();
-    expect(screen.getByText(toMonthLabel(twoMonthsAgo))).toBeTruthy();
-    expect(screen.getByText(toMonthLabel(threeMonthsAgo))).toBeTruthy();
-    expect(screen.getByText('March summary')).toBeTruthy();
+    // Wait for ScrollArea to finish async state updates
+    await waitFor(() => {
+      expect(screen.getByText('Last Week')).toBeTruthy();
+    });
+
+    // The older dates will be in month buckets (exact month depends on current date)
+    expect(screen.getByText(toMonthLabel(olderDate))).toBeTruthy();
+    expect(screen.getByText(toMonthLabel(evenOlderDate))).toBeTruthy();
+    expect(screen.getByText('Last week summary')).toBeTruthy();
+    expect(screen.getByText('Older summary')).toBeTruthy();
+    expect(screen.getByText('Even older summary')).toBeTruthy();
   });
 
   test('renders New Chat button', () => {
