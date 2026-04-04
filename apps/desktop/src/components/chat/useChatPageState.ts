@@ -223,13 +223,22 @@ export function useChatPageState(props: ChatPageProps) {
   }, []);
 
   // --------------- Chat hook ---------------
-  const [chatId] = useState<string>(
+  // Generate a stable fallback ID that persists across renders but is created
+  // once per component instance. This ensures that when sessionId is null,
+  // the Chat instance uses a consistent ID rather than undefined (which would
+  // cause the Chat to be recreated on every render due to 'id' in options check).
+  const stableFallbackId = useMemo(
     () =>
-      sessionId ??
-      (typeof crypto !== 'undefined' && crypto.randomUUID
+      typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
-        : `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+        : `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    []
   );
+
+  // Use sessionId when available, otherwise fall back to the stable ID.
+  // This ensures the Chat instance is recreated when sessionId actually changes
+  // (e.g., user switches sessions) while remaining stable when sessionId is null.
+  const chatId = sessionId ?? stableFallbackId;
 
   const handleDataPart = useCallback(
     (part: { type: string; data?: unknown }) => {
