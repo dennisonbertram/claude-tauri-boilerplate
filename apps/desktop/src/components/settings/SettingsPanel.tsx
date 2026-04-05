@@ -145,6 +145,20 @@ export function SettingsPanel({ isOpen, onClose, sessionInfo, email, plan, initi
       }
     }
   }, [isOpen, initialTab]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const [showApiKey, setShowApiKey] = useState(false);
   const { settings, updateSettings } = useSettings();
 
