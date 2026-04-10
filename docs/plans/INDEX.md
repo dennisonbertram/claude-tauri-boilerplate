@@ -7,6 +7,7 @@ Feature plans with checklists. Each plan is a markdown file with a checklist tha
 | File | Description |
 |------|-------------|
 | [active-plan.md](active-plan.md) | Active Plaid financial data integration plan with current milestone notes, key decisions, and task ledger. |
+| [connector-rollout-plan.md](connector-rollout-plan.md) | Cross-connector rollout plan that groups the open connector backlog into phased implementation waves, with shared auth/storage seams and high-risk integrations separated from low-risk API work. |
 | [browser-testing-agent-browser.md](browser-testing-agent-browser.md) | Plan and completion checklist for switching the default browser testing workflow from Playwright MCP to the `agent-browser` CLI while keeping `agentation` separate. |
 | [agent-profile-ai-generation-modal.md](agent-profile-ai-generation-modal.md) | Agent Builder create-flow plan for adding a modal that offers blank-profile creation or AI-assisted agent generation, including the server endpoint, client hook, and manual verification steps. |
 | [issue-427-settings-profile-precedence.md](issue-427-settings-profile-precedence.md) | Plan for GitHub issue #427 to clarify precedence between global settings defaults and profile-specific overrides for model and behavior controls. |

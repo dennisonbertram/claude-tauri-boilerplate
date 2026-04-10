@@ -1,17 +1,99 @@
 import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
-import type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition } from './types';
+import type { Database } from 'bun:sqlite';
+import type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition, ConnectorFactory } from './types';
 import { weatherConnector } from './weather';
+import { gmailConnectorFactory } from './gmail';
+import { calendarConnectorFactory } from './calendar';
+import { driveConnectorFactory } from './drive';
+import { plaidConnectorFactory } from './plaid';
+import { todoistConnectorFactory } from './todoist';
+import { notionConnectorFactory } from './notion';
+import { slackConnectorFactory } from './slack';
+import { blueskyConnectorFactory } from './bluesky';
+import { googleMapsConnectorFactory } from './google-maps';
+import { googlePhotosConnectorFactory } from './google-photos';
+import { contactsConnectorFactory } from './contacts';
+import { stravaConnectorFactory } from './strava';
+import { discordConnectorFactory } from './discord';
+import { ynabConnectorFactory } from './ynab';
+import { dropboxConnectorFactory } from './dropbox';
+import { telegramConnectorFactory } from './telegram';
+import { appleRemindersConnectorFactory } from './apple-reminders';
+import { appleNotesConnectorFactory } from './apple-notes';
+import { obsidianConnectorFactory } from './obsidian';
+import { imessageConnectorFactory } from './imessage';
+import { coinbaseConnectorFactory } from './coinbase';
+import { twitterConnectorFactory } from './twitter';
+import { homeAssistantConnectorFactory } from './home-assistant';
+import { subscriptionsConnectorFactory } from './subscriptions';
+import { appleHealthConnectorFactory } from './apple-health';
+import { whatsappConnectorFactory } from './whatsapp';
+import { tripitConnectorFactory } from './tripit';
+import { amazonOrdersConnectorFactory } from './amazon-orders';
+import { linkedinConnectorFactory } from './linkedin';
+import { uberLyftConnectorFactory } from './uber-lyft';
 
 // ---------------------------------------------------------------------------
 // Connector registry
 // ---------------------------------------------------------------------------
 
-/** All registered connectors. Add new connectors here. */
-const CONNECTORS: ConnectorDefinition[] = [weatherConnector];
+/** Static connectors (no dependencies needed). */
+const STATIC_CONNECTORS: ConnectorDefinition[] = [weatherConnector];
 
-const connectorMap = new Map<string, ConnectorDefinition>(
-  CONNECTORS.map((c) => [c.name, c])
+/** Factory connectors (need db injection). Add new factory connectors here. */
+const CONNECTOR_FACTORIES: ConnectorFactory[] = [
+  googleMapsConnectorFactory,
+  gmailConnectorFactory,
+  calendarConnectorFactory,
+  driveConnectorFactory,
+  plaidConnectorFactory,
+  todoistConnectorFactory,
+  notionConnectorFactory,
+  slackConnectorFactory,
+  blueskyConnectorFactory,
+  googlePhotosConnectorFactory,
+  contactsConnectorFactory,
+  stravaConnectorFactory,
+  discordConnectorFactory,
+  ynabConnectorFactory,
+  dropboxConnectorFactory,
+  telegramConnectorFactory,
+  appleRemindersConnectorFactory,
+  appleNotesConnectorFactory,
+  obsidianConnectorFactory,
+  imessageConnectorFactory,
+  coinbaseConnectorFactory,
+  twitterConnectorFactory,
+  homeAssistantConnectorFactory,
+  subscriptionsConnectorFactory,
+  appleHealthConnectorFactory,
+  whatsappConnectorFactory,
+  tripitConnectorFactory,
+  amazonOrdersConnectorFactory,
+  linkedinConnectorFactory,
+  uberLyftConnectorFactory,
+];
+
+/** All initialized connectors (static + factory-created). */
+let allConnectors: ConnectorDefinition[] = [...STATIC_CONNECTORS];
+let connectorMap = new Map<string, ConnectorDefinition>(
+  allConnectors.map((c) => [c.name, c])
 );
+
+// ---------------------------------------------------------------------------
+// Initialization
+// ---------------------------------------------------------------------------
+
+/**
+ * Initialize connectors that require dependencies (db, etc.).
+ * Called by mcp-resolver before creating connector MCP servers.
+ * Idempotent — safe to call multiple times.
+ */
+export function initConnectors(db: Database): void {
+  const factoryConnectors = CONNECTOR_FACTORIES.map((factory) => factory(db));
+  allConnectors = [...STATIC_CONNECTORS, ...factoryConnectors];
+  connectorMap = new Map(allConnectors.map((c) => [c.name, c]));
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -19,7 +101,7 @@ const connectorMap = new Map<string, ConnectorDefinition>(
 
 /** Returns serializable info for all connectors (for the frontend). */
 export function getAllConnectors(): ConnectorInfo[] {
-  return CONNECTORS.map((c) => ({
+  return allConnectors.map((c) => ({
     name: c.name,
     displayName: c.displayName,
     description: c.description,
@@ -38,7 +120,8 @@ export function getConnectorTools(
   for (const name of enabledConnectorNames) {
     const connector = connectorMap.get(name);
     if (connector) {
-      tools.push(...connector.tools);
+      // Tag each tool with its connector name so callers can filter by connector
+      tools.push(...connector.tools.map((t) => ({ ...t, connectorName: connector.name })));
     }
   }
   return tools;
@@ -60,4 +143,4 @@ export function createConnectorMcpServer(enabledConnectorNames: string[]) {
 }
 
 // Re-export types for convenience
-export type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition } from './types';
+export type { ConnectorDefinition, ConnectorInfo, ConnectorToolDefinition, ConnectorFactory } from './types';

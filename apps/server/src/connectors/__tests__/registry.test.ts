@@ -114,6 +114,34 @@ describe('Connector Registry', () => {
     });
   });
 
+  describe('initConnectors', () => {
+    test('initConnectors is exported', async () => {
+      const mod = await tryLoadRegistry();
+      if (!mod) return;
+      expect(typeof mod.initConnectors).toBe('function');
+    });
+
+    test('initConnectors accepts a db argument and is idempotent', async () => {
+      const mod = await tryLoadRegistry();
+      if (!mod) return;
+      // Use a minimal db-like object; initConnectors only passes it to factories
+      // which are currently empty, so no actual db calls are made.
+      const fakeDb = {} as import('bun:sqlite').Database;
+      expect(() => mod.initConnectors(fakeDb)).not.toThrow();
+      // Calling again should not throw (idempotent)
+      expect(() => mod.initConnectors(fakeDb)).not.toThrow();
+    });
+
+    test('static connectors remain available after initConnectors', async () => {
+      const mod = await tryLoadRegistry();
+      if (!mod) return;
+      const fakeDb = {} as import('bun:sqlite').Database;
+      mod.initConnectors(fakeDb);
+      const connectors = mod.getAllConnectors();
+      expect(connectors.map((c) => c.name)).toContain('weather');
+    });
+  });
+
   describe('createConnectorMcpServer', () => {
     test('returns undefined when no connectors enabled', async () => {
       const mod = await tryLoadRegistry();

@@ -7,7 +7,7 @@ import { getSessionMcpOverrides } from '../db';
  * Default connectors that are enabled for all sessions unless overridden.
  * In the future this will come from DB/user settings.
  */
-const DEFAULT_ENABLED_CONNECTORS = ['weather'];
+const DEFAULT_ENABLED_CONNECTORS = ['weather', 'gmail', 'calendar', 'drive', 'plaid', 'todoist', 'notion', 'slack', 'bluesky', 'google-maps', 'google-photos', 'contacts', 'strava', 'discord', 'ynab', 'dropbox', 'telegram', 'apple-reminders', 'apple-notes', 'obsidian', 'imessage', 'coinbase', 'twitter', 'home-assistant', 'subscriptions', 'apple-health', 'whatsapp', 'tripit', 'amazon-orders', 'linkedin', 'uber-lyft'];
 
 /** The MCP server name used for in-process connectors. */
 const CONNECTOR_SERVER_NAME = 'connectors';
@@ -63,16 +63,28 @@ export async function resolveSessionMcpServers(
 
   // 2. In-process connector MCP server (lazy import to avoid module graph issues in tests)
   try {
-    const { createConnectorMcpServer, getConnectorTools } = await import('../connectors');
+    const { createConnectorMcpServer, getConnectorTools, initConnectors } = await import('../connectors');
+    initConnectors(db);
     const connectorServer = createConnectorMcpServer(DEFAULT_ENABLED_CONNECTORS);
     if (connectorServer) {
       result[CONNECTOR_SERVER_NAME] = connectorServer;
 
       // Collect tool names so they can be auto-allowed in the SDK permission
       // system. The SDK names MCP tools as `mcp__<serverName>__<toolName>`.
+      // Only auto-allow read-only tools from non-sensitive connectors (e.g.,
+      // weather). Sensitive connectors like gmail, calendar, drive, and plaid
+      // must always go through the SDK's normal permission flow even for
+      // read-only operations, because they access private user data.
+      const AUTO_ALLOW_CONNECTORS = new Set(['weather']);
       const tools = getConnectorTools(DEFAULT_ENABLED_CONNECTORS);
       for (const t of tools) {
-        connectorAllowedTools.push(`mcp__${CONNECTOR_SERVER_NAME}__${t.name}`);
+        const annotations = (t.sdkTool as any).annotations;
+        if (
+          annotations?.readOnlyHint === true &&
+          AUTO_ALLOW_CONNECTORS.has(t.connectorName ?? '')
+        ) {
+          connectorAllowedTools.push(`mcp__${CONNECTOR_SERVER_NAME}__${t.name}`);
+        }
       }
     }
   } catch {
