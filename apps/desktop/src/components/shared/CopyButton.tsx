@@ -1,4 +1,4 @@
-import { useState, useCallback, type MouseEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, type MouseEvent } from 'react';
 import { Check, Copy } from '@phosphor-icons/react';
 
 interface CopyButtonProps {
@@ -26,6 +26,15 @@ export function CopyButton({
   className,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current !== null) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = useCallback(
     async (e?: MouseEvent) => {
@@ -33,7 +42,13 @@ export function CopyButton({
       try {
         await navigator.clipboard.writeText(text);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (resetTimeoutRef.current !== null) {
+          clearTimeout(resetTimeoutRef.current);
+        }
+        resetTimeoutRef.current = setTimeout(() => {
+          setCopied(false);
+          resetTimeoutRef.current = null;
+        }, 2000);
       } catch {
         // Fallback for environments without clipboard API
       }
