@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { DiffMode } from './diff-parser';
 import type * as api from '@/lib/workspace-api';
@@ -49,12 +49,27 @@ export function DiffToolbar({
   rawDiff,
 }: DiffToolbarProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current !== null) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(rawDiff);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (resetTimeoutRef.current !== null) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+      resetTimeoutRef.current = setTimeout(() => {
+        setCopied(false);
+        resetTimeoutRef.current = null;
+      }, 2000);
     } catch {
       // clipboard write failed silently
     }
