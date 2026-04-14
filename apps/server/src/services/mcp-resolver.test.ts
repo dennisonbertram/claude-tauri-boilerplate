@@ -174,4 +174,27 @@ describe('resolveSessionMcpServers', () => {
       expect(result.connectorAllowedTools).toContain('mcp__connectors__weather_alerts');
     }
   });
+
+  test('connectorAllowedTools does NOT auto-allow gmail, calendar, drive, or plaid tools', async () => {
+    mockReadMcpJson.mockResolvedValue({ mcpServers: {} });
+
+    const result = await resolveSessionMcpServers(db, 'session-1', null);
+    // Sensitive connector tools must never be auto-allowed regardless of readOnlyHint
+    const sensitiveTools = [
+      'mcp__connectors__gmail_list_messages',
+      'mcp__connectors__gmail_get_message',
+      'mcp__connectors__calendar_list_events',
+      'mcp__connectors__drive_search_files',
+      'mcp__connectors__drive_get_file',
+      'mcp__connectors__drive_read_file',
+      'mcp__connectors__plaid_list_accounts',
+      'mcp__connectors__plaid_get_balance',
+      'mcp__connectors__plaid_search_transactions',
+      'mcp__connectors__plaid_get_spending_summary',
+      'mcp__connectors__plaid_list_institutions',
+    ];
+    for (const toolName of sensitiveTools) {
+      expect(result.connectorAllowedTools).not.toContain(toolName);
+    }
+  });
 });

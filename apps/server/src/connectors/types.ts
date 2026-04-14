@@ -1,11 +1,20 @@
 import type { SdkMcpToolDefinition } from '@anthropic-ai/claude-agent-sdk';
+import type { Database } from 'bun:sqlite';
 
 export type ConnectorCategory =
   | 'communication'
   | 'productivity'
   | 'finance'
   | 'lifestyle'
-  | 'developer';
+  | 'developer'
+  | 'social-media'
+  | 'travel'
+  | 'storage'
+  | 'smart-home'
+  | 'shopping'
+  | 'health'
+  | 'subscriptions'
+  | 'contacts';
 
 /**
  * A tool definition within a connector.
@@ -18,6 +27,8 @@ export interface ConnectorToolDefinition {
   description: string;
   /** The actual SDK tool definition passed to createSdkMcpServer */
   sdkTool: SdkMcpToolDefinition<any>;
+  /** The name of the connector this tool belongs to (e.g. 'weather', 'gmail') */
+  connectorName?: string;
 }
 
 /**
@@ -40,6 +51,12 @@ export interface ConnectorDefinition {
   /** The tool definitions this connector provides */
   tools: ConnectorToolDefinition[];
 }
+
+/**
+ * A factory function that creates a ConnectorDefinition with injected dependencies.
+ * Used by connectors that need database access (e.g., Gmail, Calendar, Plaid).
+ */
+export type ConnectorFactory = (db: Database) => ConnectorDefinition;
 
 /**
  * Serializable connector info for the frontend (no tool implementations).

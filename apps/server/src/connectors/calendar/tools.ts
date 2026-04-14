@@ -1,0 +1,322 @@
+import { z } from 'zod';
+import { tool } from '@anthropic-ai/claude-agent-sdk';
+import type { Database } from 'bun:sqlite';
+import type { ConnectorToolDefinition } from '../types';
+import { listEvents, createEvent, updateEvent, deleteEvent } from '../../services/google/calendar';
+import { sanitizeError, fenceUntrustedContent } from '../utils';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatEventTime(isoString: string): string {
+  if (!isoString) return 'Unknown time';
+  // Date-only (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoString)) {
+    return isoString;
+  }
+  try {
+    return new Date(isoString).toLocaleString();
+  } catch {
+    return isoString;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// calendar_list_events
+// ---------------------------------------------------------------------------
+
+function createListEventsTool(db: Database) {
+  return tool(
+    'calendar_list_events',
+    'List upcoming Google Calendar events. Optionally filter by time range and limit results.',
+    {
+      calendarId: z
+        .string()
+        .optional()
+        .describe('Calendar ID to list events from (default: "primary")'),
+      timeMin: z
+        .string()
+        .optional()
+        .describe('Start of time range as ISO 8601 string (e.g. "2025-01-01T00:00:00Z")'),
+      timeMax: z
+        .string()
+        .optional()
+        .describe('End of time range as ISO 8601 string (e.g. "2025-01-31T23:59:59Z")'),
+      maxResults: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe('Maximum number of events to return (1-100, default 50)'),
+      pageToken: z
+        .string()
+        .optional()
+        .describe('Page token for pagination from a previous response'),
+    },
+    async (args) => {
+      try {
+        const result = await listEvents(
+          db,
+          args.calendarId,
+          args.timeMin,
+          args.timeMax,
+          args.pageToken,
+          args.maxResults,
+        );
+
+        if (result.items.length === 0) {
+          return {
+            content: [{ type: 'text' as const, text: 'No events found in the specified time range.' }],
+          };
+        }
+
+        const lines: string[] = [`Found ${result.items.length} event(s):`, ''];
+        for (const event of result.items) {
+          lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
+          lines.push(`Start: ${formatEventTime(event.start)}`);
+          lines.push(`End:   ${formatEventTime(event.end)}`);
+          if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+          if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
+          if (event.attendees && event.attendees.length > 0) {
+            lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
+          }
+          if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
+          lines.push('');
+        }
+
+        if (result.nextPageToken) {
+          lines.push(`(More events available — use pageToken: "${result.nextPageToken}" to fetch the next page)`);
+        }
+
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error listing events: ${sanitizeError(error)}` }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        title: 'List Calendar Events',
+        readOnlyHint: true,
+        openWorldHint: true,
+      },
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// calendar_create_event
+// ---------------------------------------------------------------------------
+
+function createCreateEventTool(db: Database) {
+  return tool(
+    'calendar_create_event',
+    'Create a new event on Google Calendar.',
+    {
+      summary: z.string().max(200).describe('Event title/summary'),
+      start: z
+        .string()
+        .describe('Event start time as ISO 8601 string or date (e.g. "2025-06-01T10:00:00-07:00")'),
+      end: z
+        .string()
+        .describe('Event end time as ISO 8601 string or date (e.g. "2025-06-01T11:00:00-07:00")'),
+      description: z.string().max(5000).optional().describe('Event description or notes'),
+      location: z.string().max(500).optional().describe('Event location or address'),
+      attendees: z
+        .array(z.string())
+        .optional()
+        .describe('List of attendee email addresses'),
+      calendarId: z
+        .string()
+        .optional()
+        .describe('Calendar ID to create the event in (default: "primary")'),
+    },
+    async (args) => {
+      try {
+        const event = await createEvent(
+          db,
+          {
+            summary: args.summary,
+            start: args.start,
+            end: args.end,
+            description: args.description,
+            location: args.location,
+            attendees: args.attendees,
+          },
+          args.calendarId,
+        );
+
+        const lines: string[] = ['Event created successfully:', ''];
+        lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
+        lines.push(`Start: ${formatEventTime(event.start)}`);
+        lines.push(`End:   ${formatEventTime(event.end)}`);
+        if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+        if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
+        if (event.attendees && event.attendees.length > 0) {
+          lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
+        }
+        lines.push(`Event ID: ${event.id}`);
+        if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
+
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error creating event: ${sanitizeError(error)}` }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        title: 'Create Calendar Event',
+        readOnlyHint: false,
+        openWorldHint: true,
+      },
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// calendar_update_event
+// ---------------------------------------------------------------------------
+
+function createUpdateEventTool(db: Database) {
+  return tool(
+    'calendar_update_event',
+    'Update an existing Google Calendar event. Only provided fields will be changed.',
+    {
+      eventId: z.string().describe('The ID of the event to update'),
+      summary: z.string().max(200).optional().describe('New event title/summary'),
+      start: z.string().optional().describe('New start time as ISO 8601 string'),
+      end: z.string().optional().describe('New end time as ISO 8601 string'),
+      description: z.string().max(5000).optional().describe('New event description or notes'),
+      location: z.string().max(500).optional().describe('New event location or address'),
+      calendarId: z
+        .string()
+        .optional()
+        .describe('Calendar ID containing the event (default: "primary")'),
+    },
+    async (args) => {
+      try {
+        const { eventId, calendarId, ...updates } = args;
+
+        // Filter out undefined values so we don't send empty patches
+        const cleanUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([, v]) => v !== undefined)
+        );
+
+        if (Object.keys(cleanUpdates).length === 0) {
+          return {
+            content: [{ type: 'text' as const, text: 'Error: At least one field (summary, start, end, description, location) must be provided to update.' }],
+            isError: true,
+          };
+        }
+
+        const event = await updateEvent(db, eventId, cleanUpdates, calendarId);
+
+        const lines: string[] = ['Event updated successfully:', ''];
+        lines.push(`Title: ${fenceUntrustedContent(event.summary, 'Google Calendar')}`);
+        lines.push(`Start: ${formatEventTime(event.start)}`);
+        lines.push(`End:   ${formatEventTime(event.end)}`);
+        if (event.location) lines.push(`Location: ${fenceUntrustedContent(event.location, 'Google Calendar')}`);
+        if (event.description) lines.push(`Description: ${fenceUntrustedContent(event.description, 'Google Calendar')}`);
+        if (event.attendees && event.attendees.length > 0) {
+          lines.push(`Attendees: ${fenceUntrustedContent(event.attendees.map((a) => a.email).join(', '), 'Google Calendar')}`);
+        }
+        lines.push(`Event ID: ${event.id}`);
+        if (event.htmlLink) lines.push(`Link: ${fenceUntrustedContent(event.htmlLink, 'Google Calendar')}`);
+
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error updating event: ${sanitizeError(error)}` }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        title: 'Update Calendar Event',
+        readOnlyHint: false,
+        openWorldHint: true,
+      },
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// calendar_delete_event
+// ---------------------------------------------------------------------------
+
+function createDeleteEventTool(db: Database) {
+  return tool(
+    'calendar_delete_event',
+    'Delete a Google Calendar event permanently. This action cannot be undone.',
+    {
+      eventId: z.string().describe('The ID of the event to delete'),
+      calendarId: z
+        .string()
+        .optional()
+        .describe('Calendar ID containing the event (default: "primary")'),
+    },
+    async (args) => {
+      try {
+        await deleteEvent(db, args.eventId, args.calendarId);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Event "${args.eventId}" deleted successfully.`,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error deleting event: ${sanitizeError(error)}` }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        title: 'Delete Calendar Event',
+        readOnlyHint: false,
+        openWorldHint: true,
+        destructiveHint: true,
+      },
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+export function createCalendarTools(db: Database): ConnectorToolDefinition[] {
+  return [
+    {
+      name: 'calendar_list_events',
+      description: 'List upcoming Google Calendar events with optional time range filter',
+      sdkTool: createListEventsTool(db),
+    },
+    {
+      name: 'calendar_create_event',
+      description: 'Create a new event on Google Calendar',
+      sdkTool: createCreateEventTool(db),
+    },
+    {
+      name: 'calendar_update_event',
+      description: 'Update an existing Google Calendar event',
+      sdkTool: createUpdateEventTool(db),
+    },
+    {
+      name: 'calendar_delete_event',
+      description: 'Delete a Google Calendar event permanently',
+      sdkTool: createDeleteEventTool(db),
+    },
+  ];
+}
