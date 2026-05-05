@@ -118,6 +118,14 @@ describe('SettingsPanel', () => {
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
+  test('calls onClose when Escape key is pressed', () => {
+    renderWithProvider(<SettingsPanel {...defaultProps} />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(defaultProps.onClose).toHaveBeenCalledOnce();
+  });
+
   // ─── Group navigation ───
 
   test('renders 5 group buttons in sidebar', () => {

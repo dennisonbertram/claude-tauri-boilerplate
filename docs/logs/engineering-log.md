@@ -351,3 +351,9 @@ Each entry follows this format:
 - **What:** Implemented full artifact pipeline: SQLite schema (artifacts, artifact_revisions, message_parts), backend CRUD/generate/regenerate/archive routes, frontend Dashboards tab in WorkspacePanel, `/dashboard` slash command, ArtifactBlock inline renderer.
 - **Why:** Enables workspace chat to generate persistent, revisioned dashboards that survive page reload.
 - **Result:** All phases complete, 57+ new tests passing. Dashboard generation confirmed working end-to-end via curl verification. All seven new artifact endpoints return correct responses and status codes.
+
+## 2026-04-04
+### Settings dialog Escape-key close regression
+- **What:** Added a regression test asserting that pressing `Escape` closes `SettingsPanel`, then fixed `SettingsPanel` by wiring a window `keydown` listener (active only while open) that calls `onClose()` when `Escape` is pressed.
+- **Why:** Manual UI test documentation flagged that Escape dismissal was inconsistent for dialogs; settings lacked any Escape handler, so keyboard-based dismissal did nothing.
+- **Result:** The new regression test fails on old behavior and passes after the fix; the settings panel now closes via Escape key as expected.
